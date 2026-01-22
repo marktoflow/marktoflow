@@ -737,6 +737,341 @@ def webhook_test(
         raise typer.Exit(1)
 
 
+# Watch (file watcher) commands
+watch_app = typer.Typer(help="File watcher commands")
+app.add_typer(watch_app, name="watch")
+
+
+@watch_app.command("list")
+def watch_list() -> None:
+    """List configured file watches."""
+    config_path = Path(".aiworkflow/triggers/watches.yaml")
+
+    if not config_path.exists():
+        console.print("[yellow]No file watches configured.[/yellow]")
+        console.print("Create .aiworkflow/triggers/watches.yaml to configure file watches.")
+        return
+
+    import yaml
+
+    try:
+        watches = yaml.safe_load(config_path.read_text()) or {}
+    except Exception as e:
+        console.print(f"[red]Failed to load watches config: {e}[/red]")
+        raise typer.Exit(1)
+
+    watch_list_data = watches.get("watches", [])
+
+    if not watch_list_data:
+        console.print("[yellow]No file watches defined in config.[/yellow]")
+        return
+
+    table = Table(title="Configured File Watches")
+    table.add_column("ID", style="cyan")
+    table.add_column("Path")
+    table.add_column("Patterns")
+    table.add_column("Workflow")
+    table.add_column("Recursive")
+
+    for watch in watch_list_data:
+        patterns = ", ".join(watch.get("patterns", ["*"]))
+        recursive = "[green]Yes[/green]" if watch.get("recursive", True) else "[red]No[/red]"
+        table.add_row(
+            watch.get("id", "unknown"),
+            watch.get("path", "."),
+            patterns,
+            watch.get("workflow_id", "-"),
+            recursive,
+        )
+
+    console.print(table)
+
+
+@watch_app.command("start")
+def watch_start(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Directory to watch",
+    ),
+    patterns: Optional[list[str]] = typer.Option(
+        None,
+        "--pattern",
+        "-p",
+        help="Glob patterns to match (e.g., '*.py', '*.md')",
+    ),
+    workflow: Optional[str] = typer.Option(
+        None,
+        "--workflow",
+        "-w",
+        help="Workflow ID to trigger on file events",
+    ),
+    recursive: bool = typer.Option(
+        True,
+        "--recursive/--no-recursive",
+        "-r/-R",
+        help="Watch subdirectories recursively",
+    ),
+    debounce: float = typer.Option(
+        1.0,
+        "--debounce",
+        "-d",
+        help="Debounce interval in seconds",
+    ),
+) -> None:
+    """Start watching a directory for file changes."""
+    import signal
+
+    try:
+        from aiworkflow.core.filewatcher import FileWatcher, WatchConfig, FileEventType
+    except ImportError:
+        console.print(
+            "[red]File watcher not available. Install with: pip install aiworkflow[triggers][/red]"
+        )
+        raise typer.Exit(1)
+
+    if not path.exists():
+        console.print(f"[red]Path does not exist: {path}[/red]")
+        raise typer.Exit(1)
+
+    # Build watch config
+    config = WatchConfig(
+        path=path.absolute(),
+        patterns=patterns or ["*"],
+        recursive=recursive,
+        events=[FileEventType.CREATED, FileEventType.MODIFIED, FileEventType.DELETED],
+        debounce_seconds=debounce,
+        workflow_id=workflow,
+    )
+
+    watcher = FileWatcher()
+
+    # Define callback
+    def on_event(event, watch_config):
+        event_type = event.event_type.value
+        console.print(f"[cyan]{event_type.upper()}[/cyan] {event.src_path}")
+        if workflow:
+            console.print(f"  [yellow]Would trigger workflow: {workflow}[/yellow]")
+
+    handle = watcher.add_watch(config, on_event)
+    console.print(f"[cyan]Watching: {path.absolute()}[/cyan]")
+    console.print(f"[cyan]Patterns: {', '.join(patterns or ['*'])}[/cyan]")
+    console.print(f"[cyan]Recursive: {recursive}[/cyan]")
+    if workflow:
+        console.print(f"[cyan]Workflow: {workflow}[/cyan]")
+    console.print("[green]Press Ctrl+C to stop.[/green]")
+
+    # Handle shutdown gracefully
+    def signal_handler(sig, frame):
+        console.print("\n[yellow]Stopping file watcher...[/yellow]")
+        watcher.stop()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        watcher.start(blocking=True)
+    except KeyboardInterrupt:
+        pass
+
+    console.print("[green]File watcher stopped.[/green]")
+
+
+@watch_app.command("config")
+def watch_config() -> None:
+    """Show example file watch configuration."""
+    example = """# File Watch Configuration
+# Save to: .aiworkflow/triggers/watches.yaml
+
+watches:
+  - id: python-files
+    path: ./src
+    patterns:
+      - "*.py"
+    ignore_patterns:
+      - "__pycache__/*"
+      - "*.pyc"
+    recursive: true
+    events:
+      - created
+      - modified
+    debounce_seconds: 1.0
+    workflow_id: lint-and-test
+    workflow_inputs:
+      check_types: true
+
+  - id: config-changes
+    path: ./config
+    patterns:
+      - "*.yaml"
+      - "*.json"
+    recursive: false
+    events:
+      - modified
+    debounce_seconds: 2.0
+    workflow_id: validate-config
+"""
+    console.print(Panel(example, title="Example watches.yaml", expand=False))
+
+
+# Metrics commands
+metrics_app = typer.Typer(help="Metrics and monitoring commands")
+app.add_typer(metrics_app, name="metrics")
+
+
+@metrics_app.command("start")
+def metrics_start(
+    host: str = typer.Option("0.0.0.0", "--host", "-h", help="Host to bind to"),
+    port: int = typer.Option(9090, "--port", "-p", help="Port to listen on"),
+) -> None:
+    """Start the metrics server for Prometheus scraping."""
+    import signal
+
+    try:
+        from aiworkflow.core.metrics import MetricsServer, MetricsCollector
+    except ImportError:
+        console.print(
+            "[red]Metrics not available. Install with: pip install aiworkflow[metrics][/red]"
+        )
+        raise typer.Exit(1)
+
+    collector = MetricsCollector()
+    server = MetricsServer(collector, host=host, port=port)
+
+    console.print(f"[cyan]Starting metrics server on {host}:{port}[/cyan]")
+    console.print(f"[cyan]Prometheus endpoint: http://{host}:{port}/metrics[/cyan]")
+    console.print(f"[cyan]Health endpoint: http://{host}:{port}/health[/cyan]")
+    console.print("[green]Press Ctrl+C to stop.[/green]")
+
+    # Handle shutdown gracefully
+    def signal_handler(sig, frame):
+        console.print("\n[yellow]Stopping metrics server...[/yellow]")
+        server.stop()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        server.start(blocking=True)
+    except KeyboardInterrupt:
+        pass
+
+    console.print("[green]Metrics server stopped.[/green]")
+
+
+@metrics_app.command("show")
+def metrics_show() -> None:
+    """Show current workflow metrics from state store."""
+    from pathlib import Path
+    import json
+
+    state_path = Path(".aiworkflow/state/workflow-state/metrics.json")
+
+    if not state_path.exists():
+        console.print("[yellow]No metrics data found.[/yellow]")
+        console.print("Metrics are collected when workflows are executed.")
+        return
+
+    try:
+        data = json.loads(state_path.read_text())
+    except Exception as e:
+        console.print(f"[red]Failed to load metrics: {e}[/red]")
+        raise typer.Exit(1)
+
+    # Display summary
+    console.print(Panel("[cyan]Workflow Metrics Summary[/cyan]", expand=False))
+
+    if "workflows" in data:
+        table = Table(title="Workflow Execution Stats")
+        table.add_column("Workflow ID", style="cyan")
+        table.add_column("Total Runs")
+        table.add_column("Succeeded")
+        table.add_column("Failed")
+        table.add_column("Avg Duration")
+
+        for wf_id, stats in data["workflows"].items():
+            total = stats.get("total", 0)
+            succeeded = stats.get("succeeded", 0)
+            failed = stats.get("failed", 0)
+            avg_duration = stats.get("avg_duration", 0)
+            table.add_row(
+                wf_id,
+                str(total),
+                f"[green]{succeeded}[/green]",
+                f"[red]{failed}[/red]" if failed > 0 else "0",
+                f"{avg_duration:.2f}s",
+            )
+
+        console.print(table)
+
+    if "agents" in data:
+        table = Table(title="Agent Usage Stats")
+        table.add_column("Agent", style="cyan")
+        table.add_column("Executions")
+        table.add_column("Failovers From")
+        table.add_column("Failovers To")
+
+        for agent_name, stats in data["agents"].items():
+            table.add_row(
+                agent_name,
+                str(stats.get("executions", 0)),
+                str(stats.get("failovers_from", 0)),
+                str(stats.get("failovers_to", 0)),
+            )
+
+        console.print(table)
+
+
+@metrics_app.command("export")
+def metrics_export(
+    output: Path = typer.Argument(
+        ...,
+        help="Output file path (supports .json, .csv)",
+    ),
+    format: str = typer.Option(
+        "json",
+        "--format",
+        "-f",
+        help="Output format (json, csv, prometheus)",
+    ),
+) -> None:
+    """Export metrics to a file."""
+    try:
+        from aiworkflow.core.metrics import MetricsCollector
+    except ImportError:
+        console.print(
+            "[red]Metrics not available. Install with: pip install aiworkflow[metrics][/red]"
+        )
+        raise typer.Exit(1)
+
+    collector = MetricsCollector()
+    stats = collector.get_stats()
+
+    if format == "json":
+        import json
+
+        output.write_text(json.dumps(stats, indent=2, default=str))
+    elif format == "prometheus":
+        prom_output = collector.get_prometheus_metrics()
+        output.write_text(prom_output if isinstance(prom_output, str) else prom_output.decode())
+    elif format == "csv":
+        import csv
+
+        with output.open("w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["metric", "value"])
+            for key, value in stats.items():
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        writer.writerow([f"{key}.{sub_key}", sub_value])
+                else:
+                    writer.writerow([key, value])
+    else:
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[green]Metrics exported to: {output}[/green]")
+
+
 @app.command()
 def version() -> None:
     """Show version information."""
