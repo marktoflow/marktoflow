@@ -27,6 +27,18 @@ from aiworkflow.core.scheduler import Scheduler, ScheduledJob, CronParser
 from aiworkflow.core.state import StateStore, ExecutionRecord, StepCheckpoint, ExecutionStatus
 from aiworkflow.core.logging import ExecutionLogger, ExecutionLog, LogLevel, LogEntry
 from aiworkflow.core.webhook import WebhookReceiver, WebhookEndpoint, WebhookEvent
+from aiworkflow.core.rollback import (
+    RollbackRegistry,
+    RollbackAction,
+    RollbackResult,
+    RollbackStrategy,
+    RollbackStatus,
+    TransactionContext,
+    CompensationHandler,
+    DefaultCompensationHandler,
+    FileCompensationHandler,
+    GitCompensationHandler,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -126,6 +138,17 @@ __all__ = [
     "WebhookReceiver",
     "WebhookEndpoint",
     "WebhookEvent",
+    # Rollback
+    "RollbackRegistry",
+    "RollbackAction",
+    "RollbackResult",
+    "RollbackStrategy",
+    "RollbackStatus",
+    "TransactionContext",
+    "CompensationHandler",
+    "DefaultCompensationHandler",
+    "FileCompensationHandler",
+    "GitCompensationHandler",
     # File watcher (optional)
     "FileWatcher",
     "AsyncFileWatcher",

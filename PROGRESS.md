@@ -4,6 +4,73 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 4 Continued: Rollback Capabilities)
+
+### Phase 2: Rollback Capabilities
+- [x] Implemented RollbackStrategy enum (NONE, COMPENSATE, RESTORE, IDEMPOTENT)
+- [x] Implemented RollbackStatus enum (PENDING, IN_PROGRESS, COMPLETED, FAILED, SKIPPED)
+- [x] Implemented RollbackAction dataclass
+  - step_name, step_index, strategy, compensate_action, compensate_inputs
+  - state_snapshot for capturing pre-execution state
+  - rollback_status and rollback_error tracking
+  - Optional metadata field
+- [x] Implemented RollbackResult for rollback operation results
+  - success, rollback_actions, errors, partial_rollback
+- [x] Implemented CompensationHandler abstract base class
+  - `can_handle(action)` method for handler matching
+  - `compensate(action)` method for executing compensation
+  - `compensate_async(action)` async variant
+- [x] Implemented DefaultCompensationHandler
+  - Callback-based compensation execution
+- [x] Implemented RollbackRegistry for tracking and managing rollbacks
+  - `record(action)` - Record a step execution for potential rollback
+  - `get_actions()` - Get all recorded actions
+  - `get_rollback_order()` - Get actions in reverse order
+  - `clear()` - Clear all recorded actions
+  - `rollback_all()` / `rollback_all_async()` - Rollback all recorded actions
+  - `rollback_to(step_index)` / `rollback_to_async()` - Partial rollback to step
+  - `register_compensation(step_name, handler)` - Register step-specific handler
+  - `register_handler(handler)` - Register global compensation handler
+- [x] Implemented TransactionContext for transaction-like semantics
+  - `record_step(step_name, ...)` - Record step with optional state snapshot
+  - `savepoint(name)` - Create named savepoint
+  - `rollback_to_savepoint(name)` - Rollback to specific savepoint
+  - `commit()` - Clear all recorded actions
+  - `rollback()` - Rollback all recorded actions
+  - Context manager support (`__enter__`/`__exit__`)
+  - Auto-rollback on exception when used as context manager
+- [x] Implemented FileCompensationHandler for file operation rollbacks
+  - Supports: file_write, file_delete, file_move, file_copy
+  - State-based restoration from snapshots
+- [x] Implemented GitCompensationHandler for git operation rollbacks
+  - Supports: git_commit, git_branch_create, git_branch_delete
+  - Revert commits, delete/restore branches
+
+### Testing
+- [x] Created test_rollback.py (34 tests)
+  - RollbackStrategy enum tests
+  - RollbackStatus enum tests
+  - RollbackAction creation and serialization tests
+  - RollbackResult tests
+  - DefaultCompensationHandler tests
+  - RollbackRegistry recording and ordering tests
+  - RollbackRegistry rollback execution tests
+  - TransactionContext lifecycle tests
+  - TransactionContext savepoint tests
+  - FileCompensationHandler tests
+  - GitCompensationHandler tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/rollback.py` - NEW: Rollback capabilities
+- `src/aiworkflow/core/__init__.py` - Updated exports for rollback module
+- `tests/test_rollback.py` - NEW: Rollback tests
+- `TODO.md` - Marked rollback capabilities complete
+- `PROGRESS.md` - Added rollback implementation details
+
+**Total: 227 tests passing**
+
+---
+
 ## 2026-01-22 (Session 4: Message Queue & Examples)
 
 ### Phase 2: Message Queue Integration
@@ -458,8 +525,10 @@ src/aiworkflow/
 │   ├── state.py          # State persistence
 │   ├── logging.py        # Execution logging
 │   ├── webhook.py        # Webhook receiver
-│   ├── filewatcher.py    # File system event triggers (NEW)
-│   └── metrics.py        # Prometheus metrics collection (NEW)
+│   ├── filewatcher.py    # File system event triggers
+│   ├── metrics.py        # Prometheus metrics collection
+│   ├── queue.py          # Message queue integration
+│   └── rollback.py       # Rollback and compensation (NEW)
 ├── agents/
 │   ├── __init__.py
 │   ├── base.py           # Base adapter + registry

@@ -43,9 +43,10 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] SQLite state store (StateStore class)
   - [x] Execution records and step checkpoints
   - [x] Resume from checkpoint support
-- [ ] Rollback capabilities
-  - [ ] Step undo registry
-  - [ ] Transaction-like semantics
+- [x] Rollback capabilities
+  - [x] Step undo registry (RollbackRegistry, RollbackAction)
+  - [x] Transaction-like semantics (TransactionContext with savepoints)
+  - [x] Pre-built compensation handlers (FileCompensationHandler, GitCompensationHandler)
 - [x] Agent failover
   - [x] Automatic fallback to secondary agent (FailoverConfig, _execute_step_with_failover)
   - [x] Health checking (check_agent_health, AgentHealth)
@@ -76,12 +77,13 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [x] Unit tests for file watcher (23 tests)
 - [x] Unit tests for metrics collection (23 tests)
 - [x] Unit tests for message queue (30 tests)
+- [x] Unit tests for rollback capabilities (34 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 193 tests passing**
+**Total: 227 tests passing**
 
 ---
 
