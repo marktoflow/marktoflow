@@ -1,0 +1,174 @@
+# Tool Registry
+# Central registry of all available tools with multi-implementation support
+
+tools:
+  # Jira - Project tracking
+  - name: jira
+    description: "Atlassian Jira for issue tracking and project management"
+    category: project_management
+    
+    implementations:
+      - type: mcp
+        priority: 1
+        package: "@modelcontextprotocol/server-jira"
+        config_path: mcp/jira.yaml
+        agent_compatibility:
+          claude-code: native
+          opencode: native
+          aider: not_supported
+      
+      - type: openapi
+        priority: 2
+        spec_path: openapi/jira.yaml
+        agent_compatibility:
+          claude-code: supported
+          opencode: native
+          aider: supported
+      
+      - type: custom
+        priority: 3
+        adapter_path: custom/jira/adapter.py
+        agent_compatibility:
+          claude-code: supported
+          opencode: native
+          aider: supported
+    
+    authentication:
+      type: oauth2
+      scopes: [read:jira-work, write:jira-work]
+      
+    rate_limits:
+      requests_per_minute: 100
+      burst: 10
+
+  # Outlook - Email
+  - name: outlook
+    description: "Microsoft Outlook for email operations"
+    category: communication
+    
+    implementations:
+      - type: mcp
+        priority: 1
+        package: "@modelcontextprotocol/server-outlook"
+        config_path: mcp/outlook.yaml
+        agent_compatibility:
+          claude-code: native
+          opencode: native
+          aider: not_supported
+      
+      - type: openapi
+        priority: 2
+        spec_path: openapi/microsoft-graph.yaml
+        agent_compatibility:
+          claude-code: supported
+          opencode: native
+          aider: supported
+    
+    authentication:
+      type: oauth2
+      provider: microsoft
+      scopes: [Mail.ReadWrite, Mail.Send]
+
+  # Slack - Team messaging
+  - name: slack
+    description: "Slack for team communication"
+    category: communication
+    
+    implementations:
+      - type: mcp
+        priority: 1
+        package: "@modelcontextprotocol/server-slack"
+        config_path: mcp/slack.yaml
+        agent_compatibility:
+          claude-code: native
+          opencode: native
+          aider: not_supported
+      
+      - type: openapi
+        priority: 2
+        spec_path: openapi/slack.yaml
+        agent_compatibility:
+          claude-code: supported
+          opencode: native
+          aider: supported
+    
+    authentication:
+      type: oauth2
+      scopes: [chat:write, channels:read, channels:history]
+
+  # GitHub - Version control
+  - name: github
+    description: "GitHub for code repositories and collaboration"
+    category: development
+    
+    implementations:
+      - type: mcp
+        priority: 1
+        package: "@modelcontextprotocol/server-github"
+        config_path: mcp/github.yaml
+        agent_compatibility:
+          claude-code: native
+          opencode: native
+          aider: not_supported
+      
+      - type: openapi
+        priority: 2
+        spec_url: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml
+        agent_compatibility:
+          claude-code: supported
+          opencode: native
+          aider: supported
+    
+    authentication:
+      type: bearer_token
+      token_env: GITHUB_TOKEN
+
+  # Filesystem - Local file operations
+  - name: filesystem
+    description: "Local filesystem operations"
+    category: system
+    
+    implementations:
+      - type: mcp
+        priority: 1
+        package: "@modelcontextprotocol/server-filesystem"
+        config_path: mcp/filesystem.yaml
+        agent_compatibility:
+          claude-code: native
+          opencode: native
+          aider: not_supported
+      
+      - type: custom
+        priority: 2
+        adapter_path: custom/filesystem/adapter.py
+        agent_compatibility:
+          claude-code: supported
+          opencode: native
+          aider: supported
+    
+    authentication:
+      type: none
+      
+    security:
+      sandboxed: true
+      allowed_paths: []  # Configure in adapter
+
+# Tool Categories
+categories:
+  - name: project_management
+    description: "Issue tracking and project management tools"
+    
+  - name: communication
+    description: "Email, chat, and notification tools"
+    
+  - name: development
+    description: "Code repositories and development tools"
+    
+  - name: system
+    description: "System and infrastructure tools"
+    
+  - name: database
+    description: "Database and data storage tools"
+    
+  - name: analytics
+    description: "Analytics and monitoring tools"

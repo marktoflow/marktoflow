@@ -1,0 +1,85 @@
+# Main aiworkflow configuration
+version: "1.0"
+framework: aiworkflow
+
+# Active Agent Selection
+agent:
+  primary: claude-code           # Primary agent to use
+  fallback: opencode            # Fallback if primary unavailable
+  
+  # Agent selection strategy: manual | auto | load_balanced
+  selection_strategy: manual
+  
+  # Auto-selection rules (when strategy = auto)
+  auto_selection:
+    - condition: workflow.requires.reasoning == true
+      agent: claude-code
+    - condition: deployment.type == self_hosted
+      agent: opencode
+    - condition: workflow.estimated_cost < 0.10
+      agent: opencode
+    - default: claude-code
+
+# Execution Runtime
+runtime:
+  mode: local                   # local | docker | kubernetes
+  python_version: "3.11"
+  
+# Security
+security:
+  credential_store: env         # age | gpg | vault | env
+  vault_path: .aiworkflow/state/credentials/
+  
+  # Per-agent auth strategies
+  auth_strategies:
+    claude-code: anthropic_managed
+    opencode: local_vault
+    aider: local_vault
+
+# Logging
+logging:
+  level: info
+  destination: file
+  format: markdown              # markdown | json | text
+  retention_days: 30
+  log_path: .aiworkflow/state/execution-logs/
+  
+  # Agent-specific logging
+  per_agent_logs: true
+
+# Tool Configuration
+tools:
+  discovery: auto               # auto | explicit
+  timeout: 30s
+  registry_path: .aiworkflow/tools/registry.yaml
+  
+  # Tool type priorities (in order)
+  type_priority:
+    - mcp                       # Try MCP first (if agent supports)
+    - openapi                   # Then OpenAPI specs
+    - custom                    # Finally custom adapters
+  
+  retry_policy:
+    max_attempts: 3
+    backoff: exponential
+    initial_delay: 1s
+    max_delay: 60s
+
+# Workflow Defaults
+workflows:
+  path: .aiworkflow/workflows/
+  max_concurrent: 5
+  default_timeout: 300s
+  state_persistence: enabled
+  
+# Monitoring
+monitoring:
+  enabled: false
+  metrics_endpoint: http://localhost:9090
+  alert_channels: []
+  
+# Feature Flags
+features:
+  mcp_bridge: enabled           # MCP bridge for non-Claude agents
+  auto_healing: enabled         # Auto-retry failed workflows
+  progressive_rollout: disabled # Gradual workflow updates

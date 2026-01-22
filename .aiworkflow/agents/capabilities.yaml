@@ -1,0 +1,206 @@
+# Agent Capability Matrix
+# Defines what each agent can do, used for workflow optimization
+
+agents:
+  claude-code:
+    version: "1.0.0"
+    provider: anthropic
+    
+    capabilities:
+      # Core Features
+      tool_calling: native
+      reasoning: advanced       # Deep reasoning with thinking blocks
+      streaming: supported
+      code_execution: supported
+      file_creation: supported
+      
+      # MCP Support
+      mcp:
+        native_support: true
+        mcp_servers: auto_discovered
+        
+      # Advanced Features
+      extended_reasoning: true  # Can use <thinking> blocks
+      multi_turn: true
+      context_window: 200000    # tokens
+      web_search: native
+      artifacts: supported
+      
+      # Authentication
+      auth_method: anthropic_managed
+      oauth_flows: [google, microsoft, github, slack]
+      
+    strengths:
+      - Advanced reasoning and decision making
+      - Natural language understanding
+      - Context-aware responses
+      - Native MCP integration
+      
+    limitations:
+      - Cloud-only (no self-hosting)
+      - API rate limits apply
+      - Cost per workflow execution
+      
+  opencode:
+    version: "0.1.0"
+    provider: open_source
+    
+    capabilities:
+      # Core Features
+      tool_calling: supported
+      reasoning: basic          # Standard LLM reasoning
+      streaming: supported
+      code_execution: supported
+      file_creation: supported
+      
+      # MCP Support
+      mcp:
+        native_support: true    # OpenCode supports MCP natively
+        mcp_servers: via_config
+        
+      # Advanced Features
+      extended_reasoning: model_dependent
+      multi_turn: true
+      context_window: model_dependent  # Varies by LLM
+      web_search: via_tools
+      artifacts: not_supported
+      
+      # Authentication
+      auth_method: local_vault
+      oauth_flows: [google, microsoft, github, slack]
+      
+      # Model Flexibility
+      supported_models:
+        - provider: openai
+          models: [gpt-4, gpt-4-turbo, gpt-4o, o1, o1-mini]
+        - provider: anthropic
+          models: [claude-3-5-sonnet, claude-3-opus, claude-sonnet-4]
+        - provider: google
+          models: [gemini-2.0-flash, gemini-1.5-pro]
+        - provider: ollama
+          models: [llama3, codellama, mistral, qwen]
+        - provider: custom
+          models: [any]
+          
+    strengths:
+      - Self-hosted deployment
+      - Model flexibility (any LLM)
+      - No vendor lock-in
+      - Cost control (local models)
+      - Native MCP support
+      
+    limitations:
+      - Requires infrastructure setup
+      - Reasoning quality depends on model
+      
+  aider:
+    version: "0.40.0"
+    provider: open_source
+    
+    capabilities:
+      # Core Features
+      tool_calling: limited
+      reasoning: basic
+      streaming: supported
+      code_execution: supported
+      file_creation: supported
+      
+      # MCP Support
+      mcp:
+        native_support: false
+        mcp_servers: not_supported
+        
+      # Advanced Features
+      extended_reasoning: false
+      multi_turn: true
+      context_window: model_dependent
+      web_search: not_supported
+      artifacts: not_supported
+      
+      # Authentication
+      auth_method: api_keys_only
+      oauth_flows: []
+      
+      # Model Support
+      supported_models:
+        - provider: openai
+          models: [gpt-4, gpt-4-turbo, gpt-4o]
+        - provider: anthropic
+          models: [claude-3-5-sonnet, claude-sonnet-4]
+          
+    strengths:
+      - Excellent for code editing
+      - Git integration
+      - Fast iteration
+      
+    limitations:
+      - Limited tool ecosystem
+      - No MCP support
+      - Focus on coding, not automation
+
+  codex:
+    version: "0.1.0"
+    provider: openai
+    status: planned
+    
+    capabilities:
+      tool_calling: supported
+      reasoning: advanced
+      streaming: supported
+      code_execution: sandboxed
+      file_creation: supported
+      
+      mcp:
+        native_support: false
+        mcp_servers: via_bridge
+        
+    strengths:
+      - Sandboxed code execution
+      - OpenAI ecosystem integration
+      
+    limitations:
+      - Cloud-only
+      - Limited tool ecosystem currently
+
+  gemini-cli:
+    version: "0.1.0"
+    provider: google
+    status: planned
+    
+    capabilities:
+      tool_calling: supported
+      reasoning: advanced
+      streaming: supported
+      code_execution: supported
+      file_creation: supported
+      
+      mcp:
+        native_support: false
+        mcp_servers: via_bridge
+        
+    strengths:
+      - Large context window
+      - Multi-modal support
+      - Google ecosystem integration
+      
+    limitations:
+      - Cloud-only
+      - API rate limits
+
+# Capability-Based Routing Rules
+routing_rules:
+  # Use Claude Code for workflows requiring advanced reasoning
+  - if: workflow.requires.reasoning == "advanced"
+    prefer: claude-code
+    
+  # Use OpenCode for self-hosted deployments
+  - if: deployment.requirement == "self_hosted"
+    prefer: opencode
+    
+  # Use OpenCode for cost-sensitive workflows
+  - if: workflow.estimated_cost_per_run > 0.50
+    prefer: opencode
+    
+  # Use Claude Code for MCP-heavy workflows without OpenCode MCP
+  - if: workflow.tools.filter(type="mcp").length > 3 AND NOT opencode.mcp.native_support
+    prefer: claude-code

@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aiworkflow"
+version = "0.1.0"
+description = "Universal AI Workflow Automation Framework - Write once, run on any AI coding agent"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Scott" }
+]
+keywords = [
+    "ai",
+    "automation",
+    "workflow",
+    "mcp",
+    "claude",
+    "opencode",
+    "aider",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "typer>=0.9",
+    "rich>=13.0",
+    "httpx>=0.25",
+    "aiofiles>=23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+]
+claude = [
+    "anthropic>=0.18",
+]
+openai = [
+    "openai>=1.0",
+]
+all = [
+    "anthropic>=0.18",
+    "openai>=1.0",
+]
+
+[project.scripts]
+aiworkflow = "aiworkflow.cli.main:app"
+
+[project.urls]
+Homepage = "https://github.com/scottgl/unified-workflow-automation"
+Repository = "https://github.com/scottgl/unified-workflow-automation"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aiworkflow"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.isort]
+known-first-party = ["aiworkflow"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
