@@ -80,6 +80,29 @@ from aiworkflow.core.security import (
     SQLiteAuditStore,
     AuditLogger,
 )
+from aiworkflow.core.credentials import (
+    # Encryption
+    EncryptionBackend,
+    EncryptionError,
+    KeyNotFoundError,
+    Encryptor,
+    FernetEncryptor,
+    AgeEncryptor,
+    GPGEncryptor,
+    # Credentials
+    Credential,
+    CredentialType,
+    CredentialNotFoundError,
+    CredentialStore,
+    InMemoryCredentialStore,
+    SQLiteCredentialStore,
+    CredentialManager,
+    # Key management
+    KeyManager,
+    # Convenience functions
+    create_credential_manager,
+    get_available_backends,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -253,4 +276,22 @@ __all__ = [
     "InMemoryAuditStore",
     "SQLiteAuditStore",
     "AuditLogger",
+    # Credentials
+    "EncryptionBackend",
+    "EncryptionError",
+    "KeyNotFoundError",
+    "Encryptor",
+    "FernetEncryptor",
+    "AgeEncryptor",
+    "GPGEncryptor",
+    "Credential",
+    "CredentialType",
+    "CredentialNotFoundError",
+    "CredentialStore",
+    "InMemoryCredentialStore",
+    "SQLiteCredentialStore",
+    "CredentialManager",
+    "KeyManager",
+    "create_credential_manager",
+    "get_available_backends",
 ]

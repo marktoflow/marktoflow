@@ -87,7 +87,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 369 tests (363 passing, 6 skipped async)**
+**Total: 429 tests (420 passing, 9 skipped async)**
 
 ---
 
@@ -113,9 +113,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] InMemoryAuditStore for testing
   - [x] SQLiteAuditStore for persistent storage
   - [x] AuditLogger high-level interface
-- [ ] Credential encryption (age/GPG)
-  - [ ] Age encryption integration
-  - [ ] Key management
+- [x] Credential encryption (age/GPG)
+  - [x] Age encryption integration
+  - [x] GPG encryption integration
+  - [x] Fernet built-in encryption
+  - [x] Key management
 
 ### Optimization
 - [ ] Automatic agent selection
@@ -185,7 +187,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - incident-response, sprint-planning
 - [x] Comprehensive tests (53 new tests)
 
-**Total: 369 tests (363 passing, 6 skipped async)**
+**Total: 429 tests (420 passing, 9 skipped async)**
 
 ---
 
