@@ -33,6 +33,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] RabbitMQ support (RabbitMQQueue)
   - [x] In-memory queue for testing (InMemoryQueue)
   - [x] WorkflowQueueManager for high-level operations
+  - [x] CLI commands (queue status/publish/worker/purge)
 
 ### Reliability
 - [x] Error recovery and retry logic

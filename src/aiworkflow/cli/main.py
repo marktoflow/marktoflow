@@ -1072,6 +1072,350 @@ def metrics_export(
     console.print(f"[green]Metrics exported to: {output}[/green]")
 
 
+# Queue commands
+queue_app = typer.Typer(help="Message queue commands")
+app.add_typer(queue_app, name="queue")
+
+
+@queue_app.command("status")
+def queue_status(
+    queue_type: str = typer.Option(
+        "memory",
+        "--type",
+        "-t",
+        help="Queue type (memory, redis, rabbitmq)",
+    ),
+    redis_url: Optional[str] = typer.Option(
+        None,
+        "--redis-url",
+        help="Redis connection URL (for redis type)",
+    ),
+) -> None:
+    """Show queue status and statistics."""
+    try:
+        from aiworkflow.core.queue import (
+            InMemoryQueue,
+            QueueConfig,
+            REDIS_AVAILABLE,
+            RABBITMQ_AVAILABLE,
+        )
+    except ImportError:
+        console.print("[red]Queue module not available.[/red]")
+        raise typer.Exit(1)
+
+    config = QueueConfig(name="aiworkflow-default")
+
+    if queue_type == "memory":
+        queue = InMemoryQueue(config)
+        console.print("[cyan]Queue Type:[/cyan] In-Memory (for testing only)")
+    elif queue_type == "redis":
+        if not REDIS_AVAILABLE:
+            console.print(
+                "[red]Redis not available. Install with: pip install aiworkflow[redis][/red]"
+            )
+            raise typer.Exit(1)
+        from aiworkflow.core.queue import RedisQueue
+
+        queue = RedisQueue(config=config, url=redis_url or "redis://localhost:6379")
+        console.print(f"[cyan]Queue Type:[/cyan] Redis ({redis_url or 'localhost:6379'})")
+    elif queue_type == "rabbitmq":
+        if not RABBITMQ_AVAILABLE:
+            console.print(
+                "[red]RabbitMQ not available. Install with: pip install aiworkflow[rabbitmq][/red]"
+            )
+            raise typer.Exit(1)
+        console.print("[yellow]RabbitMQ status check not yet implemented.[/yellow]")
+        return
+    else:
+        console.print(f"[red]Unknown queue type: {queue_type}[/red]")
+        raise typer.Exit(1)
+
+    try:
+        queue.connect()
+        length = queue.get_queue_length()
+        console.print(f"[cyan]Queue Name:[/cyan] {config.name}")
+        console.print(f"[cyan]Pending Messages:[/cyan] {length}")
+        console.print("[green]Status: Connected[/green]")
+        queue.disconnect()
+    except Exception as e:
+        console.print(f"[red]Failed to connect: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@queue_app.command("publish")
+def queue_publish(
+    workflow_id: str = typer.Argument(..., help="Workflow ID to enqueue"),
+    priority: str = typer.Option(
+        "normal",
+        "--priority",
+        "-p",
+        help="Message priority (low, normal, high, critical)",
+    ),
+    queue_type: str = typer.Option(
+        "memory",
+        "--type",
+        "-t",
+        help="Queue type (memory, redis)",
+    ),
+    redis_url: Optional[str] = typer.Option(
+        None,
+        "--redis-url",
+        help="Redis connection URL",
+    ),
+    input_param: Optional[list[str]] = typer.Option(
+        None,
+        "--input",
+        "-i",
+        help="Input parameters (format: key=value)",
+    ),
+) -> None:
+    """Publish a workflow to the message queue."""
+    import uuid
+
+    try:
+        from aiworkflow.core.queue import (
+            InMemoryQueue,
+            QueueConfig,
+            QueueMessage,
+            MessagePriority,
+            REDIS_AVAILABLE,
+        )
+    except ImportError:
+        console.print("[red]Queue module not available.[/red]")
+        raise typer.Exit(1)
+
+    # Parse priority
+    priority_map = {
+        "low": MessagePriority.LOW,
+        "normal": MessagePriority.NORMAL,
+        "high": MessagePriority.HIGH,
+        "critical": MessagePriority.CRITICAL,
+    }
+    if priority not in priority_map:
+        console.print(f"[red]Invalid priority: {priority}[/red]")
+        raise typer.Exit(1)
+
+    # Parse inputs
+    inputs = {}
+    if input_param:
+        for param in input_param:
+            if "=" in param:
+                key, value = param.split("=", 1)
+                inputs[key] = value
+
+    config = QueueConfig(name="aiworkflow-default")
+
+    if queue_type == "memory":
+        queue = InMemoryQueue(config)
+        console.print("[yellow]Warning: In-memory queue does not persist.[/yellow]")
+    elif queue_type == "redis":
+        if not REDIS_AVAILABLE:
+            console.print(
+                "[red]Redis not available. Install with: pip install aiworkflow[redis][/red]"
+            )
+            raise typer.Exit(1)
+        from aiworkflow.core.queue import RedisQueue
+
+        queue = RedisQueue(config=config, url=redis_url or "redis://localhost:6379")
+    else:
+        console.print(f"[red]Unknown queue type: {queue_type}[/red]")
+        raise typer.Exit(1)
+
+    # Create message
+    message = QueueMessage(
+        id=str(uuid.uuid4()),
+        workflow_id=workflow_id,
+        priority=priority_map[priority],
+        payload={"inputs": inputs} if inputs else {},
+    )
+
+    try:
+        queue.connect()
+        queue.publish(message)
+        console.print(f"[green]Published workflow to queue:[/green]")
+        console.print(f"  [cyan]Message ID:[/cyan] {message.id}")
+        console.print(f"  [cyan]Workflow:[/cyan] {workflow_id}")
+        console.print(f"  [cyan]Priority:[/cyan] {priority}")
+        if inputs:
+            console.print(f"  [cyan]Inputs:[/cyan] {inputs}")
+        queue.disconnect()
+    except Exception as e:
+        console.print(f"[red]Failed to publish: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@queue_app.command("worker")
+def queue_worker(
+    queue_type: str = typer.Option(
+        "memory",
+        "--type",
+        "-t",
+        help="Queue type (memory, redis)",
+    ),
+    redis_url: Optional[str] = typer.Option(
+        None,
+        "--redis-url",
+        help="Redis connection URL",
+    ),
+    concurrency: int = typer.Option(
+        1,
+        "--concurrency",
+        "-c",
+        help="Number of concurrent workers",
+    ),
+) -> None:
+    """Start a queue worker to process workflow messages."""
+    import asyncio
+    import signal
+
+    try:
+        from aiworkflow.core.queue import (
+            InMemoryQueue,
+            QueueConfig,
+            WorkflowQueueManager,
+            REDIS_AVAILABLE,
+        )
+    except ImportError:
+        console.print("[red]Queue module not available.[/red]")
+        raise typer.Exit(1)
+
+    config = QueueConfig(name="aiworkflow-default")
+
+    if queue_type == "memory":
+        queue = InMemoryQueue(config)
+        console.print(
+            "[yellow]Warning: In-memory queue. Messages must be published in same process.[/yellow]"
+        )
+    elif queue_type == "redis":
+        if not REDIS_AVAILABLE:
+            console.print(
+                "[red]Redis not available. Install with: pip install aiworkflow[redis][/red]"
+            )
+            raise typer.Exit(1)
+        from aiworkflow.core.queue import RedisQueue
+
+        queue = RedisQueue(config=config, url=redis_url or "redis://localhost:6379")
+    else:
+        console.print(f"[red]Unknown queue type: {queue_type}[/red]")
+        raise typer.Exit(1)
+
+    # Create workflow executor function
+    def executor(workflow_id: str, inputs: dict):
+        from aiworkflow.core.parser import WorkflowParser
+        from aiworkflow.core.engine import WorkflowEngine
+
+        # Find workflow file
+        workflow_path = Path(f".aiworkflow/workflows/{workflow_id}.md")
+        if not workflow_path.exists():
+            # Try without .md extension
+            workflow_path = Path(f".aiworkflow/workflows/{workflow_id}")
+            if not workflow_path.exists():
+                raise FileNotFoundError(f"Workflow not found: {workflow_id}")
+
+        parser = WorkflowParser()
+        wf = parser.parse_file(workflow_path)
+
+        engine = WorkflowEngine()
+        return asyncio.run(engine.execute(wf, inputs=inputs))
+
+    manager = WorkflowQueueManager(queue, executor)
+
+    console.print(f"[cyan]Starting queue worker...[/cyan]")
+    console.print(f"[cyan]Queue Type:[/cyan] {queue_type}")
+    console.print(f"[cyan]Concurrency:[/cyan] {concurrency}")
+    console.print("[green]Press Ctrl+C to stop.[/green]")
+
+    # Handle shutdown gracefully
+    def signal_handler(sig, frame):
+        console.print("\n[yellow]Stopping worker...[/yellow]")
+        manager.stop_worker()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        queue.connect()
+        manager.start_worker(num_workers=concurrency)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        queue.disconnect()
+
+    console.print("[green]Worker stopped.[/green]")
+
+
+@queue_app.command("purge")
+def queue_purge(
+    queue_type: str = typer.Option(
+        "memory",
+        "--type",
+        "-t",
+        help="Queue type (memory, redis)",
+    ),
+    redis_url: Optional[str] = typer.Option(
+        None,
+        "--redis-url",
+        help="Redis connection URL",
+    ),
+    confirm: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="Confirm purge without prompting",
+    ),
+) -> None:
+    """Purge all messages from the queue."""
+    try:
+        from aiworkflow.core.queue import (
+            InMemoryQueue,
+            QueueConfig,
+            REDIS_AVAILABLE,
+        )
+    except ImportError:
+        console.print("[red]Queue module not available.[/red]")
+        raise typer.Exit(1)
+
+    config = QueueConfig(name="aiworkflow-default")
+
+    if queue_type == "memory":
+        queue = InMemoryQueue(config)
+    elif queue_type == "redis":
+        if not REDIS_AVAILABLE:
+            console.print(
+                "[red]Redis not available. Install with: pip install aiworkflow[redis][/red]"
+            )
+            raise typer.Exit(1)
+        from aiworkflow.core.queue import RedisQueue
+
+        queue = RedisQueue(config=config, url=redis_url or "redis://localhost:6379")
+    else:
+        console.print(f"[red]Unknown queue type: {queue_type}[/red]")
+        raise typer.Exit(1)
+
+    try:
+        queue.connect()
+        length = queue.get_queue_length()
+
+        if length == 0:
+            console.print("[yellow]Queue is already empty.[/yellow]")
+            queue.disconnect()
+            return
+
+        if not confirm:
+            response = typer.confirm(f"Purge {length} message(s) from queue?")
+            if not response:
+                console.print("[yellow]Cancelled.[/yellow]")
+                queue.disconnect()
+                return
+
+        queue.purge()
+        console.print(f"[green]Purged {length} message(s) from queue.[/green]")
+        queue.disconnect()
+    except Exception as e:
+        console.print(f"[red]Failed to purge: {e}[/red]")
+        raise typer.Exit(1)
+
+
 @app.command()
 def version() -> None:
     """Show version information."""

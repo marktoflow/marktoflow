@@ -4,6 +4,29 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 4 Continued: Queue CLI)
+
+### Phase 2: Queue CLI Commands
+- [x] Implemented `aiworkflow queue status` command
+  - Shows queue type, name, and pending message count
+  - Supports memory, redis queue types
+- [x] Implemented `aiworkflow queue publish` command
+  - Publish workflow to queue with priority (low/normal/high/critical)
+  - Input parameters support (`--input key=value`)
+- [x] Implemented `aiworkflow queue worker` command
+  - Start queue worker to process workflow messages
+  - Configurable concurrency
+  - Graceful shutdown with signal handling
+- [x] Implemented `aiworkflow queue purge` command
+  - Purge all messages from queue
+  - Confirmation prompt with `--yes` override
+
+### Files Modified
+- `src/aiworkflow/cli/main.py` - Added queue CLI commands
+- `TODO.md` - Marked queue CLI as complete
+
+---
+
 ## 2026-01-22 (Session 4 Continued: Rollback Capabilities)
 
 ### Phase 2: Rollback Capabilities
