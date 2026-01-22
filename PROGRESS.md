@@ -4,6 +4,61 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 2 - Continued)
+
+### Phase 2: Engine Enhancements
+- [x] Implemented RetryPolicy class with exponential backoff
+  - Configurable: max_retries, base_delay, max_delay, exponential_base, jitter
+  - `get_delay(attempt)` calculates backoff with jitter
+- [x] Implemented CircuitBreaker class for failure protection
+  - Three states: CLOSED, OPEN, HALF_OPEN
+  - Configurable: failure_threshold, recovery_timeout, half_open_max_calls
+  - Methods: `can_execute()`, `record_success()`, `record_failure()`, `reset()`
+- [x] Enhanced WorkflowEngine with retry and circuit breaker integration
+  - `_execute_step_with_retry()` with proper exponential backoff
+  - Circuit breaker integration for failure protection
+  - `execute()` now supports `resume_from` parameter for recovery
+
+### Phase 2: Webhook Receiver
+- [x] Implemented WebhookEndpoint configuration dataclass
+- [x] Implemented WebhookEvent for incoming webhook data
+  - `get_json()`, `get_header()` methods
+- [x] Implemented WebhookHandler for HTTP request handling
+  - Signature verification (GitHub-style and generic HMAC-SHA256)
+  - Method validation, endpoint routing
+- [x] Implemented WebhookReceiver HTTP server
+  - Register/unregister endpoints
+  - Custom handlers per endpoint
+  - Start/stop server (blocking and non-blocking)
+  - `generate_signature()` for testing
+- [x] Implemented AsyncWebhookReceiver using aiohttp
+- [x] Added webhook CLI commands
+  - `aiworkflow webhook list` - List registered webhooks
+  - `aiworkflow webhook start` - Start webhook server
+  - `aiworkflow webhook test` - Test webhook endpoint
+
+### Testing
+- [x] Created test_engine.py (17 tests)
+  - RetryPolicy exponential backoff tests
+  - CircuitBreaker state transition tests
+- [x] Created test_webhook.py (14 tests)
+  - WebhookEndpoint and WebhookEvent tests
+  - WebhookReceiver lifecycle tests
+  - Signature verification tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/engine.py` - Added RetryPolicy, CircuitBreaker
+- `src/aiworkflow/core/webhook.py` - NEW: Webhook receiver system
+- `src/aiworkflow/core/__init__.py` - Updated exports
+- `src/aiworkflow/cli/main.py` - Added webhook commands
+- `tests/test_engine.py` - NEW: Engine enhancement tests
+- `tests/test_webhook.py` - NEW: Webhook tests
+- `README.md` - Added OpenCode recommendation
+- `TODO.md` - Updated Phase 2 progress
+- `PROGRESS.md` - Updated with session continuation
+
+---
+
 ## 2026-01-22 (Session 2)
 
 ### Phase 2: Scheduling System
@@ -208,10 +263,11 @@ src/aiworkflow/
 │   ├── __init__.py
 │   ├── models.py         # Data models
 │   ├── parser.py         # Workflow parser
-│   ├── engine.py         # Execution engine
-│   ├── scheduler.py      # Scheduling system (NEW)
-│   ├── state.py          # State persistence (NEW)
-│   └── logging.py        # Execution logging (NEW)
+│   ├── engine.py         # Execution engine + RetryPolicy + CircuitBreaker
+│   ├── scheduler.py      # Scheduling system
+│   ├── state.py          # State persistence
+│   ├── logging.py        # Execution logging
+│   └── webhook.py        # Webhook receiver (NEW)
 ├── agents/
 │   ├── __init__.py
 │   ├── base.py           # Base adapter + registry
@@ -225,7 +281,7 @@ src/aiworkflow/
 │   └── custom.py         # Custom tool
 └── cli/
     ├── __init__.py
-    └── main.py           # CLI commands (schedule added)
+    └── main.py           # CLI commands (schedule + webhook added)
 
 .aiworkflow/
 ├── agents/
