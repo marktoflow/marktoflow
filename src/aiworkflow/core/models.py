@@ -325,6 +325,7 @@ class StepResult:
     started_at: datetime | None = None
     completed_at: datetime | None = None
     retries: int = 0
+    metadata: dict[str, Any] | None = None
 
     @property
     def duration_seconds(self) -> float | None:

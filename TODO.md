@@ -23,9 +23,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] Event routing to workflows
   - [x] CLI commands (webhook list/start/test)
   - [x] AsyncWebhookReceiver for async variant
-- [ ] File system event triggers
-  - [ ] Watchdog integration
-  - [ ] File pattern matching
+- [x] File system event triggers
+  - [x] Watchdog integration (FileWatcher, AsyncFileWatcher)
+  - [x] File pattern matching (WatchConfig with glob patterns)
+  - [x] Debouncing and event filtering
+  - [x] Workflow trigger from file events
 - [ ] Message queue integration
   - [ ] Redis queue support
   - [ ] RabbitMQ support (optional)
@@ -49,9 +51,9 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] Failover event tracking (FailoverEvent, FailoverReason)
 
 ### Monitoring
-- [ ] Metrics collection
-  - [ ] Prometheus metrics endpoint
-  - [ ] Step timing, success rates
+- [x] Metrics collection
+  - [x] Prometheus metrics endpoint (MetricsServer with /metrics and /health)
+  - [x] Step timing, success rates (WorkflowMetrics, MetricsCollector)
 - [x] Execution logging (markdown format)
   - [x] ExecutionLog and LogEntry classes
   - [x] ExecutionLogger for managing logs
@@ -69,12 +71,14 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [x] Unit tests for execution logging module (18 tests)
 - [x] Unit tests for engine enhancements (31 tests - RetryPolicy, CircuitBreaker, Failover)
 - [x] Unit tests for webhook receiver (14 tests)
+- [x] Unit tests for file watcher (23 tests)
+- [x] Unit tests for metrics collection (23 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 117 tests passing**
+**Total: 163 tests passing**
 
 ---
 

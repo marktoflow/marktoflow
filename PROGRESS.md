@@ -4,6 +4,76 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 3: File Triggers & Metrics)
+
+### Phase 2: File System Event Triggers
+- [x] Implemented FileEventType enum (CREATED, MODIFIED, DELETED, MOVED)
+- [x] Implemented FileEvent for representing file system events
+  - Pattern matching with `matches_pattern()` and `matches_regex()`
+  - Serialization with `to_dict()`
+- [x] Implemented WatchConfig for configuring file watches
+  - Configurable: path, patterns, ignore_patterns, recursive
+  - Events to watch, debounce_seconds, workflow_id, workflow_inputs
+  - `matches()` method for event filtering
+- [x] Implemented WatchHandle for managing registered watches
+- [x] Implemented FileWatcher (synchronous) using watchdog
+  - `add_watch()`, `remove_watch()`, `get_watch()`, `list_watches()`
+  - `start()`, `stop()`, `is_running()`
+  - Context manager support
+- [x] Implemented AsyncFileWatcher for asyncio environments
+
+### Phase 2: Metrics Collection
+- [x] Implemented MetricType enum (COUNTER, GAUGE, HISTOGRAM)
+- [x] Implemented WorkflowMetrics for single workflow execution metrics
+  - Tracks: workflow_id, run_id, agent_name, status
+  - Step counts, durations, retries, failovers
+- [x] Implemented MetricsCollector for aggregating workflow metrics
+  - Works standalone or with Prometheus client
+  - `workflow_started()`, `workflow_completed()`
+  - `step_completed()`, `step_skipped()`, `step_retried()`
+  - `agent_failover()`, `get_stats()`, `get_workflow_metrics()`
+  - `get_prometheus_metrics()` for Prometheus exposition format
+- [x] Implemented MetricsServer HTTP server
+  - `/metrics` endpoint for Prometheus scraping
+  - `/health` endpoint for health checks
+  - Configurable host/port
+  - Context manager support
+
+### Model Updates
+- [x] Added `metadata: dict[str, Any] | None` field to StepResult class
+
+### Dependencies Updated
+- [x] Added optional dependency: `triggers = ["watchdog>=3.0"]`
+- [x] Added optional dependency: `metrics = ["prometheus-client>=0.19"]`
+- [x] Updated `all` extra to include both
+
+### Testing
+- [x] Created test_filewatcher.py (23 tests)
+  - FileEvent creation and pattern matching tests
+  - WatchConfig matching and filtering tests
+  - FileWatcher lifecycle tests
+  - AsyncFileWatcher tests
+- [x] Created test_metrics.py (23 tests)
+  - WorkflowMetrics tracking tests
+  - MetricsCollector aggregation tests
+  - Prometheus format output tests
+  - MetricsServer lifecycle tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/filewatcher.py` - NEW: File system event triggers
+- `src/aiworkflow/core/metrics.py` - NEW: Prometheus metrics collection
+- `src/aiworkflow/core/models.py` - Added metadata field to StepResult
+- `src/aiworkflow/core/__init__.py` - Updated exports for filewatcher and metrics
+- `pyproject.toml` - Added watchdog and prometheus-client dependencies
+- `tests/test_filewatcher.py` - NEW: File watcher tests
+- `tests/test_metrics.py` - NEW: Metrics tests
+- `TODO.md` - Marked file triggers and metrics complete
+- `PROGRESS.md` - Added Session 3 details
+
+**Total: 163 tests passing**
+
+---
+
 ## 2026-01-22 (Session 2 - Part 3: Agent Failover)
 
 ### Phase 2: Agent Failover
@@ -308,7 +378,9 @@ src/aiworkflow/
 │   ├── scheduler.py      # Scheduling system
 │   ├── state.py          # State persistence
 │   ├── logging.py        # Execution logging
-│   └── webhook.py        # Webhook receiver (NEW)
+│   ├── webhook.py        # Webhook receiver
+│   ├── filewatcher.py    # File system event triggers (NEW)
+│   └── metrics.py        # Prometheus metrics collection (NEW)
 ├── agents/
 │   ├── __init__.py
 │   ├── base.py           # Base adapter + registry

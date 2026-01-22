@@ -55,9 +55,17 @@ claude = [
 openai = [
     "openai>=1.0",
 ]
+triggers = [
+    "watchdog>=3.0",
+]
+metrics = [
+    "prometheus-client>=0.19",
+]
 all = [
     "anthropic>=0.18",
     "openai>=1.0",
+    "watchdog>=3.0",
+    "prometheus-client>=0.19",
 ]
 
 [project.scripts]
