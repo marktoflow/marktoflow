@@ -17,10 +17,12 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] Cron expression parsing (CronParser class)
   - [x] Scheduler with job management
   - [x] CLI commands (schedule list/start/run/info)
-- [ ] Webhook receivers
-  - [ ] HTTP server for webhook endpoints
-  - [ ] Webhook signature verification
-  - [ ] Event routing to workflows
+- [x] Webhook receivers
+  - [x] HTTP server for webhook endpoints (WebhookReceiver)
+  - [x] Webhook signature verification (GitHub-style and generic HMAC-SHA256)
+  - [x] Event routing to workflows
+  - [x] CLI commands (webhook list/start/test)
+  - [x] AsyncWebhookReceiver for async variant
 - [ ] File system event triggers
   - [ ] Watchdog integration
   - [ ] File pattern matching
@@ -29,9 +31,10 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [ ] RabbitMQ support (optional)
 
 ### Reliability
-- [ ] Error recovery and retry logic
-  - [ ] Exponential backoff
-  - [ ] Circuit breaker pattern
+- [x] Error recovery and retry logic
+  - [x] Exponential backoff (RetryPolicy class)
+  - [x] Circuit breaker pattern (CircuitBreaker class with CLOSED/OPEN/HALF_OPEN states)
+  - [x] Integrated into WorkflowEngine
 - [x] State persistence (workflow checkpoints)
   - [x] SQLite state store (StateStore class)
   - [x] Execution records and step checkpoints
@@ -62,10 +65,14 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [x] Unit tests for scheduler module (18 tests)
 - [x] Unit tests for state persistence module (18 tests)
 - [x] Unit tests for execution logging module (18 tests)
+- [x] Unit tests for engine enhancements (17 tests - RetryPolicy, CircuitBreaker)
+- [x] Unit tests for webhook receiver (14 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
+
+**Total: 103 tests passing**
 
 ---
 

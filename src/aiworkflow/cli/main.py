@@ -641,6 +641,102 @@ def schedule_info(
     )
 
 
+# Webhook commands
+webhook_app = typer.Typer(help="Webhook receiver commands")
+app.add_typer(webhook_app, name="webhook")
+
+
+@webhook_app.command("list")
+def webhook_list() -> None:
+    """List configured webhook endpoints."""
+    from aiworkflow.core.webhook import WebhookReceiver
+
+    config_path = Path(".aiworkflow/triggers/webhooks.yaml")
+    receiver = WebhookReceiver(config_path=config_path)
+
+    endpoints = receiver.list_endpoints()
+
+    if not endpoints:
+        console.print("[yellow]No webhook endpoints configured.[/yellow]")
+        console.print("Create .aiworkflow/triggers/webhooks.yaml to configure webhooks.")
+        return
+
+    table = Table(title="Webhook Endpoints")
+    table.add_column("ID", style="cyan")
+    table.add_column("Path")
+    table.add_column("Workflow")
+    table.add_column("Methods")
+    table.add_column("Status")
+
+    for ep in endpoints:
+        status = "[green]Enabled[/green]" if ep.enabled else "[red]Disabled[/red]"
+        table.add_row(
+            ep.id,
+            ep.path,
+            ep.workflow_id,
+            ", ".join(ep.allowed_methods),
+            status,
+        )
+
+    console.print(table)
+
+
+@webhook_app.command("start")
+def webhook_start(
+    host: str = typer.Option("0.0.0.0", "--host", "-h", help="Host to bind to"),
+    port: int = typer.Option(8080, "--port", "-p", help="Port to listen on"),
+) -> None:
+    """Start the webhook receiver server."""
+    from aiworkflow.core.webhook import WebhookReceiver
+
+    config_path = Path(".aiworkflow/triggers/webhooks.yaml")
+    receiver = WebhookReceiver(host=host, port=port, config_path=config_path)
+
+    endpoint_count = len(receiver.list_endpoints())
+    console.print(f"[cyan]Starting webhook receiver on {host}:{port}[/cyan]")
+    console.print(f"[cyan]Loaded {endpoint_count} endpoint(s)[/cyan]")
+    console.print("[green]Press Ctrl+C to stop.[/green]")
+
+    try:
+        receiver.start(blocking=True)
+    except KeyboardInterrupt:
+        receiver.stop()
+        console.print("[green]Webhook receiver stopped.[/green]")
+
+
+@webhook_app.command("test")
+def webhook_test(
+    endpoint_path: str = typer.Argument(..., help="Endpoint path to test (e.g., /webhooks/test)"),
+    host: str = typer.Option("localhost", "--host", "-h", help="Webhook server host"),
+    port: int = typer.Option(8080, "--port", "-p", help="Webhook server port"),
+    data: Optional[str] = typer.Option(None, "--data", "-d", help="JSON data to send"),
+) -> None:
+    """Send a test webhook to an endpoint."""
+    import urllib.request
+    import urllib.error
+
+    url = f"http://{host}:{port}{endpoint_path}"
+    payload = data.encode() if data else b"{}"
+
+    try:
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            result = response.read().decode()
+            console.print(f"[green]Response ({response.status}):[/green]")
+            console.print(result)
+    except urllib.error.HTTPError as e:
+        console.print(f"[red]HTTP Error {e.code}: {e.reason}[/red]")
+        raise typer.Exit(1)
+    except urllib.error.URLError as e:
+        console.print(f"[red]Failed to connect: {e}[/red]")
+        raise typer.Exit(1)
+
+
 @app.command()
 def version() -> None:
     """Show version information."""

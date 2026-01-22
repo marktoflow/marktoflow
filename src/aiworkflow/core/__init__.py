@@ -13,10 +13,16 @@ from aiworkflow.core.models import (
     ToolConfig,
 )
 from aiworkflow.core.parser import WorkflowParser
-from aiworkflow.core.engine import WorkflowEngine
+from aiworkflow.core.engine import (
+    WorkflowEngine,
+    WorkflowExecutionError,
+    RetryPolicy,
+    CircuitBreaker,
+)
 from aiworkflow.core.scheduler import Scheduler, ScheduledJob, CronParser
 from aiworkflow.core.state import StateStore, ExecutionRecord, StepCheckpoint, ExecutionStatus
 from aiworkflow.core.logging import ExecutionLogger, ExecutionLog, LogLevel, LogEntry
+from aiworkflow.core.webhook import WebhookReceiver, WebhookEndpoint, WebhookEvent
 
 __all__ = [
     "Workflow",
@@ -29,6 +35,9 @@ __all__ = [
     "ToolConfig",
     "WorkflowParser",
     "WorkflowEngine",
+    "WorkflowExecutionError",
+    "RetryPolicy",
+    "CircuitBreaker",
     "Scheduler",
     "ScheduledJob",
     "CronParser",
@@ -40,4 +49,7 @@ __all__ = [
     "ExecutionLog",
     "LogLevel",
     "LogEntry",
+    "WebhookReceiver",
+    "WebhookEndpoint",
+    "WebhookEvent",
 ]

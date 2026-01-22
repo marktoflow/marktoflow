@@ -88,6 +88,11 @@ External Services (Jira, Slack, Email, etc.)
 | Codex | Planned | Via Bridge | Sandboxed execution |
 | Gemini CLI | Planned | Via Bridge | Large context window |
 
+### Recommended Agents
+
+- **Claude Code**: Best for complex reasoning tasks and native MCP support. Recommended as primary agent.
+- **OpenCode**: Excellent alternative when Claude Code is unavailable. Works great with GitHub Copilot and supports multiple model backends (OpenAI, Anthropic, Ollama). If you're using GitHub Copilot or need a self-hosted solution, OpenCode is the recommended choice.
+
 ## CLI Commands
 
 ```bash
