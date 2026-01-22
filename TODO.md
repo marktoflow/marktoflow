@@ -42,9 +42,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] Rollback capabilities
   - [ ] Step undo registry
   - [ ] Transaction-like semantics
-- [ ] Agent failover
-  - [ ] Automatic fallback to secondary agent
-  - [ ] Health checking
+- [x] Agent failover
+  - [x] Automatic fallback to secondary agent (FailoverConfig, _execute_step_with_failover)
+  - [x] Health checking (check_agent_health, AgentHealth)
+  - [x] Per-agent circuit breakers
+  - [x] Failover event tracking (FailoverEvent, FailoverReason)
 
 ### Monitoring
 - [ ] Metrics collection
@@ -65,14 +67,14 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [x] Unit tests for scheduler module (18 tests)
 - [x] Unit tests for state persistence module (18 tests)
 - [x] Unit tests for execution logging module (18 tests)
-- [x] Unit tests for engine enhancements (17 tests - RetryPolicy, CircuitBreaker)
+- [x] Unit tests for engine enhancements (31 tests - RetryPolicy, CircuitBreaker, Failover)
 - [x] Unit tests for webhook receiver (14 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 103 tests passing**
+**Total: 117 tests passing**
 
 ---
 

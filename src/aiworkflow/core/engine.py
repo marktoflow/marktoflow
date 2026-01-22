@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from aiworkflow.core.models import (
@@ -28,7 +30,7 @@ from aiworkflow.core.state import (
 from aiworkflow.core.logging import ExecutionLog, ExecutionLogger
 
 if TYPE_CHECKING:
-    from aiworkflow.agents.base import AgentAdapter
+    from aiworkflow.agents.base import AgentAdapter, AgentConfig
     from aiworkflow.tools.registry import ToolRegistry
 
 
@@ -36,6 +38,64 @@ class WorkflowExecutionError(Exception):
     """Error during workflow execution."""
 
     pass
+
+
+class FailoverReason(Enum):
+    """Reason for agent failover."""
+
+    INITIALIZATION_FAILED = "initialization_failed"
+    HEALTH_CHECK_FAILED = "health_check_failed"
+    STEP_EXECUTION_FAILED = "step_execution_failed"
+    TIMEOUT = "timeout"
+    CIRCUIT_BREAKER_OPEN = "circuit_breaker_open"
+
+
+@dataclass
+class AgentHealth:
+    """Health status of an agent."""
+
+    agent_name: str
+    is_healthy: bool
+    last_check: datetime
+    error: str | None = None
+    latency_ms: float | None = None
+    consecutive_failures: int = 0
+
+
+@dataclass
+class FailoverConfig:
+    """
+    Configuration for agent failover behavior.
+
+    Attributes:
+        fallback_agents: Ordered list of fallback agent names
+        max_failover_attempts: Maximum failovers before giving up
+        health_check_interval: Seconds between health checks
+        health_check_timeout: Timeout for health check in seconds
+        failover_on_step_failure: Whether to failover on step failure
+        failover_on_timeout: Whether to failover on timeout
+        retry_primary_after: Seconds before retrying primary agent
+    """
+
+    fallback_agents: list[str] = field(default_factory=list)
+    max_failover_attempts: int = 2
+    health_check_interval: float = 60.0
+    health_check_timeout: float = 10.0
+    failover_on_step_failure: bool = True
+    failover_on_timeout: bool = True
+    retry_primary_after: float = 300.0  # 5 minutes
+
+
+@dataclass
+class FailoverEvent:
+    """Record of a failover event."""
+
+    timestamp: datetime
+    from_agent: str
+    to_agent: str
+    reason: FailoverReason
+    step_index: int | None = None
+    error: str | None = None
 
 
 class RetryPolicy:
@@ -187,7 +247,8 @@ class WorkflowEngine:
     2. Selects appropriate agent adapter
     3. Executes steps in order with retry logic
     4. Manages state persistence and logging
-    5. Produces execution results
+    5. Handles agent failover on failure
+    6. Produces execution results
     """
 
     def __init__(
@@ -199,18 +260,22 @@ class WorkflowEngine:
         execution_logger: ExecutionLogger | None = None,
         retry_policy: RetryPolicy | None = None,
         circuit_breaker: CircuitBreaker | None = None,
+        failover_config: FailoverConfig | None = None,
+        fallback_adapters: list[AgentAdapter] | None = None,
     ) -> None:
         """
         Initialize the workflow engine.
 
         Args:
-            agent_adapter: Agent adapter for execution
+            agent_adapter: Primary agent adapter for execution
             tool_registry: Registry of available tools
             config: Engine configuration
             state_store: State persistence store
             execution_logger: Execution logger
             retry_policy: Retry configuration
             circuit_breaker: Circuit breaker for failure protection
+            failover_config: Failover behavior configuration
+            fallback_adapters: List of fallback agent adapters (in order of preference)
         """
         self.agent_adapter = agent_adapter
         self.tool_registry = tool_registry
@@ -219,7 +284,201 @@ class WorkflowEngine:
         self.execution_logger = execution_logger
         self.retry_policy = retry_policy or RetryPolicy()
         self.circuit_breaker = circuit_breaker
+        self.failover_config = failover_config or FailoverConfig()
+        self.fallback_adapters = fallback_adapters or []
         self._running = False
+
+        # Failover state
+        self._current_adapter: AgentAdapter | None = agent_adapter
+        self._agent_health: dict[str, AgentHealth] = {}
+        self._failover_events: list[FailoverEvent] = []
+        self._failover_count = 0
+        self._primary_failed_at: datetime | None = None
+
+        # Per-agent circuit breakers
+        self._agent_circuit_breakers: dict[str, CircuitBreaker] = {}
+
+    def _get_agent_circuit_breaker(self, agent_name: str) -> CircuitBreaker:
+        """Get or create circuit breaker for an agent."""
+        if agent_name not in self._agent_circuit_breakers:
+            self._agent_circuit_breakers[agent_name] = CircuitBreaker(
+                failure_threshold=3,
+                recovery_timeout=60.0,
+                half_open_max_calls=1,
+            )
+        return self._agent_circuit_breakers[agent_name]
+
+    async def check_agent_health(
+        self,
+        adapter: AgentAdapter,
+        timeout: float | None = None,
+    ) -> AgentHealth:
+        """
+        Check health of an agent adapter.
+
+        Args:
+            adapter: Agent adapter to check
+            timeout: Health check timeout in seconds
+
+        Returns:
+            AgentHealth status
+        """
+        timeout = timeout or self.failover_config.health_check_timeout
+        agent_name = adapter.name
+
+        try:
+            start = datetime.now()
+
+            # Try to initialize if not already
+            if not adapter._initialized:
+                await asyncio.wait_for(
+                    adapter.initialize(),
+                    timeout=timeout,
+                )
+
+            latency_ms = (datetime.now() - start).total_seconds() * 1000
+
+            health = AgentHealth(
+                agent_name=agent_name,
+                is_healthy=True,
+                last_check=datetime.now(),
+                latency_ms=latency_ms,
+                consecutive_failures=0,
+            )
+
+        except asyncio.TimeoutError:
+            health = AgentHealth(
+                agent_name=agent_name,
+                is_healthy=False,
+                last_check=datetime.now(),
+                error=f"Health check timed out after {timeout}s",
+                consecutive_failures=self._agent_health.get(
+                    agent_name, AgentHealth(agent_name, False, datetime.now())
+                ).consecutive_failures
+                + 1,
+            )
+
+        except Exception as e:
+            health = AgentHealth(
+                agent_name=agent_name,
+                is_healthy=False,
+                last_check=datetime.now(),
+                error=str(e),
+                consecutive_failures=self._agent_health.get(
+                    agent_name, AgentHealth(agent_name, False, datetime.now())
+                ).consecutive_failures
+                + 1,
+            )
+
+        self._agent_health[agent_name] = health
+        return health
+
+    async def _select_healthy_adapter(
+        self,
+        exclude: list[str] | None = None,
+    ) -> AgentAdapter | None:
+        """
+        Select a healthy agent adapter.
+
+        Tries primary first, then fallbacks in order.
+
+        Args:
+            exclude: List of agent names to exclude
+
+        Returns:
+            Healthy adapter or None
+        """
+        exclude = exclude or []
+
+        # Build list of adapters to try
+        candidates: list[AgentAdapter] = []
+        if self.agent_adapter and self.agent_adapter.name not in exclude:
+            # Check if we should retry primary
+            if self._primary_failed_at:
+                elapsed = (datetime.now() - self._primary_failed_at).total_seconds()
+                if elapsed >= self.failover_config.retry_primary_after:
+                    candidates.append(self.agent_adapter)
+                    self._primary_failed_at = None
+            else:
+                candidates.append(self.agent_adapter)
+
+        for adapter in self.fallback_adapters:
+            if adapter.name not in exclude:
+                candidates.append(adapter)
+
+        # Try each candidate
+        for adapter in candidates:
+            # Check circuit breaker first
+            cb = self._get_agent_circuit_breaker(adapter.name)
+            if not cb.can_execute():
+                continue
+
+            health = await self.check_agent_health(adapter)
+            if health.is_healthy:
+                return adapter
+
+        return None
+
+    async def _failover_to_next_agent(
+        self,
+        current_agent: str,
+        reason: FailoverReason,
+        step_index: int | None = None,
+        error: str | None = None,
+    ) -> AgentAdapter | None:
+        """
+        Failover to the next available agent.
+
+        Args:
+            current_agent: Name of the current (failing) agent
+            reason: Reason for failover
+            step_index: Current step index if applicable
+            error: Error message if applicable
+
+        Returns:
+            New adapter or None if no fallback available
+        """
+        if self._failover_count >= self.failover_config.max_failover_attempts:
+            return None
+
+        # Mark primary as failed if this is the primary
+        if self.agent_adapter and current_agent == self.agent_adapter.name:
+            self._primary_failed_at = datetime.now()
+
+        # Record circuit breaker failure
+        cb = self._get_agent_circuit_breaker(current_agent)
+        cb.record_failure()
+
+        # Find next healthy adapter
+        new_adapter = await self._select_healthy_adapter(exclude=[current_agent])
+
+        if new_adapter:
+            # Record failover event
+            event = FailoverEvent(
+                timestamp=datetime.now(),
+                from_agent=current_agent,
+                to_agent=new_adapter.name,
+                reason=reason,
+                step_index=step_index,
+                error=error,
+            )
+            self._failover_events.append(event)
+            self._failover_count += 1
+            self._current_adapter = new_adapter
+
+            return new_adapter
+
+        return None
+
+    def get_failover_history(self) -> list[FailoverEvent]:
+        """Get list of failover events from current execution."""
+        return self._failover_events.copy()
+
+    def reset_failover_state(self) -> None:
+        """Reset failover state for a new execution."""
+        self._failover_count = 0
+        self._failover_events = []
+        self._current_adapter = self.agent_adapter
 
     async def execute(
         self,
@@ -338,8 +597,8 @@ class WorkflowEngine:
                     )
                     continue
 
-                # Execute step with retry logic
-                step_result = await self._execute_step_with_retry(step, context, exec_log)
+                # Execute step with retry logic and failover
+                step_result = await self._execute_step_with_failover(step, context, exec_log, i)
                 step_results.append(step_result)
 
                 # Save checkpoint
@@ -421,6 +680,117 @@ class WorkflowEngine:
             started_at=started_at,
             completed_at=datetime.now(),
         )
+
+    async def _execute_step_with_failover(
+        self,
+        step: Any,  # WorkflowStep
+        context: ExecutionContext,
+        exec_log: ExecutionLog | None = None,
+        step_index: int = 0,
+    ) -> StepResult:
+        """
+        Execute a step with retry and failover support.
+
+        This method:
+        1. Attempts execution with the current adapter
+        2. On failure, retries with exponential backoff
+        3. If retries exhausted and failover enabled, tries fallback agents
+        4. Returns the result from whichever agent succeeded (or final failure)
+
+        Args:
+            step: Workflow step to execute
+            context: Execution context
+            exec_log: Optional execution log
+            step_index: Current step index
+
+        Returns:
+            StepResult with execution outcome
+        """
+        started_at = datetime.now()
+        agents_tried: list[str] = []
+        last_error: str | None = None
+
+        # Get the current adapter
+        current_adapter = self._current_adapter
+
+        while True:
+            if current_adapter is None:
+                # No adapter available
+                return StepResult(
+                    step_id=step.id,
+                    status=StepStatus.FAILED,
+                    error="No agent adapter available",
+                    started_at=started_at,
+                    completed_at=datetime.now(),
+                    retries=0,
+                    metadata={"agents_tried": agents_tried},
+                )
+
+            agent_name = current_adapter.name
+            agents_tried.append(agent_name)
+
+            # Update context with current agent
+            context.agent_name = agent_name
+
+            # Try execution with retry
+            result = await self._execute_step_with_retry(step, context, exec_log)
+
+            if result.success:
+                # Record success in agent circuit breaker
+                cb = self._get_agent_circuit_breaker(agent_name)
+                cb.record_success()
+
+                # Add metadata about which agent succeeded
+                if result.metadata is None:
+                    result.metadata = {}
+                result.metadata["agent_used"] = agent_name
+                result.metadata["agents_tried"] = agents_tried
+
+                return result
+
+            # Execution failed
+            last_error = result.error
+
+            # Check if we should try failover
+            if not self.failover_config.failover_on_step_failure:
+                # Failover disabled, return failure
+                return result
+
+            # Try failover
+            if exec_log:
+                exec_log.log_warning(
+                    f"Step '{step.name}' failed with agent '{agent_name}', attempting failover",
+                    step_name=step.name,
+                    step_index=step_index,
+                )
+
+            new_adapter = await self._failover_to_next_agent(
+                current_agent=agent_name,
+                reason=FailoverReason.STEP_EXECUTION_FAILED,
+                step_index=step_index,
+                error=last_error,
+            )
+
+            if new_adapter is None:
+                # No more fallback options
+                if exec_log:
+                    exec_log.log_error(
+                        f"All agents exhausted for step '{step.name}'",
+                        step_name=step.name,
+                        step_index=step_index,
+                    )
+                result.metadata = result.metadata or {}
+                result.metadata["agents_tried"] = agents_tried
+                return result
+
+            if exec_log:
+                exec_log.log_info(
+                    f"Failing over from '{agent_name}' to '{new_adapter.name}'",
+                    step_name=step.name,
+                    step_index=step_index,
+                )
+
+            current_adapter = new_adapter
 
     async def _execute_step_with_retry(
         self,
