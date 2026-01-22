@@ -4,6 +4,129 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 7: Quick Wins + Phase 3 Enterprise Security)
+
+### Quick Wins: Global CLI Options
+- [x] Added `--verbose/-v` flag to all CLI commands
+  - `OutputConfig` class for global state
+  - `log_verbose()` helper for debug output
+- [x] Added `--json` flag for JSON output
+  - `output_json()` helper for JSON formatting
+  - `output_result()` for conditional output
+
+### Quick Wins: New Commands
+- [x] Implemented `aiworkflow workflow create` scaffolding command
+  - Templates: basic, multi-step, with-tools
+  - `--bundle/-b` flag to create bundle directory structure
+  - `--template/-t` option to select template
+  - `--output/-o` option for output directory
+- [x] Implemented `aiworkflow doctor` command
+  - Python version check (3.11+ recommended)
+  - Project initialization check
+  - Config file check
+  - Optional dependencies check (watchdog, prometheus, redis, pika, aiohttp)
+  - Git availability check
+  - Workflows and tools count
+
+### Quick Wins: Enhanced Commands
+- [x] Updated `run` command with verbose logging and JSON output
+- [x] Updated `workflow list` command with JSON output
+- [x] Updated `workflow show` command with JSON output
+- [x] Updated `version` command with JSON output
+
+### Quick Wins: Improved Error Messages
+- [x] Added helpful suggestions after error messages
+- [x] Tips for next commands to try
+
+### Phase 3: RBAC (Role-Based Access Control)
+- [x] Implemented Permission enum with 14 permissions
+  - workflow:read, workflow:write, workflow:execute, workflow:delete
+  - tool:read, tool:write, tool:execute
+  - agent:read, agent:write
+  - user:read, user:write, user:manage
+  - approval:approve, admin:*
+- [x] Implemented Role class with permission management
+  - Permission sets and role inheritance
+  - `has_permission()`, `add_permission()`, `remove_permission()` methods
+- [x] Implemented User class with role assignments
+  - Active status tracking
+  - Role-based permission checking
+- [x] Implemented RBACManager for permission checking
+  - User CRUD operations (add, get, update, remove)
+  - Role CRUD operations
+  - `check_permission()`, `list_users()`, `list_roles()` methods
+- [x] Created predefined roles: viewer, executor, developer, approver, admin
+- [x] Implemented PermissionDeniedError exception
+- [x] Implemented `require_permission` decorator for function-level access control
+
+### Phase 3: Approval Workflows
+- [x] Implemented ApprovalStatus enum
+  - PENDING, APPROVED, REJECTED, EXPIRED, CANCELLED
+- [x] Implemented ApprovalRequest dataclass
+  - Request ID, type, requestor, title, description
+  - Required approvers list
+  - Min approvals threshold
+  - Expiration support
+  - Approval/rejection tracking with timestamps
+- [x] Implemented ApprovalManager
+  - `create_request()`, `approve()`, `reject()`, `cancel()` methods
+  - `get_request()`, `get_pending_requests()`, `get_requests_for_approver()` methods
+  - Approval validation and threshold checking
+- [x] Implemented ApprovalHandler abstract base class
+- [x] Implemented LoggingApprovalHandler for logging approval events
+
+### Phase 3: Audit Logging
+- [x] Implemented AuditEventType enum (20+ event types)
+  - AUTH_LOGIN, AUTH_LOGOUT, AUTH_FAILED
+  - WORKFLOW_CREATED, WORKFLOW_UPDATED, WORKFLOW_DELETED, WORKFLOW_EXECUTED
+  - TOOL_REGISTERED, TOOL_EXECUTED, TOOL_FAILED
+  - APPROVAL_REQUESTED, APPROVAL_APPROVED, APPROVAL_REJECTED
+  - SECURITY_PERMISSION_DENIED, SECURITY_ROLE_CHANGED, SECURITY_USER_CREATED
+  - CONFIG_CHANGED, SYSTEM_ERROR, CUSTOM
+- [x] Implemented AuditEvent dataclass
+  - Event ID, type, timestamp, user_id, resource, action
+  - Details dictionary, source IP, user agent
+  - Serialization with `to_dict()` / `from_dict()`
+- [x] Implemented AuditStore abstract base class
+- [x] Implemented InMemoryAuditStore for testing
+  - Query filtering by event_type, user_id, resource, date range
+- [x] Implemented SQLiteAuditStore for persistent storage
+  - Automatic schema creation
+  - Indexed queries for performance
+  - `delete_before()` for cleanup
+- [x] Implemented AuditLogger high-level interface
+  - `log()`, `log_async()` methods
+  - Convenience methods: `log_auth()`, `log_workflow()`, `log_tool()`, `log_security()`, `log_approval()`
+  - `query()` for filtered retrieval
+
+### Testing
+- [x] Created test_security.py (52 tests)
+  - Permission enum tests
+  - Role creation, inheritance, and permission tests
+  - User and role assignment tests
+  - RBACManager user/role management tests
+  - Predefined roles validation tests
+  - PermissionDeniedError and require_permission decorator tests
+  - ApprovalStatus enum tests
+  - ApprovalRequest creation and validation tests
+  - ApprovalManager workflow tests
+  - AuditEventType enum tests
+  - AuditEvent serialization tests
+  - InMemoryAuditStore query tests
+  - SQLiteAuditStore persistence tests
+  - AuditLogger integration tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/security.py` - NEW: Security module (~900 lines)
+- `src/aiworkflow/core/__init__.py` - Added security module exports
+- `src/aiworkflow/cli/main.py` - Added global options, new commands, JSON support
+- `tests/test_security.py` - NEW: Security tests (52 tests)
+- `TODO.md` - Marked Quick Wins and Phase 3 Security complete
+
+**Total: 369 tests (363 passing, 6 skipped async)**
+
+---
+
 ## 2026-01-22 (Session 6: Self-Contained Workflow Bundles)
 
 ### ScriptTool for Executable Scripts

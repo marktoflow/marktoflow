@@ -57,6 +57,29 @@ from aiworkflow.core.costs import (
     LoggingAlertHandler,
     CallbackAlertHandler,
 )
+from aiworkflow.core.security import (
+    # RBAC
+    Permission,
+    Role,
+    User,
+    RBACManager,
+    PermissionDeniedError,
+    PREDEFINED_ROLES,
+    require_permission,
+    # Approval workflows
+    ApprovalStatus,
+    ApprovalRequest,
+    ApprovalManager,
+    ApprovalHandler,
+    LoggingApprovalHandler,
+    # Audit logging
+    AuditEventType,
+    AuditEvent,
+    AuditStore,
+    InMemoryAuditStore,
+    SQLiteAuditStore,
+    AuditLogger,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -211,4 +234,23 @@ __all__ = [
     "WorkflowQueueManager",
     "REDIS_AVAILABLE",
     "RABBITMQ_AVAILABLE",
+    # Security (RBAC, Approvals, Audit)
+    "Permission",
+    "Role",
+    "User",
+    "RBACManager",
+    "PermissionDeniedError",
+    "PREDEFINED_ROLES",
+    "require_permission",
+    "ApprovalStatus",
+    "ApprovalRequest",
+    "ApprovalManager",
+    "ApprovalHandler",
+    "LoggingApprovalHandler",
+    "AuditEventType",
+    "AuditEvent",
+    "AuditStore",
+    "InMemoryAuditStore",
+    "SQLiteAuditStore",
+    "AuditLogger",
 ]

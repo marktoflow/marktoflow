@@ -11,6 +11,7 @@ Usage:
 
 from __future__ import annotations
 
+import json as json_module
 from pathlib import Path
 from typing import Optional
 
@@ -26,6 +27,37 @@ app = typer.Typer(
 )
 
 console = Console()
+
+
+# Global state for verbose and JSON output modes
+class OutputConfig:
+    verbose: bool = False
+    json_output: bool = False
+
+
+output_config = OutputConfig()
+
+
+def log_verbose(message: str) -> None:
+    """Print message only in verbose mode."""
+    if output_config.verbose and not output_config.json_output:
+        console.print(f"[dim]{message}[/dim]")
+
+
+def output_json(data: dict) -> None:
+    """Output data as JSON."""
+    console.print(json_module.dumps(data, indent=2, default=str))
+
+
+def output_result(data: dict, table: Table | None = None, panel: Panel | None = None) -> None:
+    """Output result in JSON or rich format based on config."""
+    if output_config.json_output:
+        output_json(data)
+    elif panel:
+        console.print(panel)
+    elif table:
+        console.print(table)
+
 
 # Sub-command groups
 workflow_app = typer.Typer(help="Workflow management commands")
@@ -195,14 +227,28 @@ def run(
     """Run a workflow or bundle."""
     import asyncio
 
+    log_verbose(f"Loading workflow: {workflow}")
+
     if not workflow.exists():
-        console.print(f"[red]Workflow not found: {workflow}[/red]")
+        if output_config.json_output:
+            output_json(
+                {
+                    "error": f"Workflow not found: {workflow}",
+                    "suggestion": "Check the path and try again",
+                }
+            )
+        else:
+            console.print(f"[red]Workflow not found: {workflow}[/red]")
+            console.print(
+                "[dim]Tip: Use 'aiworkflow workflow list' to see available workflows[/dim]"
+            )
         raise typer.Exit(1)
 
     # Check if this is a bundle directory
     from aiworkflow.tools.bundle import is_bundle
 
     if workflow.is_dir() and is_bundle(workflow):
+        log_verbose("Detected bundle directory, delegating to bundle run")
         # Delegate to bundle run
         bundle_run(
             path=workflow,
@@ -219,6 +265,7 @@ def run(
             if "=" in param:
                 key, value = param.split("=", 1)
                 inputs[key] = value
+                log_verbose(f"Input: {key}={value}")
 
     # Load and parse workflow
     from aiworkflow.core.parser import WorkflowParser
@@ -226,53 +273,105 @@ def run(
     parser = WorkflowParser()
     try:
         wf = parser.parse_file(workflow)
+        log_verbose(f"Parsed workflow: {wf.metadata.name}")
     except Exception as e:
-        console.print(f"[red]Failed to parse workflow: {e}[/red]")
+        if output_config.json_output:
+            output_json(
+                {"error": f"Failed to parse workflow: {e}", "suggestion": "Check workflow syntax"}
+            )
+        else:
+            console.print(f"[red]Failed to parse workflow: {e}[/red]")
+            console.print(
+                "[dim]Tip: Use 'aiworkflow workflow validate' to check for syntax errors[/dim]"
+            )
         raise typer.Exit(1)
 
     # Validate
     errors = parser.validate(wf)
     if errors:
-        console.print("[red]Validation errors:[/red]")
-        for error in errors:
-            console.print(f"  - {error}")
+        if output_config.json_output:
+            output_json({"error": "Validation failed", "errors": errors})
+        else:
+            console.print("[red]Validation errors:[/red]")
+            for error in errors:
+                console.print(f"  - {error}")
         raise typer.Exit(1)
 
     if dry_run:
-        _show_execution_plan(wf)
+        if output_config.json_output:
+            output_json(
+                {
+                    "dry_run": True,
+                    "workflow": {
+                        "id": wf.metadata.id,
+                        "name": wf.metadata.name,
+                        "steps": len(wf.steps),
+                    },
+                    "required_tools": wf.get_required_tools(),
+                }
+            )
+        else:
+            _show_execution_plan(wf)
         return
 
     # Run workflow
     from aiworkflow.core.engine import WorkflowEngine
 
-    console.print(f"[cyan]Running workflow: {wf.metadata.name}[/cyan]")
-    console.print(f"Agent: {agent or 'default'}")
-    console.print()
+    if not output_config.json_output:
+        console.print(f"[cyan]Running workflow: {wf.metadata.name}[/cyan]")
+        console.print(f"Agent: {agent or 'default'}")
+        console.print()
 
+    log_verbose("Initializing workflow engine")
     engine = WorkflowEngine(config={"agent": {"primary": agent or "opencode"}})
 
-    with console.status("[cyan]Executing workflow...[/cyan]"):
+    if output_config.json_output:
         result = asyncio.run(engine.execute(wf, inputs=inputs))
+    else:
+        with console.status("[cyan]Executing workflow...[/cyan]"):
+            result = asyncio.run(engine.execute(wf, inputs=inputs))
 
     if result.success:
-        console.print(
-            Panel(
-                f"[green]Workflow completed successfully![/green]\n\n"
-                f"Run ID: {result.run_id}\n"
-                f"Duration: {result.duration_seconds:.2f}s\n"
-                f"Steps: {result.steps_succeeded}/{len(result.step_results)}",
-                title="Success",
+        if output_config.json_output:
+            output_json(
+                {
+                    "success": True,
+                    "run_id": result.run_id,
+                    "duration_seconds": result.duration_seconds,
+                    "steps_succeeded": result.steps_succeeded,
+                    "steps_total": len(result.step_results),
+                }
             )
-        )
+        else:
+            console.print(
+                Panel(
+                    f"[green]Workflow completed successfully![/green]\n\n"
+                    f"Run ID: {result.run_id}\n"
+                    f"Duration: {result.duration_seconds:.2f}s\n"
+                    f"Steps: {result.steps_succeeded}/{len(result.step_results)}",
+                    title="Success",
+                )
+            )
     else:
-        console.print(
-            Panel(
-                f"[red]Workflow failed[/red]\n\n"
-                f"Error: {result.error}\n"
-                f"Steps completed: {result.steps_succeeded}/{len(result.step_results)}",
-                title="Failed",
+        if output_config.json_output:
+            output_json(
+                {
+                    "success": False,
+                    "error": result.error,
+                    "run_id": result.run_id,
+                    "steps_succeeded": result.steps_succeeded,
+                    "steps_total": len(result.step_results),
+                }
             )
-        )
+        else:
+            console.print(
+                Panel(
+                    f"[red]Workflow failed[/red]\n\n"
+                    f"Error: {result.error}\n"
+                    f"Steps completed: {result.steps_succeeded}/{len(result.step_results)}",
+                    title="Failed",
+                )
+            )
         raise typer.Exit(1)
 
 
@@ -314,20 +413,40 @@ def workflow_list() -> None:
     """List available workflows."""
     workflows_dir = Path(".aiworkflow/workflows")
 
+    log_verbose(f"Searching for workflows in: {workflows_dir}")
+
     if not workflows_dir.exists():
-        console.print("[yellow]No workflows directory found. Run 'aiworkflow init' first.[/yellow]")
+        if output_config.json_output:
+            output_json(
+                {
+                    "error": "No workflows directory found",
+                    "suggestion": "Run 'aiworkflow init' first",
+                }
+            )
+        else:
+            console.print(
+                "[yellow]No workflows directory found. Run 'aiworkflow init' first.[/yellow]"
+            )
         raise typer.Exit(1)
 
     workflows = list(workflows_dir.glob("*.md"))
+    log_verbose(f"Found {len(workflows)} workflow files")
 
     if not workflows:
-        console.print("[yellow]No workflows found in .aiworkflow/workflows/[/yellow]")
+        if output_config.json_output:
+            output_json({"workflows": [], "count": 0})
+        else:
+            console.print("[yellow]No workflows found in .aiworkflow/workflows/[/yellow]")
+            console.print(
+                "[dim]Tip: Use 'aiworkflow workflow create' to create a new workflow[/dim]"
+            )
         return
 
     from aiworkflow.core.parser import WorkflowParser
 
     parser = WorkflowParser()
 
+    workflow_data = []
     table = Table(title="Available Workflows")
     table.add_column("Name", style="cyan")
     table.add_column("ID")
@@ -337,6 +456,15 @@ def workflow_list() -> None:
     for wf_path in workflows:
         try:
             wf = parser.parse_file(wf_path)
+            workflow_data.append(
+                {
+                    "name": wf.metadata.name,
+                    "id": wf.metadata.id,
+                    "version": wf.metadata.version,
+                    "file": wf_path.name,
+                    "path": str(wf_path),
+                }
+            )
             table.add_row(
                 wf.metadata.name,
                 wf.metadata.id,
@@ -344,6 +472,16 @@ def workflow_list() -> None:
                 wf_path.name,
             )
         except Exception as e:
+            workflow_data.append(
+                {
+                    "name": None,
+                    "id": None,
+                    "version": None,
+                    "file": wf_path.name,
+                    "path": str(wf_path),
+                    "error": str(e),
+                }
+            )
             table.add_row(
                 f"[red]Error[/red]",
                 "-",
@@ -351,7 +489,10 @@ def workflow_list() -> None:
                 f"{wf_path.name} ({e})",
             )
 
-    console.print(table)
+    if output_config.json_output:
+        output_json({"workflows": workflow_data, "count": len(workflow_data)})
+    else:
+        console.print(table)
 
 
 @workflow_app.command("validate")
@@ -391,10 +532,294 @@ def workflow_show(
 
     try:
         wf = parser.parse_file(workflow)
-        _show_execution_plan(wf)
+        if output_config.json_output:
+            output_json(
+                {
+                    "id": wf.metadata.id,
+                    "name": wf.metadata.name,
+                    "version": wf.metadata.version,
+                    "steps": [
+                        {
+                            "name": step.name,
+                            "action": step.action,
+                            "output_variable": step.output_variable,
+                        }
+                        for step in wf.steps
+                    ],
+                    "required_tools": wf.get_required_tools(),
+                }
+            )
+        else:
+            _show_execution_plan(wf)
     except Exception as e:
         console.print(f"[red]Failed to parse workflow: {e}[/red]")
         raise typer.Exit(1)
+
+
+@workflow_app.command("create")
+def workflow_create(
+    name: str = typer.Argument(..., help="Name of the workflow to create"),
+    output_dir: Path = typer.Option(
+        Path(".aiworkflow/workflows"),
+        "--output",
+        "-o",
+        help="Output directory for the workflow",
+    ),
+    bundle: bool = typer.Option(
+        False,
+        "--bundle",
+        "-b",
+        help="Create as a self-contained bundle directory",
+    ),
+    template: str = typer.Option(
+        "basic",
+        "--template",
+        "-t",
+        help="Template to use (basic, multi-step, with-tools)",
+    ),
+) -> None:
+    """Create a new workflow from a template."""
+    log_verbose(f"Creating workflow: {name}")
+    log_verbose(f"Template: {template}")
+    log_verbose(f"Bundle: {bundle}")
+
+    # Generate workflow ID from name
+    workflow_id = name.lower().replace(" ", "-").replace("_", "-")
+
+    # Templates
+    templates = {
+        "basic": """---
+workflow:
+  id: {workflow_id}
+  name: "{name}"
+  version: "1.0.0"
+  
+compatibility:
+  agents:
+    - opencode: recommended
+    - claude-code: supported
+    
+requirements:
+  tools: []
+  features:
+    - tool_calling: required
+    
+execution:
+  timeout: 300s
+  error_handling: stop
+---
+
+# {name}
+
+A brief description of what this workflow does.
+
+## Step 1: First Step
+
+```yaml
+action: tool.operation
+inputs:
+  param: value
+output_variable: result
+```
+
+Add more steps as needed.
+""",
+        "multi-step": """---
+workflow:
+  id: {workflow_id}
+  name: "{name}"
+  version: "1.0.0"
+  
+compatibility:
+  agents:
+    - opencode: recommended
+    - claude-code: supported
+    
+requirements:
+  tools: []
+  features:
+    - tool_calling: required
+    
+execution:
+  timeout: 600s
+  error_handling: continue
+---
+
+# {name}
+
+A multi-step workflow that processes data through several stages.
+
+## Step 1: Gather Data
+
+```yaml
+action: gather.data
+inputs:
+  source: input
+output_variable: raw_data
+```
+
+## Step 2: Process Data
+
+```yaml
+action: process.transform
+inputs:
+  data: "{{raw_data}}"
+output_variable: processed_data
+conditions:
+  - raw_data.success == true
+```
+
+## Step 3: Output Results
+
+```yaml
+action: output.results
+inputs:
+  data: "{{processed_data}}"
+output_variable: final_result
+```
+""",
+        "with-tools": """---
+workflow:
+  id: {workflow_id}
+  name: "{name}"
+  version: "1.0.0"
+  
+compatibility:
+  agents:
+    - opencode: recommended
+    - claude-code: supported
+    
+requirements:
+  tools:
+    - slack
+    - jira
+  features:
+    - tool_calling: required
+    
+execution:
+  timeout: 300s
+  error_handling: stop
+---
+
+# {name}
+
+A workflow that uses external tools.
+
+## Step 1: Get Issues
+
+```yaml
+action: jira.search
+inputs:
+  jql: "project = PROJ AND status = 'To Do'"
+output_variable: issues
+```
+
+## Step 2: Notify Team
+
+```yaml
+action: slack.send_message
+inputs:
+  channel: "#team"
+  message: "Found {{issues.total}} issues to work on"
+output_variable: notification
+conditions:
+  - issues.total > 0
+```
+""",
+    }
+
+    if template not in templates:
+        console.print(f"[red]Unknown template: {template}[/red]")
+        console.print(f"Available templates: {', '.join(templates.keys())}")
+        raise typer.Exit(1)
+
+    # Generate content
+    content = templates[template].format(workflow_id=workflow_id, name=name)
+
+    if bundle:
+        # Create bundle directory
+        bundle_dir = output_dir / workflow_id
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write workflow.md
+        workflow_file = bundle_dir / "workflow.md"
+        workflow_file.write_text(content)
+        log_verbose(f"Created: {workflow_file}")
+
+        # Create config.yaml
+        config_content = f'''# Bundle configuration
+name: "{name}"
+version: "1.0.0"
+
+agent: opencode
+fallback_agent: null
+timeout: 300
+
+inherit_global_tools: true
+'''
+        config_file = bundle_dir / "config.yaml"
+        config_file.write_text(config_content)
+        log_verbose(f"Created: {config_file}")
+
+        # Create tools directory
+        tools_dir = bundle_dir / "tools"
+        tools_dir.mkdir(exist_ok=True)
+        log_verbose(f"Created: {tools_dir}")
+
+        # Create tools.yaml
+        tools_yaml = bundle_dir / "tools.yaml"
+        tools_yaml.write_text("# Tool definitions\ntools: []\n")
+        log_verbose(f"Created: {tools_yaml}")
+
+        if output_config.json_output:
+            output_json(
+                {
+                    "created": str(bundle_dir),
+                    "type": "bundle",
+                    "files": [
+                        str(workflow_file),
+                        str(config_file),
+                        str(tools_yaml),
+                    ],
+                }
+            )
+        else:
+            console.print(
+                Panel(
+                    f"[green]Bundle created successfully![/green]\n\n"
+                    f"Location: {bundle_dir}\n"
+                    f"Workflow: {workflow_file.name}\n\n"
+                    "Next steps:\n"
+                    f"  1. Edit {workflow_file}\n"
+                    f"  2. Add tools to {tools_dir}/\n"
+                    f"  3. Run: aiworkflow bundle run {bundle_dir}",
+                    title="New Bundle",
+                )
+            )
+    else:
+        # Create single workflow file
+        output_dir.mkdir(parents=True, exist_ok=True)
+        workflow_file = output_dir / f"{workflow_id}.md"
+        workflow_file.write_text(content)
+
+        if output_config.json_output:
+            output_json(
+                {
+                    "created": str(workflow_file),
+                    "type": "workflow",
+                }
+            )
+        else:
+            console.print(
+                Panel(
+                    f"[green]Workflow created successfully![/green]\n\n"
+                    f"File: {workflow_file}\n\n"
+                    "Next steps:\n"
+                    f"  1. Edit {workflow_file}\n"
+                    f"  2. Run: aiworkflow run {workflow_file}",
+                    title="New Workflow",
+                )
+            )
 
 
 # Agent commands
@@ -1706,13 +2131,188 @@ def version() -> None:
     """Show version information."""
     from aiworkflow import __version__
 
-    console.print(f"aiworkflow version {__version__}")
+    if output_config.json_output:
+        output_json({"version": __version__})
+    else:
+        console.print(f"aiworkflow version {__version__}")
+
+
+@app.command()
+def doctor() -> None:
+    """Check environment and diagnose issues."""
+    import sys
+    import shutil
+
+    log_verbose("Running environment diagnostics...")
+
+    issues = []
+    checks = []
+
+    # Python version check
+    py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    py_ok = sys.version_info >= (3, 11)
+    checks.append(
+        {
+            "name": "Python Version",
+            "value": py_version,
+            "status": "ok" if py_ok else "warning",
+            "message": None if py_ok else "Python 3.11+ recommended",
+        }
+    )
+    if not py_ok:
+        issues.append("Python 3.11+ recommended for best compatibility")
+
+    # Project initialized check
+    aiworkflow_dir = Path(".aiworkflow")
+    init_ok = aiworkflow_dir.exists()
+    checks.append(
+        {
+            "name": "Project Initialized",
+            "value": str(aiworkflow_dir) if init_ok else "Not found",
+            "status": "ok" if init_ok else "error",
+            "message": None if init_ok else "Run 'aiworkflow init' to initialize",
+        }
+    )
+    if not init_ok:
+        issues.append("Project not initialized. Run 'aiworkflow init'")
+
+    # Config file check
+    config_file = Path("aiworkflow.yaml")
+    config_ok = config_file.exists()
+    checks.append(
+        {
+            "name": "Config File",
+            "value": str(config_file) if config_ok else "Not found",
+            "status": "ok" if config_ok else "warning",
+            "message": None if config_ok else "No config file found",
+        }
+    )
+
+    # Check for optional dependencies
+    optional_deps = [
+        ("watchdog", "triggers", "File watching"),
+        ("prometheus_client", "metrics", "Prometheus metrics"),
+        ("redis", "redis", "Redis queue"),
+        ("pika", "rabbitmq", "RabbitMQ queue"),
+        ("aiohttp", "async", "Async HTTP"),
+    ]
+
+    for module_name, extra, description in optional_deps:
+        try:
+            __import__(module_name)
+            available = True
+        except ImportError:
+            available = False
+
+        checks.append(
+            {
+                "name": description,
+                "value": module_name,
+                "status": "ok" if available else "info",
+                "message": None if available else f"Install with: pip install aiworkflow[{extra}]",
+            }
+        )
+
+    # Check for git
+    git_available = shutil.which("git") is not None
+    checks.append(
+        {
+            "name": "Git",
+            "value": "Available" if git_available else "Not found",
+            "status": "ok" if git_available else "warning",
+            "message": None if git_available else "Git recommended for version control",
+        }
+    )
+
+    # Check workflows directory
+    workflows_dir = Path(".aiworkflow/workflows")
+    if workflows_dir.exists():
+        workflow_count = len(list(workflows_dir.glob("*.md")))
+        checks.append(
+            {
+                "name": "Workflows",
+                "value": f"{workflow_count} found",
+                "status": "ok" if workflow_count > 0 else "info",
+                "message": None if workflow_count > 0 else "No workflows yet",
+            }
+        )
+
+    # Check tools directory
+    tools_dir = Path(".aiworkflow/tools")
+    if tools_dir.exists():
+        mcp_count = (
+            len(list((tools_dir / "mcp").glob("*.yaml"))) if (tools_dir / "mcp").exists() else 0
+        )
+        custom_count = (
+            len(list((tools_dir / "custom").iterdir())) if (tools_dir / "custom").exists() else 0
+        )
+        checks.append(
+            {
+                "name": "Tools",
+                "value": f"{mcp_count} MCP, {custom_count} custom",
+                "status": "ok",
+                "message": None,
+            }
+        )
+
+    # Output results
+    if output_config.json_output:
+        output_json(
+            {
+                "checks": checks,
+                "issues": issues,
+                "healthy": len([c for c in checks if c["status"] == "error"]) == 0,
+            }
+        )
+    else:
+        console.print(Panel("[cyan]Environment Diagnostics[/cyan]", expand=False))
+
+        table = Table()
+        table.add_column("Check", style="cyan")
+        table.add_column("Value")
+        table.add_column("Status")
+
+        status_icons = {
+            "ok": "[green]OK[/green]",
+            "warning": "[yellow]WARN[/yellow]",
+            "error": "[red]ERROR[/red]",
+            "info": "[blue]INFO[/blue]",
+        }
+
+        for check in checks:
+            status = status_icons.get(check["status"], check["status"])
+            value = check["value"]
+            if check["message"]:
+                value = f"{value}\n[dim]{check['message']}[/dim]"
+            table.add_row(check["name"], value, status)
+
+        console.print(table)
+
+        if issues:
+            console.print("\n[yellow]Issues found:[/yellow]")
+            for issue in issues:
+                console.print(f"  - {issue}")
+        else:
+            console.print("\n[green]No critical issues found.[/green]")
 
 
 @app.callback()
-def main() -> None:
+def main(
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
+    ),
+    json_out: bool = typer.Option(
+        False,
+        "--json",
+        help="Output results as JSON",
+    ),
+) -> None:
     """Universal AI Workflow Automation Framework."""
-    pass
+    output_config.verbose = verbose
+    output_config.json_output = json_out
 
 
 if __name__ == "__main__":

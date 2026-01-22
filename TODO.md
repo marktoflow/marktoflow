@@ -87,22 +87,32 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 317 tests (311 passing, 6 skipped async)**
+**Total: 369 tests (363 passing, 6 skipped async)**
 
 ---
 
-## Phase 3: Enterprise
+## Phase 3: Enterprise - In Progress
 
 ### Security
-- [ ] RBAC implementation
-  - [ ] User/role management
-  - [ ] Permission scopes
-- [ ] Approval workflows
-  - [ ] Human-in-the-loop gates
-  - [ ] Slack/email approval requests
-- [ ] Audit logging
-  - [ ] All actions logged
-  - [ ] Compliance reporting
+- [x] RBAC implementation
+  - [x] Permission enum (14 permissions)
+  - [x] Role class with inheritance
+  - [x] User class with role assignment
+  - [x] RBACManager for permission checking
+  - [x] Predefined roles (viewer, executor, developer, approver, admin)
+  - [x] PermissionDeniedError and require_permission decorator
+- [x] Approval workflows
+  - [x] ApprovalStatus enum (pending, approved, rejected, expired, cancelled)
+  - [x] ApprovalRequest dataclass
+  - [x] ApprovalManager for creating/approving/rejecting requests
+  - [x] ApprovalHandler interface for notifications
+  - [x] Required approvers and min_approvals support
+- [x] Audit logging
+  - [x] AuditEventType enum (20+ event types)
+  - [x] AuditEvent dataclass
+  - [x] InMemoryAuditStore for testing
+  - [x] SQLiteAuditStore for persistent storage
+  - [x] AuditLogger high-level interface
 - [ ] Credential encryption (age/GPG)
   - [ ] Age encryption integration
   - [ ] Key management
@@ -175,19 +185,34 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - incident-response, sprint-planning
 - [x] Comprehensive tests (53 new tests)
 
-**Total: 317 tests (311 passing, 6 skipped async)**
+**Total: 369 tests (363 passing, 6 skipped async)**
 
 ---
 
-## Quick Wins (Next Up)
+## Quick Wins - COMPLETE
 
-These are small improvements that can be done quickly:
+All quick wins have been implemented:
 
-1. [ ] Add `--verbose` flag to CLI commands
-2. [ ] Add `aiworkflow workflow create` scaffolding command
-3. [ ] Add JSON output option for CLI commands
-4. [ ] Improve error messages with suggestions
-5. [ ] Add `aiworkflow doctor` for environment checking
+- [x] Add `--verbose` flag to CLI commands
+  - Global `-v/--verbose` option for all commands
+  - `log_verbose()` helper for debug output
+- [x] Add `aiworkflow workflow create` scaffolding command
+  - Templates: basic, multi-step, with-tools
+  - `--bundle` flag to create bundle directory
+  - `--template` and `--output` options
+- [x] Add JSON output option for CLI commands
+  - Global `--json` option for all commands
+  - `output_json()` and `output_result()` helpers
+  - Updated: run, workflow list, workflow show, version
+- [x] Improve error messages with suggestions
+  - Added helpful tips after error messages
+  - Suggestions for next commands to try
+- [x] Add `aiworkflow doctor` for environment checking
+  - Python version check
+  - Project initialization check
+  - Optional dependencies check
+  - Git availability check
+  - Workflows and tools summary
 
 ---
 
