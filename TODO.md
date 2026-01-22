@@ -87,7 +87,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 429 tests (420 passing, 9 skipped async)**
+**Total: 482 tests (470+ passing, ~12 skipped async/age)**
 
 ---
 
@@ -120,12 +120,12 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] Key management
 
 ### Optimization
-- [ ] Automatic agent selection
-  - [ ] Cost/quality routing rules
-  - [ ] Capability-based selection
-- [ ] Cost-based routing
-  - [ ] Budget limits per workflow
-  - [ ] Dynamic agent switching
+- [x] Automatic agent selection
+  - [x] Cost/quality routing rules
+  - [x] Capability-based selection
+- [x] Cost-based routing
+  - [x] Budget limits per workflow
+  - [x] Dynamic agent switching
 - [ ] Performance tuning
   - [ ] Parallel step execution
   - [ ] Caching strategies
@@ -187,7 +187,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - incident-response, sprint-planning
 - [x] Comprehensive tests (53 new tests)
 
-**Total: 429 tests (420 passing, 9 skipped async)**
+**Total: 482 tests (470+ passing, ~12 skipped async/age)**
 
 ---
 

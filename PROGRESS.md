@@ -4,6 +4,81 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 7 Continued: Phase 3 Optimization - Agent Routing)
+
+### Phase 3: Agent Selection & Routing
+- [x] Implemented SelectionStrategy enum (8 strategies)
+  - CAPABILITY_MATCH, LOWEST_COST, HIGHEST_QUALITY, BALANCED
+  - ROUND_ROBIN, RANDOM, PRIORITY, LEAST_LOADED
+- [x] Implemented RoutingDecision enum
+  - USE_PRIMARY, USE_FALLBACK, SWITCH_AGENT, REJECT, QUEUE
+- [x] Implemented AgentScore for multi-dimensional scoring
+  - Capability, cost, quality, availability, load scores
+  - Weighted score calculation with custom weights
+- [x] Implemented AgentProfile for agent characteristics
+  - Provider, model, capabilities set
+  - Cost metrics (per 1k tokens, per request)
+  - Quality metrics (accuracy, reliability, speed)
+  - Constraints (max tokens, rate limits)
+  - Priority and tags for filtering
+- [x] Implemented RoutingContext for routing decisions
+  - Required capabilities, preferred/excluded agents
+  - Cost and latency constraints
+  - Current state and budget tracking
+- [x] Implemented AgentSelector for intelligent selection
+  - Register/unregister agents
+  - Score agents on multiple dimensions
+  - Select by strategy with fallback list
+  - Round-robin and random selection support
+- [x] Implemented BudgetConfig for budget constraints
+  - Total budget with optional time period
+  - Per-workflow and per-step limits
+  - Alert thresholds
+- [x] Implemented BudgetTracker for cost-based routing
+  - Record costs and check budget
+  - Per-workflow spending tracking
+  - Alert callbacks for threshold notifications
+  - Period-based budget reset
+- [x] Implemented AgentRouter combining selection and budget
+  - Route with budget constraints
+  - Automatic fallback when over budget
+  - Load tracking (record start/completion)
+  - Routing statistics
+- [x] Created predefined agent profiles
+  - claude-code, opencode-gpt4o, opencode-gpt4o-mini, opencode-claude
+- [x] Created convenience functions
+  - create_default_selector, create_cost_optimized_selector
+  - create_quality_optimized_selector
+
+### Virtual Environment Setup
+- [x] Created .venv for development
+- [x] Verified pip install -e . works correctly
+- [x] Verified CLI commands work (aiworkflow --help, version, doctor)
+- [x] Installed all optional dependencies for testing
+
+### Testing
+- [x] Created test_routing.py (53 tests)
+  - SelectionStrategy and RoutingDecision enum tests
+  - AgentScore creation and weighted scoring tests
+  - AgentProfile creation, capabilities, serialization tests
+  - RoutingContext tests
+  - AgentSelector strategy tests (8 strategies)
+  - BudgetTracker budget and workflow tracking tests
+  - AgentRouter routing and stats tests
+  - Predefined profiles validation tests
+  - Convenience function tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/routing.py` - NEW: Agent routing module (~700 lines)
+- `src/aiworkflow/core/__init__.py` - Added routing module exports
+- `tests/test_routing.py` - NEW: Routing tests (53 tests)
+- `.venv/` - NEW: Virtual environment for development
+- `TODO.md` - Marked optimization features complete
+
+**Total: 482 tests (470+ passing, ~12 skipped async/age)**
+
+---
+
 ## 2026-01-22 (Session 7: Quick Wins + Phase 3 Enterprise Security + Credentials)
 
 ### Quick Wins: Global CLI Options

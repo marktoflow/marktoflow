@@ -103,6 +103,28 @@ from aiworkflow.core.credentials import (
     create_credential_manager,
     get_available_backends,
 )
+from aiworkflow.core.routing import (
+    # Enums
+    SelectionStrategy,
+    RoutingDecision,
+    # Data classes
+    AgentScore,
+    AgentProfile,
+    RoutingContext,
+    RoutingResult,
+    BudgetConfig,
+    LoadInfo,
+    # Classes
+    AgentSelector,
+    BudgetTracker,
+    AgentRouter,
+    # Predefined profiles
+    PREDEFINED_PROFILES,
+    # Convenience functions
+    create_default_selector,
+    create_cost_optimized_selector,
+    create_quality_optimized_selector,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -294,4 +316,20 @@ __all__ = [
     "KeyManager",
     "create_credential_manager",
     "get_available_backends",
+    # Routing
+    "SelectionStrategy",
+    "RoutingDecision",
+    "AgentScore",
+    "AgentProfile",
+    "RoutingContext",
+    "RoutingResult",
+    "BudgetConfig",
+    "LoadInfo",
+    "AgentSelector",
+    "BudgetTracker",
+    "AgentRouter",
+    "PREDEFINED_PROFILES",
+    "create_default_selector",
+    "create_cost_optimized_selector",
+    "create_quality_optimized_selector",
 ]
