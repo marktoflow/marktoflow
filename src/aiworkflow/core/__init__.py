@@ -18,6 +18,10 @@ from aiworkflow.core.engine import (
     WorkflowExecutionError,
     RetryPolicy,
     CircuitBreaker,
+    FailoverConfig,
+    FailoverReason,
+    FailoverEvent,
+    AgentHealth,
 )
 from aiworkflow.core.scheduler import Scheduler, ScheduledJob, CronParser
 from aiworkflow.core.state import StateStore, ExecutionRecord, StepCheckpoint, ExecutionStatus
@@ -38,6 +42,10 @@ __all__ = [
     "WorkflowExecutionError",
     "RetryPolicy",
     "CircuitBreaker",
+    "FailoverConfig",
+    "FailoverReason",
+    "FailoverEvent",
+    "AgentHealth",
     "Scheduler",
     "ScheduledJob",
     "CronParser",

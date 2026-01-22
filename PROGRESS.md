@@ -4,6 +4,47 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 2 - Part 3: Agent Failover)
+
+### Phase 2: Agent Failover
+- [x] Implemented FailoverConfig for configuring failover behavior
+  - Configurable: fallback_agents, max_failover_attempts, health_check_interval
+  - Options: failover_on_step_failure, failover_on_timeout, retry_primary_after
+- [x] Implemented AgentHealth for tracking agent health status
+  - Tracks: is_healthy, last_check, latency_ms, consecutive_failures, error
+- [x] Implemented FailoverReason enum
+  - Reasons: INITIALIZATION_FAILED, HEALTH_CHECK_FAILED, STEP_EXECUTION_FAILED, TIMEOUT, CIRCUIT_BREAKER_OPEN
+- [x] Implemented FailoverEvent for tracking failover history
+  - Records: timestamp, from_agent, to_agent, reason, step_index, error
+- [x] Enhanced WorkflowEngine with failover capabilities
+  - `check_agent_health()` - Checks health of agent adapter
+  - `_select_healthy_adapter()` - Selects next healthy adapter
+  - `_failover_to_next_agent()` - Handles failover logic
+  - `_execute_step_with_failover()` - Executes with automatic failover
+  - Per-agent circuit breakers (`_get_agent_circuit_breaker()`)
+  - `get_failover_history()` - Returns failover events
+  - `reset_failover_state()` - Resets for new execution
+
+### Testing
+- [x] Added failover tests to test_engine.py (14 new tests, 31 total)
+  - TestFailoverConfig: default and custom config tests
+  - TestFailoverEvent: event creation tests
+  - TestFailoverReason: enum value tests
+  - TestAgentHealth: healthy/unhealthy status tests
+  - TestWorkflowEngineFailover: engine failover configuration tests
+  - TestWorkflowEngineFailoverIntegration: integration tests
+
+### Files Modified
+- `src/aiworkflow/core/engine.py` - Added failover classes and methods
+- `src/aiworkflow/core/__init__.py` - Exported failover classes
+- `tests/test_engine.py` - Added 14 failover tests
+- `TODO.md` - Marked failover as complete
+- `PROGRESS.md` - Added failover session
+
+**Total: 117 tests passing**
+
+---
+
 ## 2026-01-22 (Session 2 - Continued)
 
 ### Phase 2: Engine Enhancements
