@@ -896,18 +896,34 @@ class WorkflowEngine:
         inputs: dict[str, Any],
         context: ExecutionContext,
     ) -> Any:
-        """Execute an agent-specific task."""
+        """Execute an agent-specific task.
+
+        Returns the output value from the agent, not the StepResult.
+        """
         if self.agent_adapter is None:
             raise WorkflowExecutionError("No agent adapter configured")
 
         # Get agent-specific hints
         hints = step.get_hints_for_agent(context.agent_name)
 
-        # Merge hints with inputs
+        # Merge hints with resolved inputs
         task_inputs = {**inputs, **hints}
 
+        # Create a modified step with resolved inputs for the adapter
+        from dataclasses import replace
+
+        resolved_step = replace(step, inputs=task_inputs)
+
         # Execute through agent adapter
-        return await self.agent_adapter.execute_step(step, context)
+        result = await self.agent_adapter.execute_step(resolved_step, context)
+
+        # If the adapter returns a StepResult, extract the output value
+        # Otherwise return the result directly
+        if isinstance(result, StepResult):
+            if result.status == StepStatus.FAILED:
+                raise WorkflowExecutionError(result.error or "Agent execution failed")
+            return result.output
+        return result
 
     async def _execute_tool_call(
         self,
