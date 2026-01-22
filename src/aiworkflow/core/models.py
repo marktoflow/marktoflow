@@ -304,13 +304,19 @@ class ExecutionContext:
         self.variables[name] = value
 
     def resolve_template(self, template: str) -> str:
-        """Resolve template variables in a string."""
+        """Resolve template variables in a string.
+
+        Supports both {{variable}} and {{inputs.variable}} syntax.
+        """
         # Simple template resolution - can be enhanced with Jinja2
         result = template
         for key, value in self.variables.items():
-            result = result.replace(f"{{{key}}}", str(value))
+            # Support both single and double curly brace syntax
+            result = result.replace(f"{{{{{key}}}}}", str(value))  # {{key}}
+            result = result.replace(f"{{{key}}}", str(value))  # {key}
         for key, value in self.inputs.items():
-            result = result.replace(f"{{inputs.{key}}}", str(value))
+            result = result.replace(f"{{{{inputs.{key}}}}}", str(value))  # {{inputs.key}}
+            result = result.replace(f"{{inputs.{key}}}", str(value))  # {inputs.key}
         return result
 
 
