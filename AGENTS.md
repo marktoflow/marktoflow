@@ -161,7 +161,6 @@ output_variable: result
 
 ## File References
 
-- `PRD.md` - Full product requirements
 - `TODO.md` - Pending tasks
 - `PROGRESS.md` - Completed work
 - `CLAUDE.md` - Claude-specific context

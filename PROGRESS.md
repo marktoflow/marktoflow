@@ -4,6 +4,87 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 4: Message Queue & Examples)
+
+### Phase 2: Message Queue Integration
+- [x] Implemented QueueMessage for message representation
+  - Priority levels (LOW, NORMAL, HIGH, CRITICAL)
+  - Status tracking (PENDING, PROCESSING, COMPLETED, FAILED, DEAD_LETTER)
+  - JSON serialization/deserialization
+  - Retry tracking with max_attempts
+- [x] Implemented QueueConfig for queue configuration
+  - Queue name, max_size, message_ttl
+  - Dead letter queue support
+  - Retry delay and visibility timeout
+- [x] Implemented MessageQueue abstract base class
+  - `connect()`, `disconnect()`, `publish()`, `consume()`
+  - `acknowledge()`, `reject()`, `get_queue_length()`, `purge()`
+- [x] Implemented RedisQueue for Redis-based queuing
+  - Priority queue using sorted sets
+  - Processing tracking with hash sets
+  - TTL support for messages
+- [x] Implemented AsyncRedisQueue for async Redis operations
+- [x] Implemented RabbitMQQueue for RabbitMQ integration
+  - Durable queues with persistence
+  - Dead letter queue routing
+  - Priority message support
+- [x] Implemented InMemoryQueue for testing
+  - Full priority queue behavior
+  - Dead letter queue support
+  - No external dependencies
+- [x] Implemented WorkflowQueueManager for high-level operations
+  - `enqueue_workflow()` with priority and metadata
+  - `start_worker()` / `stop_worker()` for processing
+  - `get_pending_count()` for monitoring
+
+### Example Workflows
+- [x] Created examples/ directory with workflow examples
+  - `code-review.md` - Automated PR code review
+  - `daily-standup.md` - Team standup summary generator
+  - `incident-response.md` - Automated incident handling
+  - `dependency-update.md` - Automated dependency updates with PRs
+  - `sprint-planning.md` - Jira sprint planning assistant
+
+### Project Cleanup
+- [x] Removed PRD.md and all references
+- [x] Created comprehensive .gitignore
+  - Python cache and build files
+  - IDE configurations
+  - OS-specific files
+  - aiworkflow state and credentials
+  - Temporary and log files
+
+### Dependencies Updated
+- [x] Added optional dependency: `redis = ["redis>=5.0"]`
+- [x] Added optional dependency: `rabbitmq = ["pika>=1.3"]`
+- [x] Added optional dependency: `queues = ["redis>=5.0", "pika>=1.3"]`
+- [x] Updated `all` extra to include queue dependencies
+
+### Testing
+- [x] Created test_queue.py (30 tests)
+  - QueueMessage serialization tests
+  - QueueConfig tests
+  - InMemoryQueue lifecycle and priority tests
+  - WorkflowQueueManager tests
+  - Integration tests for queue behavior
+
+### Files Created/Modified
+- `src/aiworkflow/core/queue.py` - NEW: Message queue integration
+- `src/aiworkflow/core/__init__.py` - Updated exports for queue module
+- `pyproject.toml` - Added redis and pika dependencies
+- `tests/test_queue.py` - NEW: Message queue tests
+- `examples/code-review.md` - NEW: Code review workflow
+- `examples/daily-standup.md` - NEW: Standup summary workflow
+- `examples/incident-response.md` - NEW: Incident response workflow
+- `examples/dependency-update.md` - NEW: Dependency update workflow
+- `examples/sprint-planning.md` - NEW: Sprint planning workflow
+- `.gitignore` - NEW: Comprehensive gitignore
+- `PROGRESS.md`, `README.md`, `AGENTS.md` - Removed PRD.md references
+
+**Total: 193 tests passing**
+
+---
+
 ## 2026-01-22 (Session 3: File Triggers & Metrics)
 
 ### Phase 2: File System Event Triggers
@@ -244,7 +325,6 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 ## 2026-01-22
 
 ### Project Initialization
-- [x] Created PRD.md with comprehensive project specification
 - [x] Created README.md with project overview
 - [x] Created TODO.md for task tracking
 - [x] Created PROGRESS.md for completed items
@@ -321,7 +401,6 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 ### Documentation
 | Feature | Date | Notes |
 |---------|------|-------|
-| PRD.md | 2026-01-22 | Full product requirements document |
 | Project tracking files | 2026-01-22 | TODO.md, PROGRESS.md, AGENTS.md, CLAUDE.md |
 
 ### Core Framework

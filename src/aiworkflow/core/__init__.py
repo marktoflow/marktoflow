@@ -64,6 +64,36 @@ except ImportError:
     MetricType = None  # type: ignore
     PROMETHEUS_AVAILABLE = False
 
+# Queue imports (optional, requires redis or pika)
+try:
+    from aiworkflow.core.queue import (
+        MessageQueue,
+        QueueMessage,
+        QueueConfig,
+        MessagePriority,
+        MessageStatus,
+        RedisQueue,
+        AsyncRedisQueue,
+        RabbitMQQueue,
+        InMemoryQueue,
+        WorkflowQueueManager,
+        REDIS_AVAILABLE,
+        RABBITMQ_AVAILABLE,
+    )
+except ImportError:
+    MessageQueue = None  # type: ignore
+    QueueMessage = None  # type: ignore
+    QueueConfig = None  # type: ignore
+    MessagePriority = None  # type: ignore
+    MessageStatus = None  # type: ignore
+    RedisQueue = None  # type: ignore
+    AsyncRedisQueue = None  # type: ignore
+    RabbitMQQueue = None  # type: ignore
+    InMemoryQueue = None  # type: ignore
+    WorkflowQueueManager = None  # type: ignore
+    REDIS_AVAILABLE = False
+    RABBITMQ_AVAILABLE = False
+
 __all__ = [
     "Workflow",
     "WorkflowStep",
@@ -110,4 +140,17 @@ __all__ = [
     "WorkflowMetrics",
     "MetricType",
     "PROMETHEUS_AVAILABLE",
+    # Message Queue (optional)
+    "MessageQueue",
+    "QueueMessage",
+    "QueueConfig",
+    "MessagePriority",
+    "MessageStatus",
+    "RedisQueue",
+    "AsyncRedisQueue",
+    "RabbitMQQueue",
+    "InMemoryQueue",
+    "WorkflowQueueManager",
+    "REDIS_AVAILABLE",
+    "RABBITMQ_AVAILABLE",
 ]

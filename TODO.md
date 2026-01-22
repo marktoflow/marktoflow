@@ -28,9 +28,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] File pattern matching (WatchConfig with glob patterns)
   - [x] Debouncing and event filtering
   - [x] Workflow trigger from file events
-- [ ] Message queue integration
-  - [ ] Redis queue support
-  - [ ] RabbitMQ support (optional)
+- [x] Message queue integration
+  - [x] Redis queue support (RedisQueue, AsyncRedisQueue)
+  - [x] RabbitMQ support (RabbitMQQueue)
+  - [x] In-memory queue for testing (InMemoryQueue)
+  - [x] WorkflowQueueManager for high-level operations
 
 ### Reliability
 - [x] Error recovery and retry logic
@@ -73,12 +75,13 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [x] Unit tests for webhook receiver (14 tests)
 - [x] Unit tests for file watcher (23 tests)
 - [x] Unit tests for metrics collection (23 tests)
+- [x] Unit tests for message queue (30 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 163 tests passing**
+**Total: 193 tests passing**
 
 ---
 

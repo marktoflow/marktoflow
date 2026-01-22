@@ -278,7 +278,6 @@ project/
 
 ## Documentation
 
-- [PRD.md](PRD.md) - Full product requirements
 - [AGENTS.md](AGENTS.md) - Development guidance for AI agents
 - [CLAUDE.md](CLAUDE.md) - Claude-specific context
 - [TODO.md](TODO.md) - Pending tasks
