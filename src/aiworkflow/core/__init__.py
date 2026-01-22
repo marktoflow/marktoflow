@@ -144,6 +144,27 @@ from aiworkflow.core.plugins import (
     # Convenience functions
     create_plugin_manager,
 )
+from aiworkflow.core.templates import (
+    # Enums
+    TemplateCategory,
+    # Data classes
+    TemplateVariable,
+    TemplateMetadata,
+    # Classes
+    WorkflowTemplate,
+    TemplateRegistry,
+    # Built-in templates
+    BUILTIN_TEMPLATES,
+    PR_REVIEW_TEMPLATE,
+    DEPLOYMENT_TEMPLATE,
+    TEST_AUTOMATION_TEMPLATE,
+    DOCUMENTATION_TEMPLATE,
+    SECURITY_SCAN_TEMPLATE,
+    INCIDENT_RESPONSE_TEMPLATE,
+    DATA_PIPELINE_TEMPLATE,
+    # Convenience functions
+    create_template_registry,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -364,4 +385,19 @@ __all__ = [
     "LoggingPlugin",
     "MetricsPlugin",
     "create_plugin_manager",
+    # Templates
+    "TemplateCategory",
+    "TemplateVariable",
+    "TemplateMetadata",
+    "WorkflowTemplate",
+    "TemplateRegistry",
+    "BUILTIN_TEMPLATES",
+    "PR_REVIEW_TEMPLATE",
+    "DEPLOYMENT_TEMPLATE",
+    "TEST_AUTOMATION_TEMPLATE",
+    "DOCUMENTATION_TEMPLATE",
+    "SECURITY_SCAN_TEMPLATE",
+    "INCIDENT_RESPONSE_TEMPLATE",
+    "DATA_PIPELINE_TEMPLATE",
+    "create_template_registry",
 ]

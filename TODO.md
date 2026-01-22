@@ -87,7 +87,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 553 tests (540+ passing, ~12 skipped async/age)**
+**Total: 615 tests (600+ passing, ~12 skipped async/age)**
 
 ---
 
@@ -141,12 +141,22 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] PluginManager for managing plugins
   - [x] HookRegistry for hook callbacks
   - [x] Example plugins (LoggingPlugin, MetricsPlugin)
-- [ ] Workflow template library
-  - [ ] Common workflow patterns
-  - [ ] Importable templates
+- [x] Workflow template library
+  - [x] TemplateVariable for customizable parameters
+  - [x] TemplateMetadata with categories and requirements
+  - [x] WorkflowTemplate with render and instantiate
+  - [x] TemplateRegistry for discovery and management
+  - [x] 7 built-in templates (PR review, deployment, testing, etc.)
+  - [x] CLI commands (template list/show/use/search/categories)
 - [ ] Community tool marketplace
-  - [ ] Tool packaging format
-  - [ ] Registry integration
+  - [ ] Tool package format and metadata (ToolPackage, PackageMetadata)
+  - [ ] Tool package builder and validator (PackageBuilder, PackageValidator)
+  - [ ] Marketplace registry (MarketplaceRegistry with local/remote sources)
+  - [ ] Tool installation and management (PackageInstaller, InstalledPackage)
+  - [ ] Version management and dependency resolution
+  - [ ] Package signing and verification
+  - [ ] CLI commands (marketplace search/install/uninstall/update/publish)
+  - [ ] Comprehensive tests for marketplace module
 
 ---
 
@@ -191,7 +201,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - incident-response, sprint-planning
 - [x] Comprehensive tests (53 new tests)
 
-**Total: 553 tests (540+ passing, ~12 skipped async/age)**
+**Total: 615 tests (600+ passing, ~12 skipped async/age)**
 
 ---
 

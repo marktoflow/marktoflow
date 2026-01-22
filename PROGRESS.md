@@ -4,6 +4,73 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 7 Continued: Phase 3 Ecosystem - Template Library)
+
+### Phase 3: Workflow Template Library
+- [x] Implemented TemplateCategory enum (9 categories)
+  - CODE_QUALITY, DEPLOYMENT, TESTING, DOCUMENTATION
+  - SECURITY, MONITORING, DATA, INTEGRATION, GENERAL
+- [x] Implemented TemplateVariable for customizable parameters
+  - Name, description, type (string/integer/boolean/array/object)
+  - Required flag, default value, example
+  - Pattern validation for strings
+  - Type validation with helpful error messages
+  - Serialization with to_dict()/from_dict()
+- [x] Implemented TemplateMetadata for template information
+  - ID, name, description, category, version
+  - Author, tags, license, homepage
+  - Variables list, requirements, examples
+- [x] Implemented WorkflowTemplate for workflow generation
+  - Render templates with variable substitution
+  - Validate variables before instantiation
+  - Instantiate to file with custom workflow ID
+  - Load from file with YAML frontmatter
+  - Support for complex types (arrays, objects, booleans)
+- [x] Implemented TemplateRegistry for discovery and management
+  - Register/unregister templates
+  - List templates with category and tag filtering
+  - Search by name, description, or tags
+  - Discover templates from directories
+  - Load built-in templates by default
+- [x] Created 7 built-in templates
+  - **pr-review**: Pull request code review workflow
+  - **deployment**: Application deployment to environments
+  - **test-automation**: Automated testing with coverage
+  - **documentation**: Generate docs from code
+  - **security-scan**: Security vulnerability scanning
+  - **incident-response**: Automated incident handling
+  - **data-pipeline**: ETL data pipeline workflow
+- [x] Added CLI commands for templates
+  - `aiworkflow template list` - List available templates
+  - `aiworkflow template show <id>` - Show template details
+  - `aiworkflow template use <id>` - Create workflow from template
+  - `aiworkflow template search <query>` - Search templates
+  - `aiworkflow template categories` - List categories
+- [x] Created convenience function
+  - create_template_registry() for quick setup
+
+### Testing
+- [x] Created test_templates.py (62 tests)
+  - TemplateVariable tests (creation, defaults, validation by type)
+  - TemplateMetadata tests (creation, serialization)
+  - WorkflowTemplate tests (render, instantiate, validate, from_file)
+  - TemplateRegistry tests (register, list, search, discover)
+  - Built-in templates tests (existence, structure, renderability)
+  - TemplateCategory enum tests
+  - create_template_registry tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/templates.py` - NEW: Template library (~1100 lines)
+- `src/aiworkflow/core/__init__.py` - Added template module exports
+- `src/aiworkflow/cli/main.py` - Added template CLI commands
+- `tests/test_templates.py` - NEW: Template tests (62 tests)
+- `TODO.md` - Marked template library complete
+- `PROGRESS.md` - Added template library details
+
+**Total: 615 tests (600+ passing, ~12 skipped async/age)**
+
+---
+
 ## 2026-01-22 (Session 7 Continued: Phase 3 Ecosystem - Plugin System)
 
 ### Phase 3: Plugin System
@@ -1028,7 +1095,8 @@ src/aiworkflow/
 │   ├── queue.py          # Message queue integration
 │   ├── rollback.py       # Rollback and compensation
 │   ├── costs.py          # Cost tracking and estimation
-│   └── plugins.py        # Plugin system with hooks (NEW)
+│   ├── plugins.py        # Plugin system with hooks
+│   └── templates.py      # Workflow template library (NEW)
 ├── agents/
 │   ├── __init__.py
 │   ├── base.py           # Base adapter + registry

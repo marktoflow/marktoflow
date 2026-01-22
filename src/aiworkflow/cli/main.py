@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json as json_module
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import typer
 from rich.console import Console
@@ -65,12 +65,14 @@ agent_app = typer.Typer(help="Agent management commands")
 tools_app = typer.Typer(help="Tool management commands")
 schedule_app = typer.Typer(help="Scheduler management commands")
 bundle_app = typer.Typer(help="Workflow bundle commands")
+template_app = typer.Typer(help="Workflow template commands")
 
 app.add_typer(workflow_app, name="workflow")
 app.add_typer(agent_app, name="agent")
 app.add_typer(tools_app, name="tools")
 app.add_typer(schedule_app, name="schedule")
 app.add_typer(bundle_app, name="bundle")
+app.add_typer(template_app, name="template")
 
 
 @app.command()
@@ -2294,6 +2296,359 @@ def doctor() -> None:
                 console.print(f"  - {issue}")
         else:
             console.print("\n[green]No critical issues found.[/green]")
+
+
+# =============================================================================
+# Template Commands
+# =============================================================================
+
+
+@template_app.command("list")
+def template_list(
+    category: Optional[str] = typer.Option(
+        None,
+        "--category",
+        "-c",
+        help="Filter by category",
+    ),
+    tags: Optional[str] = typer.Option(
+        None,
+        "--tags",
+        "-t",
+        help="Filter by tags (comma-separated)",
+    ),
+) -> None:
+    """List available workflow templates."""
+    from aiworkflow.core.templates import TemplateRegistry, TemplateCategory
+
+    log_verbose("Loading template registry...")
+    registry = TemplateRegistry()
+
+    # Parse filters
+    cat = None
+    if category:
+        try:
+            cat = TemplateCategory(category)
+        except ValueError:
+            console.print(f"[red]Invalid category: {category}[/red]")
+            valid = ", ".join(c.value for c in TemplateCategory)
+            console.print(f"[dim]Valid categories: {valid}[/dim]")
+            raise typer.Exit(1)
+
+    tag_list = [t.strip() for t in tags.split(",")] if tags else None
+
+    templates = registry.list(category=cat, tags=tag_list)
+
+    if output_config.json_output:
+        output_json(
+            {
+                "templates": [
+                    {
+                        "id": t.id,
+                        "name": t.name,
+                        "category": t.category.value,
+                        "description": t.metadata.description,
+                        "tags": t.metadata.tags,
+                        "version": t.metadata.version,
+                    }
+                    for t in templates
+                ],
+                "count": len(templates),
+            }
+        )
+        return
+
+    if not templates:
+        console.print("[yellow]No templates found matching criteria.[/yellow]")
+        return
+
+    table = Table(title="Workflow Templates")
+    table.add_column("ID", style="cyan")
+    table.add_column("Name", style="green")
+    table.add_column("Category", style="yellow")
+    table.add_column("Description")
+    table.add_column("Tags", style="dim")
+
+    for template in templates:
+        table.add_row(
+            template.id,
+            template.name,
+            template.category.value,
+            template.metadata.description[:50] + "..."
+            if len(template.metadata.description) > 50
+            else template.metadata.description,
+            ", ".join(template.metadata.tags[:3]),
+        )
+
+    console.print(table)
+    console.print(f"\n[dim]Found {len(templates)} template(s)[/dim]")
+
+
+@template_app.command("show")
+def template_show(
+    template_id: str = typer.Argument(..., help="Template ID to show"),
+) -> None:
+    """Show details of a workflow template."""
+    from aiworkflow.core.templates import TemplateRegistry
+
+    log_verbose(f"Looking up template: {template_id}")
+    registry = TemplateRegistry()
+    template = registry.get(template_id)
+
+    if not template:
+        console.print(f"[red]Template not found: {template_id}[/red]")
+        console.print("[dim]Use 'aiworkflow template list' to see available templates[/dim]")
+        raise typer.Exit(1)
+
+    if output_config.json_output:
+        output_json(template.to_dict())
+        return
+
+    meta = template.metadata
+
+    # Build info panel
+    info_lines = [
+        f"[bold]Name:[/bold] {meta.name}",
+        f"[bold]ID:[/bold] {meta.id}",
+        f"[bold]Version:[/bold] {meta.version}",
+        f"[bold]Category:[/bold] {meta.category.value}",
+        f"[bold]Author:[/bold] {meta.author or 'Unknown'}",
+        f"[bold]Tags:[/bold] {', '.join(meta.tags) or 'None'}",
+        "",
+        f"[bold]Description:[/bold]",
+        meta.description,
+    ]
+
+    console.print(Panel("\n".join(info_lines), title=f"Template: {template_id}"))
+
+    # Variables table
+    if template.variables:
+        console.print("\n[bold]Variables:[/bold]")
+        var_table = Table()
+        var_table.add_column("Name", style="cyan")
+        var_table.add_column("Type", style="yellow")
+        var_table.add_column("Required", style="red")
+        var_table.add_column("Default")
+        var_table.add_column("Description")
+
+        for var in template.variables:
+            var_table.add_row(
+                var.name,
+                var.type,
+                "Yes" if var.required else "No",
+                str(var.default) if var.default is not None else "-",
+                var.description[:40] + "..." if len(var.description) > 40 else var.description,
+            )
+
+        console.print(var_table)
+
+    # Requirements
+    if meta.requirements:
+        console.print("\n[bold]Requirements:[/bold]")
+        for key, value in meta.requirements.items():
+            console.print(f"  - {key}: {value}")
+
+    # Examples
+    if meta.examples:
+        console.print("\n[bold]Examples:[/bold]")
+        for i, example in enumerate(meta.examples, 1):
+            console.print(f"  {i}. {example.get('name', 'Example')}")
+            if example.get("variables"):
+                console.print(f"     Variables: {example['variables']}")
+
+
+@template_app.command("use")
+def template_use(
+    template_id: str = typer.Argument(..., help="Template ID to use"),
+    output: Path = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output file path (default: <template_id>.md)",
+    ),
+    workflow_id: Optional[str] = typer.Option(
+        None,
+        "--id",
+        help="Custom workflow ID",
+    ),
+    var: Optional[list[str]] = typer.Option(
+        None,
+        "--var",
+        "-v",
+        help="Variable values as key=value (can be repeated)",
+    ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help="Prompt for required variables",
+    ),
+) -> None:
+    """Create a workflow from a template."""
+    from aiworkflow.core.templates import TemplateRegistry
+
+    log_verbose(f"Using template: {template_id}")
+    registry = TemplateRegistry()
+    template = registry.get(template_id)
+
+    if not template:
+        console.print(f"[red]Template not found: {template_id}[/red]")
+        console.print("[dim]Use 'aiworkflow template list' to see available templates[/dim]")
+        raise typer.Exit(1)
+
+    # Parse variables from command line
+    variables: dict[str, Any] = {}
+    if var:
+        for v in var:
+            if "=" in v:
+                key, value = v.split("=", 1)
+                # Try to parse as JSON for complex types
+                try:
+                    variables[key] = json_module.loads(value)
+                except (json_module.JSONDecodeError, ValueError):
+                    variables[key] = value
+            else:
+                console.print(
+                    f"[yellow]Warning: Invalid variable format '{v}', expected key=value[/yellow]"
+                )
+
+    # Interactive mode - prompt for required variables
+    if interactive:
+        for template_var in template.variables:
+            if template_var.name not in variables:
+                if template_var.required or template_var.default is None:
+                    default_str = (
+                        f" [{template_var.default}]" if template_var.default is not None else ""
+                    )
+                    prompt = f"{template_var.name} ({template_var.description}){default_str}"
+                    value = typer.prompt(
+                        prompt, default=str(template_var.default) if template_var.default else ""
+                    )
+                    if value:
+                        variables[template_var.name] = value
+
+    # Validate variables
+    is_valid, errors = template.validate_variables(variables)
+    if not is_valid:
+        console.print("[red]Variable validation errors:[/red]")
+        for error in errors:
+            console.print(f"  - {error}")
+        raise typer.Exit(1)
+
+    # Determine output path
+    output_path = output or Path(f"{template_id}.md")
+
+    # Check if file exists
+    if output_path.exists():
+        if not typer.confirm(f"File {output_path} exists. Overwrite?"):
+            raise typer.Exit(0)
+
+    # Instantiate template
+    try:
+        result_path = template.instantiate(
+            output_path=output_path,
+            variables=variables,
+            workflow_id=workflow_id,
+        )
+
+        if output_config.json_output:
+            output_json(
+                {
+                    "success": True,
+                    "template_id": template_id,
+                    "output_path": str(result_path),
+                    "variables": variables,
+                }
+            )
+        else:
+            console.print(f"[green]Created workflow from template:[/green] {result_path}")
+            console.print(f"[dim]Template: {template.name}[/dim]")
+            if variables:
+                console.print(f"[dim]Variables: {variables}[/dim]")
+
+    except ValueError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@template_app.command("categories")
+def template_categories() -> None:
+    """List template categories."""
+    from aiworkflow.core.templates import TemplateRegistry, TemplateCategory
+
+    registry = TemplateRegistry()
+    categories = registry.categories()
+
+    if output_config.json_output:
+        output_json(
+            {
+                "categories": [
+                    {"id": c.value, "count": len(registry.list(category=c))} for c in categories
+                ]
+            }
+        )
+        return
+
+    console.print("[bold]Template Categories:[/bold]\n")
+    for cat in TemplateCategory:
+        count = len(registry.list(category=cat))
+        if count > 0:
+            console.print(f"  [cyan]{cat.value}[/cyan]: {count} template(s)")
+        else:
+            console.print(f"  [dim]{cat.value}[/dim]: 0 templates")
+
+
+@template_app.command("search")
+def template_search(
+    query: str = typer.Argument(..., help="Search query"),
+) -> None:
+    """Search templates by name, description, or tags."""
+    from aiworkflow.core.templates import TemplateRegistry
+
+    log_verbose(f"Searching templates for: {query}")
+    registry = TemplateRegistry()
+    results = registry.search(query)
+
+    if output_config.json_output:
+        output_json(
+            {
+                "query": query,
+                "results": [
+                    {
+                        "id": t.id,
+                        "name": t.name,
+                        "category": t.category.value,
+                        "description": t.metadata.description,
+                    }
+                    for t in results
+                ],
+                "count": len(results),
+            }
+        )
+        return
+
+    if not results:
+        console.print(f"[yellow]No templates found matching '{query}'[/yellow]")
+        return
+
+    table = Table(title=f"Search Results: '{query}'")
+    table.add_column("ID", style="cyan")
+    table.add_column("Name", style="green")
+    table.add_column("Category", style="yellow")
+    table.add_column("Description")
+
+    for template in results:
+        table.add_row(
+            template.id,
+            template.name,
+            template.category.value,
+            template.metadata.description[:60] + "..."
+            if len(template.metadata.description) > 60
+            else template.metadata.description,
+        )
+
+    console.print(table)
+    console.print(f"\n[dim]Found {len(results)} template(s)[/dim]")
 
 
 @app.callback()
