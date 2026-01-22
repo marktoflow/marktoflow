@@ -87,7 +87,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 482 tests (470+ passing, ~12 skipped async/age)**
+**Total: 553 tests (540+ passing, ~12 skipped async/age)**
 
 ---
 
@@ -134,9 +134,13 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [ ] Work distribution
 
 ### Ecosystem
-- [ ] Plugin system
-  - [ ] Plugin discovery
-  - [ ] Hook points for extensions
+- [x] Plugin system
+  - [x] Plugin discovery (from directories and entry points)
+  - [x] Hook points for extensions (20+ hook types)
+  - [x] Plugin lifecycle management (load, enable, disable, unload)
+  - [x] PluginManager for managing plugins
+  - [x] HookRegistry for hook callbacks
+  - [x] Example plugins (LoggingPlugin, MetricsPlugin)
 - [ ] Workflow template library
   - [ ] Common workflow patterns
   - [ ] Importable templates
@@ -187,7 +191,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - incident-response, sprint-planning
 - [x] Comprehensive tests (53 new tests)
 
-**Total: 482 tests (470+ passing, ~12 skipped async/age)**
+**Total: 553 tests (540+ passing, ~12 skipped async/age)**
 
 ---
 

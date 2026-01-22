@@ -125,6 +125,25 @@ from aiworkflow.core.routing import (
     create_cost_optimized_selector,
     create_quality_optimized_selector,
 )
+from aiworkflow.core.plugins import (
+    # Enums
+    PluginState,
+    HookType,
+    # Data classes
+    PluginMetadata,
+    HookContext,
+    HookResult,
+    # Classes
+    Plugin,
+    PluginInfo,
+    HookRegistry,
+    PluginManager,
+    # Example plugins
+    LoggingPlugin,
+    MetricsPlugin,
+    # Convenience functions
+    create_plugin_manager,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -332,4 +351,17 @@ __all__ = [
     "create_default_selector",
     "create_cost_optimized_selector",
     "create_quality_optimized_selector",
+    # Plugins
+    "PluginState",
+    "HookType",
+    "PluginMetadata",
+    "HookContext",
+    "HookResult",
+    "Plugin",
+    "PluginInfo",
+    "HookRegistry",
+    "PluginManager",
+    "LoggingPlugin",
+    "MetricsPlugin",
+    "create_plugin_manager",
 ]
