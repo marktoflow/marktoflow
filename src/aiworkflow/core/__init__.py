@@ -39,6 +39,24 @@ from aiworkflow.core.rollback import (
     FileCompensationHandler,
     GitCompensationHandler,
 )
+from aiworkflow.core.costs import (
+    CostTracker,
+    CostStore,
+    CostRecord,
+    CostSummary,
+    CostLimit,
+    CostAlert,
+    CostAlertLevel,
+    CostAlertHandler,
+    CostUnit,
+    TokenUsage,
+    ModelPricing,
+    PricingRegistry,
+    PersistentCostTracker,
+    WorkflowCostEstimator,
+    LoggingAlertHandler,
+    CallbackAlertHandler,
+)
 
 # File watcher imports (optional, requires watchdog)
 try:
@@ -149,6 +167,23 @@ __all__ = [
     "DefaultCompensationHandler",
     "FileCompensationHandler",
     "GitCompensationHandler",
+    # Cost tracking
+    "CostTracker",
+    "CostStore",
+    "CostRecord",
+    "CostSummary",
+    "CostLimit",
+    "CostAlert",
+    "CostAlertLevel",
+    "CostAlertHandler",
+    "CostUnit",
+    "TokenUsage",
+    "ModelPricing",
+    "PricingRegistry",
+    "PersistentCostTracker",
+    "WorkflowCostEstimator",
+    "LoggingAlertHandler",
+    "CallbackAlertHandler",
     # File watcher (optional)
     "FileWatcher",
     "AsyncFileWatcher",

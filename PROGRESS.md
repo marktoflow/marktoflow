@@ -67,7 +67,83 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 - `TODO.md` - Marked rollback capabilities complete
 - `PROGRESS.md` - Added rollback implementation details
 
-**Total: 227 tests passing**
+**Total: 264 tests passing**
+
+---
+
+## 2026-01-22 (Session 4 Continued: Cost Tracking)
+
+### Phase 2: Cost Tracking
+- [x] Implemented CostUnit enum (TOKENS, REQUESTS, MINUTES, CREDITS)
+- [x] Implemented CostAlertLevel enum (INFO, WARNING, CRITICAL)
+- [x] Implemented ModelPricing dataclass
+  - Pricing per million tokens (input and output)
+  - `calculate_cost(input_tokens, output_tokens)` method
+  - Default pricing for OpenAI, Anthropic, and Google models
+- [x] Implemented TokenUsage dataclass
+  - input_tokens, output_tokens, cached_tokens, reasoning_tokens
+  - total_tokens property
+- [x] Implemented CostRecord for recording individual cost events
+  - Workflow/run/step/agent/model tracking
+  - Token usage and estimated cost
+  - Serialization with `to_dict()` / `from_dict()`
+- [x] Implemented CostSummary for aggregated cost reporting
+  - Total costs, tokens, and requests
+  - Breakdown by workflow, agent, and model
+- [x] Implemented CostLimit for budget controls
+  - Max cost with optional period (time-based limits)
+  - Scope: global, workflow, agent, or model
+  - Alert threshold and action on limit
+- [x] Implemented CostAlert for threshold notifications
+- [x] Implemented CostAlertHandler abstract base class
+  - LoggingAlertHandler for console/log output
+  - CallbackAlertHandler for custom handling
+- [x] Implemented PricingRegistry for model pricing management
+  - Default pricing for GPT-4o, GPT-4o-mini, Claude 3.5 Sonnet, etc.
+  - Partial model name matching (e.g., "gpt-4o-2024" matches "gpt-4o")
+  - Custom pricing registration
+- [x] Implemented CostTracker for in-memory cost tracking
+  - `record_usage()` - Record token usage and calculate cost
+  - `get_records()` - Query records with filtering
+  - `get_summary()` - Get aggregated cost summary
+  - `get_workflow_cost()` - Get cost for specific workflow
+  - `add_limit()` / `remove_limit()` - Manage cost limits
+  - Automatic limit checking and alerting
+- [x] Implemented CostStore for persistent storage (SQLite)
+  - `save()`, `get()`, `query()` methods
+  - `get_summary()` - Aggregated summary from database
+  - `delete_before()` - Cleanup old records
+- [x] Implemented PersistentCostTracker extending CostTracker
+  - Automatic persistence to CostStore
+- [x] Implemented WorkflowCostEstimator for pre-execution estimates
+  - `estimate_step_cost()` - Estimate single step cost
+  - `estimate_workflow_cost()` - Estimate full workflow cost
+  - `compare_models()` - Compare costs across models
+
+### Testing
+- [x] Created test_costs.py (37 tests)
+  - CostUnit and CostAlertLevel enum tests
+  - ModelPricing creation and calculation tests
+  - TokenUsage creation and serialization tests
+  - CostRecord creation and serialization tests
+  - CostSummary tests
+  - PricingRegistry tests (default, custom, partial match)
+  - CostTracker recording, filtering, and summary tests
+  - CostLimit and alert threshold tests
+  - Alert handler tests
+  - CostStore persistence tests
+  - PersistentCostTracker tests
+  - WorkflowCostEstimator tests
+  - Default pricing validation tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/costs.py` - NEW: Cost tracking module
+- `src/aiworkflow/core/__init__.py` - Updated exports for cost module
+- `tests/test_costs.py` - NEW: Cost tracking tests
+- `TODO.md` - Marked cost tracking complete
+- `PROGRESS.md` - Added cost tracking implementation details
+
+**Total: 264 tests passing**
 
 ---
 
@@ -528,7 +604,8 @@ src/aiworkflow/
 │   ├── filewatcher.py    # File system event triggers
 │   ├── metrics.py        # Prometheus metrics collection
 │   ├── queue.py          # Message queue integration
-│   └── rollback.py       # Rollback and compensation (NEW)
+│   ├── rollback.py       # Rollback and compensation
+│   └── costs.py          # Cost tracking and estimation (NEW)
 ├── agents/
 │   ├── __init__.py
 │   ├── base.py           # Base adapter + registry

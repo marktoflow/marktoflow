@@ -64,9 +64,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] Agent comparison dashboards
   - [ ] Performance metrics by agent
   - [ ] Cost per workflow
-- [ ] Cost tracking
-  - [ ] Token usage monitoring
-  - [ ] API cost estimation
+- [x] Cost tracking
+  - [x] Token usage monitoring (TokenUsage, CostRecord, CostTracker)
+  - [x] API cost estimation (ModelPricing, PricingRegistry, WorkflowCostEstimator)
+  - [x] Cost limits and alerts (CostLimit, CostAlert, CostAlertHandler)
+  - [x] Persistent storage (CostStore, PersistentCostTracker)
 
 ### Testing
 - [x] Unit tests for scheduler module (18 tests)
@@ -78,12 +80,13 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [x] Unit tests for metrics collection (23 tests)
 - [x] Unit tests for message queue (30 tests)
 - [x] Unit tests for rollback capabilities (34 tests)
+- [x] Unit tests for cost tracking (37 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 227 tests passing**
+**Total: 264 tests passing**
 
 ---
 
