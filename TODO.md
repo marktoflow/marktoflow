@@ -13,10 +13,10 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 ## Phase 2: Production Ready (Current)
 
 ### Automation
-- [ ] Scheduling system (cron-based)
-  - [ ] APScheduler integration
-  - [ ] Cron expression parsing
-  - [ ] Background job execution
+- [x] Scheduling system (cron-based)
+  - [x] Cron expression parsing (CronParser class)
+  - [x] Scheduler with job management
+  - [x] CLI commands (schedule list/start/run/info)
 - [ ] Webhook receivers
   - [ ] HTTP server for webhook endpoints
   - [ ] Webhook signature verification
@@ -32,9 +32,10 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] Error recovery and retry logic
   - [ ] Exponential backoff
   - [ ] Circuit breaker pattern
-- [ ] State persistence (workflow checkpoints)
-  - [ ] SQLite state store
-  - [ ] Resume from checkpoint
+- [x] State persistence (workflow checkpoints)
+  - [x] SQLite state store (StateStore class)
+  - [x] Execution records and step checkpoints
+  - [x] Resume from checkpoint support
 - [ ] Rollback capabilities
   - [ ] Step undo registry
   - [ ] Transaction-like semantics
@@ -46,9 +47,10 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] Metrics collection
   - [ ] Prometheus metrics endpoint
   - [ ] Step timing, success rates
-- [ ] Execution logging (markdown format)
-  - [ ] Structured log output
-  - [ ] Log aggregation
+- [x] Execution logging (markdown format)
+  - [x] ExecutionLog and LogEntry classes
+  - [x] ExecutionLogger for managing logs
+  - [x] Markdown log file generation
 - [ ] Agent comparison dashboards
   - [ ] Performance metrics by agent
   - [ ] Cost per workflow
@@ -57,6 +59,9 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [ ] API cost estimation
 
 ### Testing
+- [x] Unit tests for scheduler module (18 tests)
+- [x] Unit tests for state persistence module (18 tests)
+- [x] Unit tests for execution logging module (18 tests)
 - [ ] Integration tests with real APIs
 - [ ] Cross-agent compatibility tests
 - [ ] End-to-end workflow tests

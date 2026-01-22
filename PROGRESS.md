@@ -4,6 +4,77 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 2)
+
+### Phase 2: Scheduling System
+- [x] Implemented CronParser class with cron expression parsing
+  - Supports: *, */N, N-M, N,M patterns
+  - Field matching for minute, hour, day, month, weekday
+  - Next run time calculation
+- [x] Implemented Scheduler class for workflow scheduling
+  - Job management (add, remove, list, get)
+  - Load schedules from workflow files
+  - Async execution loop
+  - Job completion callbacks
+- [x] Added scheduler CLI commands
+  - `aiworkflow schedule list` - List scheduled workflows
+  - `aiworkflow schedule start` - Start scheduler
+  - `aiworkflow schedule run` - Run due jobs once
+  - `aiworkflow schedule info <job-id>` - Show job details
+
+### Phase 2: State Persistence
+- [x] Implemented StateStore class with SQLite backend
+  - Automatic schema creation and migration
+  - ExecutionRecord for workflow runs
+  - StepCheckpoint for step-level state
+- [x] Execution management
+  - Create, update, get, list executions
+  - Filter by workflow ID and status
+  - Get running/failed executions
+- [x] Checkpoint management
+  - Save and retrieve checkpoints
+  - Get last checkpoint
+  - Calculate resume point after failure
+- [x] Statistics and cleanup
+  - Execution statistics with success rates
+  - Cleanup old records
+
+### Phase 2: Execution Logging
+- [x] Implemented LogEntry and ExecutionLog classes
+  - Multiple log levels (debug, info, warning, error, critical)
+  - Step-aware logging with duration tracking
+  - Markdown output generation
+- [x] Implemented ExecutionLogger
+  - Start/finish log lifecycle
+  - Save logs to markdown files
+  - List and read log files
+  - Cleanup old logs
+
+### Testing
+- [x] Created test_scheduler.py (18 tests)
+  - CronParser tests for expression parsing
+  - Scheduler job management tests
+- [x] Created test_state.py (18 tests)
+  - StateStore CRUD operations
+  - Checkpoint and resume functionality
+  - Statistics calculation
+- [x] Created test_logging.py (18 tests)
+  - Log entry and level tests
+  - Markdown generation tests
+  - Logger lifecycle tests
+
+### Files Created/Modified
+- `src/aiworkflow/core/scheduler.py` - Scheduling system
+- `src/aiworkflow/core/state.py` - State persistence
+- `src/aiworkflow/core/logging.py` - Execution logging
+- `src/aiworkflow/core/__init__.py` - Added exports
+- `src/aiworkflow/cli/main.py` - Added schedule commands
+- `tests/test_scheduler.py` - Scheduler tests
+- `tests/test_state.py` - State tests
+- `tests/test_logging.py` - Logging tests
+
+---
+
 ## 2026-01-22
 
 ### Project Initialization
@@ -137,7 +208,10 @@ src/aiworkflow/
 │   ├── __init__.py
 │   ├── models.py         # Data models
 │   ├── parser.py         # Workflow parser
-│   └── engine.py         # Execution engine
+│   ├── engine.py         # Execution engine
+│   ├── scheduler.py      # Scheduling system (NEW)
+│   ├── state.py          # State persistence (NEW)
+│   └── logging.py        # Execution logging (NEW)
 ├── agents/
 │   ├── __init__.py
 │   ├── base.py           # Base adapter + registry
@@ -151,7 +225,7 @@ src/aiworkflow/
 │   └── custom.py         # Custom tool
 └── cli/
     ├── __init__.py
-    └── main.py           # CLI commands
+    └── main.py           # CLI commands (schedule added)
 
 .aiworkflow/
 ├── agents/

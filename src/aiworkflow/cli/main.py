@@ -31,10 +31,12 @@ console = Console()
 workflow_app = typer.Typer(help="Workflow management commands")
 agent_app = typer.Typer(help="Agent management commands")
 tools_app = typer.Typer(help="Tool management commands")
+schedule_app = typer.Typer(help="Scheduler management commands")
 
 app.add_typer(workflow_app, name="workflow")
 app.add_typer(agent_app, name="agent")
 app.add_typer(tools_app, name="tools")
+app.add_typer(schedule_app, name="schedule")
 
 
 @app.command()
@@ -488,6 +490,155 @@ def tools_list() -> None:
             )
 
     console.print(table)
+
+
+# Schedule commands
+@schedule_app.command("list")
+def schedule_list() -> None:
+    """List scheduled workflows."""
+    from aiworkflow.core.scheduler import Scheduler
+
+    scheduler = Scheduler()
+    count = scheduler.load_schedules()
+
+    if count == 0:
+        console.print("[yellow]No scheduled workflows found.[/yellow]")
+        console.print("Add schedule triggers to your workflows to enable scheduling.")
+        return
+
+    jobs = scheduler.list_jobs()
+
+    table = Table(title="Scheduled Workflows")
+    table.add_column("Job ID", style="cyan")
+    table.add_column("Workflow")
+    table.add_column("Schedule")
+    table.add_column("Next Run")
+    table.add_column("Status")
+
+    for job in jobs:
+        next_run = job.next_run.strftime("%Y-%m-%d %H:%M") if job.next_run else "-"
+        status = "[green]Enabled[/green]" if job.enabled else "[red]Disabled[/red]"
+        table.add_row(
+            job.id,
+            Path(job.workflow_path).name,
+            job.schedule,
+            next_run,
+            status,
+        )
+
+    console.print(table)
+
+
+@schedule_app.command("start")
+def schedule_start(
+    daemon: bool = typer.Option(
+        False,
+        "--daemon",
+        "-d",
+        help="Run scheduler in background (daemon mode)",
+    ),
+) -> None:
+    """Start the scheduler."""
+    import asyncio
+    import signal
+
+    from aiworkflow.core.scheduler import Scheduler
+
+    scheduler = Scheduler()
+    count = scheduler.load_schedules()
+
+    if count == 0:
+        console.print("[yellow]No scheduled workflows found. Nothing to run.[/yellow]")
+        raise typer.Exit(1)
+
+    console.print(f"[cyan]Starting scheduler with {count} job(s)...[/cyan]")
+
+    # Handle shutdown gracefully
+    def signal_handler(sig, frame):
+        console.print("\n[yellow]Shutting down scheduler...[/yellow]")
+        scheduler.stop()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Register callback for job completion
+    def on_complete(job, result):
+        if hasattr(result, "success") and result.success:
+            console.print(f"[green]Job {job.id} completed successfully[/green]")
+        else:
+            console.print(f"[red]Job {job.id} failed[/red]")
+
+    scheduler.on_job_complete(on_complete)
+
+    # Run scheduler
+    try:
+        if daemon:
+            console.print(
+                "[yellow]Daemon mode not yet implemented. Running in foreground.[/yellow]"
+            )
+
+        console.print("[green]Scheduler running. Press Ctrl+C to stop.[/green]")
+        asyncio.run(scheduler.start())
+    except KeyboardInterrupt:
+        pass
+
+    console.print("[green]Scheduler stopped.[/green]")
+
+
+@schedule_app.command("run")
+def schedule_run_once() -> None:
+    """Run any due scheduled jobs once and exit."""
+    import asyncio
+
+    from aiworkflow.core.scheduler import Scheduler
+
+    scheduler = Scheduler()
+    count = scheduler.load_schedules()
+
+    if count == 0:
+        console.print("[yellow]No scheduled workflows found.[/yellow]")
+        raise typer.Exit(1)
+
+    console.print(f"[cyan]Checking {count} scheduled job(s)...[/cyan]")
+
+    results = asyncio.run(scheduler.run_once())
+
+    if not results:
+        console.print("[yellow]No jobs were due to run.[/yellow]")
+    else:
+        for job_id, result in results.items():
+            console.print(f"[green]Executed job: {job_id} at {result['time']}[/green]")
+
+
+@schedule_app.command("info")
+def schedule_info(
+    job_id: str = typer.Argument(..., help="Job ID to show details for"),
+) -> None:
+    """Show details for a scheduled job."""
+    from aiworkflow.core.scheduler import Scheduler
+
+    scheduler = Scheduler()
+    scheduler.load_schedules()
+
+    job = scheduler.get_job(job_id)
+
+    if not job:
+        console.print(f"[red]Job not found: {job_id}[/red]")
+        raise typer.Exit(1)
+
+    console.print(
+        Panel(
+            f"[cyan]Job ID:[/cyan] {job.id}\n"
+            f"[cyan]Workflow:[/cyan] {job.workflow_path}\n"
+            f"[cyan]Schedule:[/cyan] {job.schedule}\n"
+            f"[cyan]Timezone:[/cyan] {job.timezone}\n"
+            f"[cyan]Enabled:[/cyan] {job.enabled}\n"
+            f"[cyan]Run Count:[/cyan] {job.run_count}\n"
+            f"[cyan]Last Run:[/cyan] {job.last_run or 'Never'}\n"
+            f"[cyan]Next Run:[/cyan] {job.next_run or 'N/A'}",
+            title="Scheduled Job Details",
+        )
+    )
 
 
 @app.command()

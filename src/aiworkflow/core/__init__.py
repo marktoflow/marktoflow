@@ -14,6 +14,9 @@ from aiworkflow.core.models import (
 )
 from aiworkflow.core.parser import WorkflowParser
 from aiworkflow.core.engine import WorkflowEngine
+from aiworkflow.core.scheduler import Scheduler, ScheduledJob, CronParser
+from aiworkflow.core.state import StateStore, ExecutionRecord, StepCheckpoint, ExecutionStatus
+from aiworkflow.core.logging import ExecutionLogger, ExecutionLog, LogLevel, LogEntry
 
 __all__ = [
     "Workflow",
@@ -26,4 +29,15 @@ __all__ = [
     "ToolConfig",
     "WorkflowParser",
     "WorkflowEngine",
+    "Scheduler",
+    "ScheduledJob",
+    "CronParser",
+    "StateStore",
+    "ExecutionRecord",
+    "StepCheckpoint",
+    "ExecutionStatus",
+    "ExecutionLogger",
+    "ExecutionLog",
+    "LogLevel",
+    "LogEntry",
 ]
