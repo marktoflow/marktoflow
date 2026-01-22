@@ -4,7 +4,7 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
-## 2026-01-22 (Session 7: Quick Wins + Phase 3 Enterprise Security)
+## 2026-01-22 (Session 7: Quick Wins + Phase 3 Enterprise Security + Credentials)
 
 ### Quick Wins: Global CLI Options
 - [x] Added `--verbose/-v` flag to all CLI commands
@@ -115,15 +115,61 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - InMemoryAuditStore query tests
   - SQLiteAuditStore persistence tests
   - AuditLogger integration tests
+- [x] Created test_credentials.py (60 tests)
+  - CredentialType and EncryptionBackend enum tests
+  - Credential dataclass tests (creation, expiration, serialization)
+  - FernetEncryptor tests (key generation, encrypt/decrypt)
+  - AgeEncryptor tests (initialization, key generation)
+  - GPGEncryptor tests (symmetric/asymmetric initialization)
+  - InMemoryCredentialStore tests
+  - SQLiteCredentialStore persistence tests
+  - CredentialManager tests (set, get, rotate, export, import)
+  - KeyManager tests (Fernet and age key management)
+  - Convenience function tests
+
+### Phase 3: Credential Encryption
+- [x] Implemented EncryptionBackend enum (AGE, GPG, FERNET)
+- [x] Implemented CredentialType enum (8 types: api_key, token, password, etc.)
+- [x] Implemented Credential dataclass
+  - Expiration support with `is_expired()` method
+  - Serialization with `to_dict()` / `from_dict()`
+  - Tags for filtering
+- [x] Implemented Encryptor abstract base class
+- [x] Implemented FernetEncryptor (built-in, no external dependencies)
+  - Uses cryptography library
+  - Key generation, encrypt/decrypt
+- [x] Implemented AgeEncryptor (modern encryption)
+  - X25519 key pairs (asymmetric)
+  - Passphrase-based (symmetric)
+  - Public key extraction from identity
+- [x] Implemented GPGEncryptor (traditional encryption)
+  - Asymmetric with recipients
+  - Symmetric with passphrase
+- [x] Implemented CredentialStore abstract base class
+- [x] Implemented InMemoryCredentialStore for testing
+- [x] Implemented SQLiteCredentialStore for persistent storage
+- [x] Implemented CredentialManager high-level interface
+  - `set()`, `get()`, `delete()`, `exists()`, `list()` methods
+  - `rotate()` for credential rotation
+  - `export()` / `import_credential()` for migration
+- [x] Implemented KeyManager for encryption key management
+  - Fernet key generation and storage
+  - Age identity generation and public key extraction
+  - Key listing and deletion
+- [x] Implemented convenience functions
+  - `create_credential_manager()` for quick setup
+  - `get_available_backends()` for backend detection
 
 ### Files Created/Modified
 - `src/aiworkflow/core/security.py` - NEW: Security module (~900 lines)
-- `src/aiworkflow/core/__init__.py` - Added security module exports
+- `src/aiworkflow/core/credentials.py` - NEW: Credentials module (~750 lines)
+- `src/aiworkflow/core/__init__.py` - Added security and credentials exports
 - `src/aiworkflow/cli/main.py` - Added global options, new commands, JSON support
 - `tests/test_security.py` - NEW: Security tests (52 tests)
+- `tests/test_credentials.py` - NEW: Credentials tests (60 tests)
 - `TODO.md` - Marked Quick Wins and Phase 3 Security complete
 
-**Total: 369 tests (363 passing, 6 skipped async)**
+**Total: 429 tests (420 passing, 9 skipped async/age)**
 
 ---
 
