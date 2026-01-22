@@ -1,0 +1,13 @@
+# Daily Standup Bundle Configuration
+agent: opencode
+fallback_agent: claude-code
+
+timeout: 300
+max_retries: 3
+
+tools_dir: tools
+inherit_global_tools: true
+
+env:
+  SLACK_API_VERSION: "v1"
+  JIRA_API_VERSION: "3"

@@ -1,0 +1,49 @@
+# Tool definitions for daily-standup bundle
+tools:
+  - name: slack
+    script: slack.py
+    description: "Slack API operations for messaging"
+    operations:
+      get_messages:
+        description: "Get recent messages from a channel"
+        parameters:
+          channel:
+            type: string
+            required: true
+            description: "Slack channel name"
+          since_hours:
+            type: integer
+            default: 24
+            description: "Hours to look back"
+          limit:
+            type: integer
+            default: 50
+            description: "Maximum messages to return"
+      post_message:
+        description: "Post a message to a channel"
+        parameters:
+          channel:
+            type: string
+            required: true
+          text:
+            type: string
+            required: true
+            description: "Message text"
+          blocks:
+            type: array
+            description: "Message blocks for rich formatting"
+
+  - name: jira
+    script: jira.py
+    description: "JIRA API operations for issue tracking"
+    operations:
+      search:
+        description: "Search for JIRA issues"
+        parameters:
+          jql:
+            type: string
+            required: true
+            description: "JQL query string"
+          fields:
+            type: array
+            description: "Fields to return"

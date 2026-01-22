@@ -1,0 +1,59 @@
+# Tool definitions for code-review bundle
+tools:
+  - name: github
+    script: github.py
+    description: "GitHub API operations for pull requests and reviews"
+    operations:
+      get_pull_request:
+        description: "Get pull request details"
+        parameters:
+          repo:
+            type: string
+            required: true
+            description: "Repository in owner/repo format"
+          pr_number:
+            type: integer
+            required: true
+            description: "Pull request number"
+      list_pr_files:
+        description: "List files changed in a pull request"
+        parameters:
+          repo:
+            type: string
+            required: true
+          pr_number:
+            type: integer
+            required: true
+      create_review:
+        description: "Create a review on a pull request"
+        parameters:
+          repo:
+            type: string
+            required: true
+          pr_number:
+            type: integer
+            required: true
+          body:
+            type: string
+            required: true
+            description: "Review body text"
+          event:
+            type: string
+            required: true
+            enum: ["APPROVE", "REQUEST_CHANGES", "COMMENT"]
+
+  - name: security
+    script: security.py
+    description: "Security scanning operations"
+    operations:
+      scan:
+        description: "Scan files for security issues"
+        parameters:
+          files:
+            type: array
+            required: true
+            description: "Files to scan"
+          rules:
+            type: array
+            required: true
+            description: "Security rules to apply"

@@ -1,0 +1,13 @@
+# Incident Response Bundle Configuration
+agent: claude-code
+fallback_agent: opencode
+
+timeout: 300
+max_retries: 2
+
+tools_dir: tools
+inherit_global_tools: true
+
+env:
+  PAGERDUTY_API_VERSION: "v2"
+  DATADOG_API_VERSION: "v1"

@@ -32,11 +32,13 @@ workflow_app = typer.Typer(help="Workflow management commands")
 agent_app = typer.Typer(help="Agent management commands")
 tools_app = typer.Typer(help="Tool management commands")
 schedule_app = typer.Typer(help="Scheduler management commands")
+bundle_app = typer.Typer(help="Workflow bundle commands")
 
 app.add_typer(workflow_app, name="workflow")
 app.add_typer(agent_app, name="agent")
 app.add_typer(tools_app, name="tools")
 app.add_typer(schedule_app, name="schedule")
+app.add_typer(bundle_app, name="bundle")
 
 
 @app.command()
@@ -170,7 +172,7 @@ tools: []
 def run(
     workflow: Path = typer.Argument(
         ...,
-        help="Path to the workflow file",
+        help="Path to the workflow file or bundle directory",
     ),
     agent: Optional[str] = typer.Option(
         None,
@@ -190,12 +192,25 @@ def run(
         help="Input parameters (format: key=value)",
     ),
 ) -> None:
-    """Run a workflow."""
+    """Run a workflow or bundle."""
     import asyncio
 
     if not workflow.exists():
         console.print(f"[red]Workflow not found: {workflow}[/red]")
         raise typer.Exit(1)
+
+    # Check if this is a bundle directory
+    from aiworkflow.tools.bundle import is_bundle
+
+    if workflow.is_dir() and is_bundle(workflow):
+        # Delegate to bundle run
+        bundle_run(
+            path=workflow,
+            agent=agent,
+            dry_run=dry_run,
+            input_param=input_param,
+        )
+        return
 
     # Parse inputs
     inputs = {}
@@ -1414,6 +1429,276 @@ def queue_purge(
     except Exception as e:
         console.print(f"[red]Failed to purge: {e}[/red]")
         raise typer.Exit(1)
+
+
+# Bundle commands
+@bundle_app.command("info")
+def bundle_info(
+    path: Path = typer.Argument(..., help="Path to the workflow bundle directory"),
+) -> None:
+    """Show information about a workflow bundle."""
+    from aiworkflow.tools.bundle import WorkflowBundle, is_bundle
+
+    if not path.exists():
+        console.print(f"[red]Bundle not found: {path}[/red]")
+        raise typer.Exit(1)
+
+    if not is_bundle(path):
+        console.print(f"[red]Not a valid bundle: {path}[/red]")
+        console.print("A bundle must be a directory with a workflow.md (or *.md) file.")
+        raise typer.Exit(1)
+
+    try:
+        bundle = WorkflowBundle(path)
+        info = bundle.get_info()
+    except Exception as e:
+        console.print(f"[red]Failed to load bundle: {e}[/red]")
+        raise typer.Exit(1)
+
+    # Display bundle info
+    console.print(
+        Panel(
+            f"[cyan]Name:[/cyan] {info['name']}\n"
+            f"[cyan]Path:[/cyan] {info['path']}\n"
+            f"[cyan]Workflow File:[/cyan] {info['workflow_file'] or 'Not found'}",
+            title="Bundle Info",
+        )
+    )
+
+    # Workflow info
+    wf = info["workflow"]
+    if wf["error"]:
+        console.print(f"[red]Workflow Error: {wf['error']}[/red]")
+    else:
+        console.print(
+            Panel(
+                f"[cyan]ID:[/cyan] {wf['id']}\n"
+                f"[cyan]Name:[/cyan] {wf['name']}\n"
+                f"[cyan]Version:[/cyan] {wf['version']}\n"
+                f"[cyan]Steps:[/cyan] {wf['steps']}",
+                title="Workflow",
+            )
+        )
+
+    # Tools info
+    tools_info = info["tools"]
+    table = Table(title="Tools")
+    table.add_column("Tool", style="cyan")
+    table.add_column("Type")
+
+    for tool in tools_info["script_tools"]:
+        table.add_row(tool, "[green]Script[/green]")
+
+    # Show inherited global tools (those not in script_tools)
+    inherited = set(tools_info["all_tools"]) - set(tools_info["script_tools"])
+    for tool in sorted(inherited):
+        table.add_row(tool, "[yellow]Global[/yellow]")
+
+    if tools_info["script_tools"] or inherited:
+        console.print(table)
+    else:
+        console.print("[yellow]No tools found in bundle.[/yellow]")
+
+    # Config info
+    cfg = info["config"]
+    console.print(
+        Panel(
+            f"[cyan]Agent:[/cyan] {cfg['agent']}\n"
+            f"[cyan]Fallback:[/cyan] {cfg['fallback_agent'] or 'None'}\n"
+            f"[cyan]Timeout:[/cyan] {cfg['timeout']}s\n"
+            f"[cyan]Inherit Global Tools:[/cyan] {cfg['inherit_global_tools']}",
+            title="Configuration",
+        )
+    )
+
+
+@bundle_app.command("validate")
+def bundle_validate(
+    path: Path = typer.Argument(..., help="Path to the workflow bundle directory"),
+) -> None:
+    """Validate a workflow bundle."""
+    from aiworkflow.tools.bundle import WorkflowBundle, is_bundle
+
+    if not path.exists():
+        console.print(f"[red]Bundle not found: {path}[/red]")
+        raise typer.Exit(1)
+
+    if not is_bundle(path):
+        console.print(f"[red]Not a valid bundle: {path}[/red]")
+        raise typer.Exit(1)
+
+    try:
+        bundle = WorkflowBundle(path)
+        errors = bundle.validate()
+    except Exception as e:
+        console.print(f"[red]Failed to load bundle: {e}[/red]")
+        raise typer.Exit(1)
+
+    if errors:
+        console.print("[red]Validation failed:[/red]")
+        for error in errors:
+            console.print(f"  - {error}")
+        raise typer.Exit(1)
+    else:
+        console.print(f"[green]Bundle '{bundle.name}' is valid.[/green]")
+
+
+@bundle_app.command("run")
+def bundle_run(
+    path: Path = typer.Argument(..., help="Path to the workflow bundle directory"),
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        "-a",
+        help="Agent to use for execution (overrides config)",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and show execution plan without running",
+    ),
+    input_param: Optional[list[str]] = typer.Option(
+        None,
+        "--input",
+        "-i",
+        help="Input parameters (format: key=value)",
+    ),
+) -> None:
+    """Run a workflow bundle."""
+    import asyncio
+
+    from aiworkflow.tools.bundle import WorkflowBundle, is_bundle
+
+    if not path.exists():
+        console.print(f"[red]Bundle not found: {path}[/red]")
+        raise typer.Exit(1)
+
+    if not is_bundle(path):
+        console.print(f"[red]Not a valid bundle: {path}[/red]")
+        raise typer.Exit(1)
+
+    # Parse inputs
+    inputs = {}
+    if input_param:
+        for param in input_param:
+            if "=" in param:
+                key, value = param.split("=", 1)
+                inputs[key] = value
+
+    try:
+        bundle = WorkflowBundle(path)
+        workflow = bundle.load_workflow()
+    except Exception as e:
+        console.print(f"[red]Failed to load bundle: {e}[/red]")
+        raise typer.Exit(1)
+
+    # Validate
+    errors = bundle.validate()
+    if errors:
+        console.print("[red]Validation errors:[/red]")
+        for error in errors:
+            console.print(f"  - {error}")
+        raise typer.Exit(1)
+
+    if dry_run:
+        _show_execution_plan(workflow)
+        # Also show available tools
+        tools = bundle.load_tools()
+        script_tools = tools.list_script_tools()
+        if script_tools:
+            console.print(f"\n[yellow]Bundle tools:[/yellow] {', '.join(script_tools)}")
+        return
+
+    # Run bundle
+    console.print(f"[cyan]Running bundle: {bundle.name}[/cyan]")
+    console.print(f"[cyan]Workflow: {workflow.metadata.name}[/cyan]")
+    console.print(f"Agent: {agent or bundle.config.agent}")
+    console.print()
+
+    with console.status("[cyan]Executing workflow...[/cyan]"):
+        result = asyncio.run(bundle.execute(inputs=inputs, agent=agent))
+
+    if result.success:
+        console.print(
+            Panel(
+                f"[green]Workflow completed successfully![/green]\n\n"
+                f"Run ID: {result.run_id}\n"
+                f"Duration: {result.duration_seconds:.2f}s\n"
+                f"Steps: {result.steps_succeeded}/{len(result.step_results)}",
+                title="Success",
+            )
+        )
+    else:
+        console.print(
+            Panel(
+                f"[red]Workflow failed[/red]\n\n"
+                f"Error: {result.error}\n"
+                f"Steps completed: {result.steps_succeeded}/{len(result.step_results)}",
+                title="Failed",
+            )
+        )
+        raise typer.Exit(1)
+
+
+@bundle_app.command("list")
+def bundle_list(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Directory to search for bundles",
+    ),
+) -> None:
+    """List workflow bundles in a directory."""
+    from aiworkflow.tools.bundle import is_bundle, WorkflowBundle
+
+    if not path.exists():
+        console.print(f"[red]Directory not found: {path}[/red]")
+        raise typer.Exit(1)
+
+    bundles = []
+    for item in path.iterdir():
+        if item.is_dir() and is_bundle(item):
+            try:
+                bundle = WorkflowBundle(item)
+                info = bundle.get_info()
+                bundles.append(info)
+            except Exception:
+                bundles.append(
+                    {
+                        "name": item.name,
+                        "path": str(item),
+                        "workflow": {"name": None, "error": "Failed to load"},
+                        "tools": {"script_tools": []},
+                    }
+                )
+
+    if not bundles:
+        console.print(f"[yellow]No bundles found in {path}[/yellow]")
+        return
+
+    table = Table(title="Workflow Bundles")
+    table.add_column("Name", style="cyan")
+    table.add_column("Workflow")
+    table.add_column("Tools")
+    table.add_column("Status")
+
+    for b in bundles:
+        wf = b["workflow"]
+        if wf.get("error"):
+            status = f"[red]{wf['error']}[/red]"
+            wf_name = "-"
+        else:
+            status = "[green]Valid[/green]"
+            wf_name = wf.get("name", "-")
+
+        tools_count = len(b["tools"]["script_tools"])
+        table.add_row(
+            b["name"],
+            wf_name,
+            str(tools_count),
+            status,
+        )
+
+    console.print(table)
 
 
 @app.command()

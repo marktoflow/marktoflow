@@ -1,0 +1,12 @@
+# Code Review Bundle Configuration
+agent: opencode
+fallback_agent: claude-code
+
+timeout: 600
+max_retries: 3
+
+tools_dir: tools
+inherit_global_tools: true
+
+env:
+  GITHUB_API_VERSION: "2022-11-28"

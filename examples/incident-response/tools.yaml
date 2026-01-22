@@ -1,0 +1,119 @@
+# Tool definitions for incident-response bundle
+tools:
+  - name: slack
+    script: slack.py
+    description: "Slack API operations for incident communication"
+    operations:
+      create_channel:
+        description: "Create a dedicated incident channel"
+        parameters:
+          name:
+            type: string
+            required: true
+          private:
+            type: boolean
+            default: false
+          description:
+            type: string
+      post_message:
+        description: "Post a message to a channel"
+        parameters:
+          channel:
+            type: string
+            required: true
+          text:
+            type: string
+          blocks:
+            type: array
+      invite_users:
+        description: "Invite users to a channel"
+        parameters:
+          channel:
+            type: string
+            required: true
+          users:
+            type: array
+            required: true
+
+  - name: pagerduty
+    script: pagerduty.py
+    description: "PagerDuty API operations for on-call management"
+    operations:
+      get_oncall:
+        description: "Get on-call responders for a service"
+        parameters:
+          service:
+            type: string
+            required: true
+          escalation_levels:
+            type: array
+      notify:
+        description: "Notify users via PagerDuty"
+        parameters:
+          users:
+            type: array
+            required: true
+          message:
+            type: string
+            required: true
+          urgency:
+            type: string
+            enum: ["low", "high"]
+
+  - name: datadog
+    script: datadog.py
+    description: "Datadog API operations for metrics"
+    operations:
+      get_metrics:
+        description: "Get metrics for a service"
+        parameters:
+          service:
+            type: string
+            required: true
+          metrics:
+            type: array
+            required: true
+          timeframe:
+            type: string
+            default: "1h"
+
+  - name: github
+    script: github.py
+    description: "GitHub API operations"
+    operations:
+      list_deployments:
+        description: "List recent deployments"
+        parameters:
+          repo:
+            type: string
+            required: true
+          environment:
+            type: string
+            default: "production"
+          per_page:
+            type: integer
+            default: 5
+
+  - name: jira
+    script: jira.py
+    description: "JIRA API operations for issue tracking"
+    operations:
+      create_issue:
+        description: "Create a JIRA issue"
+        parameters:
+          project:
+            type: string
+            required: true
+          issue_type:
+            type: string
+            required: true
+          summary:
+            type: string
+            required: true
+          description:
+            type: string
+          labels:
+            type: array
+          priority:
+            type: string
+            default: "Medium"

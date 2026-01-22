@@ -87,7 +87,7 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] End-to-end workflow tests
 - [ ] Performance benchmarks
 
-**Total: 264 tests passing**
+**Total: 317 tests (311 passing, 6 skipped async)**
 
 ---
 
@@ -150,6 +150,32 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 - [ ] Natural language workflow creation
 - [ ] Visual workflow editor (web UI)
 - [ ] Workflow versioning and rollback
+
+---
+
+## Self-Contained Bundles - COMPLETE
+
+- [x] ScriptTool for executing bash/Python scripts as tools
+  - Inputs passed as `--key=value` CLI arguments
+  - Outputs parsed as JSON or plain text
+  - Multi-operation support
+- [x] WorkflowBundle for self-contained workflow directories
+  - Auto-detect workflow.md, main.md, or single .md file
+  - Load script tools from tools/ directory
+  - Bundle configuration via config.yaml
+  - Bundle tool metadata via tools.yaml
+- [x] CLI bundle commands
+  - `aiworkflow bundle info <path>` - Show bundle information
+  - `aiworkflow bundle validate <path>` - Validate bundle structure
+  - `aiworkflow bundle run <path>` - Run a bundle workflow
+  - `aiworkflow bundle list [path]` - List bundles in a directory
+  - Auto-detect bundles in `aiworkflow run`
+- [x] Example bundles (5 refactored from flat files)
+  - code-review, daily-standup, dependency-update
+  - incident-response, sprint-planning
+- [x] Comprehensive tests (53 new tests)
+
+**Total: 317 tests (311 passing, 6 skipped async)**
 
 ---
 

@@ -101,10 +101,16 @@ aiworkflow init                    # Initialize project
 aiworkflow version                 # Show version
 
 # Workflow operations
-aiworkflow run <workflow.md>       # Run a workflow
+aiworkflow run <workflow.md>       # Run a workflow (auto-detects bundles)
 aiworkflow workflow list           # List available workflows
 aiworkflow workflow validate <wf>  # Validate a workflow
 aiworkflow workflow show <wf>      # Show workflow details
+
+# Bundle operations
+aiworkflow bundle info <path>      # Show bundle information
+aiworkflow bundle validate <path>  # Validate bundle structure
+aiworkflow bundle run <path>       # Run a bundle workflow
+aiworkflow bundle list [path]      # List bundles in directory
 
 # Agent management
 aiworkflow agent list              # List available agents
@@ -203,6 +209,95 @@ conditions:
 ```
 ```
 
+## Self-Contained Workflow Bundles
+
+Bundles are self-contained directories with everything needed to run a workflow:
+
+```
+my-workflow/
+├── workflow.md              # Main workflow file
+├── config.yaml              # Optional: bundle configuration
+├── tools.yaml               # Optional: tool metadata
+└── tools/                   # Script tools directory
+    ├── build.sh             # Auto-discovered: tool name = "build"
+    ├── deploy.py            # Auto-discovered: tool name = "deploy"
+    └── notify               # Any executable
+```
+
+### Creating a Bundle
+
+```bash
+mkdir my-workflow
+cd my-workflow
+
+# Create workflow
+cat > workflow.md << 'EOF'
+---
+workflow:
+  id: my-workflow
+  name: "My Workflow"
+---
+
+# My Workflow
+
+## Step 1: Build
+
+```yaml
+action: build.run
+inputs:
+  target: production
+```
+EOF
+
+# Create a script tool
+mkdir tools
+cat > tools/build.sh << 'EOF'
+#!/bin/bash
+echo '{"status": "success", "target": "'$1'"}'
+EOF
+chmod +x tools/build.sh
+```
+
+### Running a Bundle
+
+```bash
+# Direct bundle run
+aiworkflow bundle run my-workflow/
+
+# Or auto-detected with regular run
+aiworkflow run my-workflow/
+```
+
+### Script Tool I/O
+
+- **Inputs**: Passed as `--key=value` CLI arguments
+- **Outputs**: Stdout parsed as JSON (or plain text if invalid JSON)
+- **Multi-operation**: First argument is operation name
+
+Example Python tool:
+
+```python
+#!/usr/bin/env python3
+# tools/slack.py
+import argparse
+import json
+
+def send_message(channel, message):
+    # Your implementation here
+    return {"ok": True, "channel": channel}
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("operation")
+    parser.add_argument("--channel")
+    parser.add_argument("--message")
+    args = parser.parse_args()
+    
+    if args.operation == "send_message":
+        result = send_message(args.channel, args.message)
+        print(json.dumps(result))
+```
+
 ## Tool Integration
 
 ### MCP Tools
@@ -285,7 +380,7 @@ project/
 
 ## License
 
-MIT License
+Apache License 2.0
 
 ## Contributing
 

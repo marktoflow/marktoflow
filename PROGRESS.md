@@ -4,6 +4,80 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ---
 
+## 2026-01-22 (Session 6: Self-Contained Workflow Bundles)
+
+### ScriptTool for Executable Scripts
+- [x] Implemented ScriptOperation for representing script operations
+- [x] Implemented ScriptToolConfig for tools.yaml manifest parsing
+- [x] Implemented ScriptTool for executing bash/Python scripts as tools
+  - Inputs passed as `--key=value` CLI arguments
+  - Outputs parsed as JSON if valid, otherwise plain text
+  - Multi-operation support (operation name as first arg)
+  - Companion `.yaml` files for operation metadata
+- [x] Implemented ScriptToolLoader for auto-discovering script tools
+- [x] Created `create_script_tool()` convenience function
+
+### WorkflowBundle for Self-Contained Directories
+- [x] Implemented BundleConfig for config.yaml parsing
+- [x] Implemented BundleToolRegistry extending ToolRegistry with bundle-local tools
+- [x] Implemented WorkflowBundle for self-contained workflow directories
+  - `load_workflow()` - Parse workflow.md
+  - `load_tools()` - Load script tools from tools/ directory
+  - `validate()` - Validate bundle structure
+  - `execute()` - Run the workflow with bundle tools
+  - `get_info()` - Get bundle information
+- [x] Auto-detect workflow files (workflow.md, main.md, or single .md)
+- [x] Created `load_bundle()` / `is_bundle()` convenience functions
+
+### CLI Bundle Commands
+- [x] `aiworkflow bundle info <path>` - Show bundle information
+- [x] `aiworkflow bundle validate <path>` - Validate bundle structure
+- [x] `aiworkflow bundle run <path>` - Run a bundle workflow
+- [x] `aiworkflow bundle list [path]` - List bundles in directory
+- [x] Updated `aiworkflow run` to auto-detect bundle directories
+
+### Example Bundles
+- [x] Refactored all 5 examples to self-contained bundle structure:
+  - `examples/code-review/` - Automated PR code review
+  - `examples/daily-standup/` - Team standup summary generator
+  - `examples/dependency-update/` - Automated dependency updates
+  - `examples/incident-response/` - Automated incident handling
+  - `examples/sprint-planning/` - Jira sprint planning assistant
+- [x] Each bundle includes: workflow.md, config.yaml, tools.yaml, tools/*.py
+- [x] Created examples/README.md documentation
+
+### Testing
+- [x] Created test_script_tool.py (18 tests)
+  - ScriptOperation creation tests
+  - ScriptToolConfig parsing tests
+  - ScriptTool execution tests
+  - ScriptToolLoader discovery tests
+- [x] Created test_bundle.py (35 tests)
+  - BundleConfig tests
+  - WorkflowBundle lifecycle tests
+  - BundleToolRegistry tests
+  - Bundle detection tests
+
+### Other
+- [x] Created LICENSE file (Apache 2.0)
+- [x] Updated README.md with bundle documentation
+
+### Files Created/Modified
+- `src/aiworkflow/tools/script.py` - NEW: ScriptTool implementation
+- `src/aiworkflow/tools/bundle.py` - NEW: WorkflowBundle implementation
+- `src/aiworkflow/tools/__init__.py` - Updated exports
+- `src/aiworkflow/cli/main.py` - Added bundle commands
+- `tests/test_script_tool.py` - NEW: ScriptTool tests
+- `tests/test_bundle.py` - NEW: WorkflowBundle tests
+- `examples/*/` - Refactored to bundle structure
+- `examples/README.md` - NEW: Examples documentation
+- `LICENSE` - NEW: Apache 2.0 license
+- `README.md` - Updated with bundle documentation
+
+**Total: 317 tests (311 passing, 6 skipped async)**
+
+---
+
 ## 2026-01-22 (Session 4 Continued: Queue CLI)
 
 ### Phase 2: Queue CLI Commands
