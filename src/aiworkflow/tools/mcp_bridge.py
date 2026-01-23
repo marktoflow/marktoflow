@@ -267,6 +267,10 @@ class MCPBridge:
         self._tools.clear()
         self._initialized = False
 
+    async def cleanup(self) -> None:
+        """Compatibility alias for shutdown."""
+        await self.shutdown()
+
 
 class MCPServerStub:
     """
