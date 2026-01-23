@@ -42,6 +42,34 @@ class OutputConfig:
 output_config = OutputConfig()
 
 
+# Global configuration that can be set via CLI or environment variables
+class GlobalConfig:
+    """Global configuration values set via CLI args or environment variables."""
+
+    # API Keys
+    anthropic_api_key: str | None = None
+    openai_api_key: str | None = None
+
+    # Model configurations
+    model: str | None = None
+    temperature: float | None = None
+
+    # Service URLs
+    ollama_host: str | None = None
+    opencode_server_url: str | None = None
+
+    # Execution settings
+    timeout: int | None = None
+    max_retries: int | None = None
+
+    # Logging
+    log_level: str | None = None
+    debug: bool = False
+
+
+global_config = GlobalConfig()
+
+
 def log_verbose(message: str) -> None:
     """Print message only in verbose mode."""
     if output_config.verbose and not output_config.json_output:
@@ -353,8 +381,28 @@ def run(
             )
         raise typer.Exit(1)
 
+    # Build agent config from global settings
+    agent_config_dict = {
+        "name": agent_name,
+        "provider": agent_name,
+    }
+    if global_config.model:
+        agent_config_dict["model"] = global_config.model
+    if global_config.temperature is not None:
+        agent_config_dict["temperature"] = global_config.temperature
+    if global_config.timeout is not None:
+        agent_config_dict["timeout"] = global_config.timeout
+    if global_config.max_retries is not None:
+        agent_config_dict["max_retries"] = global_config.max_retries
+
+    # Agent-specific URL configuration
+    if agent_name == "ollama" and global_config.ollama_host:
+        agent_config_dict["api_base_url"] = global_config.ollama_host
+    elif agent_name == "opencode" and global_config.opencode_server_url:
+        agent_config_dict["api_base_url"] = global_config.opencode_server_url
+
     adapter = AgentRegistry.create_adapter(
-        agent_name, AgentConfig(name=agent_name, provider=agent_name)
+        agent_name, AgentConfig(**agent_config_dict)
     )
     engine = WorkflowEngine(
         agent_adapter=adapter,
@@ -2174,6 +2222,113 @@ def version() -> None:
 
 
 @app.command()
+def config(
+    show_all: bool = typer.Option(
+        False,
+        "--all",
+        "-a",
+        help="Show all environment variables, including empty ones",
+    ),
+    show_secrets: bool = typer.Option(
+        False,
+        "--show-secrets",
+        help="Show API keys and secrets (default: masked)",
+    ),
+) -> None:
+    """Show current configuration from environment variables and CLI args."""
+    from marktoflow.core.env import EnvConfig
+    import os
+
+    def mask_secret(value: str | None) -> str:
+        """Mask sensitive values."""
+        if value is None:
+            return "[dim]not set[/dim]"
+        if show_secrets:
+            return value
+        if len(value) <= 8:
+            return "****"
+        return f"{value[:4]}...{value[-4:]}"
+
+    def format_value(value: str | None, is_secret: bool = False) -> str:
+        """Format a configuration value for display."""
+        if value is None:
+            return "[dim]not set[/dim]"
+        if is_secret:
+            return mask_secret(value)
+        return value
+
+    if output_config.json_output:
+        config_data = {
+            "api_keys": {
+                "anthropic": format_value(EnvConfig.anthropic_api_key(), True),
+                "openai": format_value(EnvConfig.openai_api_key(), True),
+                "google": format_value(EnvConfig.google_api_key(), True),
+            },
+            "services": {
+                "ollama_host": format_value(EnvConfig.ollama_host()),
+                "ollama_model": format_value(EnvConfig.ollama_model()),
+                "opencode_server_url": format_value(EnvConfig.opencode_server_url()),
+            },
+            "execution": {
+                "timeout": global_config.timeout or os.environ.get("MARKTOFLOW_TIMEOUT", "not set"),
+                "max_retries": global_config.max_retries or os.environ.get("MARKTOFLOW_MAX_RETRIES", "not set"),
+                "model": global_config.model or os.environ.get("MARKTOFLOW_MODEL", "not set"),
+                "temperature": global_config.temperature or os.environ.get("MARKTOFLOW_TEMPERATURE", "not set"),
+            },
+            "logging": {
+                "log_level": global_config.log_level or EnvConfig.log_level(),
+                "debug": global_config.debug or EnvConfig.debug(),
+            },
+        }
+        output_json(config_data)
+    else:
+        console.print("\n[bold cyan]Marktoflow Configuration[/bold cyan]\n")
+
+        # API Keys
+        table = Table(title="API Keys", show_header=True, header_style="bold magenta")
+        table.add_column("Provider", style="cyan")
+        table.add_column("Status", style="green")
+        table.add_row("Anthropic", mask_secret(EnvConfig.anthropic_api_key()))
+        table.add_row("OpenAI", mask_secret(EnvConfig.openai_api_key()))
+        table.add_row("Google/Gemini", mask_secret(EnvConfig.google_api_key()))
+        console.print(table)
+        console.print()
+
+        # Service Configuration
+        table = Table(title="Service URLs", show_header=True, header_style="bold magenta")
+        table.add_column("Service", style="cyan")
+        table.add_column("URL/Host", style="green")
+        table.add_row("Ollama Host", EnvConfig.ollama_host())
+        table.add_row("Ollama Model", EnvConfig.ollama_model())
+        table.add_row("OpenCode Server", EnvConfig.opencode_server_url())
+        console.print(table)
+        console.print()
+
+        # Execution Settings
+        table = Table(title="Execution Settings", show_header=True, header_style="bold magenta")
+        table.add_column("Setting", style="cyan")
+        table.add_column("Value", style="green")
+        table.add_row("Model", format_value(global_config.model or os.environ.get("MARKTOFLOW_MODEL")))
+        table.add_row("Temperature", format_value(str(global_config.temperature) if global_config.temperature is not None else os.environ.get("MARKTOFLOW_TEMPERATURE")))
+        table.add_row("Timeout", format_value(str(global_config.timeout) if global_config.timeout is not None else os.environ.get("MARKTOFLOW_TIMEOUT")))
+        table.add_row("Max Retries", format_value(str(global_config.max_retries) if global_config.max_retries is not None else os.environ.get("MARKTOFLOW_MAX_RETRIES")))
+        console.print(table)
+        console.print()
+
+        # Logging
+        table = Table(title="Logging", show_header=True, header_style="bold magenta")
+        table.add_column("Setting", style="cyan")
+        table.add_column("Value", style="green")
+        table.add_row("Log Level", global_config.log_level or EnvConfig.log_level())
+        table.add_row("Debug Mode", "Enabled" if global_config.debug or EnvConfig.debug() else "Disabled")
+        console.print(table)
+        console.print()
+
+        console.print("[dim]Tip: Use --show-secrets to reveal masked API keys[/dim]")
+        console.print("[dim]Tip: Set values via CLI args (e.g., --model), environment variables, or .env files[/dim]")
+
+
+@app.command()
 def doctor() -> None:
     """Check environment and diagnose issues."""
     import sys
@@ -2698,10 +2853,131 @@ def main(
         "--json",
         help="Output results as JSON",
     ),
+    debug: bool = typer.Option(
+        False,
+        "--debug",
+        help="Enable debug mode",
+        envvar="MARKTOFLOW_DEBUG",
+    ),
+    log_level: Optional[str] = typer.Option(
+        None,
+        "--log-level",
+        help="Set log level (DEBUG, INFO, WARNING, ERROR)",
+        envvar="MARKTOFLOW_LOG_LEVEL",
+    ),
+    # API Keys
+    anthropic_api_key: Optional[str] = typer.Option(
+        None,
+        "--anthropic-api-key",
+        help="Anthropic API key (for Claude)",
+        envvar="ANTHROPIC_API_KEY",
+    ),
+    openai_api_key: Optional[str] = typer.Option(
+        None,
+        "--openai-api-key",
+        help="OpenAI API key",
+        envvar="OPENAI_API_KEY",
+    ),
+    # Model Configuration
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        "-m",
+        help="Default model to use",
+        envvar="MARKTOFLOW_MODEL",
+    ),
+    temperature: Optional[float] = typer.Option(
+        None,
+        "--temperature",
+        "-t",
+        help="Temperature for model generation (0.0-2.0)",
+        envvar="MARKTOFLOW_TEMPERATURE",
+    ),
+    # Service URLs
+    ollama_host: Optional[str] = typer.Option(
+        None,
+        "--ollama-host",
+        help="Ollama API host URL",
+        envvar="OLLAMA_HOST",
+    ),
+    opencode_server_url: Optional[str] = typer.Option(
+        None,
+        "--opencode-url",
+        help="OpenCode server URL",
+        envvar="OPENCODE_SERVER_URL",
+    ),
+    # Execution Settings
+    timeout: Optional[int] = typer.Option(
+        None,
+        "--timeout",
+        help="Default timeout in seconds",
+        envvar="MARKTOFLOW_TIMEOUT",
+    ),
+    max_retries: Optional[int] = typer.Option(
+        None,
+        "--max-retries",
+        help="Maximum retry attempts for failed operations",
+        envvar="MARKTOFLOW_MAX_RETRIES",
+    ),
 ) -> None:
-    """Universal AI Workflow Automation Framework."""
+    """Universal AI Workflow Automation Framework.
+
+    Configuration values can be provided via:
+    1. Command line arguments (highest priority)
+    2. Environment variables
+    3. .env files (loaded from ~/.marktoflow/.env, .env, .marktoflow/.env)
+    4. Defaults (lowest priority)
+    """
+    import os
+
+    # Set output config
     output_config.verbose = verbose
     output_config.json_output = json_out
+
+    # Set global config (CLI args override env vars)
+    global_config.debug = debug
+    global_config.log_level = log_level
+
+    # API Keys - also set in environment for downstream use
+    if anthropic_api_key:
+        global_config.anthropic_api_key = anthropic_api_key
+        os.environ["ANTHROPIC_API_KEY"] = anthropic_api_key
+    if openai_api_key:
+        global_config.openai_api_key = openai_api_key
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+
+    # Model configuration
+    if model:
+        global_config.model = model
+        os.environ["MARKTOFLOW_MODEL"] = model
+    if temperature is not None:
+        global_config.temperature = temperature
+        os.environ["MARKTOFLOW_TEMPERATURE"] = str(temperature)
+
+    # Service URLs
+    if ollama_host:
+        global_config.ollama_host = ollama_host
+        os.environ["OLLAMA_HOST"] = ollama_host
+    if opencode_server_url:
+        global_config.opencode_server_url = opencode_server_url
+        os.environ["OPENCODE_SERVER_URL"] = opencode_server_url
+
+    # Execution settings
+    if timeout is not None:
+        global_config.timeout = timeout
+        os.environ["MARKTOFLOW_TIMEOUT"] = str(timeout)
+    if max_retries is not None:
+        global_config.max_retries = max_retries
+        os.environ["MARKTOFLOW_MAX_RETRIES"] = str(max_retries)
+
+    # Configure logging if debug or log_level is set
+    if debug or log_level:
+        import logging
+        level = logging.DEBUG if debug else getattr(logging, (log_level or "INFO").upper(), logging.INFO)
+        logging.basicConfig(
+            level=level,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        )
 
 
 if __name__ == "__main__":
