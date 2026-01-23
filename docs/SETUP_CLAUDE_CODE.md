@@ -381,17 +381,24 @@ Claude Code works well with:
 - **MCP Servers**: Add custom tools and data sources
 - **IDEs**: Can reference code from your editor
 
-## Future: SDK Mode
+## SDK Mode (Python)
 
-Coming soon - integration with `claude-agent-sdk-python`:
+SDK integration is supported via `claude-agent-sdk`:
 
 ```yaml
-# Future configuration
 agent:
   name: claude-code
   provider: anthropic
   extra:
     claude_code_mode: sdk  # Use Python SDK
+
+# Optional SDK settings
+#   claude_code_sdk_system_prompt: "You are a helpful assistant."
+#   claude_code_sdk_max_turns: 1
+#   claude_code_sdk_allowed_tools: ["Read", "Write"]
+#   claude_code_sdk_disallowed_tools: ["Shell"]
+#   claude_code_sdk_permission_mode: "bypassPermissions"
+#   claude_code_sdk_setting_sources: ["local", "project"]
 ```
 
 **Benefits:**
@@ -400,6 +407,8 @@ agent:
 - Direct Python integration
 - Lower latency
 - Session management
+
+Install: `pip install claude-agent-sdk`
 
 See: https://github.com/anthropics/claude-agent-sdk-python
 
@@ -421,5 +430,5 @@ See the [examples/claude-code-config/](../examples/claude-code-config/) director
 
 ---
 
-**Status:** ✅ CLI Mode Ready | 🚧 SDK Mode Coming Soon
+**Status:** ✅ CLI Mode Ready | ✅ SDK Mode Ready
 **Last Updated:** January 2026

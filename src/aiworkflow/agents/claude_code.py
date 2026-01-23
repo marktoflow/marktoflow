@@ -31,11 +31,11 @@ from aiworkflow.tools.mcp_bridge import MCPBridge
 @register_agent("claude-code")
 class ClaudeCodeAdapter(AgentAdapter):
     """
-    Adapter for Claude Code CLI.
+    Adapter for Claude Code CLI / SDK.
 
     Supports execution modes:
     1. CLI Mode: Uses `claude` CLI subprocess (current implementation)
-    2. SDK Mode: Future support for claude-agent-sdk-python
+    2. SDK Mode: claude-agent-sdk-python
 
     Features:
     - File-based context (works in project directories)
@@ -52,6 +52,13 @@ class ClaudeCodeAdapter(AgentAdapter):
             claude_code_model: str  # Model to use (sonnet, opus, haiku)
             claude_code_timeout: int  # Timeout in seconds
             working_directory: str  # Working directory for file context
+            # SDK mode options (claude-agent-sdk)
+            claude_code_sdk_system_prompt: str | None
+            claude_code_sdk_max_turns: int | None
+            claude_code_sdk_allowed_tools: list[str] | None
+            claude_code_sdk_disallowed_tools: list[str] | None
+            claude_code_sdk_permission_mode: str | None
+            claude_code_sdk_setting_sources: list[str] | None
     """
 
     def __init__(self, config: AgentConfig) -> None:
@@ -72,6 +79,9 @@ class ClaudeCodeAdapter(AgentAdapter):
 
         # Runtime state
         self._mcp_bridge: MCPBridge | None = None
+        self._sdk_query: Any = None
+        self._sdk_options: Any = None
+        self._sdk_types: dict[str, Any] = {}
 
         self._capabilities = AgentCapabilities(
             name="claude-code",
@@ -105,12 +115,34 @@ class ClaudeCodeAdapter(AgentAdapter):
         if self._initialized:
             return
 
-        # Detect and validate Claude Code installation
-        if not shutil.which(self._cli_path):
-            raise RuntimeError(
-                f"Claude Code CLI not found at '{self._cli_path}'. "
-                "Install from: https://github.com/anthropics/claude-code"
-            )
+        if self._mode == "sdk":
+            try:
+                from claude_agent_sdk import (
+                    AssistantMessage,
+                    ClaudeAgentOptions,
+                    TextBlock,
+                    query,
+                )
+            except ImportError as exc:
+                raise ImportError(
+                    "claude-agent-sdk not installed. Install with: pip install claude-agent-sdk"
+                ) from exc
+
+            self._sdk_query = query
+            self._sdk_types = {
+                "AssistantMessage": AssistantMessage,
+                "TextBlock": TextBlock,
+            }
+
+            options = self._build_sdk_options(ClaudeAgentOptions)
+            self._sdk_options = options
+        else:
+            # Detect and validate Claude Code installation
+            if not shutil.which(self._cli_path):
+                raise RuntimeError(
+                    f"Claude Code CLI not found at '{self._cli_path}'. "
+                    "Install from: https://github.com/anthropics/claude-code"
+                )
 
         # Initialize MCP bridge if configured (though Claude has native MCP)
         mcp_config = self.config.extra.get("mcp_servers", {})
@@ -223,7 +255,10 @@ class ClaudeCodeAdapter(AgentAdapter):
                 output_schema, indent=2
             )
 
-        result = await self._execute_via_cli(prompt)
+        if self._mode == "sdk":
+            result = await self._execute_via_sdk(prompt)
+        else:
+            result = await self._execute_via_cli(prompt)
 
         # Parse JSON if schema was provided
         if output_schema and isinstance(result, str):
@@ -266,7 +301,31 @@ class ClaudeCodeAdapter(AgentAdapter):
         if not self._initialized:
             await self.initialize()
 
+        if self._mode == "sdk":
+            return await self._execute_via_sdk(prompt)
+
         return await self._execute_via_cli(prompt)
+
+    async def generate_stream(
+        self,
+        prompt: str,
+        context: ExecutionContext,
+        **kwargs: Any,
+    ):
+        """
+        Generate text content using Claude Code with streaming.
+
+        SDK mode yields text blocks incrementally. CLI mode yields the full response once.
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        if self._mode == "sdk":
+            async for chunk in self._execute_via_sdk_stream(prompt):
+                yield chunk
+        else:
+            result = await self._execute_via_cli(prompt)
+            yield result
 
     async def _execute_via_cli(self, prompt: str) -> str:
         """
@@ -307,6 +366,88 @@ class ClaudeCodeAdapter(AgentAdapter):
             )
 
         return stdout.decode().strip()
+
+    def _build_sdk_options(self, options_cls: Any) -> Any:
+        options: dict[str, Any] = {}
+        system_prompt = self.config.extra.get("claude_code_sdk_system_prompt")
+        if system_prompt:
+            options["system_prompt"] = system_prompt
+
+        max_turns = self.config.extra.get("claude_code_sdk_max_turns")
+        if isinstance(max_turns, int):
+            options["max_turns"] = max_turns
+
+        allowed_tools = self.config.extra.get("claude_code_sdk_allowed_tools")
+        if isinstance(allowed_tools, list):
+            options["allowed_tools"] = allowed_tools
+
+        disallowed_tools = self.config.extra.get("claude_code_sdk_disallowed_tools")
+        if isinstance(disallowed_tools, list):
+            options["disallowed_tools"] = disallowed_tools
+
+        permission_mode = self.config.extra.get("claude_code_sdk_permission_mode")
+        if isinstance(permission_mode, str):
+            options["permission_mode"] = permission_mode
+
+        setting_sources = self.config.extra.get("claude_code_sdk_setting_sources")
+        if isinstance(setting_sources, list):
+            options["setting_sources"] = setting_sources
+
+        options["cwd"] = self._working_dir
+
+        cli_path = self.config.extra.get("claude_code_cli_path")
+        if isinstance(cli_path, str) and cli_path:
+            options["cli_path"] = cli_path
+
+        return options_cls(**options) if options else options_cls()
+
+    async def _execute_via_sdk(self, prompt: str) -> str:
+        if not self._sdk_query:
+            raise RuntimeError("Claude SDK not initialized")
+
+        text_parts: list[str] = []
+        async for message in self._sdk_query(prompt=prompt, options=self._sdk_options):
+            text_parts.extend(self._extract_text_blocks(message))
+
+        return "".join(text_parts).strip()
+
+    async def _execute_via_sdk_stream(self, prompt: str):
+        if not self._sdk_query:
+            raise RuntimeError("Claude SDK not initialized")
+
+        async for message in self._sdk_query(prompt=prompt, options=self._sdk_options):
+            for chunk in self._extract_text_blocks(message):
+                if chunk:
+                    yield chunk
+
+    def _extract_text_blocks(self, message: Any) -> list[str]:
+        assistant_cls = self._sdk_types.get("AssistantMessage")
+        text_cls = self._sdk_types.get("TextBlock")
+
+        if assistant_cls and isinstance(message, assistant_cls):
+            content = getattr(message, "content", [])
+            chunks = []
+            for block in content:
+                if text_cls and isinstance(block, text_cls):
+                    chunks.append(getattr(block, "text", ""))
+                elif isinstance(block, dict) and isinstance(block.get("text"), str):
+                    chunks.append(block["text"])
+            return [c for c in chunks if c]
+
+        if isinstance(message, dict):
+            content = message.get("content")
+            if isinstance(content, list):
+                chunks = []
+                for block in content:
+                    if isinstance(block, dict) and isinstance(block.get("text"), str):
+                        chunks.append(block["text"])
+                return [c for c in chunks if c]
+
+        text = getattr(message, "text", None)
+        if isinstance(text, str):
+            return [text]
+
+        return []
 
     async def call_tool(
         self,

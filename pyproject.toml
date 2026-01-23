@@ -51,6 +51,7 @@ dev = [
 ]
 claude = [
     "anthropic>=0.18",
+    "claude-agent-sdk",
 ]
 openai = [
     "openai>=1.0",
@@ -73,6 +74,7 @@ queues = [
 ]
 all = [
     "anthropic>=0.18",
+    "claude-agent-sdk",
     "openai>=1.0",
     "watchdog>=3.0",
     "prometheus-client>=0.19",
