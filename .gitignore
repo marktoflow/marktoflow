@@ -86,6 +86,7 @@ Desktop.ini
 .marktoflow/state/credentials/
 .marktoflow/state/workflow-state/*.db
 .marktoflow/state/execution-logs/*.md
+.marktoflow/.env
 *.encrypted
 
 # Temporary files

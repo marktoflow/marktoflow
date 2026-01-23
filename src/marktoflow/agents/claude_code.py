@@ -70,11 +70,14 @@ class ClaudeCodeAdapter(AgentAdapter):
         """
         super().__init__(config)
 
-        # Configuration
-        self._mode = config.extra.get("claude_code_mode", "cli")
-        self._cli_path = config.extra.get("claude_code_cli_path", "claude")
-        self._model = config.extra.get("claude_code_model", "sonnet")  # sonnet, opus, haiku
-        self._timeout = config.extra.get("claude_code_timeout", 300)
+        # Get configuration from config or environment
+        from marktoflow.core.env import config as env_config
+
+        # Configuration (prefer explicit config, fall back to environment)
+        self._mode = config.extra.get("claude_code_mode") or env_config.claude_code_mode()
+        self._cli_path = config.extra.get("claude_code_cli_path") or env_config.claude_code_cli_path()
+        self._model = config.extra.get("claude_code_model") or env_config.claude_code_model()
+        self._timeout = config.extra.get("claude_code_timeout") or env_config.claude_code_timeout()
         self._working_dir = config.extra.get("working_directory", str(Path.cwd()))
 
         # Runtime state

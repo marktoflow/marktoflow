@@ -63,9 +63,12 @@ class OpenCodeAdapter(AgentAdapter):
         """
         super().__init__(config)
 
-        # Configuration
-        self._mode = config.extra.get("opencode_mode", "auto")  # auto, cli, server
-        self._server_url = config.extra.get("opencode_server_url", "http://localhost:4096")
+        # Get configuration from config or environment
+        from marktoflow.core.env import config as env_config
+
+        # Configuration (prefer explicit config, fall back to environment)
+        self._mode = config.extra.get("opencode_mode") or env_config.opencode_mode()
+        self._server_url = config.extra.get("opencode_server_url") or env_config.opencode_server_url()
         self._server_autostart = config.extra.get("opencode_server_autostart", False)
         self._cli_path = config.extra.get("opencode_cli_path", "opencode")
 

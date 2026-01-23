@@ -2,6 +2,17 @@
 Core module for marktoflow framework.
 """
 
+from marktoflow.core.env import (
+    load_env,
+    ensure_env_loaded,
+    get_env,
+    get_env_bool,
+    get_env_int,
+    get_env_float,
+    get_env_list,
+    find_env_files,
+    EnvConfig,
+)
 from marktoflow.core.models import (
     Workflow,
     WorkflowStep,
@@ -233,6 +244,17 @@ except ImportError:
     RABBITMQ_AVAILABLE = False
 
 __all__ = [
+    # Environment
+    "load_env",
+    "ensure_env_loaded",
+    "get_env",
+    "get_env_bool",
+    "get_env_int",
+    "get_env_float",
+    "get_env_list",
+    "find_env_files",
+    "EnvConfig",
+    # Models
     "Workflow",
     "WorkflowStep",
     "WorkflowMetadata",
