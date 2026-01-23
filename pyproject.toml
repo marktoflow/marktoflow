@@ -39,6 +39,7 @@ dependencies = [
     "rich>=13.0",
     "httpx>=0.25",
     "aiofiles>=23.0",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]

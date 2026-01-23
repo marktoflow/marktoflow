@@ -39,8 +39,12 @@ class OllamaAdapter(AgentAdapter):
             config: Agent configuration
         """
         super().__init__(config)
-        self._base_url = config.api_base_url or "http://localhost:11434"
-        self._model = config.model or "llama3"
+
+        # Get configuration from config or environment
+        from marktoflow.core.env import config as env_config
+
+        self._base_url = config.api_base_url or env_config.ollama_host()
+        self._model = config.model or env_config.ollama_model()
         self._timeout = float(config.timeout)
         self._max_retries = max(1, config.max_retries)
         self._retry_delay = float(config.extra.get("ollama_retry_delay", 0.5))

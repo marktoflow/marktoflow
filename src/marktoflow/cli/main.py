@@ -20,6 +20,10 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
+# Load environment variables from .env files on CLI startup
+from marktoflow.core.env import load_env
+load_env()
+
 app = typer.Typer(
     name="marktoflow",
     help="Universal AI Workflow Automation Framework",

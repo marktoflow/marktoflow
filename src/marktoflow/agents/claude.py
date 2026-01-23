@@ -71,15 +71,25 @@ class ClaudeCodeAdapter(AgentAdapter):
         """Initialize the Anthropic client."""
         try:
             import anthropic
-
-            self._client = anthropic.Anthropic(
-                api_key=self.config.api_key,
-            )
-            self._initialized = True
         except ImportError:
             raise ImportError(
                 "anthropic package not installed. Install with: pip install marktoflow[claude]"
             )
+
+        # Get API key from config or environment
+        api_key = self.config.api_key
+        if not api_key:
+            from marktoflow.core.env import config as env_config
+            api_key = env_config.anthropic_api_key()
+
+        if not api_key:
+            raise ValueError(
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY in your .env file "
+                "or provide it in the agent configuration."
+            )
+
+        self._client = anthropic.Anthropic(api_key=api_key)
+        self._initialized = True
 
     async def execute_step(
         self,
