@@ -186,7 +186,7 @@ class WorkflowBundle:
             path: Path to the bundle directory
             global_registry_path: Optional path to global tool registry
         """
-        self.path = Path(path).resolve()
+        self.path = Path(path).expanduser().absolute()
 
         if not self.path.exists():
             raise FileNotFoundError(f"Bundle directory not found: {self.path}")

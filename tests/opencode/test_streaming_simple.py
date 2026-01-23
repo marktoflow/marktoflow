@@ -2,6 +2,7 @@
 """Simple streaming test"""
 import asyncio
 import sys
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -22,6 +23,8 @@ async def test():
     )
 
     adapter = OpenCodeAdapter(config)
+    if not await adapter._check_server_available():
+        pytest.skip("OpenCode server not running on localhost:4096")
     await adapter.initialize()
 
     print(f"✓ Initialized, session: {adapter._session_id}")
