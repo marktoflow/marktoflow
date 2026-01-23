@@ -1,0 +1,121 @@
+# Tool definitions for Documentation Maintenance Workflow
+
+tools:
+  - id: discover_components
+    name: Component Discovery
+    type: script
+    script: discover_components.py
+    description: Scan codebase to discover components and their documentation
+    inputs:
+      - name: codebase_path
+        type: string
+        required: true
+        description: Root path of the codebase
+      - name: pattern
+        type: string
+        default: "src/*/"
+        description: Glob pattern to match component directories
+      - name: exclude
+        type: string
+        default: "node_modules,dist,build"
+        description: Comma-separated exclude patterns
+      - name: doc_files
+        type: string
+        default: "README.md,DOCS.md,API.md"
+        description: Comma-separated documentation filenames
+    outputs:
+      - name: components
+        type: array
+        description: List of discovered components
+      - name: total
+        type: integer
+        description: Total number of components found
+
+  - id: init_tracking
+    name: Initialize Tracking
+    type: script
+    script: init_tracking.py
+    description: Initialize tracking data structure for workflow execution
+    inputs:
+      - name: total_components
+        type: integer
+        required: true
+    outputs:
+      - name: tracking_data
+        type: object
+
+  - id: write_docs
+    name: Write Documentation
+    type: script
+    script: write_docs.py
+    description: Write updated documentation to file with backup
+    inputs:
+      - name: component_path
+        type: string
+        required: true
+      - name: doc_file
+        type: string
+        required: true
+      - name: content
+        type: string
+        required: true
+      - name: dry_run
+        type: boolean
+        default: false
+    outputs:
+      - name: written
+        type: boolean
+      - name: backup
+        type: string
+
+  - id: record_result
+    name: Record Result
+    type: script
+    script: record_result.py
+    description: Record the result of processing a component
+    inputs:
+      - name: component
+        type: string
+        required: true
+      - name: updated
+        type: boolean
+        required: true
+      - name: issues
+        type: integer
+        default: 0
+      - name: confidence
+        type: string
+        default: "medium"
+      - name: dry_run
+        type: boolean
+        default: false
+    outputs:
+      - name: total_processed
+        type: integer
+      - name: total_updated
+        type: integer
+
+  - id: generate_summary
+    name: Generate Summary
+    type: script
+    script: generate_summary.py
+    description: Generate final summary report
+    inputs:
+      - name: codebase_path
+        type: string
+        required: true
+      - name: total_processed
+        type: integer
+        required: true
+      - name: dry_run
+        type: boolean
+        default: false
+    outputs:
+      - name: report_path
+        type: string
+      - name: report_markdown
+        type: string
+      - name: update_rate
+        type: number
+      - name: validity_rate
+        type: number

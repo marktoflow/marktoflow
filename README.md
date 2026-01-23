@@ -211,19 +211,6 @@ conditions:
 
 ## Self-Contained Workflow Bundles
 
-Bundles are self-contained directories with everything needed to run a workflow:
-
-```
-my-workflow/
-├── workflow.md              # Main workflow file
-├── config.yaml              # Optional: bundle configuration
-├── tools.yaml               # Optional: tool metadata
-└── tools/                   # Script tools directory
-    ├── build.sh             # Auto-discovered: tool name = "build"
-    ├── deploy.py            # Auto-discovered: tool name = "deploy"
-    └── notify               # Any executable
-```
-
 ### Creating a Bundle
 
 ```bash
@@ -292,7 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--channel")
     parser.add_argument("--message")
     args = parser.parse_args()
-    
+
     if args.operation == "send_message":
         result = send_message(args.channel, args.message)
         print(json.dumps(result))
