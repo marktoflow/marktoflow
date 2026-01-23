@@ -6,7 +6,7 @@
 
 ## Overview
 
-The OpenCode adapter provides a flexible, backend-agnostic integration for aiworkflow, supporting both CLI and Server execution modes with streaming capabilities, tool calling, and MCP bridge integration.
+The OpenCode adapter provides a flexible, backend-agnostic integration for marktoflow, supporting both CLI and Server execution modes with streaming capabilities, tool calling, and MCP bridge integration.
 
 ## Key Features
 
@@ -35,7 +35,7 @@ The OpenCode adapter provides a flexible, backend-agnostic integration for aiwor
 
 ### Core Implementation
 ```
-src/aiworkflow/agents/opencode.py (509 lines)
+src/marktoflow/agents/opencode.py (509 lines)
 ├── OpenCodeAdapter class
 ├── CLI execution (_execute_via_cli)
 ├── Server execution (_execute_via_server)
@@ -123,8 +123,8 @@ opencode /connect
 # 2. Test
 opencode run "Say hello"
 
-# 3. Use with aiworkflow
-aiworkflow run workflow.md
+# 3. Use with marktoflow
+marktoflow run workflow.md
 ```
 
 ### Ollama Setup (Local & Free)
@@ -153,8 +153,8 @@ EOF
 # 4. Test
 opencode run "Hello"
 
-# 5. Use with aiworkflow
-aiworkflow run workflow.md
+# 5. Use with marktoflow
+marktoflow run workflow.md
 ```
 
 ## Testing
@@ -464,7 +464,7 @@ ollama pull llama3.2:1b
 - **OpenCode Documentation**: https://opencode.ai/docs
 - **GitHub Copilot**: https://github.com/settings/copilot
 - **Ollama**: https://ollama.ai
-- **aiworkflow Issues**: [Your repo]/issues
+- **marktoflow Issues**: [Your repo]/issues
 
 ### Getting Help
 
@@ -478,7 +478,7 @@ ollama pull llama3.2:1b
    # Test OpenCode
    opencode run "hello"
 
-   # Test aiworkflow
+   # Test marktoflow
    python3 test_opencode_adapter.py all
    ```
 
@@ -502,7 +502,7 @@ ollama pull llama3.2:1b
 
 **Last Updated:** January 22, 2026
 **OpenCode Version:** 1.1.32+
-**aiworkflow Version:** 0.1.0
+**marktoflow Version:** 0.1.0
 
 **Status:** ✅ Production Ready
 **Test Coverage:** 100% (basic), 95% (integration)

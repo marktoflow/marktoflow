@@ -3,8 +3,8 @@ Tests for the workflow parser.
 """
 
 import pytest
-from aiworkflow.core.parser import WorkflowParser, WorkflowParseError
-from aiworkflow.core.models import ErrorHandling
+from marktoflow.core.parser import WorkflowParser, WorkflowParseError
+from marktoflow.core.models import ErrorHandling
 
 
 SAMPLE_WORKFLOW = """---

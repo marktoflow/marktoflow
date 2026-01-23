@@ -4,7 +4,7 @@ workflow:
   name: "Automated Code Review"
   version: "1.0.0"
   description: "Reviews code changes and provides feedback"
-  author: "aiworkflow"
+  author: "marktoflow"
   tags:
     - code-review
     - quality

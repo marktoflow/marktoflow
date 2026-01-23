@@ -9,5 +9,5 @@ tools_dir: tools
 inherit_global_tools: true
 
 env:
-  GIT_AUTHOR_NAME: "aiworkflow"
-  GIT_AUTHOR_EMAIL: "aiworkflow@example.com"
+  GIT_AUTHOR_NAME: "marktoflow"
+  GIT_AUTHOR_EMAIL: "marktoflow@example.com"

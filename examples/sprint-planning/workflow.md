@@ -4,7 +4,7 @@ workflow:
   name: "Sprint Planning Assistant"
   version: "1.0.0"
   description: "Automates sprint planning tasks including capacity planning, story refinement, and sprint creation"
-  author: "aiworkflow"
+  author: "marktoflow"
   tags:
     - project-management
     - jira

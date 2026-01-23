@@ -82,10 +82,10 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# aiworkflow specific
-.aiworkflow/state/credentials/
-.aiworkflow/state/workflow-state/*.db
-.aiworkflow/state/execution-logs/*.md
+# marktoflow specific
+.marktoflow/state/credentials/
+.marktoflow/state/workflow-state/*.db
+.marktoflow/state/execution-logs/*.md
 *.encrypted
 
 # Temporary files
@@ -100,7 +100,7 @@ Desktop.ini
 *.db
 
 # Local configuration overrides
-aiworkflow.local.yaml
+marktoflow.local.yaml
 .env.local
 .env.*.local
 

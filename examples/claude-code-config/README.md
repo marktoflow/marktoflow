@@ -4,7 +4,7 @@ This directory demonstrates how to configure the Claude Code agent adapter.
 
 ## Overview
 
-The Claude Code adapter integrates Anthropic's official CLI tool with aiworkflow, bringing Claude's advanced capabilities to your automation workflows.
+The Claude Code adapter integrates Anthropic's official CLI tool with marktoflow, bringing Claude's advanced capabilities to your automation workflows.
 
 ## Features
 
@@ -183,7 +183,7 @@ output: improved_code
 
 ```bash
 # Run with Claude Code
-aiworkflow run code-review.md --var file_path=src/mycode.py
+marktoflow run code-review.md --var file_path=src/mycode.py
 ```
 
 ## Advanced Features

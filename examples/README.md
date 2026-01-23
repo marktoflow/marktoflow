@@ -1,6 +1,6 @@
 # Example Workflow Bundles
 
-This directory contains example workflow bundles demonstrating the aiworkflow framework's self-contained workflow capabilities.
+This directory contains example workflow bundles demonstrating the marktoflow framework's self-contained workflow capabilities.
 
 ## Bundle Structure
 
@@ -30,7 +30,7 @@ Automated code review workflow that:
 **Tools:** `github.py`, `security.py`
 
 ```bash
-aiworkflow bundle run examples/code-review --input repo=owner/repo --input pr_number=123
+marktoflow bundle run examples/code-review --input repo=owner/repo --input pr_number=123
 ```
 
 ### 2. Daily Standup (`daily-standup/`)
@@ -44,7 +44,7 @@ Aggregates team updates and generates daily standup summaries:
 **Tools:** `jira.py`, `slack.py`
 
 ```bash
-aiworkflow bundle run examples/daily-standup --input jira_project=PROJ
+marktoflow bundle run examples/daily-standup --input jira_project=PROJ
 ```
 
 ### 3. Dependency Update (`dependency-update/`)
@@ -58,7 +58,7 @@ Automated dependency updates with changelog generation:
 **Tools:** `git.sh`, `npm.py`, `github.py`
 
 ```bash
-aiworkflow bundle run examples/dependency-update --input repo=owner/repo --input package_manager=npm
+marktoflow bundle run examples/dependency-update --input repo=owner/repo --input package_manager=npm
 ```
 
 ### 4. Incident Response (`incident-response/`)
@@ -73,7 +73,7 @@ Automated incident detection and response coordination:
 **Tools:** `slack.py`, `pagerduty.py`, `datadog.py`, `github.py`, `jira.py`
 
 ```bash
-aiworkflow bundle run examples/incident-response \
+marktoflow bundle run examples/incident-response \
   --input incident_id=INC-001 \
   --input severity=high \
   --input service=api-gateway \
@@ -93,7 +93,7 @@ Automates sprint planning process:
 **Tools:** `jira.py`, `confluence.py`, `slack.py`
 
 ```bash
-aiworkflow bundle run examples/sprint-planning \
+marktoflow bundle run examples/sprint-planning \
   --input project_key=PROJ \
   --input team_members='["alice", "bob", "carol"]'
 ```
@@ -104,23 +104,23 @@ aiworkflow bundle run examples/sprint-planning \
 
 ```bash
 # Run a bundle
-aiworkflow run examples/code-review
+marktoflow run examples/code-review
 
 # With inputs
-aiworkflow run examples/code-review --input repo=owner/repo --input pr_number=42
+marktoflow run examples/code-review --input repo=owner/repo --input pr_number=42
 
 # Dry run (show execution plan)
-aiworkflow run examples/code-review --dry-run
+marktoflow run examples/code-review --dry-run
 ```
 
 ### Bundle Commands
 
 ```bash
 # Show bundle information
-aiworkflow bundle info examples/code-review
+marktoflow bundle info examples/code-review
 
 # Validate bundle structure
-aiworkflow bundle validate examples/code-review
+marktoflow bundle validate examples/code-review
 ```
 
 ## Creating Your Own Bundle

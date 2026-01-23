@@ -1,3 +1,3 @@
 """
-Tests for aiworkflow.
+Tests for marktoflow.
 """

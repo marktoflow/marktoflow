@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from aiworkflow.core.metrics import (
+from marktoflow.core.metrics import (
     MetricsCollector,
     MetricsServer,
     WorkflowMetrics,
@@ -96,7 +96,7 @@ class TestMetricsCollector:
         """Test creating a metrics collector."""
         collector = MetricsCollector(use_prometheus=False)
 
-        assert collector.prefix == "aiworkflow"
+        assert collector.prefix == "marktoflow"
         assert collector.use_prometheus is False
 
     def test_create_collector_with_prometheus(self):
@@ -288,8 +288,8 @@ class TestMetricsCollectorPrometheus:
         prometheus_output = collector.get_prometheus_metrics()
 
         assert isinstance(prometheus_output, bytes)
-        assert b"aiworkflow_workflows_total" in prometheus_output
-        assert b"aiworkflow_workflow_duration_seconds" in prometheus_output
+        assert b"marktoflow_workflows_total" in prometheus_output
+        assert b"marktoflow_workflow_duration_seconds" in prometheus_output
 
 
 class TestMetricsServer:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify the aiworkflow framework works with a real adapter.
+Test script to verify the marktoflow framework works with a real adapter.
 
 This creates an OpenCode adapter configured to use a local provider (no API key needed)
 and runs the test workflow.
@@ -9,22 +9,22 @@ and runs the test workflow.
 import asyncio
 from pathlib import Path
 
-from aiworkflow.agents.base import AgentConfig
-from aiworkflow.agents.opencode import OpenCodeAdapter
-from aiworkflow.core.engine import WorkflowEngine
-from aiworkflow.core.parser import WorkflowParser
+from marktoflow.agents.base import AgentConfig
+from marktoflow.agents.opencode import OpenCodeAdapter
+from marktoflow.core.engine import WorkflowEngine
+from marktoflow.core.parser import WorkflowParser
 
 
 async def test_with_real_adapter():
     """Test the workflow execution with a real OpenCode adapter."""
     print("=" * 70)
-    print("Testing aiworkflow Framework with Real OpenCode Adapter")
+    print("Testing marktoflow Framework with Real OpenCode Adapter")
     print("=" * 70)
     print()
 
     # 1. Parse the workflow
     print("Step 1: Parsing workflow...")
-    workflow_path = Path(".aiworkflow/workflows/test-simple.md")
+    workflow_path = Path(".marktoflow/workflows/test-simple.md")
 
     if not workflow_path.exists():
         print(f"ERROR: Workflow file not found: {workflow_path}")

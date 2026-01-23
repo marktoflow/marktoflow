@@ -142,10 +142,10 @@ All generated using Claude 3.5 Sonnet's advanced reasoning!
 
 ```bash
 # Run the workflow
-aiworkflow run examples/claude-code-config/workflow.md
+marktoflow run examples/claude-code-config/workflow.md
 
 # With custom model
-aiworkflow run workflow.md --config config-advanced.yaml
+marktoflow run workflow.md --config config-advanced.yaml
 ```
 
 ## Expected Output

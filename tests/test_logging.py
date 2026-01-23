@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from aiworkflow.core.logging import (
+from marktoflow.core.logging import (
     ExecutionLog,
     ExecutionLogger,
     LogEntry,

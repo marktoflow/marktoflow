@@ -1,6 +1,6 @@
-# Claude Code Setup Guide for aiworkflow
+# Claude Code Setup Guide for marktoflow
 
-This guide shows you how to configure aiworkflow's Claude Code adapter to use Anthropic's Claude via the official CLI.
+This guide shows you how to configure marktoflow's Claude Code adapter to use Anthropic's Claude via the official CLI.
 
 ## Why Claude Code?
 
@@ -50,9 +50,9 @@ Test Claude Code independently:
 claude -p "Say hello"
 ```
 
-You should see a response from Claude. If this works, you're ready to use it with aiworkflow!
+You should see a response from Claude. If this works, you're ready to use it with marktoflow!
 
-### Step 2: Configure aiworkflow
+### Step 2: Configure marktoflow
 
 Create a workflow configuration:
 
@@ -134,10 +134,10 @@ output: analysis
 
 ```bash
 # Run with default config
-aiworkflow run test-workflow.md
+marktoflow run test-workflow.md
 
 # Run with custom config
-aiworkflow run test-workflow.md --config config-advanced.yaml
+marktoflow run test-workflow.md --config config-advanced.yaml
 ```
 
 ## Model Selection
@@ -371,7 +371,7 @@ Pass environment variables to Claude:
 export ANTHROPIC_API_KEY="..."
 export CLAUDE_MODEL="claude-3-5-sonnet-20241022"
 
-aiworkflow run workflow.md
+marktoflow run workflow.md
 ```
 
 ### Integration with Other Tools

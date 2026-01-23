@@ -15,9 +15,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from aiworkflow.agents.claude_code import ClaudeCodeAdapter
-from aiworkflow.agents.base import AgentConfig
-from aiworkflow.core.models import ExecutionContext, Workflow, WorkflowMetadata
+from marktoflow.agents.claude_code import ClaudeCodeAdapter
+from marktoflow.agents.base import AgentConfig
+from marktoflow.core.models import ExecutionContext, Workflow, WorkflowMetadata
 
 
 async def test_cli_mode():

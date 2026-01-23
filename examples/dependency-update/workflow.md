@@ -4,7 +4,7 @@ workflow:
   name: "Automated Dependency Updates"
   version: "1.0.0"
   description: "Checks for dependency updates and creates PRs with changelogs"
-  author: "aiworkflow"
+  author: "marktoflow"
   tags:
     - dependencies
     - security

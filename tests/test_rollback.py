@@ -5,7 +5,7 @@ Tests for rollback capabilities.
 import pytest
 from datetime import datetime
 
-from aiworkflow.core.rollback import (
+from marktoflow.core.rollback import (
     RollbackAction,
     RollbackResult,
     RollbackStrategy,

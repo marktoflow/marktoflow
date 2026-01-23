@@ -11,14 +11,14 @@ from pathlib import Path
 
 import pytest
 
-from aiworkflow.tools.script import (
+from marktoflow.tools.script import (
     ScriptTool,
     ScriptToolLoader,
     ScriptOperation,
     ScriptToolConfig,
     create_script_tool,
 )
-from aiworkflow.tools.registry import ToolDefinition, ToolImplementation, ToolType
+from marktoflow.tools.registry import ToolDefinition, ToolImplementation, ToolType
 
 
 class TestScriptOperation:

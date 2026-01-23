@@ -220,11 +220,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - Bundle configuration via config.yaml
   - Bundle tool metadata via tools.yaml
 - [x] CLI bundle commands
-  - `aiworkflow bundle info <path>` - Show bundle information
-  - `aiworkflow bundle validate <path>` - Validate bundle structure
-  - `aiworkflow bundle run <path>` - Run a bundle workflow
-  - `aiworkflow bundle list [path]` - List bundles in a directory
-  - Auto-detect bundles in `aiworkflow run`
+  - `marktoflow bundle info <path>` - Show bundle information
+  - `marktoflow bundle validate <path>` - Validate bundle structure
+  - `marktoflow bundle run <path>` - Run a bundle workflow
+  - `marktoflow bundle list [path]` - List bundles in a directory
+  - Auto-detect bundles in `marktoflow run`
 - [x] Example bundles (5 refactored from flat files)
   - code-review, daily-standup, dependency-update
   - incident-response, sprint-planning
@@ -241,7 +241,7 @@ All quick wins have been implemented:
 - [x] Add `--verbose` flag to CLI commands
   - Global `-v/--verbose` option for all commands
   - `log_verbose()` helper for debug output
-- [x] Add `aiworkflow workflow create` scaffolding command
+- [x] Add `marktoflow workflow create` scaffolding command
   - Templates: basic, multi-step, with-tools
   - `--bundle` flag to create bundle directory
   - `--template` and `--output` options
@@ -252,7 +252,7 @@ All quick wins have been implemented:
 - [x] Improve error messages with suggestions
   - Added helpful tips after error messages
   - Suggestions for next commands to try
-- [x] Add `aiworkflow doctor` for environment checking
+- [x] Add `marktoflow doctor` for environment checking
   - Python version check
   - Project initialization check
   - Optional dependencies check

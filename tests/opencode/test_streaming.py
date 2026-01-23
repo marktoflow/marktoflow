@@ -12,9 +12,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from aiworkflow.agents.opencode import OpenCodeAdapter
-from aiworkflow.agents.base import AgentConfig
-from aiworkflow.core.models import ExecutionContext, Workflow, WorkflowMetadata
+from marktoflow.agents.opencode import OpenCodeAdapter
+from marktoflow.agents.base import AgentConfig
+from marktoflow.core.models import ExecutionContext, Workflow, WorkflowMetadata
 
 
 async def test_streaming_simple():

@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from aiworkflow.core.templates import (
+from marktoflow.core.templates import (
     BUILTIN_TEMPLATES,
     DATA_PIPELINE_TEMPLATE,
     DEPLOYMENT_TEMPLATE,
@@ -941,10 +941,10 @@ class TestCreateTemplateRegistry:
             assert isinstance(registry, TemplateRegistry)
 
     def test_create_with_templates_directory(self):
-        """Test creating registry finds .aiworkflow/templates."""
+        """Test creating registry finds .marktoflow/templates."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project_root = Path(tmpdir)
-            templates_dir = project_root / ".aiworkflow" / "templates"
+            templates_dir = project_root / ".marktoflow" / "templates"
             templates_dir.mkdir(parents=True)
 
             # Create a test template

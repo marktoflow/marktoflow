@@ -4,7 +4,7 @@ workflow:
   name: "Incident Response Automation"
   version: "1.0.0"
   description: "Automated incident detection, triage, and response coordination"
-  author: "aiworkflow"
+  author: "marktoflow"
   tags:
     - incident
     - ops

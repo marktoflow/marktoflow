@@ -82,7 +82,7 @@ Requires you to manually start the server first.
 opencode serve --port 4096
 
 # Terminal 2: Run workflow
-aiworkflow run workflow.md
+marktoflow run workflow.md
 ```
 
 ```yaml
@@ -96,7 +96,7 @@ agent:
 
 ## Backend Configuration
 
-OpenCode backend (LLM provider) is configured in your OpenCode config file, not in aiworkflow.
+OpenCode backend (LLM provider) is configured in your OpenCode config file, not in marktoflow.
 
 ### GitHub Copilot (No API Key Needed)
 

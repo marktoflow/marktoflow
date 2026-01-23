@@ -1,4 +1,4 @@
-# aiworkflow - Unified AI Workflow Automation Framework
+# marktoflow - Unified AI Workflow Automation Framework
 
 **Write once, run on any AI coding agent.**
 
@@ -16,20 +16,20 @@ A universal automation framework that enables AI coding agents (Claude Code, Ope
 ### Installation
 
 ```bash
-pip install aiworkflow
+pip install marktoflow
 ```
 
 ### Initialize a Project
 
 ```bash
-aiworkflow init
+marktoflow init
 ```
 
-This creates the `.aiworkflow/` directory structure with default configuration.
+This creates the `.marktoflow/` directory structure with default configuration.
 
 ### Create a Workflow
 
-Create `.aiworkflow/workflows/my-workflow.md`:
+Create `.marktoflow/workflows/my-workflow.md`:
 
 ```markdown
 ---
@@ -54,14 +54,14 @@ requirements:
 action: slack.send_message
 inputs:
   channel: "#general"
-  message: "Hello from aiworkflow!"
+  message: "Hello from marktoflow!"
 ```
 ```
 
 ### Run a Workflow
 
 ```bash
-aiworkflow run .aiworkflow/workflows/my-workflow.md
+marktoflow run .marktoflow/workflows/my-workflow.md
 ```
 
 ## Architecture
@@ -97,36 +97,36 @@ External Services (Jira, Slack, Email, etc.)
 
 ```bash
 # Project management
-aiworkflow init                    # Initialize project
-aiworkflow version                 # Show version
+marktoflow init                    # Initialize project
+marktoflow version                 # Show version
 
 # Workflow operations
-aiworkflow run <workflow.md>       # Run a workflow (auto-detects bundles)
-aiworkflow workflow list           # List available workflows
-aiworkflow workflow validate <wf>  # Validate a workflow
-aiworkflow workflow show <wf>      # Show workflow details
+marktoflow run <workflow.md>       # Run a workflow (auto-detects bundles)
+marktoflow workflow list           # List available workflows
+marktoflow workflow validate <wf>  # Validate a workflow
+marktoflow workflow show <wf>      # Show workflow details
 
 # Bundle operations
-aiworkflow bundle info <path>      # Show bundle information
-aiworkflow bundle validate <path>  # Validate bundle structure
-aiworkflow bundle run <path>       # Run a bundle workflow
-aiworkflow bundle list [path]      # List bundles in directory
+marktoflow bundle info <path>      # Show bundle information
+marktoflow bundle validate <path>  # Validate bundle structure
+marktoflow bundle run <path>       # Run a bundle workflow
+marktoflow bundle list [path]      # List bundles in directory
 
 # Agent management
-aiworkflow agent list              # List available agents
-aiworkflow agent info <agent>      # Show agent capabilities
+marktoflow agent list              # List available agents
+marktoflow agent info <agent>      # Show agent capabilities
 
 # Tool management
-aiworkflow tools list              # List registered tools
+marktoflow tools list              # List registered tools
 ```
 
 ## Configuration
 
-### Main Configuration (`aiworkflow.yaml`)
+### Main Configuration (`marktoflow.yaml`)
 
 ```yaml
 version: "1.0"
-framework: aiworkflow
+framework: marktoflow
 
 agent:
   primary: opencode
@@ -139,10 +139,10 @@ logging:
 
 tools:
   discovery: auto
-  registry_path: .aiworkflow/tools/registry.yaml
+  registry_path: .marktoflow/tools/registry.yaml
 ```
 
-### Agent Capabilities (`.aiworkflow/agents/capabilities.yaml`)
+### Agent Capabilities (`.marktoflow/agents/capabilities.yaml`)
 
 ```yaml
 agents:
@@ -262,10 +262,10 @@ chmod +x tools/build.sh
 
 ```bash
 # Direct bundle run
-aiworkflow bundle run my-workflow/
+marktoflow bundle run my-workflow/
 
 # Or auto-detected with regular run
-aiworkflow run my-workflow/
+marktoflow run my-workflow/
 ```
 
 ### Script Tool I/O
@@ -305,7 +305,7 @@ if __name__ == "__main__":
 Native support for MCP (Model Context Protocol) tools:
 
 ```yaml
-# .aiworkflow/tools/mcp/jira.yaml
+# .marktoflow/tools/mcp/jira.yaml
 server:
   command: npx
   args: ["@modelcontextprotocol/server-jira"]
@@ -318,7 +318,7 @@ server:
 Integrate any REST API via OpenAPI specs:
 
 ```yaml
-# .aiworkflow/tools/registry.yaml
+# .marktoflow/tools/registry.yaml
 tools:
   - name: github
     implementations:
@@ -331,7 +331,7 @@ tools:
 Write Python adapters for custom integrations:
 
 ```python
-# .aiworkflow/tools/custom/myservice/adapter.py
+# .marktoflow/tools/custom/myservice/adapter.py
 class Adapter:
     def op_get_data(self, id: str) -> dict:
         """Get data from my service."""
@@ -348,7 +348,7 @@ pip install -e ".[dev]"
 pytest
 
 # Type checking
-mypy src/aiworkflow
+mypy src/marktoflow
 
 # Linting
 ruff check src/
@@ -358,7 +358,7 @@ ruff check src/
 
 ```
 project/
-├── .aiworkflow/
+├── .marktoflow/
 │   ├── agents/              # Agent configurations
 │   ├── workflows/           # Workflow definitions
 │   ├── tools/               # Tool integrations
@@ -367,7 +367,7 @@ project/
 │   │   └── custom/
 │   ├── triggers/            # Schedules, webhooks
 │   └── state/               # Credentials, logs
-├── aiworkflow.yaml          # Main configuration
+├── marktoflow.yaml          # Main configuration
 └── pyproject.toml
 ```
 

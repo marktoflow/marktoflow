@@ -1,6 +1,6 @@
 # Ollama Local Model Setup Guide for OpenCode
 
-This guide shows you how to configure aiworkflow's OpenCode adapter to use Ollama for completely local, private LLM execution.
+This guide shows you how to configure marktoflow's OpenCode adapter to use Ollama for completely local, private LLM execution.
 
 ## Why Ollama?
 
@@ -192,7 +192,7 @@ opencode run "Write a function to calculate factorial"
 
 You should see a code response. If this works, you're ready!
 
-### Step 8: Configure aiworkflow
+### Step 8: Configure marktoflow
 
 Create or update your workflow configuration:
 
@@ -224,7 +224,7 @@ Start OpenCode server:
 opencode serve --port 4096
 ```
 
-Configure aiworkflow:
+Configure marktoflow:
 ```yaml
 agent:
   name: opencode
@@ -234,7 +234,7 @@ agent:
     opencode_server_url: http://localhost:4096
 ```
 
-### Step 9: Test with aiworkflow
+### Step 9: Test with marktoflow
 
 Create a test workflow:
 
@@ -274,7 +274,7 @@ output: analysis
 
 Run it:
 ```bash
-aiworkflow run test-ollama.md
+marktoflow run test-ollama.md
 ```
 
 ## Model Selection Guide
@@ -531,7 +531,7 @@ ollama rm llama2:7b  # Free up disk space
 - **Ollama Documentation**: https://github.com/ollama/ollama
 - **Model Library**: https://ollama.ai/library
 - **OpenCode Documentation**: https://opencode.ai/docs
-- **aiworkflow Issues**: https://github.com/yourusername/aiworkflow/issues
+- **marktoflow Issues**: https://github.com/yourusername/marktoflow/issues
 
 ---
 

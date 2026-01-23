@@ -41,11 +41,11 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - **incident-response**: Automated incident handling
   - **data-pipeline**: ETL data pipeline workflow
 - [x] Added CLI commands for templates
-  - `aiworkflow template list` - List available templates
-  - `aiworkflow template show <id>` - Show template details
-  - `aiworkflow template use <id>` - Create workflow from template
-  - `aiworkflow template search <query>` - Search templates
-  - `aiworkflow template categories` - List categories
+  - `marktoflow template list` - List available templates
+  - `marktoflow template show <id>` - Show template details
+  - `marktoflow template use <id>` - Create workflow from template
+  - `marktoflow template search <query>` - Search templates
+  - `marktoflow template categories` - List categories
 - [x] Created convenience function
   - create_template_registry() for quick setup
 
@@ -60,9 +60,9 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - create_template_registry tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/templates.py` - NEW: Template library (~1100 lines)
-- `src/aiworkflow/core/__init__.py` - Added template module exports
-- `src/aiworkflow/cli/main.py` - Added template CLI commands
+- `src/marktoflow/core/templates.py` - NEW: Template library (~1100 lines)
+- `src/marktoflow/core/__init__.py` - Added template module exports
+- `src/marktoflow/cli/main.py` - Added template CLI commands
 - `tests/test_templates.py` - NEW: Template tests (62 tests)
 - `TODO.md` - Marked template library complete
 - `PROGRESS.md` - Added template library details
@@ -142,8 +142,8 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Enum tests (HookType, PluginState values)
 
 ### Files Created/Modified
-- `src/aiworkflow/core/plugins.py` - NEW: Plugin system (~838 lines)
-- `src/aiworkflow/core/__init__.py` - Added plugin module exports
+- `src/marktoflow/core/plugins.py` - NEW: Plugin system (~838 lines)
+- `src/marktoflow/core/__init__.py` - Added plugin module exports
 - `tests/test_plugins.py` - NEW: Plugin tests (71 tests)
 - `TODO.md` - Marked plugin system complete
 - `PROGRESS.md` - Added plugin system details
@@ -201,7 +201,7 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 ### Virtual Environment Setup
 - [x] Created .venv for development
 - [x] Verified pip install -e . works correctly
-- [x] Verified CLI commands work (aiworkflow --help, version, doctor)
+- [x] Verified CLI commands work (marktoflow --help, version, doctor)
 - [x] Installed all optional dependencies for testing
 
 ### Testing
@@ -217,8 +217,8 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Convenience function tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/routing.py` - NEW: Agent routing module (~700 lines)
-- `src/aiworkflow/core/__init__.py` - Added routing module exports
+- `src/marktoflow/core/routing.py` - NEW: Agent routing module (~700 lines)
+- `src/marktoflow/core/__init__.py` - Added routing module exports
 - `tests/test_routing.py` - NEW: Routing tests (53 tests)
 - `.venv/` - NEW: Virtual environment for development
 - `TODO.md` - Marked optimization features complete
@@ -238,12 +238,12 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - `output_result()` for conditional output
 
 ### Quick Wins: New Commands
-- [x] Implemented `aiworkflow workflow create` scaffolding command
+- [x] Implemented `marktoflow workflow create` scaffolding command
   - Templates: basic, multi-step, with-tools
   - `--bundle/-b` flag to create bundle directory structure
   - `--template/-t` option to select template
   - `--output/-o` option for output directory
-- [x] Implemented `aiworkflow doctor` command
+- [x] Implemented `marktoflow doctor` command
   - Python version check (3.11+ recommended)
   - Project initialization check
   - Config file check
@@ -384,10 +384,10 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - `get_available_backends()` for backend detection
 
 ### Files Created/Modified
-- `src/aiworkflow/core/security.py` - NEW: Security module (~900 lines)
-- `src/aiworkflow/core/credentials.py` - NEW: Credentials module (~750 lines)
-- `src/aiworkflow/core/__init__.py` - Added security and credentials exports
-- `src/aiworkflow/cli/main.py` - Added global options, new commands, JSON support
+- `src/marktoflow/core/security.py` - NEW: Security module (~900 lines)
+- `src/marktoflow/core/credentials.py` - NEW: Credentials module (~750 lines)
+- `src/marktoflow/core/__init__.py` - Added security and credentials exports
+- `src/marktoflow/cli/main.py` - Added global options, new commands, JSON support
 - `tests/test_security.py` - NEW: Security tests (52 tests)
 - `tests/test_credentials.py` - NEW: Credentials tests (60 tests)
 - `TODO.md` - Marked Quick Wins and Phase 3 Security complete
@@ -422,11 +422,11 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 - [x] Created `load_bundle()` / `is_bundle()` convenience functions
 
 ### CLI Bundle Commands
-- [x] `aiworkflow bundle info <path>` - Show bundle information
-- [x] `aiworkflow bundle validate <path>` - Validate bundle structure
-- [x] `aiworkflow bundle run <path>` - Run a bundle workflow
-- [x] `aiworkflow bundle list [path]` - List bundles in directory
-- [x] Updated `aiworkflow run` to auto-detect bundle directories
+- [x] `marktoflow bundle info <path>` - Show bundle information
+- [x] `marktoflow bundle validate <path>` - Validate bundle structure
+- [x] `marktoflow bundle run <path>` - Run a bundle workflow
+- [x] `marktoflow bundle list [path]` - List bundles in directory
+- [x] Updated `marktoflow run` to auto-detect bundle directories
 
 ### Example Bundles
 - [x] Refactored all 5 examples to self-contained bundle structure:
@@ -455,10 +455,10 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 - [x] Updated README.md with bundle documentation
 
 ### Files Created/Modified
-- `src/aiworkflow/tools/script.py` - NEW: ScriptTool implementation
-- `src/aiworkflow/tools/bundle.py` - NEW: WorkflowBundle implementation
-- `src/aiworkflow/tools/__init__.py` - Updated exports
-- `src/aiworkflow/cli/main.py` - Added bundle commands
+- `src/marktoflow/tools/script.py` - NEW: ScriptTool implementation
+- `src/marktoflow/tools/bundle.py` - NEW: WorkflowBundle implementation
+- `src/marktoflow/tools/__init__.py` - Updated exports
+- `src/marktoflow/cli/main.py` - Added bundle commands
 - `tests/test_script_tool.py` - NEW: ScriptTool tests
 - `tests/test_bundle.py` - NEW: WorkflowBundle tests
 - `examples/*/` - Refactored to bundle structure
@@ -473,22 +473,22 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 ## 2026-01-22 (Session 4 Continued: Queue CLI)
 
 ### Phase 2: Queue CLI Commands
-- [x] Implemented `aiworkflow queue status` command
+- [x] Implemented `marktoflow queue status` command
   - Shows queue type, name, and pending message count
   - Supports memory, redis queue types
-- [x] Implemented `aiworkflow queue publish` command
+- [x] Implemented `marktoflow queue publish` command
   - Publish workflow to queue with priority (low/normal/high/critical)
   - Input parameters support (`--input key=value`)
-- [x] Implemented `aiworkflow queue worker` command
+- [x] Implemented `marktoflow queue worker` command
   - Start queue worker to process workflow messages
   - Configurable concurrency
   - Graceful shutdown with signal handling
-- [x] Implemented `aiworkflow queue purge` command
+- [x] Implemented `marktoflow queue purge` command
   - Purge all messages from queue
   - Confirmation prompt with `--yes` override
 
 ### Files Modified
-- `src/aiworkflow/cli/main.py` - Added queue CLI commands
+- `src/marktoflow/cli/main.py` - Added queue CLI commands
 - `TODO.md` - Marked queue CLI as complete
 
 ---
@@ -550,8 +550,8 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - GitCompensationHandler tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/rollback.py` - NEW: Rollback capabilities
-- `src/aiworkflow/core/__init__.py` - Updated exports for rollback module
+- `src/marktoflow/core/rollback.py` - NEW: Rollback capabilities
+- `src/marktoflow/core/__init__.py` - Updated exports for rollback module
 - `tests/test_rollback.py` - NEW: Rollback tests
 - `TODO.md` - Marked rollback capabilities complete
 - `PROGRESS.md` - Added rollback implementation details
@@ -626,8 +626,8 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Default pricing validation tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/costs.py` - NEW: Cost tracking module
-- `src/aiworkflow/core/__init__.py` - Updated exports for cost module
+- `src/marktoflow/core/costs.py` - NEW: Cost tracking module
+- `src/marktoflow/core/__init__.py` - Updated exports for cost module
 - `tests/test_costs.py` - NEW: Cost tracking tests
 - `TODO.md` - Marked cost tracking complete
 - `PROGRESS.md` - Added cost tracking implementation details
@@ -683,7 +683,7 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Python cache and build files
   - IDE configurations
   - OS-specific files
-  - aiworkflow state and credentials
+  - marktoflow state and credentials
   - Temporary and log files
 
 ### Dependencies Updated
@@ -701,8 +701,8 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Integration tests for queue behavior
 
 ### Files Created/Modified
-- `src/aiworkflow/core/queue.py` - NEW: Message queue integration
-- `src/aiworkflow/core/__init__.py` - Updated exports for queue module
+- `src/marktoflow/core/queue.py` - NEW: Message queue integration
+- `src/marktoflow/core/__init__.py` - Updated exports for queue module
 - `pyproject.toml` - Added redis and pika dependencies
 - `tests/test_queue.py` - NEW: Message queue tests
 - `examples/code-review.md` - NEW: Code review workflow
@@ -773,10 +773,10 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - MetricsServer lifecycle tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/filewatcher.py` - NEW: File system event triggers
-- `src/aiworkflow/core/metrics.py` - NEW: Prometheus metrics collection
-- `src/aiworkflow/core/models.py` - Added metadata field to StepResult
-- `src/aiworkflow/core/__init__.py` - Updated exports for filewatcher and metrics
+- `src/marktoflow/core/filewatcher.py` - NEW: File system event triggers
+- `src/marktoflow/core/metrics.py` - NEW: Prometheus metrics collection
+- `src/marktoflow/core/models.py` - Added metadata field to StepResult
+- `src/marktoflow/core/__init__.py` - Updated exports for filewatcher and metrics
 - `pyproject.toml` - Added watchdog and prometheus-client dependencies
 - `tests/test_filewatcher.py` - NEW: File watcher tests
 - `tests/test_metrics.py` - NEW: Metrics tests
@@ -818,8 +818,8 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - TestWorkflowEngineFailoverIntegration: integration tests
 
 ### Files Modified
-- `src/aiworkflow/core/engine.py` - Added failover classes and methods
-- `src/aiworkflow/core/__init__.py` - Exported failover classes
+- `src/marktoflow/core/engine.py` - Added failover classes and methods
+- `src/marktoflow/core/__init__.py` - Exported failover classes
 - `tests/test_engine.py` - Added 14 failover tests
 - `TODO.md` - Marked failover as complete
 - `PROGRESS.md` - Added failover session
@@ -857,9 +857,9 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - `generate_signature()` for testing
 - [x] Implemented AsyncWebhookReceiver using aiohttp
 - [x] Added webhook CLI commands
-  - `aiworkflow webhook list` - List registered webhooks
-  - `aiworkflow webhook start` - Start webhook server
-  - `aiworkflow webhook test` - Test webhook endpoint
+  - `marktoflow webhook list` - List registered webhooks
+  - `marktoflow webhook start` - Start webhook server
+  - `marktoflow webhook test` - Test webhook endpoint
 
 ### Testing
 - [x] Created test_engine.py (17 tests)
@@ -871,10 +871,10 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Signature verification tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/engine.py` - Added RetryPolicy, CircuitBreaker
-- `src/aiworkflow/core/webhook.py` - NEW: Webhook receiver system
-- `src/aiworkflow/core/__init__.py` - Updated exports
-- `src/aiworkflow/cli/main.py` - Added webhook commands
+- `src/marktoflow/core/engine.py` - Added RetryPolicy, CircuitBreaker
+- `src/marktoflow/core/webhook.py` - NEW: Webhook receiver system
+- `src/marktoflow/core/__init__.py` - Updated exports
+- `src/marktoflow/cli/main.py` - Added webhook commands
 - `tests/test_engine.py` - NEW: Engine enhancement tests
 - `tests/test_webhook.py` - NEW: Webhook tests
 - `README.md` - Added OpenCode recommendation
@@ -896,10 +896,10 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Async execution loop
   - Job completion callbacks
 - [x] Added scheduler CLI commands
-  - `aiworkflow schedule list` - List scheduled workflows
-  - `aiworkflow schedule start` - Start scheduler
-  - `aiworkflow schedule run` - Run due jobs once
-  - `aiworkflow schedule info <job-id>` - Show job details
+  - `marktoflow schedule list` - List scheduled workflows
+  - `marktoflow schedule start` - Start scheduler
+  - `marktoflow schedule run` - Run due jobs once
+  - `marktoflow schedule info <job-id>` - Show job details
 
 ### Phase 2: State Persistence
 - [x] Implemented StateStore class with SQLite backend
@@ -943,11 +943,11 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
   - Logger lifecycle tests
 
 ### Files Created/Modified
-- `src/aiworkflow/core/scheduler.py` - Scheduling system
-- `src/aiworkflow/core/state.py` - State persistence
-- `src/aiworkflow/core/logging.py` - Execution logging
-- `src/aiworkflow/core/__init__.py` - Added exports
-- `src/aiworkflow/cli/main.py` - Added schedule commands
+- `src/marktoflow/core/scheduler.py` - Scheduling system
+- `src/marktoflow/core/state.py` - State persistence
+- `src/marktoflow/core/logging.py` - Execution logging
+- `src/marktoflow/core/__init__.py` - Added exports
+- `src/marktoflow/cli/main.py` - Added schedule commands
 - `tests/test_scheduler.py` - Scheduler tests
 - `tests/test_state.py` - State tests
 - `tests/test_logging.py` - Logging tests
@@ -964,7 +964,7 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 - [x] Created CLAUDE.md for AI assistant context
 
 ### Core Framework Implementation
-- [x] Created project structure (.aiworkflow directory tree)
+- [x] Created project structure (.marktoflow directory tree)
 - [x] Created pyproject.toml with dependencies and build config
 - [x] Implemented core data models (models.py)
   - Workflow, WorkflowStep, ExecutionContext, StepResult, WorkflowResult
@@ -1008,14 +1008,14 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 
 ### CLI
 - [x] Created CLI with Typer (main.py)
-  - `aiworkflow init` - Project initialization
-  - `aiworkflow run` - Workflow execution
-  - `aiworkflow workflow list/validate/show` - Workflow management
-  - `aiworkflow agent list/info` - Agent management
-  - `aiworkflow tools list` - Tool management
+  - `marktoflow init` - Project initialization
+  - `marktoflow run` - Workflow execution
+  - `marktoflow workflow list/validate/show` - Workflow management
+  - `marktoflow agent list/info` - Agent management
+  - `marktoflow tools list` - Tool management
 
 ### Configuration
-- [x] Created aiworkflow.yaml main configuration
+- [x] Created marktoflow.yaml main configuration
 - [x] Created capabilities.yaml agent capability matrix
 - [x] Created registry.yaml tool registry template
 
@@ -1078,7 +1078,7 @@ This file tracks completed work on the Unified AI Workflow Automation Framework.
 ## Architecture Implemented
 
 ```
-src/aiworkflow/
+src/marktoflow/
 ├── __init__.py           # Package exports
 ├── py.typed              # Type hints marker
 ├── core/
@@ -1112,7 +1112,7 @@ src/aiworkflow/
     ├── __init__.py
     └── main.py           # CLI commands (schedule + webhook added)
 
-.aiworkflow/
+.marktoflow/
 ├── agents/
 │   └── capabilities.yaml
 ├── workflows/
@@ -1137,7 +1137,7 @@ src/aiworkflow/
 ### OpenCode Adapter - Production Ready ✅
 
 #### Core Implementation
-- [x] **OpenCodeAdapter class** (509 lines in `src/aiworkflow/agents/opencode.py`)
+- [x] **OpenCodeAdapter class** (509 lines in `src/marktoflow/agents/opencode.py`)
   - Dual-mode architecture: CLI, Server, and Auto modes
   - Backend-agnostic design (no direct LLM API calls)
   - Auto-detection and intelligent fallback
@@ -1258,7 +1258,7 @@ Recommendation: Auto mode for best balance
 #### Files Created (Summary)
 ```
 Implementation:
-├── src/aiworkflow/agents/opencode.py (509 lines)
+├── src/marktoflow/agents/opencode.py (509 lines)
 
 Testing:
 ├── test_opencode_adapter.py (227 lines)
@@ -1296,7 +1296,7 @@ All core features are working and fully tested. Streaming support is experimenta
 ### Claude Code Adapter - CLI Mode Ready ✅
 
 #### Core Implementation
-- [x] **ClaudeCodeAdapter class** (485 lines in `src/aiworkflow/agents/claude_code.py`)
+- [x] **ClaudeCodeAdapter class** (485 lines in `src/marktoflow/agents/claude_code.py`)
   - CLI mode implementation using `claude` subprocess
   - File-based context support (working directory awareness)
   - Model selection (Sonnet 3.5, Opus 3, Haiku 3)
@@ -1364,7 +1364,7 @@ All core features are working and fully tested. Streaming support is experimenta
 #### Files Created
 ```
 Implementation:
-├── src/aiworkflow/agents/claude_code.py (485 lines)
+├── src/marktoflow/agents/claude_code.py (485 lines)
 
 Examples:
 ├── examples/claude-code-config/README.md (250+ lines)

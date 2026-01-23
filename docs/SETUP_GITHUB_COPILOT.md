@@ -1,6 +1,6 @@
 # GitHub Copilot Setup Guide for OpenCode
 
-This guide shows you how to configure aiworkflow's OpenCode adapter to use GitHub Copilot as the LLM backend.
+This guide shows you how to configure marktoflow's OpenCode adapter to use GitHub Copilot as the LLM backend.
 
 ## Why GitHub Copilot?
 
@@ -104,16 +104,16 @@ opencode run "Write a Python function that says hello"
 
 You should see a response from the AI. If this works, you're all set!
 
-### Step 4: Configure aiworkflow
+### Step 4: Configure marktoflow
 
-Now configure aiworkflow to use OpenCode with your GitHub Copilot setup.
+Now configure marktoflow to use OpenCode with your GitHub Copilot setup.
 
 Create or update your workflow configuration:
 
 **Option A: Auto Mode (Recommended)**
 
 ```yaml
-# config.yaml or .aiworkflow/config.yaml
+# config.yaml or .marktoflow/config.yaml
 agent:
   name: opencode
   provider: opencode
@@ -148,7 +148,7 @@ agent:
     opencode_server_url: http://localhost:4096
 ```
 
-### Step 5: Test with aiworkflow
+### Step 5: Test with marktoflow
 
 Create a simple test workflow:
 
@@ -188,7 +188,7 @@ output: analysis_result
 
 Run it:
 ```bash
-aiworkflow run test-workflow.md
+marktoflow run test-workflow.md
 ```
 
 ## Model Selection
@@ -355,7 +355,7 @@ If privacy is a concern, consider using [Ollama instead](./SETUP_OLLAMA.md) for 
 
 - **OpenCode Issues**: https://github.com/opencode-ai/opencode/issues
 - **GitHub Copilot Support**: https://support.github.com/
-- **aiworkflow Issues**: https://github.com/yourusername/aiworkflow/issues
+- **marktoflow Issues**: https://github.com/yourusername/marktoflow/issues
 
 ---
 

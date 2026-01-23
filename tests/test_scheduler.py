@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from aiworkflow.core.scheduler import CronParser, ScheduledJob, Scheduler
+from marktoflow.core.scheduler import CronParser, ScheduledJob, Scheduler
 
 
 class TestCronParser:

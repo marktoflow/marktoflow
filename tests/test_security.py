@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from aiworkflow.core.security import (
+from marktoflow.core.security import (
     # RBAC
     Permission,
     Role,

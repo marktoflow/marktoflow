@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aiworkflow.core.credentials import (
+from marktoflow.core.credentials import (
     AgeEncryptor,
     Credential,
     CredentialManager,

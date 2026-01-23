@@ -37,7 +37,7 @@ External Services (Jira, Slack, Email, etc.)
 
 ```
 project/
-├── .aiworkflow/                    # Framework directory
+├── .marktoflow/                    # Framework directory
 │   ├── config.yaml                 # Global configuration
 │   ├── agents/                     # Agent configs and capabilities
 │   ├── workflows/                  # Workflow definitions (.md)
@@ -49,12 +49,12 @@ project/
 │   ├── state/                      # Credentials, logs, state
 │   └── plugins/                    # Installed plugins
 ├── src/                            # Framework source code
-│   ├── aiworkflow/                 # Main package
+│   ├── marktoflow/                 # Main package
 │   │   ├── core/                   # Core framework
 │   │   ├── agents/                 # Agent adapters
 │   │   ├── tools/                  # Tool integration
 │   │   └── cli/                    # CLI commands
-├── aiworkflow.yaml                 # Main config (project root)
+├── marktoflow.yaml                 # Main config (project root)
 └── pyproject.toml                  # Python project config
 ```
 
@@ -101,7 +101,7 @@ class ToolRegistry:
 
 See TODO.md for current tasks. Priority order:
 
-1. **Project Structure** - Create .aiworkflow directory tree
+1. **Project Structure** - Create .marktoflow directory tree
 2. **Workflow Parser** - Parse YAML frontmatter + markdown workflows
 3. **Agent Adapters** - Base class and capability detection
 4. **MCP Bridge** - Enable non-Claude agents to use MCP tools

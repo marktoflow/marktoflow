@@ -36,7 +36,7 @@ case "$operation" in
         depth="${args[depth]:-1}"
         
         # Simulate clone - create temp directory
-        repo_path="/tmp/aiworkflow-repo-$$"
+        repo_path="/tmp/marktoflow-repo-$$"
         mkdir -p "$repo_path"
         
         cat <<EOF

@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from aiworkflow.core.plugins import (
+from marktoflow.core.plugins import (
     HookContext,
     HookRegistry,
     HookResult,
@@ -984,7 +984,7 @@ class TestPluginDiscovery:
         with tempfile.TemporaryDirectory() as tmpdir:
             plugin_file = Path(tmpdir) / "my_plugin.py"
             plugin_file.write_text("""
-from aiworkflow.core.plugins import Plugin, PluginMetadata
+from marktoflow.core.plugins import Plugin, PluginMetadata
 
 class MyPlugin(Plugin):
     @property
@@ -1004,7 +1004,7 @@ class MyPlugin(Plugin):
             plugin_dir.mkdir()
             plugin_file = plugin_dir / "plugin.py"
             plugin_file.write_text("""
-from aiworkflow.core.plugins import Plugin, PluginMetadata
+from marktoflow.core.plugins import Plugin, PluginMetadata
 
 class PackagePlugin(Plugin):
     @property
@@ -1022,7 +1022,7 @@ class PackagePlugin(Plugin):
         with tempfile.TemporaryDirectory() as tmpdir:
             plugin_file = Path(tmpdir) / "loadable.py"
             plugin_file.write_text("""
-from aiworkflow.core.plugins import Plugin, PluginMetadata
+from marktoflow.core.plugins import Plugin, PluginMetadata
 
 class LoadablePlugin(Plugin):
     @property
@@ -1063,16 +1063,16 @@ class TestCreatePluginManager:
             assert isinstance(manager, PluginManager)
 
     def test_create_with_plugins_directory(self):
-        """Test creating manager finds .aiworkflow/plugins."""
+        """Test creating manager finds .marktoflow/plugins."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project_root = Path(tmpdir)
-            plugins_dir = project_root / ".aiworkflow" / "plugins"
+            plugins_dir = project_root / ".marktoflow" / "plugins"
             plugins_dir.mkdir(parents=True)
 
             # Create a test plugin
             plugin_file = plugins_dir / "test_plugin.py"
             plugin_file.write_text("""
-from aiworkflow.core.plugins import Plugin, PluginMetadata
+from marktoflow.core.plugins import Plugin, PluginMetadata
 
 class TestPlugin(Plugin):
     @property

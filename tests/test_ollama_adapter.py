@@ -4,9 +4,9 @@ Tests for Ollama Adapter.
 
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
-from aiworkflow.agents.ollama import OllamaAdapter
-from aiworkflow.agents.base import AgentConfig
-from aiworkflow.core.models import (
+from marktoflow.agents.ollama import OllamaAdapter
+from marktoflow.agents.base import AgentConfig
+from marktoflow.core.models import (
     ExecutionContext, 
     Workflow, 
     WorkflowMetadata,

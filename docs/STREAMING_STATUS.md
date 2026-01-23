@@ -153,7 +153,7 @@ async for chunk in adapter.generate_stream(prompt, context):
 
 The streaming implementation is in:
 
-**src/aiworkflow/agents/opencode.py:**
+**src/marktoflow/agents/opencode.py:**
 - Line 358: `generate_stream()` method
 - Line 415: `_execute_via_server_stream()` implementation
 

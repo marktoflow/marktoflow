@@ -6,7 +6,7 @@ This file provides context for Claude Code when working on this project.
 
 ## Project Summary
 
-You are working on **aiworkflow** - a universal automation framework that enables AI coding agents (Claude Code, OpenCode, Aider, etc.) to execute markdown-based workflows with standardized tool integrations.
+You are working on **marktoflow** - a universal automation framework that enables AI coding agents (Claude Code, OpenCode, Aider, etc.) to execute markdown-based workflows with standardized tool integrations.
 
 ---
 
@@ -14,16 +14,16 @@ You are working on **aiworkflow** - a universal automation framework that enable
 
 ```bash
 # Run a workflow
-aiworkflow run .aiworkflow/workflows/email-triage.md
+marktoflow run .marktoflow/workflows/email-triage.md
 
 # Validate a workflow
-aiworkflow workflow validate email-triage.md
+marktoflow workflow validate email-triage.md
 
 # List available tools
-aiworkflow tools list
+marktoflow tools list
 
 # Switch agents
-aiworkflow agent set-primary opencode
+marktoflow agent set-primary opencode
 ```
 
 ---
@@ -31,7 +31,7 @@ aiworkflow agent set-primary opencode
 ## Key Concepts
 
 ### 1. Workflows
-Markdown files with YAML frontmatter that define automation steps. Located in `.aiworkflow/workflows/`.
+Markdown files with YAML frontmatter that define automation steps. Located in `.marktoflow/workflows/`.
 
 ### 2. Agent Adapters
 Python classes that translate workflow steps to agent-specific execution. Each agent (Claude Code, OpenCode, etc.) has its own adapter.
@@ -66,14 +66,14 @@ Enables non-Claude agents to use MCP tools by converting MCP protocol to standar
 
 | Path | Purpose |
 |------|---------|
-| `src/aiworkflow/` | Main Python package |
-| `src/aiworkflow/core/` | Parser, orchestrator, state |
-| `src/aiworkflow/agents/` | Agent adapters |
-| `src/aiworkflow/tools/` | Tool registry, MCP bridge |
-| `src/aiworkflow/cli/` | CLI commands |
-| `.aiworkflow/` | User configuration directory |
-| `.aiworkflow/workflows/` | Workflow definitions |
-| `.aiworkflow/tools/` | Tool configurations |
+| `src/marktoflow/` | Main Python package |
+| `src/marktoflow/core/` | Parser, orchestrator, state |
+| `src/marktoflow/agents/` | Agent adapters |
+| `src/marktoflow/tools/` | Tool registry, MCP bridge |
+| `src/marktoflow/cli/` | CLI commands |
+| `.marktoflow/` | User configuration directory |
+| `.marktoflow/workflows/` | Workflow definitions |
+| `.marktoflow/tools/` | Tool configurations |
 
 ---
 
@@ -81,24 +81,24 @@ Enables non-Claude agents to use MCP tools by converting MCP protocol to standar
 
 ### Adding a New Agent Adapter
 
-1. Create `src/aiworkflow/agents/{agent_name}.py`
+1. Create `src/marktoflow/agents/{agent_name}.py`
 2. Inherit from `AgentAdapter` base class
 3. Implement `execute_step()` and `supports_feature()`
-4. Register in `src/aiworkflow/agents/__init__.py`
+4. Register in `src/marktoflow/agents/__init__.py`
 
 ### Adding a New Tool
 
-1. For MCP: Add config in `.aiworkflow/tools/mcp/`
-2. For OpenAPI: Add spec in `.aiworkflow/tools/openapi/`
-3. For Custom: Create adapter in `.aiworkflow/tools/custom/`
-4. Register in `.aiworkflow/tools/registry.yaml`
+1. For MCP: Add config in `.marktoflow/tools/mcp/`
+2. For OpenAPI: Add spec in `.marktoflow/tools/openapi/`
+3. For Custom: Create adapter in `.marktoflow/tools/custom/`
+4. Register in `.marktoflow/tools/registry.yaml`
 
 ### Creating a Workflow
 
-1. Create markdown file in `.aiworkflow/workflows/`
+1. Create markdown file in `.marktoflow/workflows/`
 2. Add YAML frontmatter with metadata
 3. Define steps with action blocks
-4. Test with `aiworkflow workflow validate`
+4. Test with `marktoflow workflow validate`
 
 ---
 
@@ -161,7 +161,7 @@ pytest
 pytest tests/test_parser.py
 
 # Run with coverage
-pytest --cov=src/aiworkflow
+pytest --cov=src/marktoflow
 ```
 
 ---

@@ -5,7 +5,7 @@ Tests for message queue integration.
 import pytest
 from datetime import datetime
 
-from aiworkflow.core.queue import (
+from marktoflow.core.queue import (
     QueueMessage,
     QueueConfig,
     MessagePriority,
@@ -96,7 +96,7 @@ class TestQueueConfig:
     def test_default_config(self):
         """Test default configuration values."""
         config = QueueConfig()
-        assert config.name == "aiworkflow"
+        assert config.name == "marktoflow"
         assert config.max_size == 0
         assert config.message_ttl == 86400
         assert config.retry_delay == 5.0

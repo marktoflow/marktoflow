@@ -1,5 +1,5 @@
 """
-Pytest configuration for aiworkflow tests.
+Pytest configuration for marktoflow tests.
 """
 
 import sys
