@@ -177,16 +177,16 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
     - See: docs/STREAMING_STATUS.md
     - Verified SSE parsing with SDK-compatible server events
     - Graceful fallback to non-streaming in CLI mode
-  - [ ] Cleanup: remove OpenCode CLI output wrappers in streaming fallback
+  - [x] Cleanup: remove OpenCode CLI output wrappers in streaming fallback
 - [ ] Claude Code adapter (IN PROGRESS)
   - [x] CLI mode implementation
   - [x] Basic adapter structure
   - [x] File-based context support
   - [x] Model selection (sonnet, opus, haiku)
-  - [ ] SDK mode support (https://github.com/anthropics/claude-agent-sdk-python)
-    - Future: Use claude-agent-sdk-python for programmatic access
+  - [x] SDK mode support (https://github.com/anthropics/claude-agent-sdk-python)
+    - Uses claude-agent-sdk for programmatic access
     - Benefits: Better control, streaming, session management
-    - Requirements: SDK to reach stable release
+  - [ ] Add SDK validation test (mocked; no CLI quota required)
   - [ ] Extended thinking mode support
   - [ ] Streaming support
   - [ ] Configuration documentation
