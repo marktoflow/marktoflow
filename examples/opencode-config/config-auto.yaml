@@ -1,0 +1,18 @@
+# OpenCode Auto Mode Configuration
+# Tries server first, falls back to CLI if server is unavailable
+# This is the recommended configuration for most use cases
+
+agent:
+  name: opencode
+  extra:
+    # Auto mode: intelligent fallback
+    opencode_mode: auto
+
+    # Server URL to check (optional, defaults shown)
+    opencode_server_url: http://localhost:4096
+
+    # CLI path (optional, defaults to searching PATH)
+    opencode_cli_path: opencode
+
+timeout: 600
+max_retries: 2

@@ -1,0 +1,15 @@
+# OpenCode CLI-Only Mode Configuration
+# Always uses subprocess execution, never requires server
+# Best for: simple workflows, one-off tasks, environments where server isn't available
+
+agent:
+  name: opencode
+  extra:
+    # CLI mode: subprocess only
+    opencode_mode: cli
+
+    # Optional: specify custom OpenCode CLI path
+    # opencode_cli_path: /usr/local/bin/opencode
+
+timeout: 600
+max_retries: 2

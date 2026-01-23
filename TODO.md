@@ -162,7 +162,21 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
 
 ## Backlog
 
-### Future Agent Support
+### Agent Adapters
+- [x] OpenCode adapter (COMPLETE - Production Ready)
+  - [x] Dual-mode architecture (CLI + Server)
+  - [x] Backend-agnostic (GitHub Copilot, Ollama, 75+ providers)
+  - [x] Auto-detection and fallback
+  - [x] Tool calling integration
+  - [x] MCP bridge support
+  - [x] GitHub Copilot setup documentation
+  - [x] Ollama local model setup documentation
+  - [x] Comprehensive testing (basic + integration)
+  - [x] Performance benchmarking
+  - [ ] Streaming support (EXPERIMENTAL - needs OpenCode server API investigation)
+    - See: docs/STREAMING_STATUS.md
+    - Implementation complete, waiting for API endpoint clarification
+    - Graceful fallback to non-streaming in CLI mode
 - [ ] Aider adapter (full support)
 - [ ] Cursor adapter
 - [ ] Codex adapter

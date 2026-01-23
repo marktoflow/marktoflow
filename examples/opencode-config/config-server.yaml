@@ -1,0 +1,21 @@
+# OpenCode Server Mode Configuration (Manual Start)
+# Requires opencode serve to be running before executing workflows
+# Best for: long-running workflows, multiple requests, advanced features
+
+# Start server first:
+# $ opencode serve --port 4096
+
+agent:
+  name: opencode
+  extra:
+    # Server mode: REST API only (fails if server not available)
+    opencode_mode: server
+
+    # Server URL
+    opencode_server_url: http://localhost:4096
+
+    # Don't auto-start (requires manual start)
+    opencode_server_autostart: false
+
+timeout: 600
+max_retries: 2

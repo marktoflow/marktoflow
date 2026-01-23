@@ -1,13 +1,21 @@
 """
 OpenCode Adapter for aiworkflow framework.
 
-Provides integration with OpenCode supporting multiple LLM backends.
+Provides integration with OpenCode CLI supporting multiple LLM backends
+including GitHub Copilot, local models (Ollama, vLLM), and 75+ providers.
+
+This adapter uses OpenCode CLI in non-interactive mode, delegating all
+LLM backend configuration to the user's OpenCode config file.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
+import shutil
+import subprocess
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from aiworkflow.agents.base import AgentAdapter, AgentConfig, register_agent
@@ -24,13 +32,26 @@ from aiworkflow.tools.mcp_bridge import MCPBridge
 @register_agent("opencode")
 class OpenCodeAdapter(AgentAdapter):
     """
-    Adapter for OpenCode.
+    Adapter for OpenCode CLI/Server.
+
+    Supports two execution modes:
+    1. CLI Mode: Uses `opencode run` subprocess (simple, no server needed)
+    2. Server Mode: REST API to `opencode serve` (better performance, more features)
+    3. Auto Mode: Try server first, fallback to CLI (default)
+
+    Configuration:
+        extra:
+            opencode_mode: "auto" | "cli" | "server"  # Default: "auto"
+            opencode_server_url: str  # Default: "http://localhost:4096"
+            opencode_server_autostart: bool  # Default: false
+            opencode_cli_path: str  # Default: "opencode" (searches PATH)
 
     Features:
-    - Multi-model support (OpenAI, Anthropic, Ollama, etc.)
-    - MCP support via native integration or bridge
-    - Function calling
-    - Self-hosted deployment option
+    - Backend-agnostic (works with GitHub Copilot, local models, 75+ providers)
+    - No API key required (uses user's OpenCode configuration)
+    - MCP support via OpenCode's native MCP integration
+    - Tool calling through OpenCode
+    - Streaming support (server mode only)
     """
 
     def __init__(self, config: AgentConfig) -> None:
@@ -41,40 +62,36 @@ class OpenCodeAdapter(AgentAdapter):
             config: Agent configuration
         """
         super().__init__(config)
-        self._client: Any = None
+
+        # Configuration
+        self._mode = config.extra.get("opencode_mode", "auto")  # auto, cli, server
+        self._server_url = config.extra.get("opencode_server_url", "http://localhost:4096")
+        self._server_autostart = config.extra.get("opencode_server_autostart", False)
+        self._cli_path = config.extra.get("opencode_cli_path", "opencode")
+
+        # Runtime state
+        self._http_client: Any = None
+        self._server_process: subprocess.Popen | None = None
+        self._active_mode: str | None = None  # Resolved mode after detection
+        self._session_id: str | None = None
         self._mcp_bridge: MCPBridge | None = None
+
         self._capabilities = AgentCapabilities(
             name="opencode",
             version="0.1.0",
             provider="open_source",
             tool_calling="supported",
-            reasoning="basic",  # Depends on model
-            streaming=True,
+            reasoning="model_dependent",
+            streaming=True,  # Server mode only
             code_execution=True,
             file_creation=True,
-            mcp_native=True,  # OpenCode supports MCP natively
+            mcp_native=True,
             mcp_via_bridge=True,
-            extended_reasoning=False,  # Model dependent
+            extended_reasoning=False,
             multi_turn=True,
-            context_window=100000,  # Varies by model
+            context_window=100000,  # Model dependent
             web_search=False,
         )
-
-        # Determine provider from model name
-        self._provider = self._detect_provider()
-
-    def _detect_provider(self) -> str:
-        """Detect the LLM provider from model name."""
-        model = self.config.model or ""
-
-        if model.startswith("gpt") or model.startswith("o1"):
-            return "openai"
-        elif model.startswith("claude"):
-            return "anthropic"
-        elif "/" in model:  # ollama format: "ollama/llama3"
-            return model.split("/")[0]
-        else:
-            return "openai"  # Default
 
     @property
     def name(self) -> str:
@@ -87,43 +104,50 @@ class OpenCodeAdapter(AgentAdapter):
         return self._capabilities
 
     async def initialize(self) -> None:
-        """Initialize the LLM client."""
-        if self._provider == "openai":
-            try:
-                import openai
+        """Initialize the OpenCode adapter."""
+        if self._initialized:
+            return
 
-                self._client = openai.AsyncOpenAI(
-                    api_key=self.config.api_key,
-                    base_url=self.config.api_base_url,
+        # Detect and validate OpenCode installation
+        if not shutil.which(self._cli_path):
+            raise RuntimeError(
+                f"OpenCode CLI not found at '{self._cli_path}'. "
+                "Install from: https://github.com/opencode-ai/opencode"
+            )
+
+        # Determine active mode
+        if self._mode == "cli":
+            self._active_mode = "cli"
+        elif self._mode == "server":
+            await self._ensure_server_running()
+            self._active_mode = "server"
+        else:  # auto mode
+            if await self._check_server_available():
+                self._active_mode = "server"
+            else:
+                self._active_mode = "cli"
+
+        # Initialize HTTP client for server mode
+        if self._active_mode == "server":
+            try:
+                import httpx
+
+                self._http_client = httpx.AsyncClient(
+                    base_url=self._server_url,
+                    timeout=300.0,  # 5 minute timeout for long operations
                 )
+                # Create a session
+                response = await self._http_client.post("/session")
+                response.raise_for_status()
+                self._session_id = response.json()["id"]
             except ImportError:
                 raise ImportError(
-                    "openai package not installed. Install with: pip install aiworkflow[openai]"
+                    "httpx not installed. Install with: pip install aiworkflow[opencode]"
                 )
-        elif self._provider == "anthropic":
-            try:
-                import anthropic
+            except Exception as e:
+                raise RuntimeError(f"Failed to connect to OpenCode server: {e}")
 
-                self._client = anthropic.AsyncAnthropic(
-                    api_key=self.config.api_key,
-                )
-            except ImportError:
-                raise ImportError(
-                    "anthropic package not installed. Install with: pip install aiworkflow[claude]"
-                )
-        elif self._provider == "ollama":
-            try:
-                import openai
-
-                # Ollama is OpenAI-compatible
-                self._client = openai.AsyncOpenAI(
-                    api_key="ollama",  # Ollama doesn't need a real key
-                    base_url=self.config.api_base_url or "http://localhost:11434/v1",
-                )
-            except ImportError:
-                raise ImportError("openai package not installed. Install with: pip install openai")
-
-        # Initialize MCP bridge for tool access
+        # Initialize MCP bridge if configured
         mcp_config = self.config.extra.get("mcp_servers", {})
         if mcp_config:
             self._mcp_bridge = MCPBridge(mcp_config)
@@ -131,13 +155,68 @@ class OpenCodeAdapter(AgentAdapter):
 
         self._initialized = True
 
+    async def _check_server_available(self) -> bool:
+        """Check if OpenCode server is running."""
+        try:
+            import httpx
+
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                # Try root endpoint (returns HTML web interface)
+                response = await client.get(f"{self._server_url}/")
+                # Server is available if we get any successful response
+                return response.status_code == 200
+        except Exception:
+            return False
+
+    async def _ensure_server_running(self) -> None:
+        """Ensure OpenCode server is running, optionally starting it."""
+        if await self._check_server_available():
+            return
+
+        if not self._server_autostart:
+            raise RuntimeError(
+                f"OpenCode server not running at {self._server_url}. "
+                f"Start with: opencode serve --port {self._server_url.split(':')[-1]}"
+            )
+
+        # Auto-start server
+        port = self._server_url.split(":")[-1]
+        self._server_process = subprocess.Popen(
+            [self._cli_path, "serve", "--port", port, "--print-logs"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # Wait for server to be ready
+        for _ in range(30):  # Wait up to 30 seconds
+            if await self._check_server_available():
+                return
+            await asyncio.sleep(1)
+
+        raise RuntimeError("Failed to start OpenCode server")
+
+    async def cleanup(self) -> None:
+        """Cleanup resources."""
+        if self._http_client:
+            await self._http_client.aclose()
+
+        if self._server_process:
+            self._server_process.terminate()
+            try:
+                self._server_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._server_process.kill()
+
+        if self._mcp_bridge:
+            await self._mcp_bridge.cleanup()
+
     async def execute_step(
         self,
         step: WorkflowStep,
         context: ExecutionContext,
     ) -> StepResult:
         """
-        Execute a workflow step.
+        Execute a workflow step using OpenCode.
 
         Args:
             step: Workflow step to execute
@@ -149,6 +228,9 @@ class OpenCodeAdapter(AgentAdapter):
         started_at = datetime.now()
 
         try:
+            if not self._initialized:
+                await self.initialize()
+
             if step.action.startswith("agent."):
                 operation = step.get_operation()
 
@@ -207,93 +289,48 @@ class OpenCodeAdapter(AgentAdapter):
         output_schema: dict[str, Any] | None = None,
     ) -> Any:
         """
-        Analyze content using the configured LLM.
+        Analyze content using OpenCode.
+
+        Args:
+            prompt: Analysis prompt
+            context: Execution context
+            output_schema: Optional JSON schema for structured output
+
+        Returns:
+            Analysis result (dict if schema provided, str otherwise)
         """
         if not self._initialized:
             await self.initialize()
 
-        if self._provider in ("openai", "ollama"):
-            return await self._openai_analyze(prompt, output_schema)
-        elif self._provider == "anthropic":
-            return await self._anthropic_analyze(prompt, output_schema)
+        # Add JSON schema instruction if provided
+        if output_schema:
+            prompt += "\n\nRespond with valid JSON matching this schema:\n" + json.dumps(
+                output_schema, indent=2
+            )
+
+        if self._active_mode == "server":
+            result = await self._execute_via_server(prompt)
         else:
-            raise ValueError(f"Unsupported provider: {self._provider}")
+            result = await self._execute_via_cli(prompt, output_format="json" if output_schema else "text")
 
-    async def _openai_analyze(
-        self,
-        prompt: str,
-        output_schema: dict[str, Any] | None,
-    ) -> Any:
-        """Analyze using OpenAI-compatible API."""
-        model = self.config.model or "gpt-4"
-        if self._provider == "ollama" and "/" in model:
-            model = model.split("/", 1)[1]  # Remove "ollama/" prefix
-
-        messages = [{"role": "user", "content": prompt}]
-
-        if output_schema:
-            # Use JSON mode
-            messages[0]["content"] += (
-                "\n\nRespond with valid JSON matching this schema:\n" + json.dumps(output_schema)
-            )
-            response = await self._client.chat.completions.create(
-                model=model,
-                messages=messages,
-                response_format={"type": "json_object"},
-            )
-        else:
-            response = await self._client.chat.completions.create(
-                model=model,
-                messages=messages,
-            )
-
-        content = response.choices[0].message.content
-
-        if output_schema and content:
+        # Parse JSON if schema was provided
+        if output_schema and isinstance(result, str):
             try:
-                return json.loads(content)
+                return json.loads(result)
             except json.JSONDecodeError:
-                pass
-
-        return content
-
-    async def _anthropic_analyze(
-        self,
-        prompt: str,
-        output_schema: dict[str, Any] | None,
-    ) -> Any:
-        """Analyze using Anthropic API."""
-        model = self.config.model or "claude-3-5-sonnet-20241022"
-
-        messages = [{"role": "user", "content": prompt}]
-
-        if output_schema:
-            messages[0]["content"] += (
-                "\n\nRespond with valid JSON matching this schema:\n" + json.dumps(output_schema)
-            )
-
-        response = await self._client.messages.create(
-            model=model,
-            max_tokens=4096,
-            messages=messages,
-        )
-
-        content = response.content[0].text
-
-        if output_schema:
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError:
+                # Try to extract JSON from markdown code block
                 import re
 
-                json_match = re.search(r"\{.*\}", content, re.DOTALL)
+                json_match = re.search(r"```json\s*(\{.*?\})\s*```", result, re.DOTALL)
+                if not json_match:
+                    json_match = re.search(r"\{.*\}", result, re.DOTALL)
                 if json_match:
                     try:
-                        return json.loads(json_match.group())
+                        return json.loads(json_match.group(1) if json_match.lastindex else json_match.group())
                     except json.JSONDecodeError:
                         pass
 
-        return content
+        return result
 
     async def generate(
         self,
@@ -301,31 +338,161 @@ class OpenCodeAdapter(AgentAdapter):
         context: ExecutionContext,
         **kwargs: Any,
     ) -> str:
-        """Generate text content."""
+        """
+        Generate text content using OpenCode.
+
+        Args:
+            prompt: Generation prompt
+            context: Execution context
+            **kwargs: Additional parameters (ignored, OpenCode uses its config)
+
+        Returns:
+            Generated text
+        """
         if not self._initialized:
             await self.initialize()
 
-        if self._provider in ("openai", "ollama"):
-            model = self.config.model or "gpt-4"
-            if self._provider == "ollama" and "/" in model:
-                model = model.split("/", 1)[1]
+        if self._active_mode == "server":
+            return await self._execute_via_server(prompt)
+        else:
+            return await self._execute_via_cli(prompt)
 
-            response = await self._client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=kwargs.get("max_tokens", 2048),
+    async def generate_stream(
+        self,
+        prompt: str,
+        context: ExecutionContext,
+        **kwargs: Any,
+    ):
+        """
+        Generate text content using OpenCode with streaming.
+
+        Only supported in server mode. Falls back to non-streaming in CLI mode.
+
+        Args:
+            prompt: Generation prompt
+            context: Execution context
+            **kwargs: Additional parameters
+
+        Yields:
+            Text chunks as they are generated
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        if self._active_mode == "server":
+            async for chunk in self._execute_via_server_stream(prompt):
+                yield chunk
+        else:
+            # CLI mode doesn't support streaming, return full response
+            result = await self._execute_via_cli(prompt)
+            yield result
+
+    async def _execute_via_cli(
+        self,
+        prompt: str,
+        output_format: str = "text",
+    ) -> str:
+        """Execute prompt using OpenCode CLI."""
+        cmd = [self._cli_path, "run", prompt]
+
+        if output_format == "json":
+            cmd.extend(["--format", "json"])
+
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        stdout, stderr = await process.communicate()
+
+        if process.returncode != 0:
+            error_msg = stderr.decode() if stderr else "Unknown error"
+            stdout_msg = stdout.decode() if stdout else ""
+            raise RuntimeError(
+                f"OpenCode CLI failed (exit code {process.returncode})\n"
+                f"STDOUT: {stdout_msg}\n"
+                f"STDERR: {error_msg}"
             )
-            return response.choices[0].message.content or ""
 
-        elif self._provider == "anthropic":
-            response = await self._client.messages.create(
-                model=self.config.model or "claude-3-5-sonnet-20241022",
-                max_tokens=kwargs.get("max_tokens", 2048),
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return response.content[0].text
+        return stdout.decode().strip()
 
-        raise ValueError(f"Unsupported provider: {self._provider}")
+    async def _execute_via_server(self, prompt: str) -> str:
+        """Execute prompt using OpenCode server REST API."""
+        if not self._http_client or not self._session_id:
+            raise RuntimeError("Server mode not initialized")
+
+        response = await self._http_client.post(
+            f"/session/{self._session_id}/message",
+            json={
+                "parts": [{"type": "text", "text": prompt}],
+            },
+        )
+        response.raise_for_status()
+
+        data = response.json()
+
+        # Extract text from response
+        # Server returns message with parts
+        if "parts" in data:
+            return "".join(part.get("text", "") for part in data["parts"] if "text" in part)
+        elif "text" in data:
+            return data["text"]
+        else:
+            return str(data)
+
+    async def _execute_via_server_stream(self, prompt: str):
+        """Execute prompt using OpenCode server with streaming via SSE."""
+        if not self._http_client or not self._session_id:
+            raise RuntimeError("Server mode not initialized")
+
+        # Send async message (doesn't wait for completion)
+        response = await self._http_client.post(
+            f"/session/{self._session_id}/prompt_async",
+            json={
+                "parts": [{"type": "text", "text": prompt}],
+            },
+        )
+        response.raise_for_status()
+
+        # Connect to event stream to receive updates
+        async with self._http_client.stream(
+            "GET",
+            "/event",
+            params={"session": self._session_id},
+        ) as event_response:
+            event_response.raise_for_status()
+
+            buffer = ""
+            async for line in event_response.aiter_lines():
+                if not line:
+                    continue
+
+                # Parse SSE format
+                if line.startswith("data: "):
+                    data_str = line[6:]  # Remove "data: " prefix
+                    try:
+                        event_data = json.loads(data_str)
+
+                        # Extract text chunks from different event types
+                        if event_data.get("type") == "message.part.delta":
+                            # Streaming text delta
+                            if "delta" in event_data and "text" in event_data["delta"]:
+                                yield event_data["delta"]["text"]
+
+                        elif event_data.get("type") == "message.complete":
+                            # Message is complete, stop streaming
+                            break
+
+                        elif event_data.get("type") == "message.part":
+                            # Full part received
+                            part = event_data.get("part", {})
+                            if part.get("type") == "text" and "text" in part:
+                                yield part["text"]
+
+                    except json.JSONDecodeError:
+                        # Not JSON, might be a simple text event
+                        continue
 
     async def call_tool(
         self,
@@ -335,7 +502,19 @@ class OpenCodeAdapter(AgentAdapter):
         context: ExecutionContext,
     ) -> Any:
         """
-        Call a tool using function calling.
+        Call a tool through OpenCode.
+
+        OpenCode handles tool execution through its native MCP integration
+        and tool system. We delegate to OpenCode rather than calling tools directly.
+
+        Args:
+            tool_name: Name of the tool
+            operation: Operation to perform
+            params: Tool parameters
+            context: Execution context
+
+        Returns:
+            Tool execution result
         """
         if not self._initialized:
             await self.initialize()
@@ -346,57 +525,15 @@ class OpenCodeAdapter(AgentAdapter):
             if full_tool_name in self._mcp_bridge.list_tools():
                 return await self._mcp_bridge.call_tool(full_tool_name, params)
 
-        # Otherwise, use function calling
-        return await self._function_call_tool(tool_name, operation, params)
+        # Otherwise, ask OpenCode to execute the tool
+        prompt = f"""Execute the {tool_name} tool with operation '{operation}'.
 
-    async def _function_call_tool(
-        self,
-        tool_name: str,
-        operation: str,
-        params: dict[str, Any],
-    ) -> Any:
-        """Execute tool via LLM function calling."""
-        if self._provider in ("openai", "ollama"):
-            model = self.config.model or "gpt-4"
-            if self._provider == "ollama" and "/" in model:
-                model = model.split("/", 1)[1]
+Parameters:
+{json.dumps(params, indent=2)}
 
-            # Define the function
-            functions = [
-                {
-                    "name": f"{tool_name}_{operation}",
-                    "description": f"Execute {tool_name} {operation}",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            k: {"type": "string", "description": str(v)} for k, v in params.items()
-                        },
-                    },
-                }
-            ]
+Return the result of executing this tool operation."""
 
-            prompt = f"""Execute the {tool_name} tool with operation '{operation}'.
-Parameters: {json.dumps(params, indent=2)}
-
-Analyze what this operation should do and return the expected result."""
-
-            response = await self._client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-            )
-
-            return response.choices[0].message.content
-
-        # For Anthropic, similar approach
-        return await self.generate(
-            prompt=f"Execute {tool_name}.{operation} with params: {json.dumps(params)}",
-            context=ExecutionContext(
-                run_id="",
-                workflow=None,  # type: ignore
-                agent_name=self.name,
-                agent_capabilities=self._capabilities,
-            ),
-        )
+        return await self.generate(prompt, context)
 
     def _build_analysis_prompt(
         self,

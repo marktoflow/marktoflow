@@ -1,0 +1,18 @@
+# OpenCode Server Mode Configuration (Auto-Start)
+# Automatically starts opencode serve if not already running
+# Best for: development, automated workflows
+
+agent:
+  name: opencode
+  extra:
+    # Server mode: REST API only
+    opencode_mode: server
+
+    # Server URL
+    opencode_server_url: http://localhost:4096
+
+    # Auto-start server if not running
+    opencode_server_autostart: true
+
+timeout: 600
+max_retries: 2
