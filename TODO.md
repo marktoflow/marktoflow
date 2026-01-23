@@ -173,10 +173,11 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
   - [x] Ollama local model setup documentation
   - [x] Comprehensive testing (basic + integration)
   - [x] Performance benchmarking
-  - [ ] Streaming support (EXPERIMENTAL - needs OpenCode server API investigation)
+  - [x] Streaming support (server API aligned + tested)
     - See: docs/STREAMING_STATUS.md
-    - Implementation complete, waiting for API endpoint clarification
+    - Verified SSE parsing with SDK-compatible server events
     - Graceful fallback to non-streaming in CLI mode
+  - [ ] Cleanup: remove OpenCode CLI output wrappers in streaming fallback
 - [ ] Claude Code adapter (IN PROGRESS)
   - [x] CLI mode implementation
   - [x] Basic adapter structure

@@ -1,11 +1,11 @@
 # Streaming Support Status
 
-**Status:** 🚧 Experimental / Needs Investigation
-**Last Updated:** January 22, 2026
+**Status:** 🚧 Experimental / Needs Verification
+**Last Updated:** January 23, 2026
 
 ## Current State
 
-Streaming support has been **implemented** in the OpenCode adapter (`_execute_via_server_stream` method), but requires further investigation to work correctly with the OpenCode server API.
+Streaming support has been **implemented** in the OpenCode adapter (`_execute_via_server_stream` method) and updated to align with the OpenCode server API, but still requires verification against a running server.
 
 ## Implementation
 
@@ -25,7 +25,12 @@ async def generate_stream(prompt, context) -> AsyncIterator[str]:
 
 ### 1. Server API Endpoints
 
-The OpenCode server (v1.1.32) appears to primarily serve a web interface:
+The OpenCode server (v1.1.32+) serves a web interface at `/`, but the API is expected under:
+- `GET /global/health` (JSON health check)
+- `POST /session` (create session)
+- `POST /session/:id/message` (sync request)
+- `POST /session/:id/prompt_async` (async request)
+- `GET /event` or `GET /global/event` (SSE stream)
 
 ```bash
 $ curl http://localhost:4096/
@@ -40,30 +45,26 @@ $ curl -X POST http://localhost:4096/session
 
 ### 2. REST API Access
 
-The documented REST API endpoints (`/session`, `/event`, etc.) may:
-- Require specific headers
-- Be at a different path prefix (e.g., `/api/...`)
-- Only be available in specific server modes
-- Require authentication setup
+The adapter now sends explicit headers:
+- `Accept: application/json` for REST calls
+- `Accept: text/event-stream` for SSE streaming
+
+If the server requires authentication, the adapter will detect the server but may fail on initialization until auth is configured.
 
 ### 3. Event Stream Format
 
-Without access to the working API, the SSE event parsing implementation is based on documentation and may need adjustment for the actual event format.
+The SSE parser is now robust to multiple formats:
+- `event:` + `data:` SSE framing
+- JSON payloads with `type`, `data`, `parts`, `part`, `delta`, or `text`
+- Full message snapshots vs incremental deltas
 
 ## Investigation Needed
 
-### Priority 1: Find Working API Endpoints
+### Priority 1: Verify API Endpoints
 
 ```bash
-# Try different base paths
-curl http://localhost:4096/api/session
-curl http://localhost:4096/v1/session
-curl http://localhost:4096/rpc/session
-
-# Try with headers
-curl -H "Content-Type: application/json" \
-     -H "Accept: application/json" \
-     -X POST http://localhost:4096/session
+curl -H "Accept: application/json" http://localhost:4096/global/health
+curl -H "Accept: application/json" -X POST http://localhost:4096/session -d '{}'
 ```
 
 ### Priority 2: Check Server Configuration
@@ -79,13 +80,10 @@ opencode serve --port 4096 --help
 
 ### Priority 3: Review OpenCode SDK Source
 
-The JavaScript SDK (`@opencode-ai/sdk`) source code would show:
+The SDK source should confirm:
 - Exact endpoints used
 - Request/response formats
-- Headers required
-- Event stream parsing
-
-Location: `https://github.com/opencode-ai/opencode` (SDK source)
+- Event stream parsing details
 
 ## Current Workarounds
 
@@ -162,8 +160,8 @@ The streaming implementation is in:
 ## Recommendation
 
 For now, **use CLI or auto mode** for production workflows. Streaming support is:
-- ✅ Implemented and ready
-- 🚧 Needs API investigation to activate
+- ✅ Implemented and updated to match server API patterns
+- 🚧 Needs verification against a live server
 - ⚠️ Falls back gracefully in CLI mode
 
 Once the correct OpenCode server API endpoints are identified, streaming should work with minimal code changes (just endpoint/format adjustments).

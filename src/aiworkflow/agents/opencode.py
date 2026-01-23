@@ -161,9 +161,24 @@ class OpenCodeAdapter(AgentAdapter):
             import httpx
 
             async with httpx.AsyncClient(timeout=2.0) as client:
-                # Try root endpoint (returns HTML web interface)
+                # Prefer health endpoint (JSON)
+                response = await client.get(
+                    f"{self._server_url}/global/health",
+                    headers={"Accept": "application/json"},
+                )
+                if response.status_code == 200:
+                    try:
+                        data = response.json()
+                        return bool(data.get("healthy", True))
+                    except Exception:
+                        return True
+
+                # Some servers may require auth; treat as available
+                if response.status_code in {401, 403}:
+                    return True
+
+                # Fallback: root endpoint (HTML)
                 response = await client.get(f"{self._server_url}/")
-                # Server is available if we get any successful response
                 return response.status_code == 200
         except Exception:
             return False
@@ -427,6 +442,7 @@ class OpenCodeAdapter(AgentAdapter):
             json={
                 "parts": [{"type": "text", "text": prompt}],
             },
+            headers={"Accept": "application/json"},
         )
         response.raise_for_status()
 
@@ -452,47 +468,205 @@ class OpenCodeAdapter(AgentAdapter):
             json={
                 "parts": [{"type": "text", "text": prompt}],
             },
+            headers={"Accept": "application/json"},
         )
         response.raise_for_status()
 
-        # Connect to event stream to receive updates
-        async with self._http_client.stream(
-            "GET",
-            "/event",
-            params={"session": self._session_id},
-        ) as event_response:
-            event_response.raise_for_status()
-
-            buffer = ""
+        async def iter_sse_events(event_response):
+            event_name: str | None = None
+            data_lines: list[str] = []
             async for line in event_response.aiter_lines():
-                if not line:
+                if line == "":
+                    if data_lines:
+                        yield event_name, "\n".join(data_lines)
+                    event_name = None
+                    data_lines = []
                     continue
+                if line.startswith(":"):
+                    continue
+                if line.startswith("event:"):
+                    event_name = line[len("event:") :].strip()
+                    continue
+                if line.startswith("data:"):
+                    data_lines.append(line[len("data:") :].lstrip())
+            if data_lines:
+                yield event_name, "\n".join(data_lines)
 
-                # Parse SSE format
-                if line.startswith("data: "):
-                    data_str = line[6:]  # Remove "data: " prefix
-                    try:
-                        event_data = json.loads(data_str)
+        def extract_session_id(payload: Any) -> str | None:
+            if not isinstance(payload, dict):
+                return None
+            properties = payload.get("properties")
+            if isinstance(properties, dict):
+                for key in ("sessionID", "sessionId", "session_id", "session"):
+                    if key in properties and isinstance(properties[key], str):
+                        return properties[key]
+                part = properties.get("part")
+                if isinstance(part, dict):
+                    for key in ("sessionID", "sessionId", "session_id", "session"):
+                        if key in part and isinstance(part[key], str):
+                            return part[key]
+                info = properties.get("info")
+                if isinstance(info, dict):
+                    for key in ("sessionID", "sessionId", "session_id", "session"):
+                        if key in info and isinstance(info[key], str):
+                            return info[key]
+            for key in ("sessionID", "sessionId", "session_id", "session"):
+                if key in payload and isinstance(payload[key], str):
+                    return payload[key]
+            data = payload.get("data")
+            if isinstance(data, dict):
+                for key in ("sessionID", "sessionId", "session_id", "session"):
+                    if key in data and isinstance(data[key], str):
+                        return data[key]
+            return None
 
-                        # Extract text chunks from different event types
-                        if event_data.get("type") == "message.part.delta":
-                            # Streaming text delta
-                            if "delta" in event_data and "text" in event_data["delta"]:
-                                yield event_data["delta"]["text"]
+        def extract_text_parts(payload: Any) -> list[str]:
+            if not isinstance(payload, dict):
+                return []
+            properties = payload.get("properties")
+            if isinstance(properties, dict):
+                parts = properties.get("parts")
+                if isinstance(parts, list):
+                    return [
+                        p.get("text", "")
+                        for p in parts
+                        if isinstance(p, dict) and p.get("type") == "text"
+                    ]
+                part = properties.get("part")
+                if isinstance(part, dict) and part.get("type") == "text":
+                    return [part.get("text", "")]
+            parts = payload.get("parts")
+            if isinstance(parts, list):
+                return [p.get("text", "") for p in parts if isinstance(p, dict) and p.get("type") == "text"]
+            part = payload.get("part")
+            if isinstance(part, dict) and part.get("type") == "text":
+                return [part.get("text", "")]
+            if "text" in payload and isinstance(payload["text"], str):
+                return [payload["text"]]
+            return []
 
-                        elif event_data.get("type") == "message.complete":
-                            # Message is complete, stop streaming
-                            break
+        def extract_delta(payload: Any) -> str | None:
+            if not isinstance(payload, dict):
+                return None
+            properties = payload.get("properties")
+            if isinstance(properties, dict):
+                part = properties.get("part")
+                if isinstance(part, dict) and part.get("type") == "text":
+                    delta = properties.get("delta")
+                    if isinstance(delta, str):
+                        return delta
+            delta = payload.get("delta")
+            if isinstance(delta, dict) and isinstance(delta.get("text"), str):
+                return delta["text"]
+            if isinstance(payload.get("text"), str) and payload.get("type") == "message.part.delta":
+                return payload["text"]
+            return None
 
-                        elif event_data.get("type") == "message.part":
-                            # Full part received
-                            part = event_data.get("part", {})
-                            if part.get("type") == "text" and "text" in part:
-                                yield part["text"]
+        def is_complete_event(event_name: str | None, payload: Any) -> bool:
+            if event_name in {"message.complete", "session.complete", "session.idle"}:
+                return True
+            if isinstance(payload, dict):
+                if payload.get("type") in {"message.complete", "session.complete", "session.idle"}:
+                    return True
+                properties = payload.get("properties")
+                if isinstance(properties, dict):
+                    status = properties.get("status")
+                    if isinstance(status, dict) and status.get("type") == "idle":
+                        return True
+                if payload.get("done") is True:
+                    return True
+            return False
 
-                    except json.JSONDecodeError:
-                        # Not JSON, might be a simple text event
+        async def stream_from_endpoint(path: str):
+            async with self._http_client.stream(
+                "GET",
+                path,
+                headers={"Accept": "text/event-stream"},
+            ) as event_response:
+                event_response.raise_for_status()
+
+                assembled = ""
+                part_offsets: dict[str, int] = {}
+                async for event_name, data_str in iter_sse_events(event_response):
+                    if not data_str:
                         continue
+
+                    try:
+                        payload = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        payload = {"text": data_str}
+
+                    if self._session_id:
+                        session_id = extract_session_id(payload)
+                        if session_id and session_id != self._session_id:
+                            continue
+
+                    if isinstance(payload, dict) and isinstance(payload.get("data"), dict):
+                        payload = payload["data"]
+
+                    properties = payload.get("properties") if isinstance(payload, dict) else None
+                    if isinstance(properties, dict):
+                        part = properties.get("part")
+                        if isinstance(part, dict) and part.get("type") == "text":
+                            part_id = part.get("id")
+                            delta = properties.get("delta")
+                            if isinstance(part_id, str):
+                                current_len = part_offsets.get(part_id, 0)
+                                if isinstance(delta, str) and delta:
+                                    part_offsets[part_id] = current_len + len(delta)
+                                    assembled += delta
+                                    yield delta
+                                else:
+                                    text = part.get("text")
+                                    if isinstance(text, str) and len(text) > current_len:
+                                        new_text = text[current_len:]
+                                        part_offsets[part_id] = len(text)
+                                        assembled += new_text
+                                        if new_text:
+                                            yield new_text
+
+                        if is_complete_event(event_name, payload):
+                            break
+                        continue
+
+                    delta = extract_delta(payload)
+                    if delta:
+                        assembled += delta
+                        yield delta
+                    else:
+                        text_parts = extract_text_parts(payload)
+                        if text_parts:
+                            full_text = "".join(text_parts)
+                            if full_text == assembled or full_text in assembled:
+                                pass
+                            elif full_text.startswith(assembled):
+                                new_text = full_text[len(assembled) :]
+                                if new_text:
+                                    assembled = full_text
+                                    yield new_text
+                            else:
+                                assembled += full_text
+                                yield full_text
+
+                    if is_complete_event(event_name, payload):
+                        break
+
+        # Connect to event stream to receive updates
+        received = False
+        for endpoint in ("/event", "/global/event"):
+            try:
+                async for chunk in stream_from_endpoint(endpoint):
+                    received = True
+                    yield chunk
+                if received:
+                    return
+            except Exception:
+                continue
+
+        # Fallback: if streaming failed, return full response
+        if not received:
+            result = await self._execute_via_server(prompt)
+            yield result
 
     async def call_tool(
         self,
