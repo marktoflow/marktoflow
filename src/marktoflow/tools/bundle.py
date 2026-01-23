@@ -355,21 +355,39 @@ class WorkflowBundle:
             Workflow result
         """
         from marktoflow.core.engine import WorkflowEngine
+        from marktoflow.agents import AgentRegistry
+        from marktoflow.agents.base import AgentConfig
+        # Register built-in agents
+        from marktoflow.agents.claude import ClaudeCodeAdapter  # noqa: F401
+        from marktoflow.agents.ollama import OllamaAdapter  # noqa: F401
+        from marktoflow.agents.opencode import OpenCodeAdapter  # noqa: F401
 
         workflow = self.load_workflow()
         tool_registry = self.load_tools()
 
         # Create engine with bundle configuration
+        agent_name = agent or self.config.agent
         engine_config = {
             "agent": {
-                "primary": agent or self.config.agent,
+                "primary": agent_name,
                 "fallback": self.config.fallback_agent,
             },
             "timeout": self.config.timeout,
             "max_retries": self.config.max_retries,
         }
 
-        engine = WorkflowEngine(config=engine_config)
+        adapter_class = AgentRegistry.get_adapter_class(agent_name)
+        if adapter_class is None:
+            raise ValueError(f"Unknown agent: {agent_name}")
+
+        adapter = AgentRegistry.create_adapter(
+            agent_name, AgentConfig(name=agent_name, provider=agent_name)
+        )
+        engine = WorkflowEngine(
+            agent_adapter=adapter,
+            tool_registry=tool_registry,
+            config=engine_config,
+        )
 
         # Set environment variables from config
         original_env = {}
@@ -381,7 +399,6 @@ class WorkflowBundle:
             result = await engine.execute(
                 workflow,
                 inputs=inputs or {},
-                tool_registry=tool_registry,
             )
             return result
         finally:

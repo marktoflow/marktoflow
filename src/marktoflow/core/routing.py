@@ -597,6 +597,9 @@ class BudgetTracker:
                 if workflow_spent + cost > self.config.per_workflow_limit:
                     return False
 
+            # Save previous spent for alert checking
+            prev_spent = self._spent
+
             # Record the cost
             self._spent += cost
             if workflow_id:
@@ -605,7 +608,7 @@ class BudgetTracker:
                 )
 
             # Check alert thresholds
-            self._check_alerts()
+            self._check_alerts(prev_spent)
 
             return True
 
@@ -635,20 +638,30 @@ class BudgetTracker:
         """
         self._alert_callbacks.append(callback)
 
-    def _check_alerts(self) -> None:
-        """Check and trigger alert callbacks."""
+    def _check_alerts(self, prev_spent: Decimal) -> None:
+        """Check and trigger alert callbacks.
+
+        Args:
+            prev_spent: The spent amount before the current cost was recorded
+
+        Note: This method must be called while holding self._lock.
+        """
         if not self._alert_callbacks:
             return
 
-        percentage = self.usage_percentage / 100
+        # Calculate percentage directly from _spent (don't use properties that acquire lock)
+        if self.config.total_budget == 0:
+            return
+
+        prev_percentage = float(prev_spent / self.config.total_budget)
+        curr_percentage = float(self._spent / self.config.total_budget)
 
         for threshold in self.config.alert_thresholds:
             # Check if we just crossed this threshold
-            prev_percentage = float((self._spent - Decimal("0.01")) / self.config.total_budget)
-            if prev_percentage < threshold <= percentage:
+            if prev_percentage < threshold <= curr_percentage:
                 for callback in self._alert_callbacks:
                     try:
-                        callback(percentage * 100, self._spent)
+                        callback(curr_percentage * 100, self._spent)
                     except Exception:
                         pass
 

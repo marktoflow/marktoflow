@@ -329,7 +329,37 @@ def run(
         console.print()
 
     log_verbose("Initializing workflow engine")
-    engine = WorkflowEngine(config={"agent": {"primary": agent or "opencode"}})
+    from marktoflow.agents import AgentRegistry
+    from marktoflow.agents.base import AgentConfig
+    # Register built-in agents
+    from marktoflow.agents.claude import ClaudeCodeAdapter  # noqa: F401
+    from marktoflow.agents.ollama import OllamaAdapter  # noqa: F401
+    from marktoflow.agents.opencode import OpenCodeAdapter  # noqa: F401
+
+    agent_name = agent or "opencode"
+    adapter_class = AgentRegistry.get_adapter_class(agent_name)
+    if adapter_class is None:
+        if output_config.json_output:
+            output_json(
+                {
+                    "error": f"Unknown agent: {agent_name}",
+                    "suggestion": "Use 'marktoflow agent list' to see available agents",
+                }
+            )
+        else:
+            console.print(f"[red]Unknown agent: {agent_name}[/red]")
+            console.print(
+                "[dim]Tip: Use 'marktoflow agent list' to see available agents[/dim]"
+            )
+        raise typer.Exit(1)
+
+    adapter = AgentRegistry.create_adapter(
+        agent_name, AgentConfig(name=agent_name, provider=agent_name)
+    )
+    engine = WorkflowEngine(
+        agent_adapter=adapter,
+        config={"agent": {"primary": agent_name}},
+    )
 
     if output_config.json_output:
         result = asyncio.run(engine.execute(wf, inputs=inputs))

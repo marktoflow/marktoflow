@@ -148,7 +148,7 @@ class OllamaAdapter(AgentAdapter):
                     result = await self.generate(
                         prompt=self._build_generation_prompt(step, context),
                         context=context,
-                        **step.inputs,
+                        **self._extract_generation_kwargs(step.inputs),
                     )
                 elif operation == "generate_report":
                     result = await self.generate(
@@ -396,6 +396,9 @@ Return the result of executing this tool operation.
         if "prompt_template" in step.inputs:
             return context.resolve_template(str(step.inputs["prompt_template"]))
 
+        if "prompt" in step.inputs:
+            return context.resolve_template(str(step.inputs["prompt"]))
+
         parts = []
         if "context" in step.inputs:
             parts.append(context.resolve_template(str(step.inputs["context"])))
@@ -413,6 +416,12 @@ Return the result of executing this tool operation.
         context: ExecutionContext,
     ) -> str:
         """Build generation prompt."""
+        if "prompt_template" in step.inputs:
+            return context.resolve_template(str(step.inputs["prompt_template"]))
+
+        if "prompt" in step.inputs:
+            return context.resolve_template(str(step.inputs["prompt"]))
+
         parts = []
         if "context" in step.inputs:
             parts.append(context.resolve_template(str(step.inputs["context"])))
@@ -423,6 +432,24 @@ Return the result of executing this tool operation.
                 parts.append(f"- {req}")
                 
         return "\n".join(parts)
+
+    def _extract_generation_kwargs(self, inputs: dict[str, Any]) -> dict[str, Any]:
+        """Extract non-prompt generation kwargs for Ollama options."""
+        allowed_keys = {
+            "format",
+            "options",
+            "keep_alive",
+            "temperature",
+            "top_p",
+            "top_k",
+            "num_ctx",
+            "num_predict",
+            "repeat_penalty",
+            "presence_penalty",
+            "frequency_penalty",
+            "seed",
+        }
+        return {key: inputs[key] for key in allowed_keys if key in inputs}
 
     def _build_report_prompt(
         self,

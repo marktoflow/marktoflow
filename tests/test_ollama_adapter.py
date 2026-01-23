@@ -2,6 +2,7 @@
 Tests for Ollama Adapter.
 """
 
+import os
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from marktoflow.agents.ollama import OllamaAdapter
@@ -167,3 +168,57 @@ async def test_execute_step_generate(adapter, mock_httpx_client, context):
 
     assert result.status == "completed"
     assert result.output == "Generated content"
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    not os.environ.get("OLLAMA_HOST"),
+    reason="OLLAMA_HOST not set",
+)
+async def test_ollama_integration_generate():
+    host = os.environ.get("OLLAMA_HOST")
+    model = os.environ.get("OLLAMA_MODEL", "glm-4.7-flash:latest")
+
+    try:
+        import httpx
+    except ImportError:
+        pytest.skip("httpx not installed")
+
+    try:
+        async with httpx.AsyncClient(base_url=host, timeout=5.0) as client:
+            response = await client.get("/api/tags")
+            if response.status_code != 200:
+                pytest.skip("Ollama not reachable")
+            models = response.json().get("models", [])
+            if not any(item.get("name") == model for item in models):
+                pytest.skip(f"Ollama model not available: {model}")
+    except Exception:
+        pytest.skip("Ollama not reachable")
+
+    config = AgentConfig(
+        name="ollama",
+        provider="ollama",
+        api_base_url=host,
+        model=model,
+        timeout=120,
+        max_retries=1,
+    )
+    adapter = OllamaAdapter(config)
+    workflow = Workflow(
+        metadata=WorkflowMetadata(
+            id="integration",
+            name="integration",
+            description="integration",
+            version="1.0.0",
+        ),
+        steps=[],
+    )
+    context = ExecutionContext(
+        run_id="integration-run",
+        workflow=workflow,
+        agent_name="ollama",
+        agent_capabilities=adapter.capabilities,
+    )
+
+    result = await adapter.generate("Reply with OK only.", context)
+    assert "OK" in result
