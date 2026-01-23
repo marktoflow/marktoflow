@@ -177,6 +177,20 @@ All Phase 1 items have been implemented. See PROGRESS.md for details.
     - See: docs/STREAMING_STATUS.md
     - Implementation complete, waiting for API endpoint clarification
     - Graceful fallback to non-streaming in CLI mode
+- [ ] Claude Code adapter (IN PROGRESS)
+  - [x] CLI mode implementation
+  - [x] Basic adapter structure
+  - [x] File-based context support
+  - [x] Model selection (sonnet, opus, haiku)
+  - [ ] SDK mode support (https://github.com/anthropics/claude-agent-sdk-python)
+    - Future: Use claude-agent-sdk-python for programmatic access
+    - Benefits: Better control, streaming, session management
+    - Requirements: SDK to reach stable release
+  - [ ] Extended thinking mode support
+  - [ ] Streaming support
+  - [ ] Configuration documentation
+  - [ ] Testing suite
+  - [ ] Usage examples
 - [ ] Aider adapter (full support)
 - [ ] Cursor adapter
 - [ ] Codex adapter
