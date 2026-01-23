@@ -430,7 +430,11 @@ class OpenCodeAdapter(AgentAdapter):
                 f"STDERR: {error_msg}"
             )
 
-        return stdout.decode().strip()
+        output = stdout.decode().strip()
+        if output.startswith("<output>") and output.endswith("</output>"):
+            inner = output[len("<output>") : -len("</output>")].strip()
+            return inner
+        return output
 
     async def _execute_via_server(self, prompt: str) -> str:
         """Execute prompt using OpenCode server REST API."""
