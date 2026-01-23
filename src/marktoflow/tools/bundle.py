@@ -347,6 +347,12 @@ class WorkflowBundle:
         """
         Execute the workflow in this bundle.
 
+        The bundle can contain a .env file with environment variables that will be loaded
+        during execution. Priority order:
+        1. bundle/.env (highest priority)
+        2. existing environment variables
+        3. config.yaml env section (lowest priority)
+
         Args:
             inputs: Workflow input parameters
             agent: Agent to use (overrides config)
@@ -357,10 +363,16 @@ class WorkflowBundle:
         from marktoflow.core.engine import WorkflowEngine
         from marktoflow.agents import AgentRegistry
         from marktoflow.agents.base import AgentConfig
+        from marktoflow.core.env import load_env
         # Register built-in agents
         from marktoflow.agents.claude import ClaudeCodeAdapter  # noqa: F401
         from marktoflow.agents.ollama import OllamaAdapter  # noqa: F401
         from marktoflow.agents.opencode import OpenCodeAdapter  # noqa: F401
+
+        # Load .env file from bundle directory if it exists
+        bundle_env_file = self.path / ".env"
+        if bundle_env_file.exists():
+            load_env([bundle_env_file], override=True)
 
         workflow = self.load_workflow()
         tool_registry = self.load_tools()
