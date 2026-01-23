@@ -2,7 +2,7 @@
 Tests for the state persistence module.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -12,6 +12,19 @@ from aiworkflow.core.state import (
     StateStore,
     StepCheckpoint,
 )
+
+
+def _create_execution(state_store, run_id: str, status: ExecutionStatus = ExecutionStatus.RUNNING) -> None:
+    record = ExecutionRecord(
+        run_id=run_id,
+        workflow_id="wf-test",
+        workflow_path="/workflows/test.md",
+        status=status,
+        started_at=datetime.now(),
+        total_steps=3,
+        agent="test-agent",
+    )
+    state_store.create_execution(record)
 
 
 class TestExecutionStatus:
@@ -199,14 +212,7 @@ class TestStateStore:
     def test_save_checkpoint(self, state_store):
         """Test saving a step checkpoint."""
         # First create an execution
-        record = ExecutionRecord(
-            run_id="run-789",
-            workflow_id="wf-test",
-            workflow_path="/workflows/test.md",
-            status=ExecutionStatus.RUNNING,
-            started_at=datetime.now(),
-        )
-        state_store.create_execution(record)
+        _create_execution(state_store, "run-789")
 
         # Save checkpoint
         checkpoint = StepCheckpoint(
@@ -228,14 +234,7 @@ class TestStateStore:
     def test_get_last_checkpoint(self, state_store):
         """Test getting the last checkpoint."""
         # Create execution and multiple checkpoints
-        record = ExecutionRecord(
-            run_id="run-abc",
-            workflow_id="wf-test",
-            workflow_path="/workflows/test.md",
-            status=ExecutionStatus.RUNNING,
-            started_at=datetime.now(),
-        )
-        state_store.create_execution(record)
+        _create_execution(state_store, "run-abc")
 
         for i in range(3):
             checkpoint = StepCheckpoint(
@@ -254,14 +253,7 @@ class TestStateStore:
 
     def test_get_resume_point(self, state_store):
         """Test getting resume point after failure."""
-        record = ExecutionRecord(
-            run_id="run-resume",
-            workflow_id="wf-test",
-            workflow_path="/workflows/test.md",
-            status=ExecutionStatus.FAILED,
-            started_at=datetime.now(),
-        )
-        state_store.create_execution(record)
+        _create_execution(state_store, "run-resume", ExecutionStatus.FAILED)
 
         # Save completed checkpoints
         for i in range(2):
@@ -288,6 +280,34 @@ class TestStateStore:
         # Resume point should be step 2 (0-indexed)
         resume_point = state_store.get_resume_point("run-resume")
         assert resume_point == 2
+
+    def test_cleanup_old_records(self, state_store):
+        """Test cleanup of old execution records."""
+        now = datetime.now()
+        old_record = ExecutionRecord(
+            run_id="run-old",
+            workflow_id="wf-test",
+            workflow_path="/workflows/test.md",
+            status=ExecutionStatus.COMPLETED,
+            started_at=now - timedelta(days=40),
+            completed_at=now - timedelta(days=39),
+        )
+        new_record = ExecutionRecord(
+            run_id="run-new",
+            workflow_id="wf-test",
+            workflow_path="/workflows/test.md",
+            status=ExecutionStatus.COMPLETED,
+            started_at=now - timedelta(days=5),
+            completed_at=now - timedelta(days=4),
+        )
+        state_store.create_execution(old_record)
+        state_store.create_execution(new_record)
+
+        deleted = state_store.cleanup_old_records(days=30)
+        assert deleted == 1
+
+        assert state_store.get_execution("run-old") is None
+        assert state_store.get_execution("run-new") is not None
 
     def test_get_stats(self, state_store):
         """Test getting execution statistics."""

@@ -12,7 +12,7 @@ import sqlite3
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Generator
@@ -431,8 +431,7 @@ class StateStore:
             cursor = conn.cursor()
 
             # Calculate cutoff date
-            cutoff = datetime.now()
-            cutoff = cutoff.replace(day=cutoff.day - days if cutoff.day > days else 1)
+            cutoff = datetime.now() - timedelta(days=days)
 
             # Delete old checkpoints first (foreign key)
             cursor.execute(

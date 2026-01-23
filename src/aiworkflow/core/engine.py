@@ -587,6 +587,8 @@ class WorkflowEngine:
 
                 # Check conditions
                 if not self._evaluate_conditions(step.conditions, context):
+                    if exec_log:
+                        exec_log.step_skipped(step.name, i, "conditions_not_met")
                     step_results.append(
                         StepResult(
                             step_id=step.id,
@@ -612,11 +614,16 @@ class WorkflowEngine:
                         else ExecutionStatus.FAILED,
                         started_at=step_result.started_at or datetime.now(),
                         completed_at=step_result.completed_at,
+                        inputs=step.inputs,
                         outputs={"output": step_result.output} if step_result.output else None,
                         error=step_result.error,
                         retry_count=step_result.retries,
                     )
                     self.state_store.save_checkpoint(checkpoint)
+                    exec_record = self.state_store.get_execution(run_id)
+                    if exec_record:
+                        exec_record.current_step = i
+                        self.state_store.update_execution(exec_record)
 
                 # Store output variable
                 if step.output_variable and step_result.output is not None:
