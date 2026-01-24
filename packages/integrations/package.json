@@ -1,7 +1,7 @@
 {
-  "name": "@marktoflow/core",
+  "name": "@marktoflow/integrations",
   "version": "2.0.0-alpha.1",
-  "description": "Core engine for marktoflow - parser, executor, state management",
+  "description": "Standard integrations for marktoflow",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,19 +14,16 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.3",
-    "better-sqlite3": "^11.6.0",
-    "chokidar": "^5.0.0",
-    "yaml": "^2.6.0",
-    "zod": "^3.24.0"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0"
+    "@marktoflow/core": "workspace:*",
+    "@octokit/rest": "^22.0.1",
+    "@opencode-ai/sdk": "^1.1.34",
+    "@slack/web-api": "^7.8.0",
+    "jira.js": "^5.2.2",
+    "ollama": "^0.6.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -36,9 +33,8 @@
   ],
   "keywords": [
     "marktoflow",
-    "workflow",
-    "parser",
-    "automation"
+    "integration",
+    "slack"
   ],
   "license": "Apache-2.0"
 }
