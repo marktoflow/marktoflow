@@ -219,6 +219,19 @@ npx marktoflow run workflow.md
   - Streaming
 - [x] **Ollama** (`ollama`)
   - Local model support
+- [ ] **GitHub Copilot** (`@github/copilot-sdk`)
+  - [x] Analysis and design (see `docs/COPILOT_SDK_ANALYSIS.md`)
+  - [x] Basic adapter (chat.send, chat.stream) - **In Progress**
+  - [ ] Advanced features (future enhancement):
+    - [ ] Custom tool definitions in workflows
+    - [ ] MCP server integration
+    - [ ] Session persistence and resumption
+    - [ ] Infinite sessions (context compaction)
+    - [ ] File attachments support
+    - [ ] System message customization
+    - [ ] Multi-model support (GPT-5, Claude, etc.)
+    - [ ] Streaming with reasoning traces
+    - [ ] Event system (tool execution, compaction, etc.)
 
 ---
 
