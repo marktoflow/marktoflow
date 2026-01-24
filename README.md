@@ -108,6 +108,45 @@ This workflow sends a message to Slack using the official SDK.
 marktoflow run my-workflow.md
 ```
 
+### Connect to Any REST API
+
+```yaml
+---
+workflow:
+  id: api-integration
+  name: 'Custom API Integration'
+
+tools:
+  my_api:
+    sdk: 'http'
+    options:
+      base_url: 'https://api.example.com'
+    auth:
+      type: 'bearer'
+      token: '${API_TOKEN}'
+
+steps:
+  - id: fetch_data
+    action: my_api.get
+    inputs:
+      path: '/users'
+      query:
+        status: 'active'
+    output_variable: users
+
+  - id: create_user
+    action: my_api.post
+    inputs:
+      path: '/users'
+      body:
+        name: 'John Doe'
+        email: 'john@example.com'
+    output_variable: new_user
+---
+```
+
+See [REST API Guide](docs/REST-API-GUIDE.md) for complete documentation.
+
 ## Architecture (v2.0)
 
 ```
@@ -152,9 +191,14 @@ marktoflow v2.0 includes native SDK integrations for 11+ services:
 - **GitHub** (`@octokit/rest`) - PRs, issues, repos, webhooks
 - **Airtable** (`airtable`) - Records, pagination, batch operations
 
-### Generic HTTP
+### Universal REST API Client
 
-- **HTTP Client** (`http`) - REST APIs, GraphQL, auth (Bearer/Basic/API-Key)
+- **HTTP Client** (`http`) - Connect to **any REST API** with full support for:
+  - All HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD)
+  - Multiple auth types (Bearer Token, Basic Auth, API Key)
+  - GraphQL queries
+  - Custom headers and query parameters
+  - See [REST API Guide](docs/REST-API-GUIDE.md) for complete documentation
 
 ### AI Agents
 
