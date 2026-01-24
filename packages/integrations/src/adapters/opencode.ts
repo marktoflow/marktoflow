@@ -6,16 +6,19 @@ export class OpenCodeClient {
   private mode: 'cli' | 'server' | 'auto';
   private serverUrl: string;
   private cliPath: string;
+  private model: string | undefined;
   private sdkClient: OpencodeClient | null = null;
 
   constructor(options: {
     mode?: 'cli' | 'server' | 'auto';
     serverUrl?: string;
     cliPath?: string;
+    model?: string;
   } = {}) {
     this.mode = options.mode || 'auto';
     this.serverUrl = options.serverUrl || 'http://localhost:4096';
     this.cliPath = options.cliPath || 'opencode';
+    this.model = options.model;
     
     if (this.mode === 'server' || this.mode === 'auto') {
       this.sdkClient = createOpencodeClient({
@@ -81,15 +84,25 @@ export class OpenCodeClient {
   }
 
   private async generateViaCli(prompt: string): Promise<string> {
-    const args = ['run', prompt];
+    const args = ['run'];
+    if (this.model) {
+      args.push('--model', this.model);
+    }
+    args.push(prompt);
     
     return new Promise((resolve, reject) => {
-      const process = spawn(this.cliPath, args);
+      const process = spawn(this.cliPath, args, {
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
       let stdout = '';
       let stderr = '';
       
-      process.stdout.on('data', d => stdout += d.toString());
-      process.stderr.on('data', d => stderr += d.toString());
+      process.stdout.on('data', d => {
+        stdout += d.toString();
+      });
+      process.stderr.on('data', d => {
+        stderr += d.toString();
+      });
       
       process.on('close', code => {
         if (code === 0) {
@@ -104,7 +117,9 @@ export class OpenCodeClient {
         }
       });
       
-      process.on('error', reject);
+      process.on('error', (err) => {
+        reject(err);
+      });
     });
   }
 }
@@ -116,6 +131,7 @@ export const OpenCodeInitializer: SDKInitializer = {
       mode: options['mode'] as 'cli' | 'server' | 'auto',
       serverUrl: options['serverUrl'] as string,
       cliPath: options['cliPath'] as string,
+      model: options['model'] as string,
     });
   },
 };
