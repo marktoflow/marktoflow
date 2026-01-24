@@ -31,6 +31,7 @@ import { triggerCommand } from './trigger.js';
 import { runWorkflowWizard, listTemplates } from './commands/new.js';
 import { parse as parseYaml } from 'yaml';
 import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
+import { WorkflowDebugger, parseBreakpoints } from './commands/debug.js';
 
 const VERSION = '2.0.0-alpha.1';
 
@@ -261,6 +262,77 @@ program
       console.log(`  Completed: ${completed}, Failed: ${failed}, Skipped: ${skipped}`);
     } catch (error) {
       spinner.fail(`Execution failed: ${error}`);
+      process.exit(1);
+    }
+  });
+
+// --- debug ---
+program
+  .command('debug <workflow>')
+  .description('Debug a workflow with step-by-step execution')
+  .option('-i, --input <key=value...>', 'Input parameters')
+  .option('-b, --breakpoint <stepId...>', 'Set breakpoints at step IDs')
+  .option('--auto-start', 'Start without initial prompt')
+  .action(async (workflowPath, options) => {
+    const spinner = ora('Loading workflow for debugging...').start();
+
+    try {
+      const config = getConfig();
+      const workflowsDir = config.workflows?.path ?? '.marktoflow/workflows';
+
+      // Resolve workflow path
+      let resolvedPath = workflowPath;
+      if (!existsSync(resolvedPath)) {
+        resolvedPath = join(workflowsDir, workflowPath);
+      }
+      if (!existsSync(resolvedPath)) {
+        spinner.fail(`Workflow not found: ${workflowPath}`);
+        process.exit(1);
+      }
+
+      // Parse workflow
+      const { workflow, warnings } = await parseFile(resolvedPath);
+
+      if (warnings.length > 0) {
+        spinner.warn('Workflow parsed with warnings:');
+        warnings.forEach((w) => console.log(chalk.yellow(`  - ${w}`)));
+      } else {
+        spinner.succeed(`Loaded: ${workflow.metadata.name}`);
+      }
+
+      // Parse inputs
+      const inputs: Record<string, unknown> = {};
+      if (options.input) {
+        for (const pair of options.input) {
+          const [key, value] = pair.split('=');
+          inputs[key] = value;
+        }
+      }
+
+      // Parse breakpoints
+      const breakpoints = options.breakpoint ? parseBreakpoints(options.breakpoint) : [];
+
+      // Setup SDK registry and executor
+      const registry = new SDKRegistry();
+      registerIntegrations(registry);
+      registry.registerTools(workflow.tools);
+
+      // Create debugger
+      const workflowDebugger = new WorkflowDebugger(
+        workflow,
+        inputs,
+        registry,
+        createSDKStepExecutor(),
+        {
+          breakpoints,
+          autoStart: options.autoStart,
+        }
+      );
+
+      // Start debugging session
+      await workflowDebugger.debug();
+    } catch (error) {
+      spinner.fail(`Debug session failed: ${error}`);
       process.exit(1);
     }
   });
