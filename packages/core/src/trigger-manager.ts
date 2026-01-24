@@ -68,12 +68,28 @@ export class TriggerManager {
       const methods = (trigger.config.methods as string[]) ?? ['POST'];
       const provider = trigger.config.provider as string | undefined;
 
-      const endpoint = createEndpoint(path, { secret: provider === 'github' ? secret : undefined, methods });
+      const endpoint = createEndpoint(path, { secret: provider === 'github' ? secret : undefined, methods: provider === 'graph' ? ['POST', 'GET'] : methods });
       this.webhookReceiver.registerEndpoint(endpoint, async (event: WebhookEvent): Promise<WebhookResponse> => {
+        if (provider === 'graph' && event.method === 'GET') {
+          const validationToken = event.query['validationToken'] || event.query['validationtoken'];
+          if (validationToken) {
+            return { status: 200, body: validationToken, headers: { 'content-type': 'text/plain' } };
+          }
+        }
+
+        const payload = parseWebhookBody(event);
+
         if (provider === 'github' && secret) {
           const signature = event.headers['x-hub-signature-256'] ?? '';
           if (!verifyGitHubSignature(event.body, signature, secret)) {
             return { status: 401, body: 'Invalid Signature' };
+          }
+        }
+        if (provider === 'slack' && payload && typeof payload === 'object') {
+          const type = (payload as any).type;
+          const challenge = (payload as any).challenge;
+          if (type === 'url_verification' && challenge) {
+            return { status: 200, body: challenge, headers: { 'content-type': 'text/plain' } };
           }
         }
         if (provider === 'slack' && secret) {
@@ -84,7 +100,6 @@ export class TriggerManager {
           }
         }
 
-        const payload = parseWebhookBody(event);
         await trigger.handler({ type: 'webhook', provider, event, payload });
         return { status: 200, body: 'ok' };
       });

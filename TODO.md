@@ -154,9 +154,9 @@ npx marktoflow run workflow.md
 
 ### External Triggers
 - [ ] Slack Socket Mode (real-time messages)
-- [ ] Gmail Pub/Sub (email notifications)
+- [x] Gmail Pub/Sub (email notifications) (webhook endpoint + trigger handler)
 - [x] GitHub webhooks (via webhook receiver)
-- [ ] Microsoft Graph subscriptions
+- [x] Microsoft Graph subscriptions (validation + webhook trigger)
 - [x] Webhook trigger support with Slack/GitHub signature verification
 
 ### Tunnel Support (Development)
