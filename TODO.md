@@ -1,269 +1,274 @@
-# TODO - Unified AI Workflow Automation Framework
+# TODO - Marktoflow v2.0 TypeScript Rewrite
 
-This file tracks pending tasks for the project. Completed items are moved to PROGRESS.md.
-
----
-
-## Phase 1: Foundation - COMPLETE
-
-All Phase 1 items have been implemented. See PROGRESS.md for details.
+This file tracks the TypeScript rewrite of marktoflow for native MCP support and direct SDK integration.
 
 ---
 
-## Phase 2: Production Ready (Current)
+## Decision: TypeScript Rewrite
 
-### Automation
-- [x] Scheduling system (cron-based)
-  - [x] Cron expression parsing (CronParser class)
-  - [x] Scheduler with job management
-  - [x] CLI commands (schedule list/start/run/info)
-- [x] Webhook receivers
-  - [x] HTTP server for webhook endpoints (WebhookReceiver)
-  - [x] Webhook signature verification (GitHub-style and generic HMAC-SHA256)
-  - [x] Event routing to workflows
-  - [x] CLI commands (webhook list/start/test)
-  - [x] AsyncWebhookReceiver for async variant
-- [x] File system event triggers
-  - [x] Watchdog integration (FileWatcher, AsyncFileWatcher)
-  - [x] File pattern matching (WatchConfig with glob patterns)
-  - [x] Debouncing and event filtering
-  - [x] Workflow trigger from file events
-- [x] Message queue integration
-  - [x] Redis queue support (RedisQueue, AsyncRedisQueue)
-  - [x] RabbitMQ support (RabbitMQQueue)
-  - [x] In-memory queue for testing (InMemoryQueue)
-  - [x] WorkflowQueueManager for high-level operations
-  - [x] CLI commands (queue status/publish/worker/purge)
+**Date:** 2026-01-23
 
-### Reliability
-- [x] Error recovery and retry logic
-  - [x] Exponential backoff (RetryPolicy class)
-  - [x] Circuit breaker pattern (CircuitBreaker class with CLOSED/OPEN/HALF_OPEN states)
-  - [x] Integrated into WorkflowEngine
-- [x] State persistence (workflow checkpoints)
-  - [x] SQLite state store (StateStore class)
-  - [x] Execution records and step checkpoints
-  - [x] Resume from checkpoint support
-- [x] Rollback capabilities
-  - [x] Step undo registry (RollbackRegistry, RollbackAction)
-  - [x] Transaction-like semantics (TransactionContext with savepoints)
-  - [x] Pre-built compensation handlers (FileCompensationHandler, GitCompensationHandler)
-- [x] Agent failover
-  - [x] Automatic fallback to secondary agent (FailoverConfig, _execute_step_with_failover)
-  - [x] Health checking (check_agent_health, AgentHealth)
-  - [x] Per-agent circuit breakers
-  - [x] Failover event tracking (FailoverEvent, FailoverReason)
+**Rationale:** See `FRAMEWORK_ANALYSIS.md` for full analysis.
 
-### Monitoring
-- [x] Metrics collection
-  - [x] Prometheus metrics endpoint (MetricsServer with /metrics and /health)
-  - [x] Step timing, success rates (WorkflowMetrics, MetricsCollector)
-- [x] Execution logging (markdown format)
-  - [x] ExecutionLog and LogEntry classes
-  - [x] ExecutionLogger for managing logs
-  - [x] Markdown log file generation
-- [ ] Agent comparison dashboards
-  - [ ] Performance metrics by agent
-  - [ ] Cost per workflow
-- [x] Cost tracking
-  - [x] Token usage monitoring (TokenUsage, CostRecord, CostTracker)
-  - [x] API cost estimation (ModelPricing, PricingRegistry, WorkflowCostEstimator)
-  - [x] Cost limits and alerts (CostLimit, CostAlert, CostAlertHandler)
-  - [x] Persistent storage (CostStore, PersistentCostTracker)
-
-### Testing
-- [x] Unit tests for scheduler module (18 tests)
-- [x] Unit tests for state persistence module (18 tests)
-- [x] Unit tests for execution logging module (18 tests)
-- [x] Unit tests for engine enhancements (31 tests - RetryPolicy, CircuitBreaker, Failover)
-- [x] Unit tests for webhook receiver (14 tests)
-- [x] Unit tests for file watcher (23 tests)
-- [x] Unit tests for metrics collection (23 tests)
-- [x] Unit tests for message queue (30 tests)
-- [x] Unit tests for rollback capabilities (34 tests)
-- [x] Unit tests for cost tracking (37 tests)
-- [ ] Integration tests with real APIs
-- [ ] Cross-agent compatibility tests
-- [ ] End-to-end workflow tests
-- [ ] Performance benchmarks
-
-**Total: 615 tests (600+ passing, ~12 skipped async/age)**
+Key reasons for TypeScript:
+1. **MCP Ecosystem is npm-native** - All MCP servers are npm packages
+2. **Better official SDKs** - Slack, Jira, Microsoft Graph, GitHub are primarily Node.js
+3. **Simpler tool integration** - Just import and use, no subprocess bridging
+4. **One ecosystem** - No Python-Node bridge complexity
 
 ---
 
-## Phase 3: Enterprise - In Progress
+## v2.0 Architecture Goals
 
-### Security
-- [x] RBAC implementation
-  - [x] Permission enum (14 permissions)
-  - [x] Role class with inheritance
-  - [x] User class with role assignment
-  - [x] RBACManager for permission checking
-  - [x] Predefined roles (viewer, executor, developer, approver, admin)
-  - [x] PermissionDeniedError and require_permission decorator
-- [x] Approval workflows
-  - [x] ApprovalStatus enum (pending, approved, rejected, expired, cancelled)
-  - [x] ApprovalRequest dataclass
-  - [x] ApprovalManager for creating/approving/rejecting requests
-  - [x] ApprovalHandler interface for notifications
-  - [x] Required approvers and min_approvals support
-- [x] Audit logging
-  - [x] AuditEventType enum (20+ event types)
-  - [x] AuditEvent dataclass
-  - [x] InMemoryAuditStore for testing
-  - [x] SQLiteAuditStore for persistent storage
-  - [x] AuditLogger high-level interface
-- [x] Credential encryption (age/GPG)
-  - [x] Age encryption integration
-  - [x] GPG encryption integration
-  - [x] Fernet built-in encryption
-  - [x] Key management
+### 1. Native MCP Support
+- Direct import of MCP server packages
+- No subprocess spawning or JSON-RPC bridging
+- Hot-reload of MCP servers
 
-### Optimization
-- [x] Automatic agent selection
-  - [x] Cost/quality routing rules
-  - [x] Capability-based selection
-- [x] Cost-based routing
-  - [x] Budget limits per workflow
-  - [x] Dynamic agent switching
-- [ ] Performance tuning
-  - [ ] Parallel step execution
-  - [ ] Caching strategies
-- [ ] Load balancing
-  - [ ] Multi-instance support
-  - [ ] Work distribution
+### 2. Direct SDK References in YAML
+```yaml
+# Workflow can directly reference SDKs
+tools:
+  slack:
+    sdk: "@slack/web-api"
+    auth:
+      token: "${SLACK_BOT_TOKEN}"
 
-### Ecosystem
-- [x] Plugin system
-  - [x] Plugin discovery (from directories and entry points)
-  - [x] Hook points for extensions (20+ hook types)
-  - [x] Plugin lifecycle management (load, enable, disable, unload)
-  - [x] PluginManager for managing plugins
-  - [x] HookRegistry for hook callbacks
-  - [x] Example plugins (LoggingPlugin, MetricsPlugin)
-- [x] Workflow template library
-  - [x] TemplateVariable for customizable parameters
-  - [x] TemplateMetadata with categories and requirements
-  - [x] WorkflowTemplate with render and instantiate
-  - [x] TemplateRegistry for discovery and management
-  - [x] 7 built-in templates (PR review, deployment, testing, etc.)
-  - [x] CLI commands (template list/show/use/search/categories)
-- [ ] Community tool marketplace
-  - [ ] Tool package format and metadata (ToolPackage, PackageMetadata)
-  - [ ] Tool package builder and validator (PackageBuilder, PackageValidator)
-  - [ ] Marketplace registry (MarketplaceRegistry with local/remote sources)
-  - [ ] Tool installation and management (PackageInstaller, InstalledPackage)
-  - [ ] Version management and dependency resolution
-  - [ ] Package signing and verification
-  - [ ] CLI commands (marketplace search/install/uninstall/update/publish)
-  - [ ] Comprehensive tests for marketplace module
+  anthropic:
+    sdk: "@anthropic-ai/sdk"
+    auth:
+      api_key: "${ANTHROPIC_API_KEY}"
+
+steps:
+  - action: slack.chat.postMessage
+    inputs:
+      channel: "#general"
+      text: "Hello from marktoflow!"
+```
+
+### 3. Simple Installation
+```bash
+npx marktoflow init
+npx marktoflow connect slack  # OAuth flow
+npx marktoflow run workflow.md
+```
 
 ---
 
-## Backlog
+## Phase 1: Foundation (TypeScript Core)
 
-### Agent Adapters
-- [x] OpenCode adapter (COMPLETE - Production Ready)
-  - [x] Dual-mode architecture (CLI + Server)
-  - [x] Backend-agnostic (GitHub Copilot, Ollama, 75+ providers)
-  - [x] Auto-detection and fallback
-  - [x] Tool calling integration
-  - [x] MCP bridge support
-  - [x] GitHub Copilot setup documentation
-  - [x] Ollama local model setup documentation
-  - [x] Comprehensive testing (basic + integration)
-  - [x] Performance benchmarking
-  - [x] Streaming support (server API aligned + tested)
-    - See: docs/STREAMING_STATUS.md
-    - Verified SSE parsing with SDK-compatible server events
-    - Graceful fallback to non-streaming in CLI mode
-  - [x] Cleanup: remove OpenCode CLI output wrappers in streaming fallback
-- [ ] Claude Code adapter (IN PROGRESS)
-  - [x] CLI mode implementation
-  - [x] Basic adapter structure
-  - [x] File-based context support
-  - [x] Model selection (sonnet, opus, haiku)
-  - [x] SDK mode support (https://github.com/anthropics/claude-agent-sdk-python)
-    - Uses claude-agent-sdk for programmatic access
-    - Benefits: Better control, streaming, session management
-  - [ ] Add SDK validation test (mocked; no CLI quota required)
-  - [ ] Extended thinking mode support
-  - [ ] Streaming support
-  - [ ] Configuration documentation
-  - [ ] Testing suite
-  - [ ] Usage examples
-- [ ] Aider adapter (full support)
-- [ ] Cursor adapter
-- [ ] Codex adapter
-- [ ] Gemini CLI adapter
-- [ ] GitHub Copilot Workspace adapter
+### Project Setup
+- [ ] Initialize TypeScript monorepo (pnpm/turborepo)
+- [ ] Create package structure:
+  ```
+  packages/
+    core/           # Parser, engine, state
+    cli/            # CLI commands
+    integrations/   # Slack, Jira, Gmail, etc.
+  ```
+- [ ] Configure TypeScript, ESLint, Prettier
+- [ ] Set up Vitest for testing
+- [ ] Create CI/CD pipeline
 
-### Advanced Features
-- [ ] Parallel workflow execution
-- [ ] Workflow composition (sub-workflows)
-- [ ] A/B testing workflows across agents
-- [ ] Natural language workflow creation
+### Core Engine (Port from Python)
+- [ ] Data models (Workflow, Step, Context, Result)
+- [ ] Workflow parser (YAML frontmatter + markdown)
+- [ ] Step executor with retry/circuit breaker
+- [ ] State persistence (SQLite via better-sqlite3)
+- [ ] Execution logging
+
+### CLI (Port from Python)
+- [ ] `marktoflow init` - Project initialization
+- [ ] `marktoflow run` - Workflow execution
+- [ ] `marktoflow workflow list/validate/show`
+- [ ] `marktoflow connect <service>` - OAuth setup (NEW)
+- [ ] `marktoflow doctor` - Environment check
+
+---
+
+## Phase 2: Native Integrations
+
+### MCP Integration
+- [ ] MCP server loader (npm package management)
+- [ ] Direct MCP server imports
+- [ ] MCP tool discovery and schema extraction
+- [ ] MCP server lifecycle management
+
+### Built-in Integrations (via SDKs)
+- [ ] **Slack** (`@slack/web-api`, `@slack/bolt`)
+  - Actions: send_message, create_channel, get_messages
+  - Triggers: message_received, app_mention (Socket Mode)
+  - OAuth flow with token storage
+- [ ] **Jira** (`jira.js`)
+  - Actions: create_issue, update_issue, search, transition
+  - Triggers: issue_created, issue_updated (webhooks)
+  - OAuth flow with Atlassian
+- [ ] **GitHub** (`@octokit/rest`)
+  - Actions: create_pr, merge, create_issue, search
+  - Triggers: push, pull_request, issues (webhooks)
+  - Personal access token or GitHub App
+- [ ] **Gmail** (`googleapis`)
+  - Actions: get_emails, send_email, create_draft
+  - Triggers: email_received (Pub/Sub push)
+  - OAuth 2.0 with Google
+- [ ] **Outlook** (`@microsoft/microsoft-graph-client`)
+  - Actions: get_emails, send_email, calendar
+  - Triggers: email_received (Graph subscriptions)
+  - OAuth 2.0 with Microsoft
+
+### AI SDKs (Direct YAML Reference)
+- [ ] **Anthropic** (`@anthropic-ai/sdk`)
+  - Direct Claude API access
+  - Streaming support
+  - Tool use
+- [ ] **OpenAI** (`openai`)
+  - GPT-4, GPT-4o access
+  - Function calling
+  - Streaming
+- [ ] **Google AI** (`@google/generative-ai`)
+  - Gemini models
+  - Function calling
+
+---
+
+## Phase 3: Triggers & Events
+
+### Trigger System
+- [ ] Unified trigger manager
+- [ ] Cron-based scheduling (node-cron)
+- [ ] Webhook receiver (Express/Fastify)
+- [ ] File system watcher (chokidar)
+
+### External Triggers
+- [ ] Slack Socket Mode (real-time messages)
+- [ ] Gmail Pub/Sub (email notifications)
+- [ ] GitHub webhooks
+- [ ] Microsoft Graph subscriptions
+
+### Tunnel Support (Development)
+- [ ] Built-in cloudflared tunnel
+- [ ] ngrok integration
+- [ ] Local webhook testing
+
+---
+
+## Phase 4: Developer Experience
+
+### Workflow Authoring
+- [ ] `marktoflow new` - Interactive workflow wizard
+- [ ] Dry-run mode with mocked responses
+- [ ] Step-by-step debugging
+- [ ] Hot reload during development
+
+### Quick Start Presets
+- [ ] Email-to-Jira workflow
+- [ ] Slack notifications
+- [ ] GitHub PR automation
+- [ ] Daily digest generator
+
+### Documentation
+- [ ] Getting started guide
+- [ ] Integration setup guides
+- [ ] YAML reference
+- [ ] Examples library
+
+---
+
+## Phase 5: Production Features
+
+### From Python v1.0 (Port if needed)
+- [ ] RBAC and permissions
+- [ ] Approval workflows
+- [ ] Audit logging
+- [ ] Cost tracking
+- [ ] Plugin system
+- [ ] Workflow templates
+
+### New Features
 - [ ] Visual workflow editor (web UI)
-- [ ] Workflow versioning and rollback
+- [ ] Workflow marketplace
+- [ ] Team collaboration
+- [ ] Hosted webhook service
 
 ---
 
-## Self-Contained Bundles - COMPLETE
+## Migration Notes
 
-- [x] ScriptTool for executing bash/Python scripts as tools
-  - Inputs passed as `--key=value` CLI arguments
-  - Outputs parsed as JSON or plain text
-  - Multi-operation support
-- [x] WorkflowBundle for self-contained workflow directories
-  - Auto-detect workflow.md, main.md, or single .md file
-  - Load script tools from tools/ directory
-  - Bundle configuration via config.yaml
-  - Bundle tool metadata via tools.yaml
-- [x] CLI bundle commands
-  - `marktoflow bundle info <path>` - Show bundle information
-  - `marktoflow bundle validate <path>` - Validate bundle structure
-  - `marktoflow bundle run <path>` - Run a bundle workflow
-  - `marktoflow bundle list [path]` - List bundles in a directory
-  - Auto-detect bundles in `marktoflow run`
-- [x] Example bundles (5 refactored from flat files)
-  - code-review, daily-standup, dependency-update
-  - incident-response, sprint-planning
-- [x] Comprehensive tests (53 new tests)
+### What to Keep from Python
+- Workflow YAML format (compatible)
+- Example workflows (convert to new format)
+- Architecture patterns (retry, circuit breaker, failover)
+- Test scenarios (rewrite in Vitest)
 
-**Total: 615 tests (600+ passing, ~12 skipped async/age)**
+### What Changes
+- No agent adapters (direct SDK calls instead)
+- No MCP bridge (native MCP support)
+- No subprocess spawning for tools
+- Simpler tool registration (just import)
+
+### Breaking Changes
+- Python package no longer maintained after v2.0
+- Configuration format changes
+- Some workflow syntax updates for SDK references
 
 ---
 
-## Quick Wins - COMPLETE
+## Python v1.0 - Archived
 
-All quick wins have been implemented:
+The Python implementation is feature-complete and archived. See `PROGRESS.md` for completed work.
 
-- [x] Add `--verbose` flag to CLI commands
-  - Global `-v/--verbose` option for all commands
-  - `log_verbose()` helper for debug output
-- [x] Add `marktoflow workflow create` scaffolding command
-  - Templates: basic, multi-step, with-tools
-  - `--bundle` flag to create bundle directory
-  - `--template` and `--output` options
-- [x] Add JSON output option for CLI commands
-  - Global `--json` option for all commands
-  - `output_json()` and `output_result()` helpers
-  - Updated: run, workflow list, workflow show, version
-- [x] Improve error messages with suggestions
-  - Added helpful tips after error messages
-  - Suggestions for next commands to try
-- [x] Add `marktoflow doctor` for environment checking
-  - Python version check
-  - Project initialization check
-  - Optional dependencies check
-  - Git availability check
-  - Workflows and tools summary
+**Final Python Stats:**
+- 615+ tests
+- Production-ready features:
+  - Scheduling, webhooks, file watching
+  - State persistence, retry logic, circuit breakers
+  - RBAC, audit logging, credential encryption
+  - Plugin system, workflow templates
+  - Agent adapters (Claude Code, OpenCode, Ollama)
 
 ---
 
-## Notes
+## Quick Reference
 
-- Phase 1 complete - core framework is functional
-- Phase 2 focuses on production readiness
-- Testing is critical before Phase 3
-- Consider user feedback for prioritization
+### New Project Structure
+```
+marktoflow/
+├── packages/
+│   ├── core/
+│   │   ├── src/
+│   │   │   ├── parser.ts
+│   │   │   ├── engine.ts
+│   │   │   ├── state.ts
+│   │   │   └── models.ts
+│   │   └── package.json
+│   ├── cli/
+│   │   ├── src/
+│   │   │   └── index.ts
+│   │   └── package.json
+│   └── integrations/
+│       ├── slack/
+│       ├── jira/
+│       ├── gmail/
+│       └── package.json
+├── package.json
+├── pnpm-workspace.yaml
+└── turbo.json
+```
+
+### Key Dependencies
+```json
+{
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.x",
+    "@slack/web-api": "^7.x",
+    "@slack/bolt": "^4.x",
+    "@octokit/rest": "^21.x",
+    "jira.js": "^4.x",
+    "googleapis": "^140.x",
+    "@microsoft/microsoft-graph-client": "^3.x",
+    "better-sqlite3": "^11.x",
+    "commander": "^12.x",
+    "yaml": "^2.x"
+  }
+}
+```
