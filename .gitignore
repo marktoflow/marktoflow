@@ -1,3 +1,25 @@
+# ============================================================================
+# Node.js / TypeScript
+# ============================================================================
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Test coverage
+coverage/
+
+# ============================================================================
+# Python (v1.0 legacy)
+# ============================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -10,8 +32,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
-downloads/
 eggs/
 .eggs/
 lib/
@@ -28,10 +48,6 @@ wheels/
 *.manifest
 *.spec
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -46,12 +62,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Translations
-*.mo
-*.pot
-
 # Environments
-.env
 .venv
 env/
 venv/
@@ -59,7 +70,10 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE
+# ============================================================================
+# IDE / Editor
+# ============================================================================
+
 .idea/
 .vscode/
 *.swp
@@ -70,6 +84,10 @@ venv.bak/
 .settings/
 *.sublime-project
 *.sublime-workspace
+
+# ============================================================================
+# OS Files
+# ============================================================================
 
 # macOS
 .DS_Store
@@ -82,18 +100,16 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
+# ============================================================================
 # marktoflow specific
+# ============================================================================
+
+# State and credentials
 .marktoflow/state/credentials/
 .marktoflow/state/workflow-state/*.db
 .marktoflow/state/execution-logs/*.md
 .marktoflow/.env
 *.encrypted
-
-# Temporary files
-*.tmp
-*.temp
-*.log
-*.bak
 
 # SQLite databases (state files)
 *.sqlite
@@ -105,9 +121,23 @@ marktoflow.local.yaml
 .env.local
 .env.*.local
 
+# ============================================================================
 # Secrets and credentials
+# ============================================================================
+
+.env
 secrets/
 credentials/
 *.pem
 *.key
 *.crt
+
+# ============================================================================
+# Temporary files
+# ============================================================================
+
+*.tmp
+*.temp
+*.log
+*.bak
+downloads/

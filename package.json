@@ -1,0 +1,37 @@
+{
+  "name": "marktoflow",
+  "version": "2.0.0-alpha.1",
+  "description": "Universal automation framework with native MCP support and direct SDK integration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"packages/*/src/**/*.ts\"",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "keywords": [
+    "automation",
+    "workflow",
+    "mcp",
+    "ai",
+    "slack",
+    "jira",
+    "github"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prettier": "^3.4.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
