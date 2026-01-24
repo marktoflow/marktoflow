@@ -79,9 +79,9 @@ npx marktoflow run workflow.md
 - [x] Env loading + config helpers (.env discovery, typed accessors)
 - [x] Credential manager + encryption backends (Fernet/Age/GPG parity)
 - [x] Agent routing + selection + budgeting (routing/selection strategies)
-- [ ] Failover + agent health tracking (engine failover parity)
+- [x] Failover + agent health tracking (engine failover parity)
   - [x] Failover config + health tracker types
-  - [ ] Engine integration
+  - [x] Engine integration
 - [x] Rollback/compensation framework (transaction + file/git handlers)
 
 ### CLI (Port from Python)

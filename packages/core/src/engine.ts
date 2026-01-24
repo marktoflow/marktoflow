@@ -17,6 +17,13 @@ import {
   createStepResult,
 } from './models.js';
 import { StateStore } from './state.js';
+import {
+  DEFAULT_FAILOVER_CONFIG,
+  AgentHealthTracker,
+  type FailoverConfig,
+  type FailoverEvent,
+  FailoverReason,
+} from './failover.js';
 import { RollbackRegistry } from './rollback.js';
 
 // ============================================================================
@@ -34,6 +41,10 @@ export interface EngineConfig {
   retryMaxDelay?: number;
   /** Optional rollback registry for rollback error handling */
   rollbackRegistry?: RollbackRegistry;
+  /** Failover configuration for step execution */
+  failoverConfig?: Partial<FailoverConfig>;
+  /** Optional agent health tracker */
+  healthTracker?: AgentHealthTracker;
 }
 
 export interface SDKRegistryLike {
@@ -236,6 +247,9 @@ export class WorkflowEngine {
   private events: EngineEvents;
   private stateStore?: StateStore | undefined;
   private rollbackRegistry?: RollbackRegistry;
+  private failoverConfig: FailoverConfig;
+  private healthTracker: AgentHealthTracker;
+  private failoverEvents: FailoverEvent[] = [];
 
   constructor(config: EngineConfig = {}, events: EngineEvents = {}, stateStore?: StateStore) {
     this.config = {
@@ -244,6 +258,8 @@ export class WorkflowEngine {
       retryBaseDelay: config.retryBaseDelay ?? 1000,
       retryMaxDelay: config.retryMaxDelay ?? 30000,
       rollbackRegistry: config.rollbackRegistry ?? undefined,
+      failoverConfig: config.failoverConfig ?? undefined,
+      healthTracker: config.healthTracker ?? undefined,
     };
 
     this.retryPolicy = new RetryPolicy(
@@ -255,6 +271,8 @@ export class WorkflowEngine {
     this.events = events;
     this.stateStore = stateStore;
     this.rollbackRegistry = config.rollbackRegistry;
+    this.failoverConfig = { ...DEFAULT_FAILOVER_CONFIG, ...(config.failoverConfig ?? {}) };
+    this.healthTracker = config.healthTracker ?? new AgentHealthTracker();
   }
 
   /**
@@ -303,7 +321,7 @@ export class WorkflowEngine {
         }
 
         // Execute step with retry
-        const result = await this.executeStepWithRetry(step, context, sdkRegistry, stepExecutor);
+        const result = await this.executeStepWithFailover(step, context, sdkRegistry, stepExecutor);
         stepResults.push(result);
 
         // Store output variable
@@ -391,6 +409,10 @@ export class WorkflowEngine {
     return workflowResult;
   }
 
+  getFailoverHistory(): FailoverEvent[] {
+    return [...this.failoverEvents];
+  }
+
   /**
    * Execute a step with retry logic.
    */
@@ -467,6 +489,67 @@ export class WorkflowEngine {
     );
     this.events.onStepComplete?.(step, result);
     return result;
+  }
+
+  /**
+   * Execute a step with retry + failover support.
+   */
+  private async executeStepWithFailover(
+    step: WorkflowStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const primaryResult = await this.executeStepWithRetry(step, context, sdkRegistry, stepExecutor);
+    const [primaryTool, ...methodParts] = step.action.split('.');
+    const method = methodParts.join('.');
+
+    if (primaryResult.status === StepStatus.COMPLETED) {
+      this.healthTracker.markHealthy(primaryTool);
+      return primaryResult;
+    }
+
+    const errorMessage = primaryResult.error ?? '';
+    const isTimeout = errorMessage.includes('timed out');
+    if (isTimeout && !this.failoverConfig.failoverOnTimeout) {
+      this.healthTracker.markUnhealthy(primaryTool, errorMessage);
+      return primaryResult;
+    }
+    if (!isTimeout && !this.failoverConfig.failoverOnStepFailure) {
+      this.healthTracker.markUnhealthy(primaryTool, errorMessage);
+      return primaryResult;
+    }
+
+    if (!method || this.failoverConfig.fallbackAgents.length === 0) {
+      this.healthTracker.markUnhealthy(primaryTool, errorMessage);
+      return primaryResult;
+    }
+
+    let attempts = 0;
+    for (const fallbackTool of this.failoverConfig.fallbackAgents) {
+      if (fallbackTool === primaryTool) continue;
+      if (attempts >= this.failoverConfig.maxFailoverAttempts) break;
+
+      const fallbackStep: WorkflowStep = { ...step, action: `${fallbackTool}.${method}` };
+      const result = await this.executeStepWithRetry(fallbackStep, context, sdkRegistry, stepExecutor);
+      this.failoverEvents.push({
+        timestamp: new Date(),
+        fromAgent: primaryTool,
+        toAgent: fallbackTool,
+        reason: isTimeout ? FailoverReason.TIMEOUT : FailoverReason.STEP_EXECUTION_FAILED,
+        stepIndex: context.currentStepIndex,
+        error: errorMessage || undefined,
+      });
+      attempts += 1;
+
+      if (result.status === StepStatus.COMPLETED) {
+        this.healthTracker.markHealthy(fallbackTool);
+        return result;
+      }
+    }
+
+    this.healthTracker.markUnhealthy(primaryTool, errorMessage);
+    return primaryResult;
   }
 
   /**
