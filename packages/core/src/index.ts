@@ -34,6 +34,42 @@ export {
   createStepResult,
 } from './models.js';
 
+// Env
+export {
+  findEnvFiles,
+  findProjectRoot,
+  loadEnv,
+  ensureEnvLoaded,
+  getEnv,
+  getEnvBool,
+  getEnvInt,
+  getEnvFloat,
+  getEnvList,
+  EnvConfig,
+  config,
+} from './env.js';
+
+// Credentials
+export {
+  EncryptionBackend,
+  CredentialType,
+  EncryptionError,
+  KeyNotFoundError,
+  CredentialNotFoundError,
+  FernetEncryptor,
+  AgeEncryptor,
+  GPGEncryptor,
+  InMemoryCredentialStore,
+  SQLiteCredentialStore,
+  CredentialManager,
+  KeyManager,
+  createCredentialManager,
+  getAvailableBackends,
+  type Credential,
+  type Encryptor,
+  type CredentialStore,
+} from './credentials.js';
+
 // Parser
 export {
   parseFile,
@@ -56,6 +92,33 @@ export {
   type StepExecutor,
   type CircuitState,
 } from './engine.js';
+
+// Tool Registry
+export {
+  ToolRegistry,
+} from './tool-registry.js';
+
+export {
+  ToolType,
+  ToolCompatibility,
+  type ToolImplementation,
+  type ToolAuth,
+  type ToolDefinition,
+  type Tool,
+} from './tool-base.js';
+
+// Tool Implementations
+export { OpenAPITool } from './tools/openapi-tool.js';
+export { CustomTool, operation as customOperation } from './tools/custom-tool.js';
+export { MCPTool } from './tools/mcp-tool.js';
+
+// Bundle support
+export {
+  WorkflowBundle,
+  BundleToolRegistry,
+  loadBundleConfig,
+  type BundleConfig,
+} from './bundle.js';
 
 // SDK Registry
 export {
@@ -168,13 +231,40 @@ export {
 
 // Cost Tracking
 export {
-  CostStore,
   DEFAULT_PRICING,
+  CostStore,
+  CostTracker,
+  PersistentCostTracker,
+  PricingRegistry,
+  WorkflowCostEstimator,
+  LoggingAlertHandler,
+  CallbackAlertHandler,
+  CostAlertLevel,
+  CostUnit,
   type ModelPricing,
+  type TokenUsage,
   type CostRecord,
+  type CostSummary,
+  type CostLimit,
+  type CostAlert,
+  type CostAlertHandler,
 } from './costs.js';
 
 // Metrics
 export {
   MetricsCollector,
 } from './metrics.js';
+
+// Rollback
+export {
+  RollbackStrategy,
+  RollbackStatus,
+  RollbackRegistry,
+  DefaultCompensationHandler,
+  TransactionContext,
+  FileCompensationHandler,
+  GitCompensationHandler,
+  type RollbackAction,
+  type RollbackResult,
+  type CompensationHandler,
+} from './rollback.js';

@@ -16,20 +16,28 @@ describe('FileWatcher', () => {
   });
 
   it('should detect file changes', async () => {
-    const watcher = new FileWatcher({ path: testDir, debounceMs: 10 });
+    const watcher = new FileWatcher({ path: testDir, debounceMs: 10, recursive: false, usePolling: true, interval: 50 });
     const handler = vi.fn().mockResolvedValue(undefined);
-    
+
     watcher.onEvent(handler);
     watcher.start();
 
-    // Wait for watcher to be ready
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise<void>((resolve) => {
+      watcher.on('ready', () => resolve());
+    });
+
+    const eventPromise = new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout waiting for file event')), 4000);
+      watcher.on('event', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
 
     const testFile = join(testDir, 'test.txt');
     writeFileSync(testFile, 'hello');
 
-    // Wait for event to be processed
-    await new Promise(r => setTimeout(r, 500));
+    await eventPromise;
 
     expect(handler).toHaveBeenCalledWith(expect.objectContaining({
       event: 'add',

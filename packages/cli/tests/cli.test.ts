@@ -62,5 +62,20 @@ describe('CLI', () => {
       const output = runCLI('init --force', tempDir);
       expect(output).toContain('Project initialized successfully');
     });
+
+    it('should list agents', () => {
+      const output = runCLI('agent list', tempDir);
+      expect(output).toContain('Available Agents');
+    });
+
+    it('should list tools with no registry', () => {
+      const output = runCLI('tools list', tempDir);
+      expect(output).toContain('No tool registry');
+    });
+
+    it('should list bundles in empty dir', () => {
+      const output = runCLI('bundle list', tempDir);
+      expect(output).toContain('No bundles found');
+    });
   });
 });

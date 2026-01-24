@@ -9,7 +9,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, readdirSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   parseFile,
@@ -18,12 +18,31 @@ import {
   createSDKStepExecutor,
   StepStatus,
   WorkflowStatus,
+  loadEnv,
+  ToolRegistry,
+  WorkflowBundle,
+  Scheduler,
 } from '@marktoflow/core';
 import { registerIntegrations } from '@marktoflow/integrations';
 import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
+import { parse as parseYaml } from 'yaml';
 
 const VERSION = '2.0.0-alpha.1';
+
+// Load environment variables from .env files on CLI startup
+loadEnv();
+
+function isBundle(path: string): boolean {
+  try {
+    const stat = existsSync(path) ? statSync(path) : null;
+    if (!stat || !stat.isDirectory()) return false;
+    const entries = readdirSync(path);
+    return entries.some((name) => name.endsWith('.md') && name !== 'README.md');
+  } catch {
+    return false;
+  }
+}
 
 // ============================================================================
 // CLI Setup
@@ -254,6 +273,205 @@ program
         console.log(`  ${chalk.red(file)}: (invalid)`);
       }
     }
+  });
+
+// --- agent ---
+const agentCmd = program.command('agent').description('Agent management');
+
+agentCmd
+  .command('list')
+  .description('List available agents')
+  .action(() => {
+    const capabilitiesPath = join('.marktoflow', 'agents', 'capabilities.yaml');
+    const agentsFromFile: string[] = [];
+    if (existsSync(capabilitiesPath)) {
+      const content = readFileSync(capabilitiesPath, 'utf8');
+      const data = parseYaml(content) as { agents?: Record<string, unknown> };
+      agentsFromFile.push(...Object.keys(data?.agents ?? {}));
+    }
+
+    const knownAgents = ['claude-code', 'opencode', 'ollama', 'codex', 'gemini-cli'];
+    const allAgents = Array.from(new Set([...agentsFromFile, ...knownAgents]));
+
+    console.log(chalk.bold('Available Agents:'));
+    for (const agent of allAgents) {
+      const status = agentsFromFile.includes(agent) ? chalk.green('Registered') : chalk.yellow('Not configured');
+      console.log(`  ${chalk.cyan(agent)}: ${status}`);
+    }
+  });
+
+agentCmd
+  .command('info <agent>')
+  .description('Show agent information')
+  .action((agent) => {
+    const capabilitiesPath = join('.marktoflow', 'agents', 'capabilities.yaml');
+    if (!existsSync(capabilitiesPath)) {
+      console.log(chalk.yellow('No capabilities file found. Run `marktoflow init` first.'));
+      process.exit(1);
+    }
+    const content = readFileSync(capabilitiesPath, 'utf8');
+    const data = parseYaml(content) as { agents?: Record<string, any> };
+    const info = data?.agents?.[agent];
+    if (!info) {
+      console.log(chalk.red(`Agent not found: ${agent}`));
+      process.exit(1);
+    }
+    console.log(chalk.bold(agent));
+    console.log(`  Version: ${info.version ?? 'unknown'}`);
+    console.log(`  Provider: ${info.provider ?? 'unknown'}`);
+    const capabilities = info.capabilities ?? {};
+    for (const [key, value] of Object.entries(capabilities)) {
+      if (typeof value === 'object' && value) {
+        for (const [subKey, subValue] of Object.entries(value)) {
+          console.log(`  ${key}.${subKey}: ${String(subValue)}`);
+        }
+      } else {
+        console.log(`  ${key}: ${String(value)}`);
+      }
+    }
+  });
+
+// --- tools ---
+const toolsCmd = program.command('tools').description('Tool management');
+toolsCmd
+  .command('list')
+  .description('List available tools')
+  .action(() => {
+    const registryPath = join('.marktoflow', 'tools', 'registry.yaml');
+    if (!existsSync(registryPath)) {
+      console.log(chalk.yellow("No tool registry found. Run 'marktoflow init' first."));
+      return;
+    }
+    const registry = new ToolRegistry(registryPath);
+    const tools = registry.listTools();
+    if (tools.length === 0) {
+      console.log(chalk.yellow('No tools registered.'));
+      return;
+    }
+    console.log(chalk.bold('Registered Tools:'));
+    for (const toolName of tools) {
+      const definition = registry.getDefinition(toolName);
+      const types = definition?.implementations.map((impl) => impl.type).join(', ') ?? '';
+      console.log(`  ${chalk.cyan(toolName)} ${types ? `(${types})` : ''}`);
+    }
+  });
+
+// --- schedule ---
+const scheduleCmd = program.command('schedule').description('Scheduler management');
+scheduleCmd
+  .command('list')
+  .description('List scheduled workflows')
+  .action(() => {
+    const scheduler = new Scheduler();
+    const jobs = scheduler.listJobs();
+    if (jobs.length === 0) {
+      console.log(chalk.yellow('No scheduled workflows found.'));
+      console.log('Add schedule triggers to your workflows to enable scheduling.');
+      return;
+    }
+    console.log(chalk.bold('Scheduled Workflows:'));
+    for (const job of jobs) {
+      console.log(`  ${chalk.cyan(job.id)} ${job.workflowPath} (${job.schedule})`);
+    }
+  });
+
+// --- bundle ---
+const bundleCmd = program.command('bundle').description('Workflow bundle commands');
+bundleCmd
+  .command('list [path]')
+  .description('List workflow bundles in a directory')
+  .action((path = '.') => {
+    if (!existsSync(path)) {
+      console.log(chalk.red(`Path not found: ${path}`));
+      process.exit(1);
+    }
+    const entries = readdirSync(path, { withFileTypes: true });
+    const bundles: string[] = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const fullPath = join(path, entry.name);
+      if (isBundle(fullPath)) bundles.push(fullPath);
+    }
+    if (bundles.length === 0) {
+      console.log(chalk.yellow(`No bundles found in ${path}`));
+      return;
+    }
+    console.log(chalk.bold('Bundles:'));
+    for (const bundlePath of bundles) {
+      console.log(`  ${chalk.cyan(bundlePath)}`);
+    }
+  });
+
+bundleCmd
+  .command('info <path>')
+  .description('Show information about a workflow bundle')
+  .action(async (path) => {
+    if (!isBundle(path)) {
+      console.log(chalk.red(`Not a valid bundle: ${path}`));
+      process.exit(1);
+    }
+    const bundle = new WorkflowBundle(path);
+    const workflow = await bundle.loadWorkflow();
+    const tools = bundle.loadTools().listTools();
+    console.log(chalk.bold(`Bundle: ${bundle.name}`));
+    console.log(`  Workflow: ${workflow.metadata.name} (${workflow.metadata.id})`);
+    console.log(`  Steps: ${workflow.steps.length}`);
+    console.log(`  Tools: ${tools.length ? tools.join(', ') : 'none'}`);
+  });
+
+bundleCmd
+  .command('validate <path>')
+  .description('Validate a workflow bundle')
+  .action(async (path) => {
+    if (!isBundle(path)) {
+      console.log(chalk.red(`Not a valid bundle: ${path}`));
+      process.exit(1);
+    }
+    try {
+      const bundle = new WorkflowBundle(path);
+      await bundle.loadWorkflow();
+      console.log(chalk.green(`Bundle '${bundle.name}' is valid.`));
+    } catch (error) {
+      console.log(chalk.red(`Bundle validation failed: ${error}`));
+      process.exit(1);
+    }
+  });
+
+bundleCmd
+  .command('run <path>')
+  .description('Run a workflow bundle')
+  .option('-i, --input <key=value...>', 'Input parameters')
+  .action(async (path, options) => {
+    if (!isBundle(path)) {
+      console.log(chalk.red(`Not a valid bundle: ${path}`));
+      process.exit(1);
+    }
+    const bundle = new WorkflowBundle(path);
+    const workflow = await bundle.loadWorkflowWithBundleTools();
+    const inputs: Record<string, unknown> = {};
+    if (options.input) {
+      for (const pair of options.input) {
+        const [key, value] = pair.split('=');
+        inputs[key] = value;
+      }
+    }
+
+    const engine = new WorkflowEngine();
+    const registry = new SDKRegistry();
+    registerIntegrations(registry);
+    registry.registerTools(workflow.tools);
+
+    const result = await engine.execute(workflow, inputs, registry, createSDKStepExecutor());
+    console.log(chalk.bold(`Bundle completed: ${result.status}`));
+  });
+
+// --- template ---
+const templateCmd = program.command('template').description('Workflow template commands');
+templateCmd
+  .command('list')
+  .description('List workflow templates')
+  .action(() => {
+    console.log(chalk.yellow('Templates are not yet implemented in v2.0.'));
   });
 
 // --- connect ---

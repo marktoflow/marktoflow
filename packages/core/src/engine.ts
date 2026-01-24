@@ -17,6 +17,7 @@ import {
   createStepResult,
 } from './models.js';
 import { StateStore } from './state.js';
+import { RollbackRegistry } from './rollback.js';
 
 // ============================================================================
 // Types
@@ -31,6 +32,8 @@ export interface EngineConfig {
   retryBaseDelay?: number;
   /** Maximum delay for retry backoff in milliseconds */
   retryMaxDelay?: number;
+  /** Optional rollback registry for rollback error handling */
+  rollbackRegistry?: RollbackRegistry;
 }
 
 export interface SDKRegistryLike {
@@ -232,6 +235,7 @@ export class WorkflowEngine {
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
   private events: EngineEvents;
   private stateStore?: StateStore | undefined;
+  private rollbackRegistry?: RollbackRegistry;
 
   constructor(config: EngineConfig = {}, events: EngineEvents = {}, stateStore?: StateStore) {
     this.config = {
@@ -239,6 +243,7 @@ export class WorkflowEngine {
       maxRetries: config.maxRetries ?? 3,
       retryBaseDelay: config.retryBaseDelay ?? 1000,
       retryMaxDelay: config.retryMaxDelay ?? 30000,
+      rollbackRegistry: config.rollbackRegistry ?? undefined,
     };
 
     this.retryPolicy = new RetryPolicy(
@@ -249,6 +254,7 @@ export class WorkflowEngine {
 
     this.events = events;
     this.stateStore = stateStore;
+    this.rollbackRegistry = config.rollbackRegistry;
   }
 
   /**
@@ -323,7 +329,26 @@ export class WorkflowEngine {
             return workflowResult;
           }
           // 'continue' - keep going
-          // 'rollback' - would require rollback implementation
+          if (errorAction === 'rollback') {
+            if (this.rollbackRegistry) {
+              await this.rollbackRegistry.rollbackAllAsync({
+                context,
+                inputs: context.inputs,
+                variables: context.variables,
+              });
+            }
+            context.status = WorkflowStatus.FAILED;
+            const workflowError = result.error || `Step ${step.id} failed`;
+            const workflowResult = this.buildWorkflowResult(
+              workflow,
+              context,
+              stepResults,
+              startedAt,
+              workflowError
+            );
+            this.events.onWorkflowComplete?.(workflow, workflowResult);
+            return workflowResult;
+          }
         }
       }
 

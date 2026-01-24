@@ -13,6 +13,8 @@ export interface FileWatcherOptions {
   persistent?: boolean;
   recursive?: boolean;
   debounceMs?: number;
+  usePolling?: boolean;
+  interval?: number;
 }
 
 export interface FileEvent {
@@ -58,6 +60,13 @@ export class FileWatcher extends EventEmitter {
       watchOptions.depth = 0;
     }
 
+    if (this.options.usePolling !== undefined) {
+      watchOptions.usePolling = this.options.usePolling;
+    }
+    if (this.options.interval !== undefined) {
+      watchOptions.interval = this.options.interval;
+    }
+
     this.watcher = watch(this.options.path, watchOptions);
 
     const handleEvent = (event: FileEvent['event'], path: string) => {
@@ -85,6 +94,7 @@ export class FileWatcher extends EventEmitter {
       .on('unlink', path => handleEvent('unlink', path))
       .on('addDir', path => handleEvent('addDir', path))
       .on('unlinkDir', path => handleEvent('unlinkDir', path))
+      .on('ready', () => this.emit('ready'))
       .on('error', error => this.emit('error', error));
   }
 
