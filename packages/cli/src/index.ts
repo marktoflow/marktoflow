@@ -30,6 +30,7 @@ import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
 import { runWorkflowWizard, listTemplates } from './commands/new.js';
 import { parse as parseYaml } from 'yaml';
+import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
 
 const VERSION = '2.0.0-alpha.1';
 
@@ -190,18 +191,6 @@ program
         spinner.succeed(`Loaded: ${workflow.metadata.name}`);
       }
 
-      if (options.dryRun) {
-        console.log('\n' + chalk.bold('Workflow Structure:'));
-        console.log(`  ID: ${workflow.metadata.id}`);
-        console.log(`  Steps: ${workflow.steps.length}`);
-        console.log(`  Tools: ${Object.keys(workflow.tools).join(', ') || 'none'}`);
-        console.log('\n' + chalk.bold('Steps:'));
-        workflow.steps.forEach((step, i) => {
-          console.log(`  ${i + 1}. ${step.id}: ${step.action}`);
-        });
-        return;
-      }
-
       // Parse inputs
       const inputs: Record<string, unknown> = {};
       if (options.input) {
@@ -209,6 +198,21 @@ program
           const [key, value] = pair.split('=');
           inputs[key] = value;
         }
+      }
+
+      // Handle dry-run mode
+      if (options.dryRun) {
+        const dryRunResult = await executeDryRun(workflow, inputs, {
+          verbose: options.verbose,
+          showMockData: true,
+          showVariables: true,
+        });
+        displayDryRunSummary(dryRunResult, {
+          verbose: options.verbose,
+          showMockData: true,
+          showVariables: true,
+        });
+        return;
       }
 
       // Execute workflow
