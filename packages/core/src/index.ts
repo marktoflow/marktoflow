@@ -165,3 +165,16 @@ export {
   type AuditEvent,
   type AuditStore,
 } from './security.js';
+
+// Cost Tracking
+export {
+  CostStore,
+  DEFAULT_PRICING,
+  type ModelPricing,
+  type CostRecord,
+} from './costs.js';
+
+// Metrics
+export {
+  MetricsCollector,
+} from './metrics.js';

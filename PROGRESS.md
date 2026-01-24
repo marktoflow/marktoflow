@@ -154,6 +154,8 @@ src/marktoflow/
 | 11 | 2026-01-23 | TypeScript Core tests fix, CLI tests, Integrations setup |
 | 12 | 2026-01-23 | OpenCode SDK, Script Tool, File Watcher, Jira/Ollama/Claude Code integrations |
 | 13 | 2026-01-23 | Reorganized integrations, Engine State Persistence, Worker/Trigger CLI |
+| 14 | 2026-01-23 | OpenCode CLI hang fix, marktoflow executable creation |
+| 15 | 2026-01-23 | Costs tracking, Prometheus metrics, Tests |
 
 ---
 

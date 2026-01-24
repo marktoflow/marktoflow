@@ -21,7 +21,7 @@ This file tracks the progress and state of the TypeScript v2.0 port for the Gemi
 - [x] Jira Integration (jira.js) - *Moved to `services/`*
 - [x] Ollama Integration (ollama) - *Moved to `adapters/`*
 - [x] Claude Code CLI Integration (Subprocess wrapper) - *Moved to `adapters/`*
-- [x] OpenCode CLI/Server Integration (Manual fetch + @opencode-ai/sdk) - *Moved to `adapters/`*
+- [x] OpenCode CLI/Server Integration (Manual fetch + @opencode-ai/sdk) - *Verified working in CLI mode*
 - [x] Script Tool (Executable script runner) - *Moved to `tools/`*
 - [x] File Watcher Trigger
 - [x] Queue Integration (Redis/RabbitMQ)
@@ -34,6 +34,10 @@ Integrations have been reorganized by type:
 - `packages/integrations/src/adapters/`: AI Agents (Ollama, OpenCode, Claude Code)
 - `packages/integrations/src/services/`: External APIs (Slack, GitHub, Jira)
 - `packages/integrations/src/tools/`: Generic tools (Script)
+
+## Key Fixes & Tools
+- **OpenCode CLI Fix**: Resolved a hang in `opencode run` by correctly handling `stdin` in `spawn`.
+- **marktoflow Executable**: Created a local symlink `./marktoflow` pointing to the CLI entry point.
 
 ## Next Steps
 
