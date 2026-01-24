@@ -153,7 +153,7 @@ npx marktoflow run workflow.md
 - [x] File system watcher (chokidar)
 
 ### External Triggers
-- [ ] Slack Socket Mode (real-time messages)
+- [x] Slack Socket Mode (real-time messages)
 - [x] Gmail Pub/Sub (email notifications) (webhook endpoint + trigger handler)
 - [x] GitHub webhooks (via webhook receiver)
 - [x] Microsoft Graph subscriptions (validation + webhook trigger)
