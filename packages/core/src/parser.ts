@@ -153,7 +153,10 @@ function buildWorkflow(
 
   if (frontmatter.steps && Array.isArray(frontmatter.steps)) {
     // Steps defined in frontmatter
-    steps = parseStepsFromFrontmatter(frontmatter.steps as Array<Record<string, unknown>>, warnings);
+    steps = parseStepsFromFrontmatter(
+      frontmatter.steps as Array<Record<string, unknown>>,
+      warnings
+    );
   } else {
     // Steps defined in markdown code blocks
     steps = parseStepsFromMarkdown(markdownBody, warnings);
@@ -249,9 +252,7 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
 /**
  * Normalize error handling configuration.
  */
-function normalizeErrorHandling(
-  raw: unknown
-): Record<string, unknown> | undefined {
+function normalizeErrorHandling(raw: unknown): Record<string, unknown> | undefined {
   if (!raw || typeof raw !== 'object') {
     return undefined;
   }
@@ -259,9 +260,9 @@ function normalizeErrorHandling(
   const obj = raw as Record<string, unknown>;
   return {
     action: obj.action,
-    maxRetries: obj.max_retries || obj.maxRetries,
-    retryDelaySeconds: obj.retry_delay_seconds || obj.retryDelaySeconds,
-    fallbackAction: obj.fallback_action || obj.fallbackAction,
+    maxRetries: obj.max_retries ?? obj.maxRetries,
+    retryDelaySeconds: obj.retry_delay_seconds ?? obj.retryDelaySeconds,
+    fallbackAction: obj.fallback_action ?? obj.fallbackAction,
   };
 }
 

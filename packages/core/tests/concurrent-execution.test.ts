@@ -268,7 +268,7 @@ steps:
 
       const mockExecutor = vi
         .fn()
-        .mockImplementation(async () => {
+        .mockImplementationOnce(async () => {
           // Simulate a step that takes too long
           await new Promise((resolve) => setTimeout(resolve, 5000));
           return { never: 'reached' };
@@ -279,7 +279,7 @@ steps:
 
       // First step should timeout, second should complete
       expect(result.stepResults.length).toBeGreaterThan(0);
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout (5s mock delay + retries + overhead)
   });
 
   describe('Workflow State Consistency', () => {

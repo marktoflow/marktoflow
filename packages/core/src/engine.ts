@@ -192,9 +192,10 @@ export function resolveTemplates(value: unknown, context: ExecutionContext): unk
 
 /**
  * Resolve a variable path from context.
- * First checks inputs.*, then variables, then direct context properties.
+ * First checks inputs.*, then variables, then stepMetadata, then direct context properties.
+ * Exported to allow access from condition evaluation.
  */
-function resolveVariablePath(path: string, context: ExecutionContext): unknown {
+export function resolveVariablePath(path: string, context: ExecutionContext): unknown {
   // Handle inputs.* prefix
   if (path.startsWith('inputs.')) {
     const inputPath = path.slice(7); // Remove 'inputs.'
@@ -205,6 +206,12 @@ function resolveVariablePath(path: string, context: ExecutionContext): unknown {
   const fromVars = getNestedValue(context.variables, path);
   if (fromVars !== undefined) {
     return fromVars;
+  }
+
+  // Check step metadata (for status checks like: step_id.status)
+  const fromStepMeta = getNestedValue(context.stepMetadata, path);
+  if (fromStepMeta !== undefined) {
+    return fromStepMeta;
   }
 
   // Fall back to direct context access
@@ -308,7 +315,7 @@ export class WorkflowEngine {
         inputs: inputs,
         outputs: null,
         error: null,
-        metadata: null
+        metadata: null,
       });
     }
 
@@ -327,6 +334,14 @@ export class WorkflowEngine {
         // Execute step with retry
         const result = await this.executeStepWithFailover(step, context, sdkRegistry, stepExecutor);
         stepResults.push(result);
+
+        // Store step metadata (status, error, etc.) in separate field for condition evaluation
+        // This allows conditions like: step_id.status == 'failed'
+        context.stepMetadata[step.id] = {
+          status: result.status.toLowerCase(),
+          retryCount: result.retryCount,
+          ...(result.error ? { error: result.error } : {}),
+        };
 
         // Store output variable
         if (step.outputVariable && result.status === StepStatus.COMPLETED) {
@@ -383,7 +398,7 @@ export class WorkflowEngine {
         this.stateStore.updateExecution(context.runId, {
           status: WorkflowStatus.FAILED,
           completedAt: new Date(),
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       }
 
@@ -400,12 +415,12 @@ export class WorkflowEngine {
     }
 
     const workflowResult = this.buildWorkflowResult(workflow, context, stepResults, startedAt);
-    
+
     if (this.stateStore) {
       this.stateStore.updateExecution(context.runId, {
         status: context.status,
         completedAt: new Date(),
-        outputs: context.variables
+        outputs: context.variables,
       });
     }
 
@@ -535,7 +550,12 @@ export class WorkflowEngine {
       if (attempts >= this.failoverConfig.maxFailoverAttempts) break;
 
       const fallbackStep: WorkflowStep = { ...step, action: `${fallbackTool}.${method}` };
-      const result = await this.executeStepWithRetry(fallbackStep, context, sdkRegistry, stepExecutor);
+      const result = await this.executeStepWithRetry(
+        fallbackStep,
+        context,
+        sdkRegistry,
+        stepExecutor
+      );
       this.failoverEvents.push({
         timestamp: new Date(),
         fromAgent: primaryTool,
@@ -583,6 +603,8 @@ export class WorkflowEngine {
   /**
    * Evaluate a single condition.
    * Supports: ==, !=, >, <, >=, <=
+   * Also supports nested property access (e.g., check_result.success)
+   * and step status checks (e.g., step_id.status == 'failed')
    */
   private evaluateCondition(condition: string, context: ExecutionContext): boolean {
     // Simple expression parsing
@@ -599,12 +621,12 @@ export class WorkflowEngine {
     }
 
     if (!operator || parts.length !== 2) {
-      // Treat as boolean variable reference
-      const value = resolveTemplates(`{{${condition}}}`, context);
+      // Treat as boolean variable reference with nested property support
+      const value = this.resolveConditionValue(condition, context);
       return Boolean(value);
     }
 
-    const left = resolveTemplates(`{{${parts[0]}}}`, context);
+    const left = this.resolveConditionValue(parts[0], context);
     const right = this.parseValue(parts[1]);
 
     switch (operator) {
@@ -626,12 +648,26 @@ export class WorkflowEngine {
   }
 
   /**
+   * Resolve a condition value with support for nested properties.
+   * Handles direct variable references and nested paths.
+   */
+  private resolveConditionValue(path: string, context: ExecutionContext): unknown {
+    // Try to resolve the path directly from variables
+    const resolved = resolveVariablePath(path, context);
+
+    // Return the resolved value directly
+    return resolved;
+  }
+
+  /**
    * Parse a value from a condition string.
    */
   private parseValue(value: string): unknown {
     // Remove quotes
-    if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       return value.slice(1, -1);
     }
 
