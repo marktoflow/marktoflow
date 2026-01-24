@@ -27,15 +27,29 @@ Automated code review workflow that uses GitHub Copilot to analyze pull requests
    # https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli
    ```
 
-3. **Authenticate CLI**
+3. **Authenticate CLI via OAuth**
+
+   The Copilot adapter uses **OAuth authentication** (not API keys). Run this one-time setup:
 
    ```bash
    copilot auth login
    ```
 
-4. **Verify Installation**
+   This will:
+   - Open your browser to GitHub's OAuth consent page
+   - Prompt you to authorize GitHub Copilot CLI
+   - Save the OAuth token locally in `~/.copilot/`
+
+   **No API keys needed** - the workflow automatically uses the CLI's stored token.
+
+4. **Verify Authentication**
+
    ```bash
+   # Check CLI version
    copilot --version
+
+   # Test connectivity
+   copilot ping
    ```
 
 ## Setup
@@ -51,12 +65,14 @@ npm install -g @marktoflow/cli@alpha
 Create a `.env` file:
 
 ```bash
-# GitHub Personal Access Token with repo permissions
+# GitHub Personal Access Token (for GitHub API access, NOT Copilot auth)
 GITHUB_TOKEN=ghp_xxxxxxxxxxxx
 
 # Optional: Slack webhook for notifications
 SLACK_BOT_TOKEN=xoxb-xxxxxxxxxxxx
 ```
+
+**Important**: The `GITHUB_TOKEN` is for accessing the GitHub API (fetching PRs, posting comments). Copilot authentication is handled separately via the CLI's OAuth flow (see Prerequisites above).
 
 ### 3. Configure GitHub Webhook
 
@@ -268,6 +284,23 @@ output_variable: review
 ```
 
 ## Troubleshooting
+
+### Authentication Issues
+
+If Copilot fails to authenticate:
+
+```bash
+# Check authentication status
+copilot ping
+
+# Re-authenticate
+copilot auth logout
+copilot auth login
+
+# Verify subscription at https://github.com/settings/copilot
+```
+
+**Remember**: Copilot uses OAuth, not API keys. The `GITHUB_TOKEN` in `.env` is only for GitHub API access.
 
 ### CLI Not Found
 

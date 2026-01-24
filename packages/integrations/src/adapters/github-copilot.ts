@@ -178,6 +178,19 @@ export class GitHubCopilotClient {
   async ping(): Promise<{ message: string; timestamp: number }> {
     return this.client.ping();
   }
+
+  /**
+   * Check if the Copilot CLI is authenticated and ready.
+   * Returns true if ping succeeds, false otherwise.
+   */
+  async checkAuth(): Promise<boolean> {
+    try {
+      await this.ping();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 }
 
 /**

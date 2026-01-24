@@ -399,13 +399,42 @@ GitHub Copilot CLI integration with advanced agentic capabilities.
 
 **Requirements**:
 
-- GitHub Copilot subscription
+- GitHub Copilot subscription (Individual, Business, or Enterprise)
 - Copilot CLI installed: [Installation Guide](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli)
 
-**Verify CLI**:
+**Installation**:
 
 ```bash
+# Install Copilot CLI
+npm install -g @githubnext/github-copilot-cli
+
+# Verify installation
 copilot --version
+```
+
+**Authentication**:
+
+The GitHub Copilot adapter uses **OAuth authentication** managed by the Copilot CLI, not API keys. Authentication is a one-time setup:
+
+```bash
+# Authenticate with GitHub via OAuth
+copilot auth login
+```
+
+This command will:
+
+1. Open your browser to GitHub's OAuth consent page
+2. Prompt you to authorize GitHub Copilot CLI
+3. Save the OAuth token locally in `~/.copilot/`
+
+**No API keys are required** - the adapter automatically uses the CLI's stored OAuth token. Your GitHub Copilot subscription determines your access level.
+
+**Verify Authentication**:
+
+```bash
+# Test CLI connectivity
+copilot --version
+copilot ping
 ```
 
 **Basic Usage**:
@@ -488,6 +517,23 @@ tools:
 - `cli_url`: External CLI server URL (mutually exclusive with cli_path)
 - `autoStart`: Auto-start CLI (default: true)
 - `logLevel`: Log verbosity (info, debug, error, warning, none, all)
+
+**Troubleshooting Authentication**:
+
+If you encounter authentication issues:
+
+```bash
+# Check if authenticated
+copilot ping
+
+# Re-authenticate if needed
+copilot auth logout
+copilot auth login
+
+# Verify subscription status at https://github.com/settings/copilot
+```
+
+**Note**: The adapter does **not** require or use API keys. All authentication is handled through the CLI's OAuth flow.
 
 **Advanced Features** (See [COPILOT_SDK_ANALYSIS.md](../../docs/COPILOT_SDK_ANALYSIS.md)):
 

@@ -119,6 +119,12 @@ describe('GitHub Copilot Adapter', () => {
       expect(client.ping).toBeDefined();
       expect(typeof client.ping).toBe('function');
     });
+
+    it('should have checkAuth method', () => {
+      const client = new GitHubCopilotClient();
+      expect(client.checkAuth).toBeDefined();
+      expect(typeof client.checkAuth).toBe('function');
+    });
   });
 
   describe('Integration with SDKRegistry', () => {

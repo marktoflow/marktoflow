@@ -4,7 +4,7 @@
 
 A universal automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.1 (TypeScript)
+**Version:** 2.0.0-alpha.4 (TypeScript)
 
 ## What's New in v2.0
 
@@ -21,10 +21,10 @@ marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subproc
 - **Workflow as Code**: Define workflows in Markdown + YAML
 - **Native MCP Support**: Direct import of MCP server packages (no subprocess spawning)
 - **Direct SDK Integration**: Built-in support for 11+ services with official SDKs
+- **AI Agent Integration**: GitHub Copilot, Claude Code, OpenCode, Ollama
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
 - **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
 - **Universal Triggering**: Webhooks, File Watchers, Cron Schedules
-- **AI Agent Integration**: Claude Code, OpenCode, Ollama
 
 ## Quick Start
 
@@ -310,6 +310,7 @@ marktoflow v2.0 includes native SDK integrations for 11+ services:
 
 ### AI Agents
 
+- **GitHub Copilot** (`@github/copilot-sdk`) - GitHub Copilot CLI integration with OAuth authentication
 - **Claude Code** - CLI wrapper for Claude with MCP
 - **OpenCode** - SDK + CLI, 75+ AI backends
 - **Ollama** - Local LLM execution
@@ -330,6 +331,7 @@ All integrations support:
 
 See `examples/` directory for production-ready workflow templates:
 
+- **[copilot-code-review](examples/copilot-code-review/)** - AI code review with GitHub Copilot
 - **[code-review](examples/code-review/)** - Automated PR reviews with AI
 - **[daily-standup](examples/daily-standup/)** - Team update aggregation (scheduled)
 - **[incident-response](examples/incident-response/)** - Incident coordination (webhook-triggered)
@@ -490,7 +492,7 @@ The CLI package (`packages/cli/package.json`) is configured with:
 - [ ] All tests passing (181/181)
 - [ ] Version bumped in all package.json files
 - [ ] CHANGELOG.md updated
-- [ ] Git tag created (`git tag v2.0.0-alpha.1`)
+- [ ] Git tag created (`git tag v2.0.0-alpha.4`)
 - [ ] Built with `pnpm build`
 - [ ] Published to npm registry
 - [ ] Installation tested: `npm install -g marktoflow`

@@ -17,6 +17,7 @@ import { HttpInitializer } from './services/http.js';
 import { OllamaInitializer } from './adapters/ollama.js';
 import { ClaudeCodeInitializer } from './adapters/claude-code.js';
 import { OpenCodeInitializer } from './adapters/opencode.js';
+import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
 
 // Tools
 import { ScriptInitializer } from './tools/script.js';
@@ -51,6 +52,7 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('ollama', OllamaInitializer);
   registry.registerInitializer('claude-code', ClaudeCodeInitializer);
   registry.registerInitializer('opencode', OpenCodeInitializer);
+  registry.registerInitializer('github-copilot', GitHubCopilotInitializer);
 
   // Tools
   registry.registerInitializer('script', ScriptInitializer);
@@ -117,6 +119,7 @@ export { SlackSocketTrigger } from './services/slack-socket.js';
 export * from './adapters/ollama.js';
 export * from './adapters/claude-code.js';
 export * from './adapters/opencode.js';
+export * from './adapters/github-copilot.js';
 
 // Export tools
 export * from './tools/script.js';

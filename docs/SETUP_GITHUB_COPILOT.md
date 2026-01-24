@@ -1,364 +1,467 @@
-# GitHub Copilot Setup Guide for OpenCode
+# GitHub Copilot Native SDK Setup Guide
 
-This guide shows you how to configure marktoflow's OpenCode adapter to use GitHub Copilot as the LLM backend.
+This guide shows you how to use the **native GitHub Copilot SDK integration** in marktoflow workflows.
 
-## Why GitHub Copilot?
+> **Note:** This is for the native `@github/copilot-sdk` adapter. If you want to use GitHub Copilot as a backend with OpenCode, see [OPENCODE.md](./OPENCODE.md#using-github-copilot-as-opencode-backend).
 
-✅ **No API keys needed** - Uses your existing GitHub Copilot subscription
-✅ **Official support** - GitHub and OpenCode partnered in January 2026
-✅ **No extra cost** - Included with Copilot Pro, Pro+, Business, or Enterprise
-✅ **High-quality models** - Access to latest GPT-4 and Claude models
-✅ **Simple setup** - One-time authentication flow
+## Overview
+
+The GitHub Copilot adapter provides direct integration with the GitHub Copilot CLI via the official `@github/copilot-sdk`. This gives you access to:
+
+- ✅ **Advanced AI capabilities** - GPT-4, GPT-5, Claude models
+- ✅ **File attachments** - Attach files and directories for context
+- ✅ **Streaming responses** - Real-time response streaming
+- ✅ **Multi-turn sessions** - Persistent conversations
+- ✅ **OAuth authentication** - No API keys needed
+- ✅ **Built-in tools** - File system, Git operations via CLI
 
 ## Prerequisites
 
 ### 1. GitHub Copilot Subscription
 
-You need one of these subscriptions:
-- **GitHub Copilot Pro** ($10/month) - Personal use
-- **GitHub Copilot Pro+** ($39/month) - Includes Claude Opus, o1, etc.
+You need an active GitHub Copilot subscription:
+
+- **GitHub Copilot Individual** - Personal use
 - **GitHub Copilot Business** - For organizations
 - **GitHub Copilot Enterprise** - For large enterprises
 
 Check your subscription at: https://github.com/settings/copilot
 
-### 2. OpenCode CLI Installed
-
-Install OpenCode if you haven't already:
+### 2. Install Copilot CLI
 
 ```bash
-# macOS/Linux
-curl -fsSL https://opencode.ai/install.sh | sh
+# Install via npm
+npm install -g @githubnext/github-copilot-cli
 
-# Or with Homebrew (macOS)
-brew install opencode
-
-# Windows
-# Download from https://github.com/opencode-ai/opencode/releases
+# Verify installation
+copilot --version
 ```
 
-Verify installation:
-```bash
-opencode --version
-# Should show: 1.1.x or higher
-```
-
-## Setup Steps
-
-### Step 1: Connect OpenCode to GitHub Copilot
-
-Open your terminal and run:
+### 3. Authenticate via OAuth
 
 ```bash
-opencode /connect
+# Authenticate with GitHub (one-time setup)
+copilot auth login
 ```
 
 This will:
-1. Show you a list of available providers
-2. Select **"GitHub Copilot"**
-3. Open your browser for GitHub authentication
-4. Ask you to authorize OpenCode
 
-**Follow the prompts:**
-```
-? Select a provider:
-  OpenAI
-  Anthropic
-❯ GitHub Copilot
-  Google AI
-  ...
+1. Open your browser to GitHub's OAuth consent page
+2. Prompt you to authorize GitHub Copilot CLI
+3. Save the OAuth token locally in `~/.copilot/`
 
-Opening browser for GitHub authentication...
-✓ Authenticated successfully!
-```
+**Important:** No API keys are needed - the adapter automatically uses the CLI's stored OAuth token.
 
-### Step 2: Verify Configuration
-
-Check your OpenCode configuration:
+### 4. Verify Authentication
 
 ```bash
-cat ~/.config/opencode/opencode.json
+# Test CLI connectivity
+copilot ping
 ```
 
-You should see something like:
+If this succeeds, you're ready to use the adapter!
 
-```json
-{
-  "providers": {
-    "github-copilot": {
-      "token": "ghu_..." // Auto-generated
-    }
-  },
-  "model": "anthropic/claude-sonnet-4-5",
-  "small_model": "anthropic/claude-haiku-4-5"
-}
-```
+## Usage in Workflows
 
-### Step 3: Test OpenCode with Copilot
-
-Test that it's working:
-
-```bash
-opencode run "Write a Python function that says hello"
-```
-
-You should see a response from the AI. If this works, you're all set!
-
-### Step 4: Configure marktoflow
-
-Now configure marktoflow to use OpenCode with your GitHub Copilot setup.
-
-Create or update your workflow configuration:
-
-**Option A: Auto Mode (Recommended)**
+### Basic Example
 
 ```yaml
-# config.yaml or .marktoflow/config.yaml
-agent:
-  name: opencode
-  provider: opencode
-  extra:
-    opencode_mode: auto  # Tries server, falls back to CLI
-```
-
-**Option B: CLI Mode (Simple)**
-
-```yaml
-agent:
-  name: opencode
-  provider: opencode
-  extra:
-    opencode_mode: cli
-```
-
-**Option C: Server Mode (Performance)**
-
-First, start the OpenCode server:
-```bash
-opencode serve --port 4096
-```
-
-Then configure:
-```yaml
-agent:
-  name: opencode
-  provider: opencode
-  extra:
-    opencode_mode: server
-    opencode_server_url: http://localhost:4096
-```
-
-### Step 5: Test with marktoflow
-
-Create a simple test workflow:
-
-```markdown
 ---
-name: Test GitHub Copilot
-description: Test workflow using GitHub Copilot via OpenCode
-agent: opencode
-version: 1.0.0
+workflow:
+  id: copilot-example
+  name: 'GitHub Copilot Example'
+
+tools:
+  copilot:
+    adapter: github-copilot
+    config:
+      model: gpt-4.1 # Optional, defaults to gpt-4.1
+
+steps:
+  - id: generate
+    action: copilot.send
+    inputs:
+      prompt: 'Explain TypeScript generics'
+    output_variable: explanation
 ---
+```
 
-# Test Workflow
-
-## Step 1: Generate Code
+### With File Attachments
 
 ```yaml
-id: test_generation
-action: agent.generate_response
-inputs:
-  context: "Write a Python function that calculates fibonacci numbers"
-output: code_result
+steps:
+  - id: review_code
+    action: copilot.send
+    inputs:
+      prompt: 'Review this code for security issues'
+      attachments:
+        - type: file
+          path: ./src/app.ts
+          displayName: app.ts
+        - type: directory
+          path: ./src/utils
+          displayName: utils/
+    output_variable: review
 ```
 
-## Step 2: Analyze Code
+### Streaming Response
 
 ```yaml
-id: test_analysis
-action: agent.analyze
-inputs:
-  prompt_template: "Analyze the following code: {{ code_result }}"
-  categories:
-    quality: "Code quality"
-    performance: "Performance considerations"
-output: analysis_result
-```
+steps:
+  - id: stream_response
+    action: copilot.stream
+    inputs:
+      prompt: 'Write a function to calculate fibonacci'
+      onChunk: '${print_chunk}' # Callback for each chunk
+    output_variable: code
 ```
 
-Run it:
+### Custom System Message
+
+```yaml
+steps:
+  - id: custom_analysis
+    action: copilot.send
+    inputs:
+      prompt: 'Analyze this database schema'
+      systemMessage: |
+        You are a database optimization expert.
+        Focus on:
+        - Index usage
+        - Query performance
+        - Normalization issues
+    output_variable: analysis
+```
+
+### Multi-Turn Conversations
+
+```yaml
+steps:
+  - id: create_session
+    action: copilot.createSession
+    inputs:
+      sessionId: 'code-review-session'
+      model: gpt-4.1
+    output_variable: session
+
+  - id: first_question
+    action: session.send
+    inputs:
+      prompt: 'What are the security issues in this code?'
+    output_variable: answer1
+
+  - id: follow_up
+    action: session.send
+    inputs:
+      prompt: 'How would you fix the authentication issue?'
+    output_variable: answer2
+```
+
+## Configuration Options
+
+### Model Selection
+
+Available models (as of January 2026):
+
+- `gpt-4.1` (default) - Latest GPT-4 turbo
+- `gpt-5` - Newest model
+- `claude-sonnet-4.5` - Anthropic Claude
+- `claude-opus-4` - Most capable Claude model
+
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    config:
+      model: gpt-5
+```
+
+### Custom CLI Path
+
+If Copilot CLI is not in your PATH:
+
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    auth:
+      cli_path: /custom/path/to/copilot
+```
+
+### External CLI Server
+
+For development or shared CLI instances:
+
 ```bash
-marktoflow run test-workflow.md
+# Terminal 1: Start CLI in server mode
+copilot --server --port 4321
+
+# Terminal 2: Use in workflow
 ```
 
-## Model Selection
-
-GitHub Copilot gives you access to multiple models. Configure in `~/.config/opencode/opencode.json`:
-
-### Claude Models (Recommended for Code)
-
-```json
-{
-  "model": "anthropic/claude-sonnet-4-5",
-  "small_model": "anthropic/claude-haiku-4-5"
-}
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    auth:
+      cli_url: localhost:4321
 ```
 
-### GPT Models
+### Advanced Options
 
-```json
-{
-  "model": "openai/gpt-4o",
-  "small_model": "openai/gpt-4o-mini"
-}
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    config:
+      model: gpt-4.1
+      autoStart: true # Auto-start CLI (default)
+      logLevel: info # info, debug, error, warning, none, all
+    auth:
+      cli_path: copilot # Custom CLI path
+      # OR
+      cli_url: localhost:4321 # External server (mutually exclusive)
 ```
 
-### O1 Models (Pro+ only)
+## Complete Example: AI Code Review
 
-```json
-{
-  "model": "openai/o1",
-  "small_model": "openai/o1-mini"
+See the full example in [`examples/copilot-code-review/`](../examples/copilot-code-review/):
+
+```yaml
+---
+workflow:
+  id: pr-review
+  name: 'AI Code Review with GitHub Copilot'
+
+tools:
+  copilot:
+    adapter: github-copilot
+  github:
+    sdk: '@octokit/rest'
+    auth:
+      token: '${GITHUB_TOKEN}'
+
+triggers:
+  - type: webhook
+    path: /github-pr
+
+steps:
+  # 1. Fetch PR files
+  - id: fetch_pr
+    action: github.pulls.listFiles
+    inputs:
+      owner: '{{ webhook.repository.owner }}'
+      repo: '{{ webhook.repository.name }}'
+      pull_number: '{{ webhook.pull_request.number }}'
+    output_variable: pr_files
+
+  # 2. Review with Copilot
+  - id: review_code
+    action: copilot.send
+    inputs:
+      prompt: |
+        Review these pull request files for:
+        - Security vulnerabilities
+        - Performance issues
+        - Code quality concerns
+
+        Categorize findings as: Critical, Warning, or Suggestion
+      attachments: '{{ pr_files | map_files }}'
+      systemMessage: |
+        You are a senior code reviewer.
+        Focus on security, performance, and maintainability.
+    output_variable: review
+
+  # 3. Post review comment
+  - id: post_comment
+    action: github.pulls.createReview
+    inputs:
+      owner: '{{ webhook.repository.owner }}'
+      repo: '{{ webhook.repository.name }}'
+      pull_number: '{{ webhook.pull_request.number }}'
+      body: '{{ review }}'
+      event: COMMENT
+---
+```
+
+## Programmatic Usage
+
+You can also use the adapter directly in TypeScript:
+
+```typescript
+import { GitHubCopilotClient } from '@marktoflow/integrations';
+
+// Create client
+const client = new GitHubCopilotClient({
+  model: 'gpt-4.1',
+  cliPath: 'copilot', // Optional
+});
+
+// Send a message
+const response = await client.send({
+  prompt: 'Explain async/await in JavaScript',
+});
+
+console.log(response);
+
+// Stream a response
+await client.stream({
+  prompt: 'Write a REST API server',
+  onChunk: (chunk) => process.stdout.write(chunk),
+  onComplete: (full) => console.log('\n\nDone!'),
+});
+
+// Check authentication
+const isAuthed = await client.checkAuth();
+if (!isAuthed) {
+  console.error('Please run: copilot auth login');
 }
+
+// Cleanup
+await client.stop();
 ```
 
 ## Troubleshooting
 
-### "Authentication failed" or "Unauthorized"
+### Authentication Issues
 
-**Solution 1:** Re-authenticate
-```bash
-opencode /connect
-# Select GitHub Copilot again
-```
+**Problem:** Copilot fails to authenticate
 
-**Solution 2:** Check subscription
 ```bash
+# Check authentication status
+copilot ping
+
+# Re-authenticate
+copilot auth logout
+copilot auth login
+
+# Verify subscription
 # Visit https://github.com/settings/copilot
-# Ensure your subscription is active
 ```
 
-### "Rate limit exceeded"
+**Important:** The adapter does **not** use API keys. All authentication is via OAuth through the CLI.
 
-GitHub Copilot has usage limits. If you hit them:
+### CLI Not Found
 
-1. **Wait a few minutes** - Limits reset periodically
-2. **Upgrade to Pro+** - Higher limits
-3. **Use a different model** - Switch between Claude/GPT
+**Problem:** `copilot: command not found`
 
-### "OpenCode not found"
-
-Make sure OpenCode is in your PATH:
 ```bash
-which opencode
-# Should show: /path/to/opencode
+# Check if CLI is in PATH
+which copilot
 
-# If not found, reinstall:
-curl -fsSL https://opencode.ai/install.sh | sh
+# If not found, specify full path in workflow
+tools:
+  copilot:
+    adapter: github-copilot
+    auth:
+      cli_path: /usr/local/bin/copilot
 ```
 
-### "Connection refused" (Server Mode)
+### Connection Issues
 
-If using server mode:
+**Problem:** CLI fails to connect
+
 ```bash
-# Check if server is running
-curl http://localhost:4096/health
+# Run CLI in server mode separately
+copilot --server --port 4321
 
-# If not, start it:
-opencode serve --port 4096
+# Connect workflow to external server
+tools:
+  copilot:
+    adapter: github-copilot
+    auth:
+      cli_url: localhost:4321
 ```
 
-Or use auto mode which falls back to CLI:
-```yaml
-extra:
-  opencode_mode: auto
-```
+### Rate Limiting
 
-## Advanced Configuration
+**Problem:** "Rate limit exceeded"
 
-### Custom Port for Server Mode
+Copilot has request quotas. If you hit limits:
 
-```yaml
-agent:
-  name: opencode
-  provider: opencode
-  extra:
-    opencode_mode: server
-    opencode_server_url: http://localhost:8080  # Custom port
-```
-
-Then start server on that port:
-```bash
-opencode serve --port 8080
-```
-
-### Auto-Start Server
+1. Wait a few minutes - Limits reset periodically
+2. Check your subscription tier at https://github.com/settings/copilot
+3. Add retry logic to your workflow:
 
 ```yaml
-agent:
-  name: opencode
-  provider: opencode
-  extra:
-    opencode_mode: server
-    opencode_server_autostart: true  # Starts server automatically
-    opencode_server_url: http://localhost:4096
+steps:
+  - id: generate
+    action: copilot.send
+    inputs:
+      prompt: 'Your prompt here'
+    retry:
+      max_attempts: 3
+      backoff: exponential
+      initial_delay: 5000
 ```
 
-### Organization SSO
+### Large File Handling
 
-If using GitHub Copilot Business/Enterprise with SSO:
+**Problem:** Timeout or errors with large files
 
-1. Complete SSO authorization when prompted during `/connect`
-2. OpenCode will handle token refresh automatically
-3. If issues, contact your GitHub org admin
+```yaml
+# Filter files by size
+steps:
+  - id: filter_files
+    action: script.execute
+    inputs:
+      code: |
+        // Skip files over 100KB
+        const files = context.pr_files.filter(f => 
+          f.size < 100000
+        );
+        return { files };
+```
 
-## Cost Optimization
+## Authentication Architecture
 
-GitHub Copilot pricing is **flat-rate**, not per-token, so you can:
+```
+User → copilot auth login → GitHub OAuth → Token saved to ~/.copilot/
 
-✅ Use it as much as you want (within rate limits)
-✅ Use the best models (Claude Opus, GPT-4) freely
-✅ Run long workflows without worrying about cost
+Workflow → GitHubCopilotClient → spawns CLI → uses saved token → GitHub Copilot API
+```
 
-**Pro Tips:**
-- Pro ($10/mo): Great for personal projects, basic models
-- Pro+ ($39/mo): Best value, includes all premium models
-- Business/Enterprise: Best for teams, higher rate limits
+**Key Points:**
 
-## Security & Privacy
+1. **OAuth only** - No API keys supported
+2. **CLI-managed** - Authentication handled by Copilot CLI
+3. **One-time setup** - Run `copilot auth login` once per machine
+4. **SDK transparent** - Adapter automatically uses CLI's credentials
 
-### What GitHub Sees
+## Comparison: Native SDK vs OpenCode
 
-According to GitHub's privacy policy:
-- Prompts and code sent to models for processing
-- May be used to improve Copilot (can opt out)
-- Not used to train public models
+| Feature                 | Native SDK (`github-copilot`) | OpenCode with Copilot     |
+| ----------------------- | ----------------------------- | ------------------------- |
+| **Setup**               | `copilot auth login`          | `opencode /connect`       |
+| **Authentication**      | OAuth (CLI-managed)           | OAuth (OpenCode-managed)  |
+| **Models**              | Copilot models only           | 75+ providers             |
+| **File attachments**    | ✅ Yes                        | ❌ No (string only)       |
+| **Streaming**           | ✅ Yes                        | ✅ Yes (server mode)      |
+| **Multi-turn sessions** | ✅ Yes                        | ✅ Yes (server mode)      |
+| **Built-in tools**      | ✅ File/Git operations        | ❌ No                     |
+| **Backend switching**   | ❌ No                         | ✅ Yes                    |
+| **Use case**            | Copilot-specific features     | Multi-backend flexibility |
 
-### Opting Out of Data Collection
+**Recommendation:**
 
-1. Go to https://github.com/settings/copilot
-2. Under "Suggestions matching public code"
-3. Disable "Allow GitHub to use my data for product improvements"
-
-### Alternative: Use Local Models
-
-If privacy is a concern, consider using [Ollama instead](./SETUP_OLLAMA.md) for fully local processing.
+- Use **native SDK** for GitHub Copilot-specific features (file attachments, sessions)
+- Use **OpenCode** if you need to switch between multiple AI providers
 
 ## Next Steps
 
-- ✅ [OpenCode Configuration Examples](../examples/opencode-config/README.md)
-- ✅ [Ollama Setup (Local Models)](./SETUP_OLLAMA.md)
-- ✅ [Performance Benchmarking](../benchmark_opencode.py)
-- ✅ [Integration Tests](../test_opencode_integration.py)
+- ✅ [Complete SDK Analysis](./COPILOT_SDK_ANALYSIS.md) - Technical deep-dive
+- ✅ [Example Workflow](../examples/copilot-code-review/) - Production-ready code review
+- ✅ [Integrations README](../packages/integrations/README.md) - All adapters
+- ✅ [OpenCode with Copilot](./OPENCODE.md#using-github-copilot-as-opencode-backend) - Alternative approach
 
 ## Support
 
-- **OpenCode Issues**: https://github.com/opencode-ai/opencode/issues
 - **GitHub Copilot Support**: https://support.github.com/
-- **marktoflow Issues**: https://github.com/yourusername/marktoflow/issues
+- **SDK Repository**: https://github.com/github/copilot-sdk
+- **marktoflow Issues**: https://github.com/scottgl9/marktoflow/issues
 
 ---
 
 **Last Updated:** January 2026
-**OpenCode Version:** 1.1.32+
-**GitHub Copilot:** Official support since January 16, 2026
+**Copilot CLI Version:** Latest
+**SDK Version:** @github/copilot-sdk@0.1.18+

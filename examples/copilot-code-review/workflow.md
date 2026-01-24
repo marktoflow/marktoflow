@@ -18,8 +18,10 @@ tools:
       token: '${GITHUB_TOKEN}'
 
   copilot:
-    adapter: github-copilot
-    config:
+    sdk: github-copilot
+    auth:
+      cli_path: /opt/homebrew/bin/copilot  # or your copilot CLI path
+    options:
       model: gpt-4.1
       logLevel: info
 

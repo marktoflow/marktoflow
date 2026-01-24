@@ -157,6 +157,81 @@ Your Application
   GitHub Copilot API
 ```
 
+### Authentication Flow
+
+GitHub Copilot uses **OAuth authentication**, not API keys. The authentication is managed entirely by the Copilot CLI:
+
+```
+User → copilot auth login → GitHub OAuth → CLI stores token
+SDK → spawns/connects to CLI → uses CLI's auth → GitHub Copilot API
+```
+
+**Key Points**:
+
+1. **No API Keys**: The SDK does not accept or require API keys
+2. **CLI-Managed**: Authentication is handled by the Copilot CLI
+3. **One-Time Setup**: Users run `copilot auth login` once to authenticate
+4. **OAuth Flow**: Opens browser, redirects to GitHub, stores token locally
+5. **Subscription-Based**: Requires active GitHub Copilot subscription
+6. **Token Storage**: OAuth tokens stored in `~/.copilot/` directory
+7. **SDK Transparent**: SDK automatically uses CLI's stored credentials
+
+**Authentication Setup**:
+
+```bash
+# One-time OAuth authentication
+copilot auth login
+# Opens browser → GitHub login → Authorize → Token saved
+
+# Verify authentication
+copilot ping
+
+# Check subscription status
+# Visit https://github.com/settings/copilot
+
+# Re-authenticate if needed
+copilot auth logout
+copilot auth login
+```
+
+**How SDK Uses Authentication**:
+
+```typescript
+// SDK client - no auth configuration needed
+const client = new CopilotClient({
+  cliPath: 'copilot', // Just path to CLI binary
+  autoStart: true, // SDK spawns CLI automatically
+});
+
+// CLI already authenticated via OAuth
+// SDK piggybacks on CLI's stored token
+await client.ping(); // Uses CLI's OAuth token
+```
+
+**Authentication in marktoflow**:
+
+Since the SDK relies on CLI authentication, the marktoflow adapter requires no auth configuration:
+
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    config:
+      model: gpt-4.1
+      # No auth.token needed!
+      # SDK uses CLI's OAuth token automatically
+```
+
+Users must authenticate the CLI separately before running workflows:
+
+```bash
+# Setup (once per machine)
+copilot auth login
+
+# Run workflow (uses CLI's auth)
+marktoflow run workflow.md
+```
+
 ### Communication Transports
 
 - **Stdio** (default): Process spawning, direct I/O
@@ -346,7 +421,7 @@ steps:
 | ---------------------- | --------- | ------------- | -------- | -------------------------------- |
 | **Type**               | Local LLM | API           | API      | CLI wrapper                      |
 | **Installation**       | Separate  | npm SDK       | npm SDK  | CLI + npm SDK                    |
-| **Authentication**     | None      | API key       | API key  | Copilot subscription             |
+| **Authentication**     | None      | API key       | API key  | OAuth (via CLI)                  |
 | **Tool Calling**       | ✅ Yes    | ✅ Yes        | ✅ Yes   | ✅ Yes (advanced)                |
 | **File Operations**    | ❌ No     | ❌ No         | ❌ No    | ✅ Yes (built-in)                |
 | **Git Operations**     | ❌ No     | ❌ No         | ❌ No    | ✅ Yes (built-in)                |
