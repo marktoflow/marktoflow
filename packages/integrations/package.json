@@ -5,6 +5,15 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scottgl9/marktoflow-automation.git",
+    "directory": "packages/integrations"
+  },
+  "homepage": "https://github.com/scottgl9/marktoflow-automation#readme",
+  "bugs": {
+    "url": "https://github.com/scottgl9/marktoflow-automation/issues"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -37,7 +46,11 @@
   "keywords": [
     "marktoflow",
     "integration",
-    "slack"
+    "slack",
+    "github",
+    "jira",
+    "gmail",
+    "outlook"
   ],
   "author": "Scott Glover",
   "license": "Apache-2.0"

@@ -30,10 +30,39 @@ marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subproc
 
 ### Installation
 
+**Option 1: Install from GitHub (Recommended for now)**
+
 ```bash
+# Install globally from GitHub
+npm install -g github:scottgl9/marktoflow-automation#main
+
+# Or use npx directly (no installation)
+npx github:scottgl9/marktoflow-automation init
+```
+
+**Option 2: Install from npm (Coming Soon)**
+
+```bash
+# Once published to npm registry
 npm install -g marktoflow
-# or
-npx marktoflow init
+```
+
+**Option 3: Install from Source**
+
+```bash
+# Clone repository
+git clone https://github.com/scottgl9/marktoflow-automation.git
+cd marktoflow-automation
+
+# Install dependencies
+pnpm install
+
+# Build packages
+pnpm build
+
+# Link CLI globally
+cd packages/cli
+npm link
 ```
 
 ### Initialize a Project
@@ -164,12 +193,23 @@ marktoflow version                 # Show version
 marktoflow doctor                  # Check environment
 
 # Workflow operations
+marktoflow new                     # Create workflow from template (interactive)
 marktoflow run <workflow.md>       # Run a workflow
+marktoflow run --dry-run           # Simulate workflow without executing
+marktoflow debug <workflow.md>     # Debug workflow step-by-step
 marktoflow workflow list           # List available workflows
+
+# Service connections
+marktoflow connect <service>       # Set up OAuth for services (gmail, outlook)
 
 # Distributed execution
 marktoflow worker                  # Start a workflow worker
 marktoflow trigger                 # Start trigger service (Scheduler)
+
+# Developer tools
+marktoflow agent list              # List available AI agents
+marktoflow tools list              # List registered tools
+marktoflow bundle list             # List workflow bundles
 ```
 
 ## Advanced Features
@@ -250,6 +290,56 @@ marktoflow/
 - [AGENTS.md](AGENTS.md) - Development guidance
 - [GEMINI.md](GEMINI.md) - Port status tracking
 - [PROGRESS.md](PROGRESS.md) - Development history
+
+## Publishing to npm
+
+To publish marktoflow to the npm registry:
+
+### Prerequisites
+
+1. **npm account**: Create at https://www.npmjs.com/signup
+2. **Login**: `npm login`
+3. **Package name availability**: Check if `marktoflow` is available
+
+### Publishing Steps
+
+```bash
+# 1. Ensure all packages are built
+pnpm build
+
+# 2. Update version (if needed)
+npm version patch  # or minor, major
+
+# 3. Publish core package
+cd packages/core
+npm publish --access public
+
+# 4. Publish integrations package
+cd ../integrations
+npm publish --access public
+
+# 5. Publish CLI package (main package)
+cd ../cli
+npm publish --access public
+```
+
+### Package Configuration
+
+The CLI package (`packages/cli/package.json`) is configured with:
+
+- **bin**: Points to `./dist/index.js` for the `marktoflow` command
+- **files**: Includes only the `dist/` directory
+- **dependencies**: Uses `workspace:*` for internal packages (converted to versions on publish)
+
+### Publishing Checklist
+
+- [ ] All tests passing (181/181)
+- [ ] Version bumped in all package.json files
+- [ ] CHANGELOG.md updated
+- [ ] Git tag created (`git tag v2.0.0-alpha.1`)
+- [ ] Built with `pnpm build`
+- [ ] Published to npm registry
+- [ ] Installation tested: `npm install -g marktoflow`
 
 ## License
 
