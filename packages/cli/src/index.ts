@@ -28,6 +28,7 @@ import {
 import { registerIntegrations } from '@marktoflow/integrations';
 import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
+import { runWorkflowWizard, listTemplates } from './commands/new.js';
 import { parse as parseYaml } from 'yaml';
 
 const VERSION = '2.0.0-alpha.1';
@@ -141,6 +142,21 @@ Outputs a greeting message.
     }
   });
 
+// --- new ---
+program
+  .command('new')
+  .description('Create a new workflow from template')
+  .option('-o, --output <path>', 'Output file path')
+  .option('-t, --template <id>', 'Template ID to use')
+  .option('--list-templates', 'List available templates')
+  .action(async (options) => {
+    if (options.listTemplates) {
+      listTemplates();
+      return;
+    }
+    await runWorkflowWizard(options);
+  });
+
 // --- run ---
 program
   .command('run <workflow>')
@@ -219,12 +235,7 @@ program
       registerIntegrations(registry);
       registry.registerTools(workflow.tools);
 
-      const result = await engine.execute(
-        workflow,
-        inputs,
-        registry,
-        createSDKStepExecutor()
-      );
+      const result = await engine.execute(workflow, inputs, registry, createSDKStepExecutor());
 
       if (result.status === WorkflowStatus.COMPLETED) {
         spinner.succeed(`Workflow completed in ${result.duration}ms`);
@@ -303,7 +314,9 @@ agentCmd
 
     console.log(chalk.bold('Available Agents:'));
     for (const agent of allAgents) {
-      const status = agentsFromFile.includes(agent) ? chalk.green('Registered') : chalk.yellow('Not configured');
+      const status = agentsFromFile.includes(agent)
+        ? chalk.green('Registered')
+        : chalk.yellow('Not configured');
       console.log(`  ${chalk.cyan(agent)}: ${status}`);
     }
   });
@@ -345,7 +358,8 @@ toolsCmd
   .command('list')
   .description('List available tools')
   .action(() => {
-    const registryPath = getConfig().tools?.registryPath ?? join('.marktoflow', 'tools', 'registry.yaml');
+    const registryPath =
+      getConfig().tools?.registryPath ?? join('.marktoflow', 'tools', 'registry.yaml');
     if (!existsSync(registryPath)) {
       console.log(chalk.yellow("No tool registry found. Run 'marktoflow init' first."));
       return;
@@ -512,7 +526,9 @@ program
         console.log('\nTo connect Gmail:');
         console.log('  1. Go to https://console.cloud.google.com/');
         console.log('  2. Create OAuth 2.0 credentials (Desktop app type)');
-        console.log('  3. Run: marktoflow connect gmail --client-id YOUR_ID --client-secret YOUR_SECRET');
+        console.log(
+          '  3. Run: marktoflow connect gmail --client-id YOUR_ID --client-secret YOUR_SECRET'
+        );
         console.log('\nOr set environment variables:');
         console.log('  export GOOGLE_CLIENT_ID="your-client-id"');
         console.log('  export GOOGLE_CLIENT_SECRET="your-client-secret"');
@@ -523,16 +539,22 @@ program
         const { runGmailOAuth } = await import('./oauth.js');
         const tokens = await runGmailOAuth({ clientId, clientSecret });
         console.log(chalk.green('\nGmail connected successfully!'));
-        console.log(chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`));
+        console.log(
+          chalk.dim(
+            `Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`
+          )
+        );
         console.log('\nYou can now use Gmail in your workflows:');
-        console.log(chalk.cyan(`  tools:
+        console.log(
+          chalk.cyan(`  tools:
     gmail:
       sdk: "googleapis"
       auth:
         client_id: "\${GOOGLE_CLIENT_ID}"
         client_secret: "\${GOOGLE_CLIENT_SECRET}"
         redirect_uri: "http://localhost:8484/callback"
-        refresh_token: "\${GMAIL_REFRESH_TOKEN}"`));
+        refresh_token: "\${GMAIL_REFRESH_TOKEN}"`)
+        );
       } catch (error) {
         console.log(chalk.red(`\nOAuth failed: ${error}`));
         process.exit(1);
@@ -564,13 +586,19 @@ program
         const { runOutlookOAuth } = await import('./oauth.js');
         const tokens = await runOutlookOAuth({ clientId, clientSecret, tenantId });
         console.log(chalk.green('\nOutlook connected successfully!'));
-        console.log(chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`));
+        console.log(
+          chalk.dim(
+            `Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`
+          )
+        );
         console.log('\nYou can now use Outlook in your workflows:');
-        console.log(chalk.cyan(`  tools:
+        console.log(
+          chalk.cyan(`  tools:
     outlook:
       sdk: "@microsoft/microsoft-graph-client"
       auth:
-        token: "\${OUTLOOK_ACCESS_TOKEN}"`));
+        token: "\${OUTLOOK_ACCESS_TOKEN}"`)
+        );
       } catch (error) {
         console.log(chalk.red(`\nOAuth failed: ${error}`));
         process.exit(1);
@@ -595,13 +623,21 @@ program
         console.log(`  export JIRA_HOST="https://your-domain.atlassian.net"`);
         console.log(`  export JIRA_EMAIL="your-email@example.com"`);
         console.log(`  export JIRA_API_TOKEN="your-api-token"`);
-        console.log(chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'));
+        console.log(
+          chalk.dim(
+            '\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'
+          )
+        );
         break;
       case 'confluence':
         console.log(`  export CONFLUENCE_HOST="https://your-domain.atlassian.net"`);
         console.log(`  export CONFLUENCE_EMAIL="your-email@example.com"`);
         console.log(`  export CONFLUENCE_API_TOKEN="your-api-token"`);
-        console.log(chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'));
+        console.log(
+          chalk.dim(
+            '\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'
+          )
+        );
         break;
       case 'linear':
         console.log(`  export LINEAR_API_KEY="lin_api_your-key"`);
