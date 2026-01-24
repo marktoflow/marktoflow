@@ -1,11 +1,11 @@
 import { SDKRegistry } from '@marktoflow/core';
-import { SlackInitializer } from './slack.js';
-import { GitHubInitializer } from './github.js';
-import { JiraInitializer } from './jira.js';
-import { OllamaInitializer } from './ollama.js';
-import { ClaudeCodeInitializer } from './claude-code.js';
-import { OpenCodeInitializer } from './opencode.js';
-import { ScriptInitializer } from './script.js';
+import { SlackInitializer } from './services/slack.js';
+import { GitHubInitializer } from './services/github.js';
+import { JiraInitializer } from './services/jira.js';
+import { OllamaInitializer } from './adapters/ollama.js';
+import { ClaudeCodeInitializer } from './adapters/claude-code.js';
+import { OpenCodeInitializer } from './adapters/opencode.js';
+import { ScriptInitializer } from './tools/script.js';
 
 export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('@slack/web-api', SlackInitializer);
@@ -17,10 +17,10 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('script', ScriptInitializer);
 }
 
-export * from './slack.js';
-export * from './github.js';
-export * from './jira.js';
-export * from './ollama.js';
-export * from './claude-code.js';
-export * from './opencode.js';
-export * from './script.js';
+export * from './services/slack.js';
+export * from './services/github.js';
+export * from './services/jira.js';
+export * from './adapters/ollama.js';
+export * from './adapters/claude-code.js';
+export * from './adapters/opencode.js';
+export * from './tools/script.js';
