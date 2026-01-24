@@ -255,6 +255,72 @@ export {
   MetricsCollector,
 } from './metrics.js';
 
+// Routing
+export {
+  SelectionStrategy,
+  RoutingDecision,
+  AgentSelector,
+  AgentRouter,
+  BudgetTracker,
+  PREDEFINED_PROFILES,
+  createDefaultSelector,
+  createCostOptimizedSelector,
+  createQualityOptimizedSelector,
+  type AgentProfile,
+  type AgentScore,
+  type RoutingContext,
+  type RoutingResult,
+  type BudgetConfig,
+  type LoadInfo,
+} from './routing.js';
+
+// Failover
+export {
+  FailoverReason,
+  AgentHealthTracker,
+  DEFAULT_FAILOVER_CONFIG,
+  type AgentHealth,
+  type FailoverConfig,
+  type FailoverEvent,
+} from './failover.js';
+
+// Trigger Manager
+export {
+  TriggerManager,
+  type TriggerDefinition,
+  type TriggerHandler,
+} from './trigger-manager.js';
+
+// Plugins
+export {
+  PluginState,
+  HookType,
+  HookRegistry,
+  PluginManager,
+  LoggingPlugin,
+  MetricsPlugin,
+  type PluginMetadata,
+  type HookContext,
+  type HookResult,
+  type HookCallback,
+  type Plugin,
+  type PluginInfo,
+} from './plugins.js';
+
+// Templates
+export {
+  TemplateCategory,
+  TemplateRegistry,
+  WorkflowTemplate,
+  HELLO_TEMPLATE,
+  BUILTIN_TEMPLATES,
+  type TemplateMetadata,
+  type TemplateVariable,
+} from './templates.js';
+
+// Config
+export { loadConfig, type MarktoflowConfig } from './config.js';
+
 // Rollback
 export {
   RollbackStrategy,
