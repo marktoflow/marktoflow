@@ -68,7 +68,7 @@ npx marktoflow run workflow.md
   ```
 - [x] Configure TypeScript, ESLint, Prettier
 - [x] Set up Vitest for testing
-- [ ] Create CI/CD pipeline
+- [x] Create CI/CD pipeline
 
 ### Core Engine (Port from Python)
 - [x] Data models (Workflow, Step, Context, Result)
@@ -76,11 +76,13 @@ npx marktoflow run workflow.md
 - [x] Step executor with retry/circuit breaker
 - [x] State persistence (SQLite via better-sqlite3)
 - [x] Execution logging
-- [ ] Env loading + config helpers (.env discovery, typed accessors)
-- [ ] Credential manager + encryption backends (Fernet/Age/GPG parity)
-- [ ] Agent routing + selection + budgeting (routing/selection strategies)
+- [x] Env loading + config helpers (.env discovery, typed accessors)
+- [x] Credential manager + encryption backends (Fernet/Age/GPG parity)
+- [x] Agent routing + selection + budgeting (routing/selection strategies)
 - [ ] Failover + agent health tracking (engine failover parity)
-- [ ] Rollback/compensation framework (transaction + file/git handlers)
+  - [x] Failover config + health tracker types
+  - [ ] Engine integration
+- [x] Rollback/compensation framework (transaction + file/git handlers)
 
 ### CLI (Port from Python)
 - [x] `marktoflow init` - Project initialization
@@ -88,11 +90,11 @@ npx marktoflow run workflow.md
 - [x] `marktoflow workflow list/validate/show`
 - [x] `marktoflow connect <service>` - OAuth setup (placeholder)
 - [x] `marktoflow doctor` - Environment check
-- [ ] `marktoflow agent` - Agent management commands
-- [ ] `marktoflow tools` - Tool registry/inspection commands
-- [ ] `marktoflow schedule` - Scheduler management commands
-- [ ] `marktoflow bundle` - Workflow bundle commands
-- [ ] `marktoflow template` - Workflow template commands
+- [x] `marktoflow agent` - Agent management commands
+- [x] `marktoflow tools` - Tool registry/inspection commands
+- [x] `marktoflow schedule` - Scheduler management commands
+- [x] `marktoflow bundle` - Workflow bundle commands
+- [x] `marktoflow template` - Workflow template commands
 
 ---
 
@@ -143,7 +145,7 @@ npx marktoflow run workflow.md
 ## Phase 3: Triggers & Events
 
 ### Trigger System
-- [ ] Unified trigger manager
+- [x] Unified trigger manager
 - [x] Cron-based scheduling (node-cron/custom scheduler)
 - [x] Webhook receiver (Express/Fastify/custom)
 - [x] File system watcher (chokidar)
@@ -189,14 +191,14 @@ npx marktoflow run workflow.md
 - [x] RBAC and permissions
 - [x] Approval workflows
 - [x] Audit logging
-- [ ] Cost tracking parity (alerts, limits, summaries, estimators, persistent tracker)
-- [ ] Plugin system (hooks, registry, lifecycle, metrics/logging plugins)
-- [ ] Workflow templates (registry, variables, built-ins, CLI integration)
-- [ ] Tool registry parity (MCP/OpenAPI/Custom implementations + compatibility matrix)
-- [ ] Tool bundle support (bundle build/validate/load)
-- [ ] OpenAPI tool loader + schema validation
-- [ ] Custom tool adapters + local tool discovery
-- [ ] Env-based config + CLI config defaults (marktoflow.yaml parity)
+- [x] Cost tracking parity (alerts, limits, summaries, estimators, persistent tracker)
+- [x] Plugin system (hooks, registry, lifecycle, metrics/logging plugins)
+- [x] Workflow templates (registry, variables, built-ins, CLI integration)
+- [x] Tool registry parity (MCP/OpenAPI/Custom implementations + compatibility matrix)
+- [x] Tool bundle support (bundle build/validate/load)
+- [x] OpenAPI tool loader + schema validation
+- [x] Custom tool adapters + local tool discovery
+- [x] Env-based config + CLI config defaults (marktoflow.yaml parity)
 
 ### New Features
 - [ ] Visual workflow editor (web UI)

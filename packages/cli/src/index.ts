@@ -22,6 +22,8 @@ import {
   ToolRegistry,
   WorkflowBundle,
   Scheduler,
+  TemplateRegistry,
+  loadConfig,
 } from '@marktoflow/core';
 import { registerIntegrations } from '@marktoflow/integrations';
 import { workerCommand } from './worker.js';
@@ -32,6 +34,10 @@ const VERSION = '2.0.0-alpha.1';
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
+
+function getConfig() {
+  return loadConfig(process.cwd());
+}
 
 function isBundle(path: string): boolean {
   try {
@@ -146,10 +152,12 @@ program
     const spinner = ora('Loading workflow...').start();
 
     try {
+      const config = getConfig();
+      const workflowsDir = config.workflows?.path ?? '.marktoflow/workflows';
       // Resolve workflow path
       let resolvedPath = workflowPath;
       if (!existsSync(resolvedPath)) {
-        resolvedPath = join('.marktoflow', 'workflows', workflowPath);
+        resolvedPath = join(workflowsDir, workflowPath);
       }
       if (!existsSync(resolvedPath)) {
         spinner.fail(`Workflow not found: ${workflowPath}`);
@@ -249,7 +257,7 @@ program
   .command('list')
   .description('List available workflows')
   .action(async () => {
-    const workflowsDir = '.marktoflow/workflows';
+    const workflowsDir = getConfig().workflows?.path ?? '.marktoflow/workflows';
 
     if (!existsSync(workflowsDir)) {
       console.log(chalk.yellow('No workflows found. Run `marktoflow init` first.'));
@@ -337,7 +345,7 @@ toolsCmd
   .command('list')
   .description('List available tools')
   .action(() => {
-    const registryPath = join('.marktoflow', 'tools', 'registry.yaml');
+    const registryPath = getConfig().tools?.registryPath ?? join('.marktoflow', 'tools', 'registry.yaml');
     if (!existsSync(registryPath)) {
       console.log(chalk.yellow("No tool registry found. Run 'marktoflow init' first."));
       return;
@@ -471,7 +479,16 @@ templateCmd
   .command('list')
   .description('List workflow templates')
   .action(() => {
-    console.log(chalk.yellow('Templates are not yet implemented in v2.0.'));
+    const registry = new TemplateRegistry();
+    const templates = registry.list();
+    if (!templates.length) {
+      console.log(chalk.yellow('No templates found.'));
+      return;
+    }
+    console.log(chalk.bold('Templates:'));
+    for (const template of templates) {
+      console.log(`  ${chalk.cyan(template.id)}: ${template.name}`);
+    }
   });
 
 // --- connect ---

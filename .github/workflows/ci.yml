@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build core
+        run: pnpm -C packages/core build
+      - name: Test core
+        run: pnpm -C packages/core test
+      - name: Build CLI
+        run: pnpm -C packages/cli build
+      - name: Test CLI
+        run: pnpm -C packages/cli test
