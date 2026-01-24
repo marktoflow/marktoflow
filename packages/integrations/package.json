@@ -1,6 +1,6 @@
 {
-  "name": "@scottgl/marktoflow-integrations",
-  "version": "2.0.0-alpha.2",
+  "name": "@marktoflow/integrations",
+  "version": "2.0.0-alpha.3",
   "description": "Standard integrations for marktoflow",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@scottgl/marktoflow-core": "2.0.0-alpha.1",
+    "@marktoflow/core": "2.0.0-alpha.3",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@octokit/rest": "^22.0.1",
     "@opencode-ai/sdk": "^1.1.34",

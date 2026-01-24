@@ -1,6 +1,6 @@
 {
-  "name": "@scottgl/marktoflow",
-  "version": "2.0.0-alpha.2",
+  "name": "@marktoflow/cli",
+  "version": "2.0.0-alpha.3",
   "description": "Universal automation framework with native MCP support",
   "type": "module",
   "bin": {
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.2.0",
-    "@scottgl/marktoflow-core": "2.0.0-alpha.1",
-    "@scottgl/marktoflow-integrations": "2.0.0-alpha.1",
+    "@marktoflow/core": "2.0.0-alpha.3",
+    "@marktoflow/integrations": "2.0.0-alpha.3",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "open": "^10.1.0",

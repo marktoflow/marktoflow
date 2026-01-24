@@ -34,7 +34,7 @@ marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subproc
 
 ```bash
 # Install globally from npm
-npm install -g @scottgl/marktoflow@alpha
+npm install -g @marktoflow/cli@alpha
 
 # Verify installation
 marktoflow version
@@ -46,8 +46,8 @@ After installation, the `marktoflow` command should be available globally. If yo
 
 ```bash
 # Run commands directly without installation
-npx @scottgl/marktoflow@alpha init
-npx @scottgl/marktoflow@alpha run workflow.md
+npx @marktoflow/cli@alpha init
+npx @marktoflow/cli@alpha run workflow.md
 ```
 
 **Option 3: Install from GitHub**
@@ -169,8 +169,8 @@ marktoflow version
 If PATH setup is not working, you can always use `npx` to run marktoflow without installation:
 
 ```bash
-npx @scottgl/marktoflow@alpha version
-npx @scottgl/marktoflow@alpha run workflow.md
+npx @marktoflow/cli@alpha version
+npx @marktoflow/cli@alpha run workflow.md
 ```
 
 ### Initialize a Project

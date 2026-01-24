@@ -19,14 +19,14 @@ Complete installation guide for marktoflow CLI with troubleshooting.
 Install from the npm registry:
 
 ```bash
-npm install -g @scottgl/marktoflow@alpha
+npm install -g @marktoflow/cli@alpha
 ```
 
 **Pros:**
 
 - Fast installation
 - Official npm package
-- Easy updates with `npm update -g @scottgl/marktoflow`
+- Easy updates with `npm update -g @marktoflow/cli`
 
 **Cons:**
 
@@ -38,9 +38,9 @@ Run marktoflow commands without installing:
 
 ```bash
 # Run any command with npx
-npx @scottgl/marktoflow@alpha version
-npx @scottgl/marktoflow@alpha init
-npx @scottgl/marktoflow@alpha run workflow.md
+npx @marktoflow/cli@alpha version
+npx @marktoflow/cli@alpha init
+npx @marktoflow/cli@alpha run workflow.md
 ```
 
 **Pros:**
@@ -289,13 +289,13 @@ export PATH="$PATH:$HOME/.npm-global/bin"
 source ~/.bashrc  # or ~/.zshrc
 
 # Try installation again
-npm install -g @scottgl/marktoflow@alpha
+npm install -g @marktoflow/cli@alpha
 ```
 
 **Option 3: Use sudo (Not Recommended)**
 
 ```bash
-sudo npm install -g @scottgl/marktoflow@alpha
+sudo npm install -g @marktoflow/cli@alpha
 ```
 
 **Note:** Using sudo can cause permission issues later. Options 1 or 2 are better.
@@ -354,7 +354,7 @@ npm link
 
 3. **Use verbose logging:**
    ```bash
-   npm install -g @scottgl/marktoflow@alpha --verbose
+   npm install -g @marktoflow/cli@alpha --verbose
    ```
 
 ### Issue: "Cannot find module '@marktoflow/core'"
@@ -385,7 +385,7 @@ npm cache clean --force
 
 # Reinstall global package
 npm uninstall -g marktoflow
-npm install -g @scottgl/marktoflow@alpha
+npm install -g @marktoflow/cli@alpha
 
 # Or use npx with --no-cache
 npx --no-cache @scottgl/marktoflow@alpha version
@@ -398,7 +398,7 @@ npx --no-cache @scottgl/marktoflow@alpha version
 ### If installed globally from npm:
 
 ```bash
-npm uninstall -g @scottgl/marktoflow
+npm uninstall -g @marktoflow/cli
 ```
 
 ### If installed from source with npm link:
