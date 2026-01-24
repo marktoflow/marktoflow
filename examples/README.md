@@ -46,7 +46,30 @@ marktoflow run examples/code-review \
   --input pr_number=123
 ```
 
-### 2. Daily Standup (`daily-standup/`)
+### 2. AI Code Review with Copilot (`copilot-code-review/`)
+
+**NEW!** Advanced code review using GitHub Copilot SDK for comprehensive analysis.
+
+**Integrations:** GitHub, GitHub Copilot
+
+**Features:**
+
+- Powered by GitHub Copilot's production-tested agent runtime
+- Deep analysis for security vulnerabilities (OWASP Top 10)
+- Performance optimization recommendations
+- Code quality and best practices review
+- Automatic PR labeling and team notifications
+- Support for multiple models (GPT-5, Claude, etc.)
+
+```bash
+marktoflow run examples/copilot-code-review \
+  --input repository=owner/repo \
+  --input pull_number=123
+```
+
+**Requirements:** GitHub Copilot subscription + CLI installed
+
+### 3. Daily Standup (`daily-standup/`)
 
 Aggregates team updates from Jira and Slack into an AI-generated standup summary.
 
@@ -67,7 +90,7 @@ marktoflow run examples/daily-standup \
 
 **Scheduled:** Runs automatically at 9 AM weekdays
 
-### 3. Dependency Update (`dependency-update/`)
+### 4. Dependency Update (`dependency-update/`)
 
 Automated dependency updates with AI-powered changelog generation.
 
@@ -89,7 +112,7 @@ marktoflow run examples/dependency-update \
 
 **Scheduled:** Runs automatically every Monday at 10 AM
 
-### 4. Incident Response (`incident-response/`)
+### 5. Incident Response (`incident-response/`)
 
 Automated incident detection and response coordination.
 
@@ -113,7 +136,7 @@ marktoflow run examples/incident-response \
 
 **Triggered by:** PagerDuty webhooks, monitoring alert webhooks
 
-### 5. Sprint Planning (`sprint-planning/`)
+### 6. Sprint Planning (`sprint-planning/`)
 
 Automates sprint planning with velocity analysis and story selection.
 

@@ -22,11 +22,13 @@ Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, an
 - **Confluence** - Wiki page management
 - **HTTP** - Generic HTTP requests with auth
 
-### AI Agent Adapters (3)
+### AI Agent Adapters (4)
 
 - **Ollama** - Local LLM integration
 - **Claude Code** - Anthropic Claude integration
 - **OpenCode** - OpenCode AI integration
+- **GitHub Copilot** - GitHub Copilot CLI integration
+- **GitHub Copilot** - GitHub Copilot CLI integration
 
 ## Installation
 
@@ -390,6 +392,110 @@ OpenCode AI integration.
 ```bash
 export OPENCODE_API_KEY=your-key
 ```
+
+### GitHub Copilot
+
+GitHub Copilot CLI integration with advanced agentic capabilities.
+
+**Requirements**:
+
+- GitHub Copilot subscription
+- Copilot CLI installed: [Installation Guide](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli)
+
+**Verify CLI**:
+
+```bash
+copilot --version
+```
+
+**Basic Usage**:
+
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    config:
+      model: gpt-4.1 # Optional, defaults to gpt-4.1
+
+steps:
+  - action: copilot.send
+    inputs:
+      prompt: 'Explain TypeScript generics'
+    output_variable: explanation
+```
+
+**Streaming Responses**:
+
+```yaml
+steps:
+  - action: copilot.stream
+    inputs:
+      prompt: 'Write a function to calculate fibonacci'
+      onChunk: '${print_chunk}' # Callback for each chunk
+    output_variable: code
+```
+
+**With File Attachments**:
+
+```yaml
+steps:
+  - action: copilot.send
+    inputs:
+      prompt: 'Review this code for security issues'
+      attachments:
+        - type: file
+          path: ./src/app.ts
+          displayName: app.ts
+    output_variable: review
+```
+
+**System Message Customization**:
+
+```yaml
+steps:
+  - action: copilot.send
+    inputs:
+      prompt: 'Help me optimize this function'
+      systemMessage: |
+        You are a performance optimization expert.
+        Focus on time and space complexity.
+    output_variable: suggestions
+```
+
+**External CLI Server**:
+
+For development or shared CLI instances:
+
+```bash
+# Terminal 1: Start CLI in server mode
+copilot --server --port 4321
+
+# Terminal 2: Use in workflow
+```
+
+```yaml
+tools:
+  copilot:
+    adapter: github-copilot
+    auth:
+      cli_url: localhost:4321 # Connect to external server
+```
+
+**Configuration Options**:
+
+- `model`: Model to use (gpt-4.1, gpt-5, claude-sonnet-4.5, etc.)
+- `cli_path`: Custom path to CLI binary (default: 'copilot')
+- `cli_url`: External CLI server URL (mutually exclusive with cli_path)
+- `autoStart`: Auto-start CLI (default: true)
+- `logLevel`: Log verbosity (info, debug, error, warning, none, all)
+
+**Advanced Features** (See [COPILOT_SDK_ANALYSIS.md](../../docs/COPILOT_SDK_ANALYSIS.md)):
+
+- Custom tool definitions
+- MCP server integration
+- Session persistence
+- Infinite sessions (automatic context compaction)
+- Multi-turn conversations
 
 ## Advanced Usage
 
