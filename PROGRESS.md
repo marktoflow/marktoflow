@@ -18,13 +18,26 @@
   - Execution engine with retry/circuit breaker
   - SDK registry for dynamic loading
   - Variable template resolution
-  - 29 passing tests
+  - Scheduler, State persistence, Logging
+  - Webhook receiver, File system watcher
+  - Script tool (executable runner)
+  - 63 passing tests
 - [x] CLI package:
   - Commander-based CLI
   - Commands: init, run, workflow, connect, doctor, version
+  - Basic CLI tests added
+- [x] Integrations package:
+  - @slack/web-api support
+  - @octokit/rest (GitHub) support
+  - jira.js (Jira) support
+  - ollama support
+  - claude-code (CLI) support
+  - @opencode-ai/sdk support
+  - script tool integration
 
 ### In Progress
-- [ ] Integrations package (Slack, Jira, GitHub, etc.)
+- [ ] More built-in integrations (Jira, GitHub, etc.)
+- [ ] Native MCP support
 
 ---
 
@@ -136,6 +149,8 @@ src/marktoflow/
 | 8 | 2026-01-22 | OpenCode adapter (production ready) |
 | 9 | 2026-01-22 | Claude Code adapter (CLI mode) |
 | 10 | 2026-01-23 | Framework analysis, TypeScript decision |
+| 11 | 2026-01-23 | TypeScript Core tests fix, CLI tests, Integrations setup |
+| 12 | 2026-01-23 | OpenCode SDK, Script Tool, File Watcher, Jira/Ollama/Claude Code integrations |
 
 ---
 

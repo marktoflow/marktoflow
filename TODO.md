@@ -74,8 +74,8 @@ npx marktoflow run workflow.md
 - [x] Data models (Workflow, Step, Context, Result)
 - [x] Workflow parser (YAML frontmatter + markdown)
 - [x] Step executor with retry/circuit breaker
-- [ ] State persistence (SQLite via better-sqlite3)
-- [ ] Execution logging
+- [x] State persistence (SQLite via better-sqlite3)
+- [x] Execution logging
 
 ### CLI (Port from Python)
 - [x] `marktoflow init` - Project initialization
@@ -95,15 +95,15 @@ npx marktoflow run workflow.md
 - [ ] MCP server lifecycle management
 
 ### Built-in Integrations (via SDKs)
-- [ ] **Slack** (`@slack/web-api`, `@slack/bolt`)
+- [x] **Slack** (`@slack/web-api`, `@slack/bolt`)
   - Actions: send_message, create_channel, get_messages
   - Triggers: message_received, app_mention (Socket Mode)
   - OAuth flow with token storage
-- [ ] **Jira** (`jira.js`)
+- [x] **Jira** (`jira.js`)
   - Actions: create_issue, update_issue, search, transition
   - Triggers: issue_created, issue_updated (webhooks)
   - OAuth flow with Atlassian
-- [ ] **GitHub** (`@octokit/rest`)
+- [x] **GitHub** (`@octokit/rest`)
   - Actions: create_pr, merge, create_issue, search
   - Triggers: push, pull_request, issues (webhooks)
   - Personal access token or GitHub App

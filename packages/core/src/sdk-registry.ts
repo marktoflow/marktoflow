@@ -6,10 +6,12 @@
  */
 
 import { ToolConfig } from './models.js';
+import { McpLoader } from './mcp-loader.js';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 // ============================================================================
 // Types
-// ============================================================================
+// ============================================================================ 
 
 export interface SDKInstance {
   name: string;
@@ -36,9 +38,9 @@ export interface SDKInitializer {
   initialize(module: unknown, config: ToolConfig): Promise<unknown>;
 }
 
-// ============================================================================
+// ============================================================================ 
 // Default SDK Loader (dynamic import)
-// ============================================================================
+// ============================================================================ 
 
 export const defaultSDKLoader: SDKLoader = {
   async load(packageName: string): Promise<unknown> {
@@ -55,9 +57,9 @@ export const defaultSDKLoader: SDKLoader = {
   },
 };
 
-// ============================================================================
+// ============================================================================ 
 // SDK Initializers for common services
-// ============================================================================
+// ============================================================================ 
 
 export const defaultInitializers: Record<string, SDKInitializer> = {
   '@slack/web-api': {
@@ -124,21 +126,24 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
   },
 };
 
-// ============================================================================
+// ============================================================================ 
 // SDK Registry Implementation
-// ============================================================================
+// ============================================================================ 
 
 export class SDKRegistry {
   private sdks: Map<string, SDKInstance> = new Map();
   private loader: SDKLoader;
   private initializers: Map<string, SDKInitializer>;
+  private mcpLoader: McpLoader;
 
   constructor(
     loader: SDKLoader = defaultSDKLoader,
-    initializers: Record<string, SDKInitializer> = defaultInitializers
+    initializers: Record<string, SDKInitializer> = defaultInitializers,
+    mcpLoader?: McpLoader
   ) {
     this.loader = loader;
     this.initializers = new Map(Object.entries(initializers));
+    this.mcpLoader = mcpLoader || new McpLoader();
   }
 
   /**
@@ -186,11 +191,57 @@ export class SDKRegistry {
     if (initializer) {
       instance.sdk = await initializer.initialize(module, instance.config);
     } else {
-      // No custom initializer - use generic initialization
-      instance.sdk = await this.genericInitialize(module, instance.config);
+      // Check for MCP
+      if (this.isMcpModule(module)) {
+        try {
+          const client = await this.mcpLoader.connectModule(module, instance.config);
+          instance.sdk = this.createMcpProxy(client);
+        } catch (error) {
+           throw new Error(`Failed to connect to MCP module '${instance.config.sdk}': ${error}`);
+        }
+      } else {
+        // No custom initializer - use generic initialization
+        instance.sdk = await this.genericInitialize(module, instance.config);
+      }
     }
 
     return instance.sdk;
+  }
+
+  private isMcpModule(module: unknown): boolean {
+    return typeof (module as { createMcpServer?: unknown }).createMcpServer === 'function';
+  }
+
+  private createMcpProxy(client: Client): unknown {
+    return new Proxy(client, {
+      get: (target, prop) => {
+        if (typeof prop === 'string') {
+          // Avoid treating the proxy as a Thenable
+          if (prop === 'then') {
+            return undefined;
+          }
+
+          // If property is 'close', return the close method
+          if (prop === 'close') {
+            return target.close.bind(target);
+          }
+
+          // Otherwise, treat as tool name
+          return async (args: Record<string, unknown>) => {
+             const result = await client.callTool({
+               name: prop,
+               arguments: args
+             });
+             
+             // If tool call fails, it throws? No, Client.callTool throws on error.
+             // Result content handling? 
+             // For now return result.
+             return result;
+          };
+        }
+        return Reflect.get(target, prop);
+      }
+    });
   }
 
   /**
@@ -238,9 +289,9 @@ export class SDKRegistry {
   }
 }
 
-// ============================================================================
+// ============================================================================ 
 // Step Executor Factory
-// ============================================================================
+// ============================================================================ 
 
 export interface SDKRegistryLike {
   load(sdkName: string): Promise<unknown>;
