@@ -118,10 +118,12 @@ This workflow monitors Slack messages and creates Jira issues.
       // Verify the notification included the Jira issue key
       expect(mockExecutor).toHaveBeenNthCalledWith(
         3,
-        expect.anything(),
         expect.objectContaining({
-          text: 'Created Jira issue: SUP-123',
+          inputs: expect.objectContaining({
+            text: 'Created Jira issue: SUP-123',
+          }),
         }),
+        expect.anything(),
         expect.anything()
       );
     });
@@ -481,12 +483,14 @@ steps:
       // Verify data passed between services
       expect(mockExecutor).toHaveBeenNthCalledWith(
         3, // Jira step
-        expect.anything(),
         expect.objectContaining({
-          fields: expect.objectContaining({
-            description: 'GitHub: https://github.com/company/incidents/issues/789',
+          inputs: expect.objectContaining({
+            fields: expect.objectContaining({
+              description: 'GitHub: https://github.com/company/incidents/issues/789',
+            }),
           }),
         }),
+        expect.anything(),
         expect.anything()
       );
     });

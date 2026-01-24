@@ -124,6 +124,7 @@ export interface ExecutionContext {
   startedAt: Date;
   currentStepIndex: number;
   status: WorkflowStatus;
+  stepMetadata: Record<string, { status: string; error?: string; retryCount: number }>;
   [key: string]: unknown; // Allow index access for template resolution
 }
 
@@ -166,6 +167,7 @@ export function createExecutionContext(
     startedAt: new Date(),
     currentStepIndex: 0,
     status: WorkflowStatus.PENDING,
+    stepMetadata: {},
   };
 }
 
