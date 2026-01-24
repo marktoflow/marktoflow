@@ -1,0 +1,460 @@
+# @marktoflow/integrations
+
+Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, and more.
+
+## Overview
+
+`@marktoflow/integrations` provides ready-to-use service integrations and AI agent adapters for the marktoflow automation framework.
+
+## Features
+
+### Service Integrations (11)
+
+- **Slack** - Send messages, manage channels, socket mode
+- **GitHub** - Create PRs, issues, comments, manage repos
+- **Jira** - Create/update issues, transitions, search
+- **Gmail** - Send emails, read inbox, manage labels, webhook triggers
+- **Outlook** - Send emails, read calendar/inbox, webhook triggers
+- **Linear** - Issue tracking and project management
+- **Notion** - Database operations, page management
+- **Discord** - Bot interactions, message management
+- **Airtable** - Spreadsheet database operations
+- **Confluence** - Wiki page management
+- **HTTP** - Generic HTTP requests with auth
+
+### AI Agent Adapters (3)
+
+- **Ollama** - Local LLM integration
+- **Claude Code** - Anthropic Claude integration
+- **OpenCode** - OpenCode AI integration
+
+## Installation
+
+```bash
+npm install @marktoflow/integrations
+```
+
+This package depends on `@marktoflow/core` which will be installed automatically.
+
+## Quick Start
+
+### Using in Workflows
+
+Integrations are designed to work seamlessly in workflow YAML definitions:
+
+```yaml
+workflow:
+  id: slack-notification
+  name: Send Slack Notification
+
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+steps:
+  - action: slack.chat.postMessage
+    inputs:
+      channel: '#general'
+      text: 'Hello from marktoflow!'
+```
+
+### Programmatic Usage
+
+You can also use integrations directly in TypeScript:
+
+```typescript
+import { SlackInitializer } from '@marktoflow/integrations';
+import { SDKRegistry } from '@marktoflow/core';
+
+// Register Slack integration
+const registry = new SDKRegistry();
+await registry.registerSDK(SlackInitializer);
+
+// Load and use SDK
+const slack = await registry.loadSDK('slack', {
+  auth: { token: process.env.SLACK_BOT_TOKEN },
+});
+
+// Execute action
+const result = await registry.executeAction('slack', 'chat.postMessage', slack, {
+  channel: '#general',
+  text: 'Hello World!',
+});
+```
+
+## Available Integrations
+
+### Slack
+
+Send messages, manage channels, handle events.
+
+**Setup**:
+
+```bash
+# Set environment variable
+export SLACK_BOT_TOKEN=xoxb-your-token
+```
+
+**Actions**:
+
+- `chat.postMessage` - Send a message
+- `conversations.list` - List channels
+- `conversations.create` - Create channel
+- `users.list` - List workspace users
+
+**Example**:
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: '#general'
+  text: 'Deployment complete!'
+  blocks:
+    - type: section
+      text:
+        type: mrkdwn
+        text: '*Status:* ✅ Success'
+```
+
+### GitHub
+
+Manage repositories, PRs, issues, and more.
+
+**Setup**:
+
+```bash
+export GITHUB_TOKEN=ghp_your-token
+```
+
+**Actions**:
+
+- `repos.get` - Get repository info
+- `pulls.create` - Create pull request
+- `issues.create` - Create issue
+- `issues.createComment` - Comment on issue
+
+**Example**:
+
+```yaml
+action: github.pulls.create
+inputs:
+  owner: scottgl9
+  repo: marktoflow
+  title: 'Add new feature'
+  head: feature-branch
+  base: main
+  body: 'This PR adds...'
+```
+
+### Jira
+
+Issue tracking and project management.
+
+**Setup**:
+
+```bash
+export JIRA_HOST=your-domain.atlassian.net
+export JIRA_EMAIL=your@email.com
+export JIRA_API_TOKEN=your-token
+```
+
+**Actions**:
+
+- `issues.createIssue` - Create issue
+- `issues.updateIssue` - Update issue
+- `issues.searchIssues` - Search issues
+- `issues.getIssue` - Get issue details
+
+**Example**:
+
+```yaml
+action: jira.issues.createIssue
+inputs:
+  fields:
+    project:
+      key: PROJ
+    summary: 'Bug: Login fails'
+    description: 'Users cannot log in'
+    issuetype:
+      name: Bug
+```
+
+### Gmail
+
+Email operations with webhook support.
+
+**Setup**:
+
+```bash
+export GMAIL_CLIENT_ID=your-client-id
+export GMAIL_CLIENT_SECRET=your-secret
+export GMAIL_REFRESH_TOKEN=your-refresh-token
+```
+
+**Actions**:
+
+- `users.messages.send` - Send email
+- `users.messages.list` - List messages
+- `users.labels.list` - List labels
+- `users.messages.get` - Get message details
+
+**Example**:
+
+```yaml
+action: gmail.users.messages.send
+inputs:
+  to: user@example.com
+  subject: 'Daily Report'
+  body: 'Here is your daily report...'
+```
+
+### Outlook
+
+Microsoft 365 email and calendar.
+
+**Setup**:
+
+```bash
+export OUTLOOK_CLIENT_ID=your-client-id
+export OUTLOOK_CLIENT_SECRET=your-secret
+export OUTLOOK_TENANT_ID=your-tenant-id
+export OUTLOOK_REFRESH_TOKEN=your-refresh-token
+```
+
+**Actions**:
+
+- `sendMail` - Send email
+- `listMessages` - List inbox messages
+- `listCalendarEvents` - List calendar events
+- `createCalendarEvent` - Create calendar event
+
+**Example**:
+
+```yaml
+action: outlook.sendMail
+inputs:
+  to: [user@example.com]
+  subject: 'Meeting Reminder'
+  body: 'Don't forget our meeting at 2pm'
+```
+
+### Linear
+
+Modern issue tracking.
+
+**Setup**:
+
+```bash
+export LINEAR_API_KEY=your-api-key
+```
+
+**Actions**:
+
+- `createIssue` - Create issue
+- `updateIssue` - Update issue
+- `listIssues` - List issues
+
+### Notion
+
+Database and page management.
+
+**Setup**:
+
+```bash
+export NOTION_TOKEN=secret_your-token
+```
+
+**Actions**:
+
+- `databases.query` - Query database
+- `pages.create` - Create page
+- `blocks.children.append` - Add content blocks
+
+### Discord
+
+Bot interactions and messaging.
+
+**Setup**:
+
+```bash
+export DISCORD_BOT_TOKEN=your-bot-token
+```
+
+**Actions**:
+
+- `sendMessage` - Send message to channel
+- `editMessage` - Edit message
+- `deleteMessage` - Delete message
+
+### Airtable
+
+Spreadsheet database operations.
+
+**Setup**:
+
+```bash
+export AIRTABLE_API_KEY=your-api-key
+```
+
+**Actions**:
+
+- `select` - Query records
+- `create` - Create records
+- `update` - Update records
+- `delete` - Delete records
+
+### Confluence
+
+Wiki page management.
+
+**Setup**:
+
+```bash
+export CONFLUENCE_HOST=your-domain.atlassian.net
+export CONFLUENCE_EMAIL=your@email.com
+export CONFLUENCE_API_TOKEN=your-token
+```
+
+**Actions**:
+
+- `getPage` - Get page content
+- `createPage` - Create page
+- `updatePage` - Update page
+- `deletePage` - Delete page
+
+### HTTP
+
+Generic HTTP requests with authentication.
+
+**Actions**:
+
+- `request` - Make HTTP request
+
+**Example**:
+
+```yaml
+action: http.request
+inputs:
+  method: POST
+  url: https://api.example.com/endpoint
+  headers:
+    Authorization: 'Bearer ${API_TOKEN}'
+  body:
+    key: value
+```
+
+## AI Agent Adapters
+
+### Ollama
+
+Run local LLMs via Ollama.
+
+**Setup**:
+
+```bash
+export OLLAMA_BASE_URL=http://localhost:11434
+```
+
+**Example**:
+
+```yaml
+tools:
+  ollama:
+    adapter: ollama
+
+steps:
+  - action: ollama.generate
+    inputs:
+      model: llama2
+      prompt: 'Explain quantum computing'
+```
+
+### Claude Code
+
+Anthropic Claude integration.
+
+**Setup**:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-your-key
+```
+
+### OpenCode
+
+OpenCode AI integration.
+
+**Setup**:
+
+```bash
+export OPENCODE_API_KEY=your-key
+```
+
+## Advanced Usage
+
+### Custom Integration
+
+Create your own integration:
+
+```typescript
+import type { SDKInitializer } from '@marktoflow/core';
+
+export const MyServiceInitializer: SDKInitializer = {
+  name: 'myservice',
+  async initialize(config) {
+    return new MyServiceClient(config.auth.apiKey);
+  },
+  actions: {
+    doSomething: async (sdk, inputs) => {
+      return sdk.doSomething(inputs);
+    },
+  },
+};
+```
+
+### Error Handling
+
+All integrations support automatic retry and error handling:
+
+```yaml
+steps:
+  - action: slack.chat.postMessage
+    inputs:
+      channel: '#general'
+      text: 'Message'
+    retry:
+      max_attempts: 3
+      backoff: exponential
+      initial_delay: 1000
+    on_error: continue # or 'fail', 'retry'
+```
+
+## OAuth Setup Guides
+
+For Gmail and Outlook, use the CLI to set up OAuth:
+
+```bash
+# Gmail OAuth
+npx @marktoflow/cli@alpha connect gmail
+
+# Outlook OAuth
+npx @marktoflow/cli@alpha connect outlook
+```
+
+## Testing
+
+```bash
+npm test
+```
+
+## Links
+
+- [Main Repository](https://github.com/scottgl9/marktoflow)
+- [Documentation](https://github.com/scottgl9/marktoflow#readme)
+- [Core Package](@marktoflow/core)
+- [CLI Package](@marktoflow/cli)
+
+## License
+
+Apache-2.0
