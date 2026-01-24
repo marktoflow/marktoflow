@@ -27,7 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.3",
+    "@marktoflow/core": "workspace:*",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@octokit/rest": "^22.0.1",
     "@opencode-ai/sdk": "^1.1.34",
