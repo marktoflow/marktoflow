@@ -5,7 +5,7 @@ Write once, run on any AI coding agent (Claude Code, OpenCode, Aider, etc.)
 """
 
 __version__ = "0.1.0"
-__author__ = "Scott"
+__author__ = "Scott Glover"
 
 from marktoflow.core.models import (
     Workflow,
