@@ -5,6 +5,15 @@
 import { TriggerType } from './models.js';
 import { Scheduler, createJob, type ScheduledJob } from './scheduler.js';
 import { FileWatcher, type FileWatcherOptions, type FileEvent } from './filewatcher.js';
+import {
+  WebhookReceiver,
+  createEndpoint,
+  parseWebhookBody,
+  verifyGitHubSignature,
+  verifySlackSignature,
+  type WebhookEvent,
+  type WebhookResponse,
+} from './webhook.js';
 
 export interface TriggerHandler {
   (payload: Record<string, unknown>): Promise<void>;
@@ -21,8 +30,10 @@ export class TriggerManager {
   private scheduler = new Scheduler();
   private fileWatchers: Map<string, FileWatcher> = new Map();
   private triggers: Map<string, TriggerDefinition> = new Map();
+  private webhookReceiver: WebhookReceiver;
 
-  constructor() {
+  constructor(webhookReceiver?: WebhookReceiver) {
+    this.webhookReceiver = webhookReceiver ?? new WebhookReceiver();
     this.scheduler.onJobDue(async (job) => {
       const triggerId = job.id;
       const trigger = this.triggers.get(triggerId);
@@ -50,6 +61,34 @@ export class TriggerManager {
       });
       this.fileWatchers.set(trigger.id, watcher);
     }
+
+    if (trigger.type === TriggerType.WEBHOOK) {
+      const path = trigger.config.path as string;
+      const secret = trigger.config.secret as string | undefined;
+      const methods = (trigger.config.methods as string[]) ?? ['POST'];
+      const provider = trigger.config.provider as string | undefined;
+
+      const endpoint = createEndpoint(path, { secret: provider === 'github' ? secret : undefined, methods });
+      this.webhookReceiver.registerEndpoint(endpoint, async (event: WebhookEvent): Promise<WebhookResponse> => {
+        if (provider === 'github' && secret) {
+          const signature = event.headers['x-hub-signature-256'] ?? '';
+          if (!verifyGitHubSignature(event.body, signature, secret)) {
+            return { status: 401, body: 'Invalid Signature' };
+          }
+        }
+        if (provider === 'slack' && secret) {
+          const signature = event.headers['x-slack-signature'] ?? '';
+          const timestamp = event.headers['x-slack-request-timestamp'] ?? '';
+          if (!verifySlackSignature(event.body, signature, timestamp, secret)) {
+            return { status: 401, body: 'Invalid Signature' };
+          }
+        }
+
+        const payload = parseWebhookBody(event);
+        await trigger.handler({ type: 'webhook', provider, event, payload });
+        return { status: 200, body: 'ok' };
+      });
+    }
   }
 
   start(): void {
@@ -57,12 +96,18 @@ export class TriggerManager {
     for (const watcher of this.fileWatchers.values()) {
       watcher.start();
     }
+    if (!this.webhookReceiver.isRunning()) {
+      this.webhookReceiver.start().catch(() => undefined);
+    }
   }
 
   async stop(): Promise<void> {
     this.scheduler.stop();
     for (const watcher of this.fileWatchers.values()) {
       await watcher.stop();
+    }
+    if (this.webhookReceiver.isRunning()) {
+      await this.webhookReceiver.stop();
     }
   }
 

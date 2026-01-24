@@ -86,6 +86,26 @@ export function verifyHmacSignature(
 }
 
 /**
+ * Verify a Slack webhook signature.
+ * Uses headers: x-slack-signature (v0=...) and x-slack-request-timestamp.
+ */
+export function verifySlackSignature(
+  payload: string,
+  signature: string,
+  timestamp: string,
+  secret: string
+): boolean {
+  if (!signature.startsWith('v0=')) return false;
+  const base = `v0:${timestamp}:${payload}`;
+  const expected = 'v0=' + createHmac('sha256', secret).update(base).digest('hex');
+  try {
+    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Generate a signature for testing.
  */
 export function generateSignature(payload: string, secret: string): string {

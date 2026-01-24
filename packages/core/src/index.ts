@@ -166,6 +166,7 @@ export {
   WebhookReceiver,
   verifyGitHubSignature,
   verifyHmacSignature,
+  verifySlackSignature,
   generateSignature,
   createEndpoint,
   parseWebhookBody,
