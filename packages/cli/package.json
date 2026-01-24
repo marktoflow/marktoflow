@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/cli",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.4",
   "description": "Universal automation framework with native MCP support",
   "type": "module",
   "bin": {
@@ -39,7 +39,8 @@
     "tsx": "^4.19.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "keywords": [
     "marktoflow",
