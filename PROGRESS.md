@@ -21,7 +21,9 @@
   - Scheduler, State persistence, Logging
   - Webhook receiver, File system watcher
   - Script tool (executable runner)
-  - 63 passing tests
+  - Queue system (Redis/RabbitMQ/InMemory)
+  - Security (RBAC, Approval Workflows, Audit Logging)
+  - 72 passing tests
 - [x] CLI package:
   - Commander-based CLI
   - Commands: init, run, workflow, connect, doctor, version

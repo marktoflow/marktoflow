@@ -133,3 +133,34 @@ export {
   type FileEvent,
   type FileEventHandler,
 } from './filewatcher.js';
+
+// Queue Integration
+export {
+  MessagePriority,
+  MessageStatus,
+  MessageQueue,
+  InMemoryQueue,
+  RedisQueue,
+  RabbitMQQueue,
+  type QueueMessage,
+  type QueueConfig,
+  type MessageHandler,
+} from './queue.js';
+
+// Security (RBAC, Approval, Audit)
+export {
+  Permission,
+  RBACManager,
+  ApprovalStatus,
+  ApprovalManager,
+  AuditEventType,
+  AuditLogger,
+  SQLiteAuditStore,
+  InMemoryAuditStore,
+  type Role,
+  type User,
+  type ApprovalRequest,
+  type ApprovalHandler,
+  type AuditEvent,
+  type AuditStore,
+} from './security.js';
