@@ -46,7 +46,8 @@ export class AgentHealthTracker {
   }
 
   markHealthy(agentName: string, latencyMs?: number): AgentHealth {
-    const current = this.health.get(agentName);
+    // Previous health record is retrieved but not currently used for history tracking
+    this.health.get(agentName);
     const next: AgentHealth = {
       agentName,
       isHealthy: true,

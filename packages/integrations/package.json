@@ -39,5 +39,6 @@
     "integration",
     "slack"
   ],
+  "author": "Scott Glover",
   "license": "Apache-2.0"
 }

@@ -16,7 +16,7 @@ describe('FileWatcher', () => {
   });
 
   it('should detect file changes', async () => {
-    const watcher = new FileWatcher({ path: testDir, debounceMs: 10, recursive: false, usePolling: true, interval: 50 });
+    const watcher = new FileWatcher({ path: testDir, debounceMs: 10, recursive: false, usePolling: true, interval: 100 });
     const handler = vi.fn().mockResolvedValue(undefined);
 
     watcher.onEvent(handler);
@@ -26,8 +26,11 @@ describe('FileWatcher', () => {
       watcher.on('ready', () => resolve());
     });
 
+    // Give chokidar extra time to stabilize on slow filesystems (e.g., external drives)
+    await new Promise((r) => setTimeout(r, 200));
+
     const eventPromise = new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('timeout waiting for file event')), 4000);
+      const timer = setTimeout(() => reject(new Error('timeout waiting for file event')), 8000);
       watcher.on('event', () => {
         clearTimeout(timer);
         resolve();

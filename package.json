@@ -20,7 +20,7 @@
     "jira",
     "github"
   ],
-  "author": "",
+  "author": "Scott Glover",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^22.10.0",

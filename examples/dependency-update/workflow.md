@@ -1,269 +1,275 @@
 ---
 workflow:
   id: dependency-update
-  name: "Automated Dependency Updates"
-  version: "1.0.0"
-  description: "Checks for dependency updates and creates PRs with changelogs"
-  author: "marktoflow"
+  name: 'Automated Dependency Updates'
+  version: '2.0.0'
+  description: 'Checks for outdated packages and creates update PRs with changelog'
+  author: 'marktoflow'
   tags:
     - dependencies
     - security
     - maintenance
 
-compatibility:
-  agents:
-    - claude-code: recommended
-    - opencode: supported
-    - aider: supported
+tools:
+  github:
+    sdk: '@octokit/rest'
+    auth:
+      token: '${GITHUB_TOKEN}'
 
-requirements:
-  tools:
-    - git
-    - github
-    - npm  # or pip, cargo, etc.
-  features:
-    - tool_calling: required
-    - file_editing: required
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+  claude:
+    sdk: 'claude-code'
+    auth:
+      api_key: '${ANTHROPIC_API_KEY}'
 
 triggers:
   - type: schedule
-    cron: "0 6 * * 1"  # Every Monday at 6 AM
-    timezone: "UTC"
+    cron: '0 10 * * 1' # 10 AM every Monday
+    timezone: 'America/New_York'
 
 inputs:
   repo:
     type: string
     required: true
-    description: "Repository in owner/repo format"
+    description: 'Repository in owner/repo format'
   package_manager:
     type: string
-    enum: ["npm", "pip", "cargo", "go"]
-    default: "npm"
-    description: "Package manager to use"
-  update_type:
+    enum: ['npm', 'yarn', 'pnpm']
+    default: 'npm'
+    description: 'Package manager to use'
+  notification_channel:
     type: string
-    enum: ["all", "security", "minor", "patch"]
-    default: "minor"
-    description: "Type of updates to apply"
-  auto_merge:
-    type: boolean
-    default: false
-    description: "Automatically merge if CI passes"
+    default: '#engineering'
+    description: 'Slack channel for notifications'
 
 outputs:
   pr_url:
     type: string
-    description: "URL of the created PR"
+    description: 'Created PR URL'
   updates_count:
     type: integer
-    description: "Number of dependencies updated"
-  security_fixes:
-    type: integer
-    description: "Number of security vulnerabilities fixed"
+    description: 'Number of packages updated'
 ---
 
 # Automated Dependency Updates
 
-This workflow checks for outdated dependencies, creates a branch with updates,
-generates a changelog, and opens a pull request.
+This workflow checks for outdated npm packages, analyzes security vulnerabilities, creates an update branch, and opens a PR with a comprehensive changelog.
 
-## Step 1: Clone Repository
+## Step 1: Get Repository
 
-Clone the repository to work with.
-
-```yaml
-action: git.clone
-inputs:
-  repo: "{{ inputs.repo }}"
-  depth: 1
-output_variable: repo_path
-```
-
-## Step 2: Check for Outdated Dependencies
-
-List all outdated dependencies.
+Fetch repository details.
 
 ```yaml
-action: "{{ inputs.package_manager }}.outdated"
+action: github.repos.get
 inputs:
-  path: "{{ repo_path }}"
-  format: "json"
-output_variable: outdated_deps
+  owner: "{{ inputs.repo.split('/')[0] }}"
+  repo: "{{ inputs.repo.split('/')[1] }}"
+output_variable: repo_details
 ```
 
-## Step 3: Check Security Advisories
+## Step 2: Get Current package.json
 
-Check for known security vulnerabilities.
+Fetch the current package.json file.
 
 ```yaml
-action: "{{ inputs.package_manager }}.audit"
+action: github.repos.getContent
 inputs:
-  path: "{{ repo_path }}"
-  format: "json"
-output_variable: security_audit
+  owner: "{{ inputs.repo.split('/')[0] }}"
+  repo: "{{ inputs.repo.split('/')[1] }}"
+  path: 'package.json'
+output_variable: package_json_content
 ```
 
-## Step 4: Filter Updates
+## Step 3: Analyze Outdated Packages
 
-Filter updates based on configuration.
+Use Claude to analyze which packages should be updated.
 
-```yaml
-action: agent.process
+````yaml
+action: claude.chat.completions
 inputs:
-  task: "filter_updates"
-  data:
-    outdated: "{{ outdated_deps }}"
-    security: "{{ security_audit }}"
-    update_type: "{{ inputs.update_type }}"
-  instructions: |
-    Filter the dependency updates based on the update_type:
-    - "all": Include all updates
-    - "security": Only include security fixes
-    - "minor": Include minor and patch updates (no major)
-    - "patch": Only include patch updates
-    
-    Return a list of updates to apply with:
-    - package name
-    - current version
-    - target version
-    - is_security_fix (boolean)
-    - changelog_url if available
-output_variable: updates_to_apply
-```
+  model: 'claude-3-5-sonnet-20241022'
+  messages:
+    - role: 'user'
+      content: |
+        Analyze the following package.json and identify packages that should be updated:
 
-## Step 5: Create Update Branch
+        ```json
+        {{ Buffer.from(package_json_content.data.content, 'base64').toString() }}
+        ```
+
+        Provide a JSON response with:
+        {
+          "updates": [
+            {
+              "package": "package-name",
+              "current": "1.0.0",
+              "latest": "1.1.0",
+              "type": "minor|major|patch",
+              "breaking": boolean,
+              "security": boolean,
+              "priority": "high|medium|low"
+            }
+          ],
+          "summary": "Overall recommendation"
+        }
+output_variable: update_analysis
+````
+
+## Step 4: Create Update Branch
 
 Create a new branch for the updates.
 
 ```yaml
-action: git.create_branch
+action: github.git.createRef
 inputs:
-  path: "{{ repo_path }}"
-  name: "deps/update-{{ now | datetimeformat('%Y%m%d') }}"
-  from: "main"
-output_variable: branch_name
+  owner: "{{ inputs.repo.split('/')[0] }}"
+  repo: "{{ inputs.repo.split('/')[1] }}"
+  ref: 'refs/heads/deps/update-{{ Date.now() }}'
+  sha: '{{ repo_details.data.default_branch.sha }}'
+output_variable: update_branch
 ```
 
-## Step 6: Apply Updates
+## Step 5: Generate Updated package.json
 
-Apply each dependency update.
+Use script to update package versions.
 
 ```yaml
-action: "{{ inputs.package_manager }}.update"
+action: script
 inputs:
-  path: "{{ repo_path }}"
-  packages: "{{ updates_to_apply | map(attribute='name') | list }}"
-output_variable: update_result
+  code: |
+    const pkg = JSON.parse(Buffer.from(context.package_json_content.data.content, 'base64').toString());
+    const updates = JSON.parse(context.update_analysis).updates;
+
+    for (const update of updates) {
+      if (update.priority !== 'low' && !update.breaking) {
+        if (pkg.dependencies && pkg.dependencies[update.package]) {
+          pkg.dependencies[update.package] = `^${update.latest}`;
+        }
+        if (pkg.devDependencies && pkg.devDependencies[update.package]) {
+          pkg.devDependencies[update.package] = `^${update.latest}`;
+        }
+      }
+    }
+
+    return {
+      updated_content: Buffer.from(JSON.stringify(pkg, null, 2)).toString('base64'),
+      update_count: updates.filter(u => u.priority !== 'low' && !u.breaking).length
+    };
+output_variable: updated_package
+```
+
+## Step 6: Commit Updated package.json
+
+Commit the changes to the new branch.
+
+```yaml
+action: github.repos.createOrUpdateFileContents
+inputs:
+  owner: "{{ inputs.repo.split('/')[0] }}"
+  repo: "{{ inputs.repo.split('/')[1] }}"
+  path: 'package.json'
+  message: 'chore(deps): update dependencies'
+  content: '{{ updated_package.updated_content }}'
+  branch: "{{ update_branch.data.ref.split('/').pop() }}"
+output_variable: commit_result
 ```
 
 ## Step 7: Generate Changelog
 
-Generate a changelog for the updates.
+Create a comprehensive changelog using Claude.
 
 ```yaml
-action: agent.generate
+action: claude.chat.completions
 inputs:
-  task: "changelog"
-  data:
-    updates: "{{ updates_to_apply }}"
-  template: |
-    ## Dependency Updates
-    
-    This PR updates {{ updates | length }} dependencies.
-    
-    ### Security Fixes
-    {% for u in updates if u.is_security_fix %}
-    - **{{ u.name }}**: {{ u.current }} → {{ u.target }} (🔒 Security)
-    {% else %}
-    _No security fixes in this update._
-    {% endfor %}
-    
-    ### Other Updates
-    {% for u in updates if not u.is_security_fix %}
-    - **{{ u.name }}**: {{ u.current }} → {{ u.target }}
-    {% else %}
-    _No other updates._
-    {% endfor %}
-    
-    ### Changelogs
-    {% for u in updates if u.changelog_url %}
-    - [{{ u.name }}]({{ u.changelog_url }})
-    {% endfor %}
+  model: 'claude-3-5-sonnet-20241022'
+  messages:
+    - role: 'user'
+      content: |
+        Generate a changelog for these dependency updates:
+
+        {{ update_analysis | json }}
+
+        Format as a markdown document with:
+        - Summary of changes
+        - Breaking changes (if any)
+        - Security fixes
+        - New features
+        - Bug fixes
+        - Grouped by package type
 output_variable: changelog
 ```
 
-## Step 8: Commit Changes
+## Step 8: Create Pull Request
 
-Commit the updated dependency files.
-
-```yaml
-action: git.commit
-inputs:
-  path: "{{ repo_path }}"
-  message: "chore(deps): update {{ updates_to_apply | length }} dependencies"
-  files:
-    - "package.json"
-    - "package-lock.json"
-    - "requirements.txt"
-    - "Cargo.toml"
-    - "Cargo.lock"
-    - "go.mod"
-    - "go.sum"
-output_variable: commit_result
-```
-
-## Step 9: Push Branch
-
-Push the update branch to the remote.
+Open a PR with the updates.
 
 ```yaml
-action: git.push
+action: github.pulls.create
 inputs:
-  path: "{{ repo_path }}"
-  branch: "{{ branch_name }}"
-output_variable: push_result
+  owner: "{{ inputs.repo.split('/')[0] }}"
+  repo: "{{ inputs.repo.split('/')[1] }}"
+  title: 'chore(deps): update dependencies - {{ updated_package.update_count }} packages'
+  head: "{{ update_branch.data.ref.split('/').pop() }}"
+  base: '{{ repo_details.data.default_branch }}'
+  body: |
+    ## 📦 Dependency Updates
+
+    This PR updates {{ updated_package.update_count }} packages to their latest compatible versions.
+
+    {{ changelog }}
+
+    ## ✅ Checklist
+
+    - [ ] All tests pass
+    - [ ] No breaking changes
+    - [ ] Security vulnerabilities addressed
+
+    ---
+    *Generated by marktoflow v2.0*
+output_variable: pull_request
 ```
 
-## Step 10: Create Pull Request
+## Step 9: Notify Team
 
-Open a PR with the dependency updates.
+Post notification to Slack.
 
 ```yaml
-action: github.create_pull_request
+action: slack.chat.postMessage
 inputs:
-  repo: "{{ inputs.repo }}"
-  title: "chore(deps): Update {{ updates_to_apply | length }} dependencies"
-  body: "{{ changelog }}"
-  head: "{{ branch_name }}"
-  base: "main"
-  labels:
-    - dependencies
-    - automated
-  reviewers: []
-  draft: false
-output_variable: pr_result
+  channel: '{{ inputs.notification_channel }}'
+  text: 'Dependency Update PR Created'
+  blocks:
+    - type: header
+      text:
+        type: plain_text
+        text: '📦 Dependency Update PR'
+    - type: section
+      text:
+        type: mrkdwn
+        text: |
+          *Repository:* {{ inputs.repo }}
+          *Updates:* {{ updated_package.update_count }} packages
+          *PR:* <{{ pull_request.data.html_url }}|#{{ pull_request.data.number }}>
+    - type: actions
+      elements:
+        - type: button
+          text:
+            type: plain_text
+            text: 'Review PR'
+          url: '{{ pull_request.data.html_url }}'
+          style: 'primary'
+output_variable: notification
 ```
 
-## Step 11: Enable Auto-Merge
-
-Enable auto-merge if configured and CI passes.
-
-```yaml
-action: github.enable_auto_merge
-inputs:
-  repo: "{{ inputs.repo }}"
-  pr_number: "{{ pr_result.number }}"
-  merge_method: "squash"
-output_variable: auto_merge_result
-condition: "inputs.auto_merge == true"
-```
-
-## Step 12: Set Outputs
+## Step 10: Set Outputs
 
 ```yaml
 action: workflow.set_outputs
 inputs:
-  pr_url: "{{ pr_result.html_url }}"
-  updates_count: "{{ updates_to_apply | length }}"
-  security_fixes: "{{ updates_to_apply | selectattr('is_security_fix') | list | length }}"
+  pr_url: '{{ pull_request.data.html_url }}'
+  updates_count: '{{ updated_package.update_count }}'
 ```

@@ -1,71 +1,196 @@
-# GEMINI.md - Automation Framework Port Status
+# GEMINI.md - TypeScript v2.0 Status
 
-This file tracks the progress and state of the TypeScript v2.0 port for the Gemini CLI agent.
-
----
-
-## Current Status: Porting Phase
-
-**Last Updated:** 2026-01-23
-
-### Core Progress
-- [x] Monorepo setup (pnpm + turbo)
-- [x] Core package foundation (Parser, Engine, Models, State, Logging, Scheduler, Webhook)
-- [x] 56 passing tests in `packages/core`
-- [x] CLI package (init, run, workflow, connect, doctor, version)
-- [x] Integrations package initialization
-
-### Parity Progress (Python v1.0 -> TS v2.0)
-- [x] Slack Integration (@slack/web-api) - *Moved to `services/`*
-- [x] GitHub Integration (@octokit/rest) - *Moved to `services/`*
-- [x] Jira Integration (jira.js) - *Moved to `services/`*
-- [x] Ollama Integration (ollama) - *Moved to `adapters/`*
-- [x] Claude Code CLI Integration (Subprocess wrapper) - *Moved to `adapters/`*
-- [x] OpenCode CLI/Server Integration (Manual fetch + @opencode-ai/sdk) - *Verified working in CLI mode*
-- [x] Script Tool (Executable script runner) - *Moved to `tools/`*
-- [x] File Watcher Trigger
-- [x] Queue Integration (Redis/RabbitMQ)
+This file tracks the current state of the marktoflow v2.0 TypeScript implementation.
 
 ---
 
-## Code Structure Update
+## Current Status: ✅ Feature Parity Achieved
 
-Integrations have been reorganized by type:
-- `packages/integrations/src/adapters/`: AI Agents (Ollama, OpenCode, Claude Code)
-- `packages/integrations/src/services/`: External APIs (Slack, GitHub, Jira)
-- `packages/integrations/src/tools/`: Generic tools (Script)
+**Last Updated:** 2026-01-24
 
-## Key Fixes & Tools
-- **OpenCode CLI Fix**: Resolved a hang in `opencode run` by correctly handling `stdin` in `spawn`.
-- **marktoflow Executable**: Created a local symlink `./marktoflow` pointing to the CLI entry point.
-
-## Next Steps
-
-1.  **State Persistence Integration**: Wire `WorkflowEngine` to `StateStore` to ensure resumption after failure.
-2.  **Webhook Server**: Implement Express/Fastify server in `trigger` command.
-3.  **Secrets Management**: Evaluate if credential encryption port is needed.
+**Test Status:** 145 tests passing (89 core + 48 integrations + 8 CLI)
 
 ---
 
-## Next Steps
+## Implementation Complete
 
-1.  **OpenCode SDK Integration**: Refactor `opencode.ts` to use `@opencode-ai/sdk` for server communication.
-2.  **Script Tool Implementation**: Port `ScriptTool` from Python to `packages/core` or `packages/integrations`.
-3.  **File Watcher Trigger**: Port `filewatcher.py` to TypeScript (likely using `chokidar`).
-4.  **Feature Parity Audit**: Review Python modules for missing small features.
-5.  **Documentation**: Update README and examples for v2.0 usage.
+### Core Features ✅
+
+- [x] Monorepo setup (pnpm + turborepo)
+- [x] Workflow parser (YAML frontmatter + markdown)
+- [x] Execution engine with retry/circuit breaker/failover
+- [x] State persistence (SQLite)
+- [x] Execution logging
+- [x] Scheduler (cron-based)
+- [x] Webhook receiver with signature verification
+- [x] File system watcher
+- [x] Queue system (Redis/RabbitMQ/InMemory)
+- [x] RBAC and permissions
+- [x] Approval workflows
+- [x] Audit logging
+- [x] Cost tracking and budget management
+- [x] Plugin system with 17 hook types
+- [x] Workflow templates
+- [x] Agent routing and selection
+- [x] Credential encryption (Fernet/Age/GPG)
+- [x] Tool registry (MCP/OpenAPI/Custom)
+- [x] Rollback/compensation framework
+
+### CLI Commands ✅
+
+- [x] `marktoflow init` - Project initialization
+- [x] `marktoflow run` - Workflow execution
+- [x] `marktoflow workflow list/validate/show`
+- [x] `marktoflow connect <service>` - OAuth setup
+- [x] `marktoflow doctor` - Environment check
+- [x] `marktoflow agent` - Agent management commands
+- [x] `marktoflow tools` - Tool registry/inspection commands
+- [x] `marktoflow schedule` - Scheduler management commands
+- [x] `marktoflow bundle` - Workflow bundle commands
+- [x] `marktoflow template` - Workflow template commands
+- [x] `marktoflow worker` - Start workflow worker
+- [x] `marktoflow trigger` - Start trigger service
+
+### Native Integrations ✅
+
+**Services (11):**
+
+- [x] **Slack** (`@slack/web-api`) - Messages, channels, Socket Mode triggers
+- [x] **GitHub** (`@octokit/rest`) - PRs, issues, repos, webhooks
+- [x] **Jira** (`jira.js`) - Issues, sprints, JQL search
+- [x] **Gmail** (`googleapis`) - Send/receive emails, Pub/Sub triggers
+- [x] **Outlook** (`@microsoft/microsoft-graph-client`) - Emails, calendar, Graph subscriptions
+- [x] **Linear** (`linear`) - Issues, projects, GraphQL API
+- [x] **Notion** (`notion`) - Pages, databases, blocks
+- [x] **Discord** (`discord`) - Messages, threads, webhooks
+- [x] **Airtable** (`airtable`) - Records, batch operations
+- [x] **Confluence** (`confluence`) - Pages, spaces, CQL search
+- [x] **HTTP** (`http`) - Generic REST/GraphQL client
+
+**AI Agents (3):**
+
+- [x] **Ollama** (`ollama`) - Local LLM execution
+- [x] **Claude Code** (`claude-code`) - CLI wrapper
+- [x] **OpenCode** (`opencode`) - SDK + CLI integration
+
+**Tools:**
+
+- [x] **Script** (`script`) - Execute local scripts
+- [x] **MCP** - Native MCP server support
+- [x] **OpenAPI** - OpenAPI spec tool loader
+
+### OAuth Flows ✅
+
+- [x] Gmail OAuth 2.0 (`marktoflow connect gmail`)
+- [x] Outlook OAuth 2.0 (`marktoflow connect outlook`)
+
+---
+
+## Package Structure
+
+```
+packages/
+├── core/                    # 89 tests passing
+│   ├── parser.ts
+│   ├── engine.ts
+│   ├── state.ts
+│   ├── security.ts
+│   ├── costs.ts
+│   ├── plugins.ts
+│   ├── templates.ts
+│   ├── routing.ts
+│   ├── credentials.ts
+│   ├── rollback.ts
+│   └── tools/               # MCP, OpenAPI, Custom
+├── cli/                     # 8 tests passing
+│   ├── index.ts             # All CLI commands
+│   └── oauth.ts             # OAuth flows
+└── integrations/            # 48 tests passing
+    ├── services/            # 11 service integrations
+    ├── adapters/            # 3 AI agents
+    └── tools/               # Script tool
+```
+
+---
+
+## Example Workflows (Updated for v2.0)
+
+All examples rewritten to use native TypeScript SDKs:
+
+- [x] **code-review** - Automated PR reviews with GitHub SDK + Claude AI
+- [x] **daily-standup** - Jira + Slack aggregation (scheduled)
+- [x] **incident-response** - Slack + Jira + PagerDuty coordination (webhook-triggered)
+- [x] **sprint-planning** - AI-powered sprint planning with Jira + Confluence
+- [x] **dependency-update** - Automated npm dependency PRs with GitHub SDK
+
+---
+
+## Migration Complete
+
+### Removed (Python v1.0)
+
+- ❌ `src/` - Python source code
+- ❌ `tests/` - Python test suite (615+ tests)
+- ❌ Python tool scripts in examples
+- ❌ `pyproject.toml`, `requirements.txt`
+- ❌ Python build artifacts
+
+### What Changed
+
+- ✅ No more subprocess spawning for tools
+- ✅ No more agent adapters (direct SDK calls)
+- ✅ No more Python tool scripts
+- ✅ Native MCP support (no bridge needed)
+- ✅ Full TypeScript type safety
+
+### What's New in v2.0
+
+- ✅ 11 native service integrations (vs 0 in Python)
+- ✅ OAuth CLI flows (Gmail, Outlook)
+- ✅ Direct SDK method calls in workflows
+- ✅ Better error messages
+- ✅ Faster execution (no subprocess overhead)
+
+---
+
+## Remaining Work
+
+### Test Coverage
+
+- [ ] Expand from 145 tests to 615+ tests
+- [ ] Add integration tests for full workflows
+- [ ] Add end-to-end tests
+- [ ] Add performance/load tests
+
+### Features
+
+- [ ] Prometheus metrics integration (basic interface exists)
+- [ ] Developer experience (Phase 4):
+  - [ ] `marktoflow new` - Interactive workflow wizard
+  - [ ] Dry-run mode with mocked responses
+  - [ ] Step-by-step debugging
+  - [ ] Hot reload during development
+- [ ] Tunnel support (Phase 3):
+  - [ ] Built-in cloudflared tunnel
+  - [ ] ngrok integration
+  - [ ] Local webhook testing
 
 ---
 
 ## Technical Notes
 
-- **SDK Registry**: Dynamically loads integrations. Supports both traditional SDKs and Native MCP modules.
-- **Native MCP**: Supports in-memory communication with MCP servers exported as NPM packages.
-- **CLI Mode**: Agents like Claude Code and OpenCode still support CLI fallback via subprocesses for ease of local development.
+- **SDK Registry**: Dynamically loads integrations at runtime
+- **Native MCP**: Supports in-memory communication with MCP servers exported as npm packages
+- **OAuth**: Local HTTP server for callback handling, tokens stored in `.marktoflow/credentials/`
+- **Build**: All packages compile successfully with TypeScript strict mode
+- **Tests**: All tests use Vitest, run in parallel
 
 ---
 
 ## References
-- `AGENTS.md` - Agent development guidelines
-- `TODO.md` - Detailed roadmap
-- `PROGRESS.md` - Overall project history
+
+- `AGENTS.md` - Detailed development guidelines
+- `TODO.md` - Full roadmap and remaining work
+- `PROGRESS.md` - Development history
+- `README.md` - Project overview
+- `examples/` - Production-ready workflow templates

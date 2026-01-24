@@ -15,8 +15,7 @@ export class SlackSocketTrigger {
   private app?: App;
   private handlersRegistered = false;
 
-  constructor(private config: SlackSocketTriggerConfig) {
-  }
+  constructor(private config: SlackSocketTriggerConfig) {}
 
   async start(): Promise<void> {
     if (!this.app) {
@@ -24,7 +23,6 @@ export class SlackSocketTrigger {
         token: this.config.botToken,
         appToken: this.config.appToken,
         socketMode: true,
-        authTest: false,
       });
     }
 
@@ -37,7 +35,11 @@ export class SlackSocketTrigger {
         }
         if (trigger.event === 'app_mention') {
           this.app.event('app_mention', async ({ event }) => {
-            await trigger.handler({ type: TriggerType.EVENT, event: 'app_mention', payload: event });
+            await trigger.handler({
+              type: TriggerType.EVENT,
+              event: 'app_mention',
+              payload: event,
+            });
           });
         }
       }

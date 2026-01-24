@@ -1,4 +1,4 @@
-import { Client, PageCollection, PageIterator } from '@microsoft/microsoft-graph-client';
+import { Client, PageCollection } from '@microsoft/microsoft-graph-client';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 
 export interface OutlookEmail {
@@ -119,9 +119,10 @@ function normalizeRecipients(
   return [];
 }
 
-function parseRecipient(r: {
-  emailAddress?: { name?: string; address?: string };
-}): { name: string; address: string } {
+function parseRecipient(r: { emailAddress?: { name?: string; address?: string } }): {
+  name: string;
+  address: string;
+} {
   return {
     name: r.emailAddress?.name ?? '',
     address: r.emailAddress?.address ?? '',
@@ -173,7 +174,9 @@ function parseEvent(evt: Record<string, unknown>): CalendarEvent {
     emailAddress?: { name?: string; address?: string };
     type?: string;
   }[];
-  const organizer = evt.organizer as { emailAddress?: { name?: string; address?: string } } | undefined;
+  const organizer = evt.organizer as
+    | { emailAddress?: { name?: string; address?: string } }
+    | undefined;
 
   return {
     id: (evt.id as string) ?? '',
@@ -347,7 +350,9 @@ export class OutlookActions {
     bodyType: 'text' | 'html' = 'text',
     replyAll: boolean = false
   ): Promise<void> {
-    const endpoint = replyAll ? `/me/messages/${messageId}/replyAll` : `/me/messages/${messageId}/reply`;
+    const endpoint = replyAll
+      ? `/me/messages/${messageId}/replyAll`
+      : `/me/messages/${messageId}/reply`;
 
     await this.client.api(endpoint).post({
       message: {
@@ -431,7 +436,14 @@ export class OutlookActions {
    * Get calendar events
    */
   async getEvents(options: GetEventsOptions = {}): Promise<CalendarEvent[]> {
-    const { startDateTime, endDateTime, top = 10, skip, filter, orderBy = 'start/dateTime' } = options;
+    const {
+      startDateTime,
+      endDateTime,
+      top = 10,
+      skip,
+      filter,
+      orderBy = 'start/dateTime',
+    } = options;
 
     let request = this.client
       .api('/me/events')
@@ -553,10 +565,7 @@ export class OutlookActions {
   /**
    * Update a calendar event
    */
-  async updateEvent(
-    id: string,
-    updates: Partial<CreateEventOptions>
-  ): Promise<CalendarEvent> {
+  async updateEvent(id: string, updates: Partial<CreateEventOptions>): Promise<CalendarEvent> {
     const patch: Record<string, unknown> = {};
 
     if (updates.subject !== undefined) patch.subject = updates.subject;

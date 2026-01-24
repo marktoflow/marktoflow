@@ -216,7 +216,7 @@ export class CostTracker {
     return record;
   }
 
-  private checkLimits(record: CostRecord): void {
+  private checkLimits(_record: CostRecord): void {
     for (const limit of this.limits) {
       const currentCost = this.calculateLimitUsage(limit);
       const percentage = limit.maxCost > 0 ? (currentCost / limit.maxCost) * 100 : 0;

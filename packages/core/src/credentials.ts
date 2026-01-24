@@ -4,15 +4,14 @@
  * Provides secure credential storage with encryption support for:
  * - Age encryption (external binary)
  * - GPG encryption (external binary)
- * - Fernet encryption (built-in via npm package)
+ * - Fernet encryption (built-in via Node crypto)
  */
 
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createCipheriv, createDecipheriv, createHmac } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import Database from 'better-sqlite3';
-import { Secret, Token } from 'fernet';
 
 export enum EncryptionBackend {
   AGE = 'age',
@@ -54,43 +53,135 @@ export interface Encryptor {
   generateKey(): string;
 }
 
+/**
+ * Fernet-compatible encryption using Node's built-in crypto.
+ *
+ * Fernet format:
+ * - Version (1 byte): 0x80
+ * - Timestamp (8 bytes): big-endian seconds since epoch
+ * - IV (16 bytes): random initialization vector
+ * - Ciphertext: AES-128-CBC encrypted, PKCS7 padded
+ * - HMAC (32 bytes): SHA256 HMAC of version || timestamp || iv || ciphertext
+ *
+ * Key format: URL-safe base64 encoded 32 bytes (16 bytes signing key + 16 bytes encryption key)
+ */
 export class FernetEncryptor implements Encryptor {
-  private key: string | null;
+  private signingKey: Buffer | null = null;
+  private encryptionKey: Buffer | null = null;
 
   constructor(key?: string, keyFile?: string) {
     if (key) {
-      this.key = key;
+      this.setKey(key);
     } else if (keyFile && existsSync(keyFile)) {
-      this.key = readFileSync(keyFile, 'utf8').trim();
-    } else {
-      this.key = null;
+      this.setKey(readFileSync(keyFile, 'utf8').trim());
     }
   }
 
-  private getSecret(): Secret {
-    if (!this.key) {
-      throw new KeyNotFoundError('No Fernet key configured');
+  private decodeKey(key: string): { signingKey: Buffer; encryptionKey: Buffer } {
+    // Handle URL-safe base64
+    const base64 = key.replace(/-/g, '+').replace(/_/g, '/');
+    const keyBuffer = Buffer.from(base64, 'base64');
+
+    if (keyBuffer.length !== 32) {
+      throw new KeyNotFoundError(`Invalid Fernet key length: expected 32 bytes, got ${keyBuffer.length}`);
     }
-    return new Secret(this.key);
+
+    return {
+      signingKey: keyBuffer.subarray(0, 16),
+      encryptionKey: keyBuffer.subarray(16, 32),
+    };
+  }
+
+  setKey(key: string): void {
+    const { signingKey, encryptionKey } = this.decodeKey(key);
+    this.signingKey = signingKey;
+    this.encryptionKey = encryptionKey;
   }
 
   encrypt(plaintext: string): string {
-    const token = new Token({
-      secret: this.getSecret(),
-      time: Math.floor(Date.now() / 1000),
-    });
-    return token.encode(plaintext);
+    if (!this.signingKey || !this.encryptionKey) {
+      throw new KeyNotFoundError('No Fernet key configured');
+    }
+
+    const version = Buffer.from([0x80]);
+    const timestamp = Buffer.alloc(8);
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    timestamp.writeBigUInt64BE(now);
+
+    const iv = randomBytes(16);
+
+    // Encrypt with AES-128-CBC
+    const cipher = createCipheriv('aes-128-cbc', this.encryptionKey, iv);
+    const ciphertext = Buffer.concat([
+      cipher.update(plaintext, 'utf8'),
+      cipher.final(),
+    ]);
+
+    // Create token without HMAC
+    const tokenWithoutHmac = Buffer.concat([version, timestamp, iv, ciphertext]);
+
+    // Calculate HMAC
+    const hmac = createHmac('sha256', this.signingKey)
+      .update(tokenWithoutHmac)
+      .digest();
+
+    // Final token
+    const token = Buffer.concat([tokenWithoutHmac, hmac]);
+
+    // Return URL-safe base64
+    return token.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
   }
 
   decrypt(ciphertext: string): string {
+    if (!this.signingKey || !this.encryptionKey) {
+      throw new KeyNotFoundError('No Fernet key configured');
+    }
+
     try {
-      const token = new Token({
-        secret: this.getSecret(),
-        token: ciphertext,
-        ttl: 0,
-      });
-      return token.decode();
+      // Decode URL-safe base64
+      const base64 = ciphertext.replace(/-/g, '+').replace(/_/g, '/');
+      const token = Buffer.from(base64, 'base64');
+
+      if (token.length < 57) {
+        // 1 + 8 + 16 + 16 (min ciphertext) + 32 (hmac) = 73, but can be less with small plaintext
+        throw new EncryptionError('Token too short');
+      }
+
+      // Parse token
+      const version = token[0];
+      if (version !== 0x80) {
+        throw new EncryptionError(`Invalid Fernet version: ${version}`);
+      }
+
+      const hmacOffset = token.length - 32;
+      const tokenWithoutHmac = token.subarray(0, hmacOffset);
+      const providedHmac = token.subarray(hmacOffset);
+
+      // Verify HMAC
+      const expectedHmac = createHmac('sha256', this.signingKey)
+        .update(tokenWithoutHmac)
+        .digest();
+
+      if (!providedHmac.equals(expectedHmac)) {
+        throw new EncryptionError('HMAC verification failed');
+      }
+
+      // Extract IV and ciphertext
+      const iv = token.subarray(9, 25);
+      const encryptedData = token.subarray(25, hmacOffset);
+
+      // Decrypt
+      const decipher = createDecipheriv('aes-128-cbc', this.encryptionKey, iv);
+      const decrypted = Buffer.concat([
+        decipher.update(encryptedData),
+        decipher.final(),
+      ]);
+
+      return decrypted.toString('utf8');
     } catch (error) {
+      if (error instanceof EncryptionError || error instanceof KeyNotFoundError) {
+        throw error;
+      }
       throw new EncryptionError(`Decryption failed: ${String(error)}`);
     }
   }
@@ -100,11 +191,9 @@ export class FernetEncryptor implements Encryptor {
   }
 
   generateKey(): string {
-    return randomBytes(32).toString('base64');
-  }
-
-  setKey(key: string): void {
-    this.key = key;
+    // Generate 32 random bytes and encode as URL-safe base64
+    const key = randomBytes(32);
+    return key.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
   }
 }
 
@@ -197,7 +286,8 @@ export class AgeEncryptor implements Encryptor {
 export class GPGEncryptor implements Encryptor {
   constructor(
     private recipient?: string,
-    private keyId?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _keyId?: string,
     private passphrase?: string,
     private symmetric: boolean = false
   ) {}
@@ -494,10 +584,10 @@ export class CredentialManager {
       name,
       value: newValue,
       credentialType: existing.credentialType,
-      description: existing.description,
-      metadata: existing.metadata,
-      expiresAt: existing.expiresAt,
-      tags: existing.tags,
+      ...(existing.description !== undefined && { description: existing.description }),
+      ...(existing.metadata !== undefined && { metadata: existing.metadata }),
+      ...(existing.expiresAt !== undefined && { expiresAt: existing.expiresAt }),
+      ...(existing.tags !== undefined && { tags: existing.tags }),
     });
   }
 

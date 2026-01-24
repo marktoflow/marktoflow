@@ -11,6 +11,7 @@ This file tracks the TypeScript rewrite of marktoflow for native MCP support and
 **Rationale:** See `FRAMEWORK_ANALYSIS.md` for full analysis.
 
 Key reasons for TypeScript:
+
 1. **MCP Ecosystem is npm-native** - All MCP servers are npm packages
 2. **Better official SDKs** - Slack, Jira, Microsoft Graph, GitHub are primarily Node.js
 3. **Simpler tool integration** - Just import and use, no subprocess bridging
@@ -21,32 +22,35 @@ Key reasons for TypeScript:
 ## v2.0 Architecture Goals
 
 ### 1. Native MCP Support
+
 - Direct import of MCP server packages
 - No subprocess spawning or JSON-RPC bridging
 - Hot-reload of MCP servers
 
 ### 2. Direct SDK References in YAML
+
 ```yaml
 # Workflow can directly reference SDKs
 tools:
   slack:
-    sdk: "@slack/web-api"
+    sdk: '@slack/web-api'
     auth:
-      token: "${SLACK_BOT_TOKEN}"
+      token: '${SLACK_BOT_TOKEN}'
 
   anthropic:
-    sdk: "@anthropic-ai/sdk"
+    sdk: '@anthropic-ai/sdk'
     auth:
-      api_key: "${ANTHROPIC_API_KEY}"
+      api_key: '${ANTHROPIC_API_KEY}'
 
 steps:
   - action: slack.chat.postMessage
     inputs:
-      channel: "#general"
-      text: "Hello from marktoflow!"
+      channel: '#general'
+      text: 'Hello from marktoflow!'
 ```
 
 ### 3. Simple Installation
+
 ```bash
 npx marktoflow init
 npx marktoflow connect slack  # OAuth flow
@@ -58,6 +62,7 @@ npx marktoflow run workflow.md
 ## Phase 1: Foundation (TypeScript Core)
 
 ### Project Setup
+
 - [x] Initialize TypeScript monorepo (pnpm/turborepo)
 - [x] Create package structure:
   ```
@@ -71,6 +76,7 @@ npx marktoflow run workflow.md
 - [x] Create CI/CD pipeline
 
 ### Core Engine (Port from Python)
+
 - [x] Data models (Workflow, Step, Context, Result)
 - [x] Workflow parser (YAML frontmatter + markdown)
 - [x] Step executor with retry/circuit breaker
@@ -85,6 +91,7 @@ npx marktoflow run workflow.md
 - [x] Rollback/compensation framework (transaction + file/git handlers)
 
 ### CLI (Port from Python)
+
 - [x] `marktoflow init` - Project initialization
 - [x] `marktoflow run` - Workflow execution
 - [x] `marktoflow workflow list/validate/show`
@@ -101,12 +108,14 @@ npx marktoflow run workflow.md
 ## Phase 2: Native Integrations
 
 ### MCP Integration
+
 - [x] MCP server loader (npm package management)
 - [x] Direct MCP server imports
 - [x] MCP tool discovery and schema extraction
 - [x] MCP server lifecycle management
 
 ### Built-in Integrations (via SDKs)
+
 - [x] **Slack** (`@slack/web-api`, `@slack/bolt`)
   - Actions: send_message, create_channel, get_messages
   - Triggers: message_received, app_mention (Socket Mode)
@@ -131,6 +140,7 @@ npx marktoflow run workflow.md
   - [x] OAuth 2.0 with Microsoft (CLI flow via `marktoflow connect outlook`)
 
 ### Additional Integrations
+
 - [x] **Linear** (`linear`)
   - GraphQL API client
   - Actions: getIssue, createIssue, updateIssue, searchIssues, addComment, archiveIssue
@@ -157,6 +167,7 @@ npx marktoflow run workflow.md
   - GraphQL client helper
 
 ### AI SDKs (Direct YAML Reference)
+
 - [x] **Anthropic** (`@anthropic-ai/sdk` via Claude Code CLI wrapper)
   - Direct Claude API access
   - Streaming support
@@ -173,12 +184,14 @@ npx marktoflow run workflow.md
 ## Phase 3: Triggers & Events
 
 ### Trigger System
+
 - [x] Unified trigger manager
 - [x] Cron-based scheduling (node-cron/custom scheduler)
 - [x] Webhook receiver (Express/Fastify/custom)
 - [x] File system watcher (chokidar)
 
 ### External Triggers
+
 - [x] Slack Socket Mode (real-time messages)
 - [x] Gmail Pub/Sub (email notifications) (webhook endpoint + trigger handler)
 - [x] GitHub webhooks (via webhook receiver)
@@ -186,6 +199,7 @@ npx marktoflow run workflow.md
 - [x] Webhook trigger support with Slack/GitHub signature verification
 
 ### Tunnel Support (Development)
+
 - [ ] Built-in cloudflared tunnel
 - [ ] ngrok integration
 - [ ] Local webhook testing
@@ -195,18 +209,21 @@ npx marktoflow run workflow.md
 ## Phase 4: Developer Experience
 
 ### Workflow Authoring
+
 - [ ] `marktoflow new` - Interactive workflow wizard
 - [ ] Dry-run mode with mocked responses
 - [ ] Step-by-step debugging
 - [ ] Hot reload during development
 
 ### Quick Start Presets
+
 - [ ] Email-to-Jira workflow
 - [ ] Slack notifications
 - [ ] GitHub PR automation
 - [ ] Daily digest generator
 
 ### Documentation
+
 - [ ] Getting started guide
 - [ ] Integration setup guides
 - [ ] YAML reference
@@ -217,6 +234,7 @@ npx marktoflow run workflow.md
 ## Phase 5: Production Features
 
 ### From Python v1.0 (Port if needed)
+
 - [x] RBAC and permissions
 - [x] Approval workflows
 - [x] Audit logging
@@ -230,6 +248,8 @@ npx marktoflow run workflow.md
 - [x] Env-based config + CLI config defaults (marktoflow.yaml parity)
 
 ### New Features
+
+- [ ] Prometheus metrics integration (Python v1.0 had this)
 - [ ] Visual workflow editor (web UI)
 - [ ] Workflow marketplace
 - [ ] Team collaboration
@@ -237,21 +257,52 @@ npx marktoflow run workflow.md
 
 ---
 
+## Phase 6: Quality & Testing
+
+### Test Coverage
+
+- [ ] Expand test suite (current: 145 tests, Python had 615+)
+  - [x] Core package: 89 tests
+  - [x] Integrations package: 48 tests
+  - [x] CLI package: 8 tests
+  - [ ] Add integration tests for workflows
+  - [ ] Add end-to-end tests
+  - [ ] Add performance/load tests
+  - [ ] Add security tests
+
+### Missing Test Coverage
+
+- [ ] Full workflow execution scenarios
+- [ ] Multi-agent workflows
+- [ ] Error handling and recovery paths
+- [ ] Concurrent execution
+- [ ] Large-scale state management
+- [ ] Plugin lifecycle
+- [ ] Template instantiation edge cases
+- [ ] Cost tracking accuracy
+- [ ] RBAC edge cases
+- [ ] Webhook signature verification edge cases
+
+---
+
 ## Migration Notes
 
 ### What to Keep from Python
+
 - Workflow YAML format (compatible)
 - Example workflows (convert to new format)
 - Architecture patterns (retry, circuit breaker, failover)
 - Test scenarios (rewrite in Vitest)
 
 ### What Changes
+
 - No agent adapters (direct SDK calls instead)
 - No MCP bridge (native MCP support)
 - No subprocess spawning for tools
 - Simpler tool registration (just import)
 
 ### Breaking Changes
+
 - Python package no longer maintained after v2.0
 - Configuration format changes
 - Some workflow syntax updates for SDK references
@@ -263,6 +314,7 @@ npx marktoflow run workflow.md
 The Python implementation is feature-complete and archived. See `PROGRESS.md` for completed work.
 
 **Final Python Stats:**
+
 - 615+ tests
 - Production-ready features:
   - Scheduling, webhooks, file watching
@@ -271,11 +323,26 @@ The Python implementation is feature-complete and archived. See `PROGRESS.md` fo
   - Plugin system, workflow templates
   - Agent adapters (Claude Code, OpenCode, Ollama)
 
+**TypeScript v2.0 Status:**
+
+- **Core Features**: ✅ Feature parity achieved
+- **Tests**: 145 tests (89 core + 48 integrations + 8 CLI)
+- **Service Integrations**: ✅ 11 native integrations (vs 0 in Python)
+- **Missing from Python v1.0**:
+  - Prometheus metrics integration (basic metrics interface exists)
+  - Full test coverage (615 tests → 145 tests)
+- **New in v2.0**:
+  - Native MCP support (no subprocess bridging)
+  - Direct SDK integration in YAML
+  - OAuth flows for Gmail/Outlook
+  - 6 additional service integrations (Linear, Notion, Discord, Airtable, Confluence, HTTP)
+
 ---
 
 ## Quick Reference
 
 ### New Project Structure
+
 ```
 marktoflow/
 ├── packages/
@@ -301,6 +368,7 @@ marktoflow/
 ```
 
 ### Key Dependencies
+
 ```json
 {
   "dependencies": {

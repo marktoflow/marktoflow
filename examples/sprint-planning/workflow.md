@@ -1,366 +1,266 @@
 ---
 workflow:
   id: sprint-planning
-  name: "Sprint Planning Assistant"
-  version: "1.0.0"
-  description: "Automates sprint planning tasks including capacity planning, story refinement, and sprint creation"
-  author: "marktoflow"
+  name: 'Automated Sprint Planning'
+  version: '2.0.0'
+  description: 'Automates sprint planning with velocity analysis and story selection'
+  author: 'marktoflow'
   tags:
-    - project-management
-    - jira
     - agile
-    - sprint
-
-compatibility:
-  agents:
-    - claude-code: recommended
-    - opencode: supported
-
-requirements:
-  tools:
+    - planning
     - jira
-    - confluence
-    - slack
-  features:
-    - tool_calling: required
+
+tools:
+  jira:
+    sdk: 'jira.js'
+    auth:
+      host: '${JIRA_HOST}'
+      email: '${JIRA_EMAIL}'
+      apiToken: '${JIRA_API_TOKEN}'
+
+  confluence:
+    sdk: 'confluence'
+    auth:
+      host: '${CONFLUENCE_HOST}'
+      username: '${CONFLUENCE_EMAIL}'
+      apiToken: '${CONFLUENCE_API_TOKEN}'
+
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+  claude:
+    sdk: 'claude-code'
+    auth:
+      api_key: '${ANTHROPIC_API_KEY}'
 
 triggers:
   - type: schedule
-    cron: "0 9 * * 1"  # Every Monday at 9 AM
-    timezone: "America/New_York"
-  - type: webhook
-    path: /webhooks/sprint/start
-    events:
-      - sprint.planning.requested
+    cron: '0 14 * * 5' # 2 PM every Friday
+    timezone: 'America/New_York'
 
 inputs:
   project_key:
     type: string
     required: true
-    description: "JIRA project key (e.g., PROJ)"
-  sprint_duration_weeks:
-    type: integer
-    default: 2
-    description: "Sprint duration in weeks"
+    description: 'Jira project key'
   team_members:
     type: array
     required: true
-    description: "List of team member usernames"
-  velocity_sprints:
+    description: 'List of team member names'
+  sprint_duration:
     type: integer
-    default: 3
-    description: "Number of past sprints to calculate velocity"
-  planning_channel:
+    default: 14
+    description: 'Sprint duration in days'
+  team_channel:
     type: string
-    default: "#sprint-planning"
-    description: "Slack channel for planning updates"
+    default: '#engineering'
+    description: 'Slack channel to notify'
 
 outputs:
   sprint_id:
     type: string
-    description: "Created sprint ID"
-  sprint_goal:
-    type: string
-    description: "Generated sprint goal"
-  committed_points:
+    description: 'Created sprint ID'
+  selected_stories:
     type: integer
-    description: "Total story points committed"
-  capacity_percentage:
-    type: number
-    description: "Team capacity utilization percentage"
+    description: 'Number of stories selected'
+  estimated_points:
+    type: integer
+    description: 'Total story points'
 ---
 
-# Sprint Planning Assistant
+# Automated Sprint Planning
 
-This workflow automates the sprint planning process by analyzing team capacity,
-calculating velocity, suggesting stories for the sprint, and creating the sprint
-in JIRA with appropriate goals and documentation.
+This workflow analyzes past sprint velocity, selects appropriate stories for the upcoming sprint, and documents the sprint plan in Confluence.
 
-## Step 1: Get Backlog Items
+## Step 1: Analyze Team Velocity
 
-Fetch prioritized backlog items ready for sprint planning.
+Get completed story points from the last 3 sprints.
 
 ```yaml
-action: jira.search
+action: jira.issueSearch.searchForIssuesUsingJql
 inputs:
-  jql: |
-    project = {{ inputs.project_key }} 
-    AND sprint IS EMPTY 
-    AND status = "Ready for Development"
-    AND "Story Points" IS NOT EMPTY
-    ORDER BY Rank ASC
+  jql: 'project = {{ inputs.project_key }} AND sprint in closedSprints() ORDER BY sprint DESC'
   fields:
-    - summary
-    - description
-    - issuetype
-    - priority
-    - customfield_10016  # Story Points
-    - labels
-    - components
-    - assignee
-  max_results: 50
-output_variable: backlog_items
+    - customfield_10016 # Story points
+    - sprint
+    - status
+  maxResults: 100
+output_variable: past_sprints
 ```
 
-## Step 2: Get Previous Sprint Data
+## Step 2: Calculate Average Velocity
 
-Analyze previous sprints for velocity calculation.
-
-```yaml
-action: jira.get_sprints
-inputs:
-  project: "{{ inputs.project_key }}"
-  state: "closed"
-  max_results: "{{ inputs.velocity_sprints }}"
-output_variable: previous_sprints
-```
-
-## Step 3: Calculate Team Velocity
-
-Calculate average velocity from past sprints.
+Use Claude to analyze velocity trends.
 
 ```yaml
-action: jira.get_sprint_report
+action: claude.chat.completions
 inputs:
-  sprint_ids: "{{ previous_sprints | map(attribute='id') | list }}"
-output_variable: sprint_reports
-```
+  model: 'claude-3-5-sonnet-20241022'
+  messages:
+    - role: 'user'
+      content: |
+        Analyze the following sprint data and calculate the team's average velocity:
 
-## Step 4: Get Team Availability
+        {{ past_sprints.issues | json }}
 
-Check team member availability for the upcoming sprint.
-
-```yaml
-action: agent.process
-inputs:
-  task: "calculate_capacity"
-  data:
-    team_members: "{{ inputs.team_members }}"
-    sprint_weeks: "{{ inputs.sprint_duration_weeks }}"
-  instructions: |
-    Calculate team capacity for the sprint:
-    - Standard capacity: 8 hours/day, 5 days/week per person
-    - Account for typical meeting overhead (20%)
-    - Return total available hours and person-days
-output_variable: team_capacity
-```
-
-## Step 5: Analyze Velocity and Recommend Commitment
-
-Use AI to analyze velocity trends and recommend sprint commitment.
-
-```yaml
-action: agent.analyze
-inputs:
-  task: "velocity_analysis"
-  context:
-    sprint_reports: "{{ sprint_reports }}"
-    team_capacity: "{{ team_capacity }}"
-    backlog: "{{ backlog_items }}"
-  instructions: |
-    Analyze the team's velocity from past sprints:
-    
-    1. Calculate average velocity (story points completed)
-    2. Identify velocity trends (increasing, stable, decreasing)
-    3. Factor in any capacity changes for upcoming sprint
-    4. Recommend a sustainable commitment level
-    5. Flag any risks or concerns
-    
-    Return:
-    - average_velocity: number
-    - velocity_trend: string
-    - recommended_points: number
-    - confidence: high/medium/low
-    - risks: array of strings
+        Provide a JSON response with:
+        {
+          "average_velocity": number,
+          "velocity_trend": "increasing|stable|decreasing",
+          "recommended_capacity": number,
+          "confidence": "high|medium|low"
+        }
 output_variable: velocity_analysis
 ```
 
-## Step 6: Select Stories for Sprint
+## Step 3: Get Backlog Stories
 
-Recommend stories to include in the sprint based on priority and capacity.
+Fetch prioritized backlog items.
 
 ```yaml
-action: agent.process
+action: jira.issueSearch.searchForIssuesUsingJql
 inputs:
-  task: "story_selection"
-  data:
-    backlog: "{{ backlog_items }}"
-    recommended_points: "{{ velocity_analysis.recommended_points }}"
-    velocity_analysis: "{{ velocity_analysis }}"
-  instructions: |
-    Select stories for the sprint:
-    
-    1. Start from top of prioritized backlog
-    2. Add stories until reaching recommended points
-    3. Consider story dependencies and groupings
-    4. Ensure mix of story types if possible
-    5. Leave ~10% buffer for unexpected work
-    
-    Return:
-    - selected_stories: array of issue keys
-    - total_points: number
-    - buffer_points: number
-    - groupings: logical groupings of related stories
-output_variable: sprint_selection
+  jql: "project = {{ inputs.project_key }} AND status = 'To Do' AND sprint is EMPTY ORDER BY priority DESC, created ASC"
+  fields:
+    - summary
+    - description
+    - customfield_10016 # Story points
+    - priority
+  maxResults: 50
+output_variable: backlog_stories
 ```
 
-## Step 7: Generate Sprint Goal
+## Step 4: Select Stories for Sprint
 
-Create a meaningful sprint goal based on selected stories.
+Use AI to select appropriate stories based on capacity.
 
 ```yaml
-action: agent.generate
+action: claude.chat.completions
 inputs:
-  task: "sprint_goal"
-  data:
-    stories: "{{ sprint_selection.selected_stories }}"
-    backlog_items: "{{ backlog_items }}"
-  template: |
-    Based on the selected stories, generate a sprint goal that:
-    - Is outcome-focused, not output-focused
-    - Is measurable and achievable
-    - Communicates value to stakeholders
-    - Follows the format: "Enable [users] to [outcome] by [delivering what]"
-    
-    Also provide:
-    - A brief sprint theme (2-3 words)
-    - Key deliverables (bullet points)
-    - Success criteria
-output_variable: sprint_goal_content
+  model: 'claude-3-5-sonnet-20241022'
+  messages:
+    - role: 'user'
+      content: |
+        Select stories for the upcoming sprint based on:
+
+        **Team Capacity:** {{ velocity_analysis.recommended_capacity }} points
+        **Available Stories:**
+        {% for story in backlog_stories.issues %}
+        - [{{ story.key }}] {{ story.fields.summary }} ({{ story.fields.customfield_10016 || '?' }} points)
+        {% endfor %}
+
+        Select stories that:
+        1. Fit within the capacity
+        2. Are highest priority
+        3. Have clear story points
+        4. Balance different types of work
+
+        Return JSON: { "selected_keys": ["KEY-1", "KEY-2"], "total_points": number, "rationale": "..." }
+output_variable: selected_stories
 ```
 
-## Step 8: Create Sprint in JIRA
+## Step 5: Create New Sprint
 
-Create the new sprint with the generated goal.
+Create the sprint in Jira.
 
 ```yaml
-action: jira.create_sprint
+action: jira.sprints.createSprint
 inputs:
-  project: "{{ inputs.project_key }}"
-  name: "Sprint {{ now | datetimeformat('%Y.%m.%d') }}"
-  goal: "{{ sprint_goal_content.goal }}"
-  start_date: "{{ (now + timedelta(days=1)) | datetimeformat('%Y-%m-%d') }}"
-  end_date: "{{ (now + timedelta(weeks=inputs.sprint_duration_weeks)) | datetimeformat('%Y-%m-%d') }}"
+  name: 'Sprint {{ Date.now() }}'
+  startDate: '{{ new Date().toISOString() }}'
+  endDate: '{{ new Date(Date.now() + inputs.sprint_duration * 24 * 60 * 60 * 1000).toISOString() }}'
+  originBoardId: '${JIRA_BOARD_ID}'
 output_variable: new_sprint
 ```
 
-## Step 9: Move Stories to Sprint
+## Step 6: Add Stories to Sprint
 
-Add selected stories to the new sprint.
+Move selected stories to the sprint.
 
 ```yaml
-action: jira.move_issues_to_sprint
+action: jira.sprints.moveIssuesToSprintAndRank
 inputs:
-  sprint_id: "{{ new_sprint.id }}"
-  issues: "{{ sprint_selection.selected_stories }}"
-output_variable: move_result
+  sprintId: '{{ new_sprint.id }}'
+  issues: '{{ selected_stories.selected_keys }}'
+output_variable: sprint_update
 ```
 
-## Step 10: Create Sprint Planning Document
+## Step 7: Create Confluence Sprint Doc
 
-Generate a Confluence page with sprint details.
+Document the sprint plan.
 
 ```yaml
-action: confluence.create_page
+action: confluence.createPage
 inputs:
-  space: "{{ inputs.project_key }}"
-  parent_title: "Sprint Planning"
-  title: "Sprint Planning - {{ now | datetimeformat('%Y-%m-%d') }}"
-  content: |
-    <h1>Sprint Planning Summary</h1>
-    
-    <h2>Sprint Goal</h2>
-    <p><strong>{{ sprint_goal_content.goal }}</strong></p>
-    
-    <h2>Sprint Theme</h2>
-    <p>{{ sprint_goal_content.theme }}</p>
-    
-    <h2>Key Deliverables</h2>
-    <ul>
-    {% for item in sprint_goal_content.deliverables %}
-      <li>{{ item }}</li>
-    {% endfor %}
-    </ul>
-    
-    <h2>Capacity & Commitment</h2>
-    <table>
-      <tr><th>Metric</th><th>Value</th></tr>
-      <tr><td>Team Velocity (Avg)</td><td>{{ velocity_analysis.average_velocity }} pts</td></tr>
-      <tr><td>Recommended Commitment</td><td>{{ velocity_analysis.recommended_points }} pts</td></tr>
-      <tr><td>Actual Commitment</td><td>{{ sprint_selection.total_points }} pts</td></tr>
-      <tr><td>Buffer</td><td>{{ sprint_selection.buffer_points }} pts</td></tr>
-      <tr><td>Capacity Utilization</td><td>{{ (sprint_selection.total_points / velocity_analysis.recommended_points * 100) | round }}%</td></tr>
-    </table>
-    
-    <h2>Stories in Sprint</h2>
-    <table>
-      <tr><th>Key</th><th>Summary</th><th>Points</th><th>Assignee</th></tr>
-    {% for story in backlog_items if story.key in sprint_selection.selected_stories %}
-      <tr>
-        <td><a href="https://jira.company.com/browse/{{ story.key }}">{{ story.key }}</a></td>
-        <td>{{ story.summary }}</td>
-        <td>{{ story.story_points }}</td>
-        <td>{{ story.assignee or 'Unassigned' }}</td>
-      </tr>
-    {% endfor %}
-    </table>
-    
-    <h2>Risks & Notes</h2>
-    <ul>
-    {% for risk in velocity_analysis.risks %}
-      <li>⚠️ {{ risk }}</li>
-    {% endfor %}
-    </ul>
-    
-    <h2>Success Criteria</h2>
-    <ul>
-    {% for criterion in sprint_goal_content.success_criteria %}
-      <li>{{ criterion }}</li>
-    {% endfor %}
-    </ul>
+  spaceKey: 'ENG'
+  title: 'Sprint {{ new_sprint.name }} - Planning'
+  body:
+    storage:
+      value: |
+        <h2>Sprint Goal</h2>
+        <p>{{ selected_stories.rationale }}</p>
+
+        <h2>Capacity</h2>
+        <p>Average Velocity: {{ velocity_analysis.average_velocity }} points</p>
+        <p>Planned: {{ selected_stories.total_points }} points</p>
+
+        <h2>Selected Stories</h2>
+        <ul>
+        {% for key in selected_stories.selected_keys %}
+        <li><ac:structured-macro ac:name="jira"><ac:parameter ac:name="key">{{ key }}</ac:parameter></ac:structured-macro></li>
+        {% endfor %}
+        </ul>
+      representation: 'storage'
 output_variable: confluence_page
 ```
 
-## Step 11: Notify Team on Slack
+## Step 8: Notify Team
 
-Post sprint planning summary to the team channel.
+Post sprint plan to Slack.
 
 ```yaml
-action: slack.post_message
+action: slack.chat.postMessage
 inputs:
-  channel: "{{ inputs.planning_channel }}"
+  channel: '{{ inputs.team_channel }}'
+  text: 'Sprint Planning Complete'
   blocks:
     - type: header
-      text: ":rocket: Sprint Planning Complete"
+      text:
+        type: plain_text
+        text: '🎯 {{ new_sprint.name }} Planning Complete'
     - type: section
       fields:
         - type: mrkdwn
-          text: "*Sprint:* {{ new_sprint.name }}"
+          text: "*Stories:*\n{{ selected_stories.selected_keys.length }}"
         - type: mrkdwn
-          text: "*Duration:* {{ inputs.sprint_duration_weeks }} weeks"
+          text: "*Points:*\n{{ selected_stories.total_points }}"
         - type: mrkdwn
-          text: "*Committed:* {{ sprint_selection.total_points }} story points"
+          text: "*Duration:*\n{{ inputs.sprint_duration }} days"
         - type: mrkdwn
-          text: "*Stories:* {{ sprint_selection.selected_stories | length }}"
-    - type: section
-      text: "*Sprint Goal:* {{ sprint_goal_content.goal }}"
-    - type: divider
-    - type: section
-      text: "*Key Deliverables:*\n{% for item in sprint_goal_content.deliverables %}• {{ item }}\n{% endfor %}"
-    - type: context
+          text: "*Velocity:*\n{{ velocity_analysis.velocity_trend }}"
+    - type: actions
       elements:
-        - type: mrkdwn
-          text: "<{{ confluence_page.url }}|View Sprint Planning Document> | <https://jira.company.com/secure/RapidBoard.jspa?rapidView={{ inputs.project_key }}|Open Sprint Board>"
-output_variable: slack_notification
+        - type: button
+          text:
+            type: plain_text
+            text: 'View Sprint in Jira'
+          url: '{{ new_sprint.self }}'
+        - type: button
+          text:
+            type: plain_text
+            text: 'View Planning Doc'
+          url: '{{ confluence_page._links.webui }}'
+output_variable: notification
 ```
 
-## Step 12: Set Outputs
+## Step 9: Set Outputs
 
 ```yaml
 action: workflow.set_outputs
 inputs:
-  sprint_id: "{{ new_sprint.id }}"
-  sprint_goal: "{{ sprint_goal_content.goal }}"
-  committed_points: "{{ sprint_selection.total_points }}"
-  capacity_percentage: "{{ (sprint_selection.total_points / velocity_analysis.recommended_points * 100) | round }}"
+  sprint_id: '{{ new_sprint.id }}'
+  selected_stories: '{{ selected_stories.selected_keys.length }}'
+  estimated_points: '{{ selected_stories.total_points }}'
 ```

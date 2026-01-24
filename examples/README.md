@@ -1,109 +1,147 @@
-# Example Workflow Bundles
+# Example Workflows
 
-This directory contains example workflow bundles demonstrating the marktoflow framework's self-contained workflow capabilities.
+This directory contains example workflows demonstrating the marktoflow v2.0 TypeScript framework with native SDK integrations.
+
+## What's New in v2.0
+
+All examples have been updated to use **native SDK integrations** instead of Python tool scripts:
+
+- **@slack/web-api** - Official Slack SDK
+- **@octokit/rest** - Official GitHub SDK
+- **jira.js** - Official Jira SDK
+- **googleapis** - Official Google APIs
+- **confluence** - Confluence REST API client
+- **claude-code** / **opencode** - AI agent integrations
+
+No more subprocess bridging or wrapper scripts! Workflows now call SDK methods directly with full type safety.
 
 ## Bundle Structure
 
-Each bundle is a self-contained directory with:
+Each workflow is self-contained with:
 
 ```
-bundle-name/
-├── workflow.md      # Main workflow definition
-├── config.yaml      # Bundle configuration
-├── tools/           # Script tools
-│   ├── tool1.py     # Python tool script
-│   ├── tool2.sh     # Bash tool script
-│   └── ...
-└── tools.yaml       # Tool metadata and schemas
+workflow-name/
+├── workflow.md      # Workflow definition with YAML frontmatter
+└── config.yaml      # Optional: Bundle configuration
 ```
 
 ## Available Examples
 
 ### 1. Code Review (`code-review/`)
 
-Automated code review workflow that:
-- Fetches PR details from GitHub
-- Analyzes code changes for issues
-- Runs security scans
-- Posts review comments
+Automated code review using GitHub API and Claude AI.
 
-**Tools:** `github.py`, `security.py`
+**Integrations:** GitHub, Claude Code
+
+**Features:**
+
+- Fetches PR details and changed files via GitHub SDK
+- AI-powered code analysis for security, performance, quality issues
+- Posts review comments with severity classification
+- Approves or requests changes automatically
 
 ```bash
-marktoflow bundle run examples/code-review --input repo=owner/repo --input pr_number=123
+marktoflow run examples/code-review \
+  --input repo=owner/repo \
+  --input pr_number=123
 ```
 
 ### 2. Daily Standup (`daily-standup/`)
 
-Aggregates team updates and generates daily standup summaries:
-- Fetches JIRA updates from the last 24 hours
-- Gets Slack channel activity
-- Generates AI-powered summary
-- Posts to team channel
+Aggregates team updates from Jira and Slack into an AI-generated standup summary.
 
-**Tools:** `jira.py`, `slack.py`
+**Integrations:** Jira, Slack, Claude Code
+
+**Features:**
+
+- Fetches recent Jira updates and in-progress work
+- Analyzes Slack channel activity
+- Generates formatted standup summary with AI
+- Posts to team channel with rich formatting
 
 ```bash
-marktoflow bundle run examples/daily-standup --input jira_project=PROJ
+marktoflow run examples/daily-standup \
+  --input jira_project=PROJ \
+  --input team_channel=#engineering
 ```
+
+**Scheduled:** Runs automatically at 9 AM weekdays
 
 ### 3. Dependency Update (`dependency-update/`)
 
-Automated dependency updates with changelog generation:
-- Checks for outdated packages
-- Runs security audit
-- Creates update branch
-- Opens PR with changelog
+Automated dependency updates with AI-powered changelog generation.
 
-**Tools:** `git.sh`, `npm.py`, `github.py`
+**Integrations:** GitHub, Claude Code, Slack
+
+**Features:**
+
+- Analyzes outdated npm packages
+- AI-assisted package update selection
+- Creates update branch and commits changes
+- Generates comprehensive changelog
+- Opens PR with detailed description
 
 ```bash
-marktoflow bundle run examples/dependency-update --input repo=owner/repo --input package_manager=npm
+marktoflow run examples/dependency-update \
+  --input repo=owner/repo \
+  --input package_manager=npm
 ```
+
+**Scheduled:** Runs automatically every Monday at 10 AM
 
 ### 4. Incident Response (`incident-response/`)
 
-Automated incident detection and response coordination:
-- Creates incident Slack channel
-- Gets on-call responders from PagerDuty
-- Gathers metrics from Datadog
-- Posts initial assessment
-- Creates incident ticket in JIRA
+Automated incident detection and response coordination.
 
-**Tools:** `slack.py`, `pagerduty.py`, `datadog.py`, `github.py`, `jira.py`
+**Integrations:** Slack, GitHub, Jira, HTTP (PagerDuty API)
+
+**Features:**
+
+- Creates dedicated incident Slack channel
+- Fetches on-call responders from PagerDuty
+- Searches for related GitHub issues
+- Creates Jira incident ticket
+- Posts formatted incident summary with action buttons
 
 ```bash
-marktoflow bundle run examples/incident-response \
+marktoflow run examples/incident-response \
   --input incident_id=INC-001 \
   --input severity=high \
   --input service=api-gateway \
   --input description="API latency spike"
 ```
 
+**Triggered by:** PagerDuty webhooks, monitoring alert webhooks
+
 ### 5. Sprint Planning (`sprint-planning/`)
 
-Automates sprint planning process:
+Automates sprint planning with velocity analysis and story selection.
+
+**Integrations:** Jira, Confluence, Slack, Claude Code
+
+**Features:**
+
 - Analyzes team velocity from past sprints
-- Selects stories based on capacity
-- Generates sprint goal
-- Creates sprint in JIRA
-- Documents in Confluence
+- AI-powered story selection based on capacity
+- Creates new sprint in Jira
+- Moves selected stories to sprint
+- Documents sprint plan in Confluence
 - Notifies team in Slack
 
-**Tools:** `jira.py`, `confluence.py`, `slack.py`
-
 ```bash
-marktoflow bundle run examples/sprint-planning \
+marktoflow run examples/sprint-planning \
   --input project_key=PROJ \
   --input team_members='["alice", "bob", "carol"]'
 ```
 
-## Running Bundles
+**Scheduled:** Runs automatically every Friday at 2 PM
+
+## Running Workflows
 
 ### Basic Usage
 
 ```bash
-# Run a bundle
+# Run a workflow
 marktoflow run examples/code-review
 
 # With inputs
@@ -111,98 +149,164 @@ marktoflow run examples/code-review --input repo=owner/repo --input pr_number=42
 
 # Dry run (show execution plan)
 marktoflow run examples/code-review --dry-run
+
+# With custom config
+marktoflow run examples/code-review --config custom-config.yaml
 ```
 
-### Bundle Commands
+### Workflow Commands
 
 ```bash
-# Show bundle information
-marktoflow bundle info examples/code-review
+# Validate workflow
+marktoflow workflow validate examples/code-review/workflow.md
 
-# Validate bundle structure
-marktoflow bundle validate examples/code-review
+# Show workflow info
+marktoflow workflow show examples/code-review/workflow.md
+
+# List all workflows
+marktoflow workflow list examples/
 ```
 
-## Creating Your Own Bundle
+## Environment Variables
 
-1. Create a directory for your bundle:
-   ```bash
-   mkdir my-workflow
-   ```
+Each workflow requires specific environment variables for SDK authentication:
 
-2. Create `workflow.md` with YAML frontmatter:
-   ```markdown
-   ---
-   workflow:
-     id: my-workflow
-     name: "My Workflow"
-     version: "1.0.0"
-   ---
-   
-   # My Workflow
-   
-   ## Step 1: Do Something
-   
-   ```yaml
-   action: my_tool.operation
-   inputs:
-     param: "{{ inputs.value }}"
-   output_variable: result
-   ```
-   ```
-
-3. Create `tools/` directory with executable scripts:
-   ```bash
-   mkdir tools
-   # Create Python or bash scripts
-   ```
-
-4. (Optional) Create `tools.yaml` for tool metadata
-5. (Optional) Create `config.yaml` for bundle settings
-
-## Script Tool Format
-
-### Python Scripts
-
-```python
-#!/usr/bin/env python3
-import argparse
-import json
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("operation")
-    parser.add_argument("--param", required=True)
-    args = parser.parse_args()
-    
-    result = {"success": True, "data": args.param}
-    print(json.dumps(result))
-
-if __name__ == "__main__":
-    main()
-```
-
-### Bash Scripts
+### GitHub
 
 ```bash
-#!/usr/bin/env bash
-operation="$1"
-shift
-
-# Parse --key=value arguments
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --param=*) param="${1#*=}"; shift ;;
-        *) shift ;;
-    esac
-done
-
-echo "{\"success\": true, \"param\": \"$param\"}"
+export GITHUB_TOKEN="ghp_..."
 ```
+
+### Slack
+
+```bash
+export SLACK_BOT_TOKEN="xoxb-..."
+```
+
+### Jira
+
+```bash
+export JIRA_HOST="your-company.atlassian.net"
+export JIRA_EMAIL="your-email@company.com"
+export JIRA_API_TOKEN="..."
+```
+
+### Confluence
+
+```bash
+export CONFLUENCE_HOST="your-company.atlassian.net"
+export CONFLUENCE_EMAIL="your-email@company.com"
+export CONFLUENCE_API_TOKEN="..."
+```
+
+### Claude / OpenCode
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+# or
+export OPENCODE_API_KEY="..."
+```
+
+### PagerDuty (for incident-response)
+
+```bash
+export PAGERDUTY_API_KEY="..."
+export PAGERDUTY_SCHEDULE_ID="..."
+```
+
+## Creating Your Own Workflow
+
+1. Create a workflow file with YAML frontmatter:
+
+````markdown
+---
+workflow:
+  id: my-workflow
+  name: 'My Workflow'
+  version: '2.0.0'
+
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+inputs:
+  message:
+    type: string
+    required: true
+---
+
+# My Workflow
+
+## Step 1: Post Message
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: '#general'
+  text: '{{ inputs.message }}'
+output_variable: result
+```
+````
+
+\```
+
+````
+
+2. Run it:
+
+```bash
+marktoflow run my-workflow.md --input message="Hello World"
+````
+
+## Key Differences from v1.0 (Python)
+
+### Old Way (Python v1.0)
+
+```yaml
+# Required separate Python tool scripts
+action: slack.post_message
+inputs:
+  channel: '#general'
+  text: 'Hello'
+```
+
+### New Way (TypeScript v2.0)
+
+```yaml
+# Direct SDK method calls
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+action: slack.chat.postMessage
+inputs:
+  channel: '#general'
+  text: 'Hello'
+```
+
+**Benefits:**
+
+- No Python tool scripts needed
+- Type-safe SDK methods
+- Full SDK feature access
+- Better error messages
+- Easier debugging
 
 ## Notes
 
-- All example tools return mock data for demonstration
-- In production, replace with real API calls
-- Scripts must be executable (`chmod +x`)
-- Output should be valid JSON for structured data
+- All workflows use official SDKs and native integrations
+- No subprocess spawning or bridge layers
+- Full TypeScript type safety
+- Examples are production-ready patterns
+- Modify inputs and logic to fit your needs
+
+## Learn More
+
+- [Workflow YAML Reference](../docs/WORKFLOW_YAML.md)
+- [Available Integrations](../docs/INTEGRATIONS.md)
+- [CLI Commands](../docs/CLI.md)
+- [Agent Configuration](../docs/AGENTS.md)

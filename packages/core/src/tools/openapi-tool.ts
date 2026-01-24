@@ -117,14 +117,17 @@ export class OpenAPITool extends Tool {
       finalUrl.searchParams.set(key, String(value));
     }
 
-    const response = await fetch(finalUrl.toString(), {
+    const fetchOptions: RequestInit = {
       method,
       headers: {
         'Content-Type': 'application/json',
         ...headers,
       },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    };
+    if (body) {
+      fetchOptions.body = JSON.stringify(body);
+    }
+    const response = await fetch(finalUrl.toString(), fetchOptions);
 
     if (!response.ok) {
       const errorText = await response.text();

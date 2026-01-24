@@ -69,9 +69,6 @@ importers:
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
-      fernet:
-        specifier: ^0.4.0
-        version: 0.4.0
       ioredis:
         specifier: ^5.9.2
         version: 5.9.2
@@ -912,9 +909,6 @@ packages:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
-  crypto-js@3.1.8:
-    resolution: {integrity: sha512-4E+PJNbUbBrzQLB9Vw86eaF5xZ8MB6dw4aaZ67YhLNduTmqJ5AziuLrYikPWHJkC59DYZp+cyj+qg3vBE8OnOQ==}
-
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -1070,9 +1064,6 @@ packages:
 
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
-
-  fernet@0.4.0:
-    resolution: {integrity: sha512-FJgmKoMeG4eoM+bEbMyTzPx9US4W+sw4D0i6jSWSKHFYlFZv92UIWi6a/w6MEf2JNSO+Mth/T+u+d/ye1zwN9A==}
 
   file-uri-to-path@1.0.0:
     resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==}
@@ -1753,9 +1744,6 @@ packages:
 
   url-template@2.0.8:
     resolution: {integrity: sha512-XdVKMF4SJ0nP/O7XIPB0JwAEuT9lDIYnNsK8yGVe43y0AWoKeJNdv3ZNWh7ksJ6KqQFjOO6ox/VEitLnaVNufw==}
-
-  urlsafe-base64@1.0.0:
-    resolution: {integrity: sha512-RtuPeMy7c1UrHwproMZN9gN6kiZ0SvJwRaEzwZY0j9MypEkFqyBaKv176jvlPtg58Zh36bOkS0NFABXMHvvGCA==}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -2528,8 +2516,6 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  crypto-js@3.1.8: {}
-
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
@@ -2719,11 +2705,6 @@ snapshots:
   fast-deep-equal@3.1.3: {}
 
   fast-uri@3.1.0: {}
-
-  fernet@0.4.0:
-    dependencies:
-      crypto-js: 3.1.8
-      urlsafe-base64: 1.0.0
 
   file-uri-to-path@1.0.0: {}
 
@@ -3444,8 +3425,6 @@ snapshots:
       requires-port: 1.0.0
 
   url-template@2.0.8: {}
-
-  urlsafe-base64@1.0.0: {}
 
   util-deprecate@1.0.2: {}
 

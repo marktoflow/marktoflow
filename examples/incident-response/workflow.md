@@ -1,29 +1,38 @@
 ---
 workflow:
   id: incident-response
-  name: "Incident Response Automation"
-  version: "1.0.0"
-  description: "Automated incident detection, triage, and response coordination"
-  author: "marktoflow"
+  name: 'Incident Response Automation'
+  version: '2.0.0'
+  description: 'Automated incident detection, triage, and response coordination using native integrations'
+  author: 'marktoflow'
   tags:
     - incident
     - ops
     - critical
 
-compatibility:
-  agents:
-    - claude-code: recommended
-    - opencode: supported
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
 
-requirements:
-  tools:
-    - pagerduty
-    - slack
-    - datadog
-    - github
-  features:
-    - tool_calling: required
-    - parallel_execution: optional
+  github:
+    sdk: '@octokit/rest'
+    auth:
+      token: '${GITHUB_TOKEN}'
+
+  jira:
+    sdk: 'jira.js'
+    auth:
+      host: '${JIRA_HOST}'
+      email: '${JIRA_EMAIL}'
+      apiToken: '${JIRA_API_TOKEN}'
+
+  http:
+    sdk: 'http'
+    auth:
+      type: 'bearer'
+      token: '${PAGERDUTY_API_KEY}'
 
 triggers:
   - type: webhook
@@ -31,7 +40,7 @@ triggers:
     events:
       - incident.triggered
   - type: webhook
-    path: /webhooks/datadog/alert
+    path: /webhooks/alert
     events:
       - alert.triggered
 
@@ -39,242 +48,230 @@ inputs:
   incident_id:
     type: string
     required: true
-    description: "Incident or alert identifier"
+    description: 'Incident or alert identifier'
   severity:
     type: string
-    enum: ["critical", "high", "medium", "low"]
+    enum: ['critical', 'high', 'medium', 'low']
     required: true
-    description: "Incident severity level"
+    description: 'Incident severity level'
   service:
     type: string
     required: true
-    description: "Affected service name"
+    description: 'Affected service name'
   description:
     type: string
     required: true
-    description: "Incident description"
+    description: 'Incident description'
 
 outputs:
   incident_channel:
     type: string
-    description: "Created Slack incident channel"
-  runbook_url:
+    description: 'Created Slack incident channel'
+  incident_issue:
     type: string
-    description: "Link to relevant runbook"
+    description: 'Created Jira incident ticket'
   assigned_responders:
     type: array
-    description: "List of assigned responders"
+    description: 'List of assigned responders'
 ---
 
 # Incident Response Automation
 
-This workflow automates the initial response to incidents, including creating
-communication channels, gathering context, and coordinating responders.
+This workflow automates the initial response to incidents, including creating communication channels, gathering context, and coordinating responders using native Slack, GitHub, and Jira integrations.
 
 ## Step 1: Create Incident Channel
 
 Create a dedicated Slack channel for incident communication.
 
 ```yaml
-action: slack.create_channel
+action: slack.conversations.create
 inputs:
-  name: "inc-{{ now | datetimeformat('%Y%m%d') }}-{{ inputs.service | lower | replace(' ', '-') }}"
-  private: false
-  description: "[{{ inputs.severity | upper }}] {{ inputs.description | truncate(80) }}"
+  name: "inc-{{ Date.now().toString().slice(-6) }}-{{ inputs.service.toLowerCase().replace(/[^a-z0-9]/g, '-') }}"
+  is_private: false
 output_variable: incident_channel
 ```
 
-## Step 2: Get On-Call Responders
+## Step 2: Set Channel Topic
 
-Identify who is currently on-call for the affected service.
+Set the channel topic with incident details.
 
 ```yaml
-action: pagerduty.get_oncall
+action: slack.conversations.setTopic
 inputs:
-  service: "{{ inputs.service }}"
-  escalation_levels: [1, 2]
-output_variable: oncall_responders
+  channel: '{{ incident_channel.channel.id }}'
+  topic: '🚨 [{{ inputs.severity.toUpperCase() }}] {{ inputs.service }} - {{ inputs.description }}'
+output_variable: topic_result
 ```
 
-## Step 3: Gather System Metrics
+## Step 3: Post Initial Alert
 
-Get recent metrics for the affected service.
-
-```yaml
-action: datadog.get_metrics
-inputs:
-  service: "{{ inputs.service }}"
-  metrics:
-    - "system.cpu.user"
-    - "system.mem.used"
-    - "trace.errors"
-    - "http.response_time.p95"
-  timeframe: "1h"
-output_variable: service_metrics
-```
-
-## Step 4: Get Recent Deployments
-
-Check for recent deployments that might be related.
+Post the initial incident notification to the channel.
 
 ```yaml
-action: github.list_deployments
+action: slack.chat.postMessage
 inputs:
-  repo: "{{ inputs.service }}"
-  environment: "production"
-  per_page: 5
-output_variable: recent_deployments
-```
-
-## Step 5: Find Relevant Runbook
-
-Search for runbooks related to this incident.
-
-```yaml
-action: agent.search
-inputs:
-  task: "find_runbook"
-  query: "{{ inputs.service }} {{ inputs.description }}"
-  sources:
-    - type: confluence
-      space: "OPS"
-    - type: github
-      repo: "company/runbooks"
-      path: "services/"
-output_variable: runbook_results
-```
-
-## Step 6: Generate Initial Assessment
-
-Create an initial assessment of the incident.
-
-```yaml
-action: agent.analyze
-inputs:
-  task: "incident_assessment"
-  context:
-    incident:
-      id: "{{ inputs.incident_id }}"
-      severity: "{{ inputs.severity }}"
-      service: "{{ inputs.service }}"
-      description: "{{ inputs.description }}"
-    metrics: "{{ service_metrics }}"
-    deployments: "{{ recent_deployments }}"
-    runbooks: "{{ runbook_results }}"
-  instructions: |
-    Analyze this incident and provide:
-    1. Likely root cause hypothesis
-    2. Affected components
-    3. Recommended immediate actions
-    4. Escalation recommendations
-output_variable: assessment
-```
-
-## Step 7: Post Incident Summary
-
-Post the incident summary to the dedicated channel.
-
-```yaml
-action: slack.post_message
-inputs:
-  channel: "{{ incident_channel.id }}"
+  channel: '{{ incident_channel.channel.id }}'
+  text: '🚨 Incident Alert'
   blocks:
     - type: header
-      text: ":rotating_light: Incident: {{ inputs.description | truncate(50) }}"
+      text:
+        type: plain_text
+        text: '🚨 Incident: {{ inputs.incident_id }}'
     - type: section
       fields:
         - type: mrkdwn
-          text: "*Severity:* {{ inputs.severity | upper }}"
+          text: "*Severity:*\n{{ inputs.severity.toUpperCase() }}"
         - type: mrkdwn
-          text: "*Service:* {{ inputs.service }}"
+          text: "*Service:*\n{{ inputs.service }}"
         - type: mrkdwn
-          text: "*Incident ID:* {{ inputs.incident_id }}"
+          text: "*Status:*\n🔴 Active"
         - type: mrkdwn
-          text: "*Time:* {{ now | datetimeformat('%Y-%m-%d %H:%M UTC') }}"
+          text: "*Started:*\n{{ new Date().toISOString() }}"
+    - type: section
+      text:
+        type: mrkdwn
+        text: "*Description:*\n{{ inputs.description }}"
     - type: divider
-    - type: section
-      text: "*Initial Assessment*\n{{ assessment.summary }}"
-    - type: section
-      text: "*On-Call Responders*\n{% for r in oncall_responders %}• <@{{ r.slack_id }}> ({{ r.escalation_level }})\n{% endfor %}"
-    - type: section
-      text: "*Recent Deployments*\n{% for d in recent_deployments[:3] %}• {{ d.sha[:7] }} by {{ d.creator }} ({{ d.created_at | timeago }})\n{% endfor %}"
-    - type: actions
+    - type: context
       elements:
-        - type: button
-          text: "View Runbook"
-          url: "{{ runbook_results[0].url if runbook_results else '#' }}"
-        - type: button
-          text: "View Dashboard"
-          url: "https://app.datadoghq.com/dashboard/{{ inputs.service }}"
-        - type: button
-          text: "Acknowledge"
-          action_id: "incident_ack"
-output_variable: summary_post
+        - type: mrkdwn
+          text: 'Incident ID: `{{ inputs.incident_id }}`'
+output_variable: alert_message
 ```
 
-## Step 8: Notify Responders
+## Step 4: Get On-Call Responders
 
-Page the on-call responders.
+Use PagerDuty API to get on-call responders (via HTTP integration).
 
 ```yaml
-action: pagerduty.notify
+action: http.request
 inputs:
-  users: "{{ oncall_responders | map(attribute='id') | list }}"
-  message: "[{{ inputs.severity | upper }}] {{ inputs.description }}"
-  urgency: "{{ 'high' if inputs.severity in ['critical', 'high'] else 'low' }}"
-output_variable: notification_result
-condition: "inputs.severity in ['critical', 'high']"
+  method: 'GET'
+  url: 'https://api.pagerduty.com/oncalls'
+  params:
+    schedule_ids: ['${PAGERDUTY_SCHEDULE_ID}']
+    include: ['users']
+  headers:
+    Authorization: 'Token token=${PAGERDUTY_API_KEY}'
+    Accept: 'application/vnd.pagerduty+json;version=2'
+output_variable: oncall_response
 ```
 
-## Step 9: Invite Responders to Channel
+## Step 5: Invite Responders to Channel
 
-Add responders to the incident channel.
+Invite the on-call responders to the incident channel.
 
 ```yaml
-action: slack.invite_users
+action: slack.conversations.invite
 inputs:
-  channel: "{{ incident_channel.id }}"
-  users: "{{ oncall_responders | map(attribute='slack_id') | list }}"
+  channel: '{{ incident_channel.channel.id }}'
+  users: "{{ oncall_response.data.oncalls.map(o => o.user.slack_user_id).join(',') }}"
 output_variable: invite_result
 ```
 
-## Step 10: Create Incident Ticket
+## Step 6: Check for Related GitHub Issues
 
-Create a tracking ticket for the incident.
+Search for related issues or recent deployments.
 
 ```yaml
-action: jira.create_issue
+action: github.search.issuesAndPullRequests
 inputs:
-  project: "OPS"
-  issue_type: "Incident"
-  summary: "[{{ inputs.severity | upper }}] {{ inputs.description }}"
-  description: |
-    ## Incident Details
-    - **ID:** {{ inputs.incident_id }}
-    - **Service:** {{ inputs.service }}
-    - **Severity:** {{ inputs.severity }}
-    - **Slack Channel:** #{{ incident_channel.name }}
-    
-    ## Initial Assessment
-    {{ assessment.summary }}
-    
-    ## Timeline
-    - {{ now | datetimeformat('%H:%M') }} - Incident detected
-    - {{ now | datetimeformat('%H:%M') }} - Automated response initiated
-  labels:
-    - incident
-    - "{{ inputs.severity }}"
-    - "{{ inputs.service }}"
-  priority: "{{ 'Highest' if inputs.severity == 'critical' else 'High' if inputs.severity == 'high' else 'Medium' }}"
-output_variable: incident_ticket
+  q: '{{ inputs.service }} in:title state:open repo:${GITHUB_ORG}/${GITHUB_REPO}'
+  sort: 'updated'
+  per_page: 5
+output_variable: related_issues
 ```
 
-## Step 11: Set Outputs
+## Step 7: Create Jira Incident Ticket
+
+Create a Jira incident ticket for tracking.
+
+```yaml
+action: jira.issues.createIssue
+inputs:
+  fields:
+    project:
+      key: 'OPS'
+    issuetype:
+      name: 'Incident'
+    summary: '[{{ inputs.severity.toUpperCase() }}] {{ inputs.service }} - {{ inputs.description }}'
+    description: |
+      h2. Incident Details
+
+      *Incident ID:* {{ inputs.incident_id }}
+      *Severity:* {{ inputs.severity.toUpperCase() }}
+      *Service:* {{ inputs.service }}
+      *Started:* {{ new Date().toISOString() }}
+
+      h3. Description
+      {{ inputs.description }}
+
+      h3. Communication
+      Slack Channel: #{{ incident_channel.channel.name }}
+
+      h3. Related Issues
+      {% for issue in related_issues.data.items %}
+      - [{{ issue.title }}|{{ issue.html_url }}]
+      {% endfor %}
+    priority:
+      name: "{{ inputs.severity === 'critical' ? 'Highest' : inputs.severity === 'high' ? 'High' : 'Medium' }}"
+    labels:
+      - 'incident'
+      - '{{ inputs.service }}'
+output_variable: jira_incident
+```
+
+## Step 8: Post Summary with Actions
+
+Post a summary message with action items and links.
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: '{{ incident_channel.channel.id }}'
+  text: 'Incident Response Initiated'
+  blocks:
+    - type: section
+      text:
+        type: mrkdwn
+        text: |
+          *📋 Incident Response Initiated*
+
+          *Jira Ticket:* <{{ jira_incident.self }}|{{ jira_incident.key }}>
+          *On-Call:* {{ oncall_response.data.oncalls.map(o => '@' + o.user.name).join(', ') }}
+
+          *Related Issues:*
+          {% for issue in related_issues.data.items %}
+          • <{{ issue.html_url }}|#{{ issue.number }}> - {{ issue.title }}
+          {% endfor %}
+    - type: actions
+      elements:
+        - type: button
+          text:
+            type: plain_text
+            text: 'View Runbook'
+          url: 'https://runbooks.example.com/{{ inputs.service }}'
+          style: 'primary'
+        - type: button
+          text:
+            type: plain_text
+            text: 'View Jira'
+          url: '{{ jira_incident.self }}'
+        - type: button
+          text:
+            type: plain_text
+            text: 'Escalate'
+          style: 'danger'
+          action_id: 'escalate_incident'
+output_variable: summary_message
+```
+
+## Step 9: Set Outputs
 
 ```yaml
 action: workflow.set_outputs
 inputs:
-  incident_channel: "{{ incident_channel.name }}"
-  runbook_url: "{{ runbook_results[0].url if runbook_results else null }}"
-  assigned_responders: "{{ oncall_responders | map(attribute='name') | list }}"
+  incident_channel: '#{{ incident_channel.channel.name }}'
+  incident_issue: '{{ jira_incident.key }}'
+  assigned_responders: '{{ oncall_response.data.oncalls.map(o => o.user.name) }}'
 ```

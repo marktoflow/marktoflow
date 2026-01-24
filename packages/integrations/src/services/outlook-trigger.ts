@@ -56,7 +56,7 @@ export interface GraphNotification {
   }>;
 }
 
-export interface GraphValidationRequest {
+export interface GraphValidationRequest extends Record<string, unknown> {
   validationToken: string;
 }
 
@@ -89,9 +89,7 @@ export class OutlookTrigger {
     const resource = this.config.resource ?? 'me/mailFolders/inbox/messages';
     const expirationMinutes = this.config.expirationMinutes ?? 4230;
 
-    const expirationDateTime = new Date(
-      Date.now() + expirationMinutes * 60 * 1000
-    ).toISOString();
+    const expirationDateTime = new Date(Date.now() + expirationMinutes * 60 * 1000).toISOString();
 
     const subscription = await this.client.api('/subscriptions').post({
       changeType: changeTypes.join(','),
@@ -122,15 +120,11 @@ export class OutlookTrigger {
     }
 
     const minutes = expirationMinutes ?? this.config.expirationMinutes ?? 4230;
-    const expirationDateTime = new Date(
-      Date.now() + minutes * 60 * 1000
-    ).toISOString();
+    const expirationDateTime = new Date(Date.now() + minutes * 60 * 1000).toISOString();
 
-    const updated = await this.client
-      .api(`/subscriptions/${this.subscription.id}`)
-      .patch({
-        expirationDateTime,
-      });
+    const updated = await this.client.api(`/subscriptions/${this.subscription.id}`).patch({
+      expirationDateTime,
+    });
 
     this.subscription.expirationDateTime = updated.expirationDateTime;
     return this.subscription;
@@ -200,8 +194,10 @@ export class OutlookTrigger {
         resource: item.resource,
         resourceData: item.resourceData
           ? {
+              '@odata.type': item.resourceData['@odata.type'],
+              '@odata.id': item.resourceData['@odata.id'],
+              '@odata.etag': item.resourceData['@odata.etag'],
               id: item.resourceData.id,
-              ...item.resourceData,
             }
           : undefined,
         clientState: item.clientState,

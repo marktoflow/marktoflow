@@ -325,10 +325,10 @@ export class TransactionContext {
     return this.registry.record({
       stepName: params.stepName,
       stepIndex: params.stepIndex,
-      compensateAction: params.compensateAction,
-      compensateInputs: params.compensateInputs,
-      stateSnapshot: params.stateSnapshot,
-      strategy: params.strategy,
+      ...(params.compensateAction !== undefined && { compensateAction: params.compensateAction }),
+      ...(params.compensateInputs !== undefined && { compensateInputs: params.compensateInputs }),
+      ...(params.stateSnapshot !== undefined && { stateSnapshot: params.stateSnapshot }),
+      ...(params.strategy !== undefined && { strategy: params.strategy }),
     });
   }
 

@@ -38,5 +38,6 @@
     "cli",
     "mcp"
   ],
+  "author": "Scott Glover",
   "license": "Apache-2.0"
 }

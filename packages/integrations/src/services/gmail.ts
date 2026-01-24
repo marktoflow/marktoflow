@@ -140,11 +140,7 @@ function buildRawEmail(options: SendEmailOptions | CreateDraftOptions): string {
 
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
-  let headers = [
-    `To: ${to}`,
-    `Subject: ${options.subject}`,
-    `MIME-Version: 1.0`,
-  ];
+  let headers = [`To: ${to}`, `Subject: ${options.subject}`, `MIME-Version: 1.0`];
 
   if (cc) headers.push(`Cc: ${cc}`);
   if (bcc) headers.push(`Bcc: ${bcc}`);
@@ -281,7 +277,7 @@ export class GmailActions {
     return {
       id: response.data.id ?? '',
       messageId: response.data.message?.id ?? '',
-      threadId: response.data.message?.threadId,
+      threadId: response.data.message?.threadId ?? undefined,
     };
   }
 

@@ -6,57 +6,61 @@ This file provides context for Claude Code when working on this project.
 
 ## Project Summary
 
-**marktoflow** is a universal automation framework that enables markdown-based workflows with standardized tool integrations.
+**marktoflow v2.0** is a universal automation framework that enables markdown-based workflows with native MCP support and direct SDK integrations.
 
-**Current Status:** Transitioning from Python v1.0 to TypeScript v2.0
+**Current Status:** TypeScript v2.0 - Feature parity achieved with Python v1.0
 
 ---
 
-## v2.0 TypeScript Rewrite (Current Focus)
+## Key Features
 
-We are rewriting the framework in TypeScript for:
-- Native MCP server support (npm packages)
-- Direct SDK integration (Slack, Jira, GitHub, etc.)
-- Simpler tool registration (just import)
-- Better developer experience
+- **Native SDK Integration**: 11 built-in service integrations (Slack, GitHub, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP)
+- **Native MCP Support**: Direct npm package imports, no subprocess bridging
+- **Enterprise Ready**: RBAC, audit logging, cost tracking, approval workflows
+- **Distributed Execution**: Queue system with Redis/RabbitMQ/InMemory
+- **Universal Triggering**: Cron schedules, webhooks, file watchers
 
-### Key Design Goals
+### TypeScript v2.0 Advantages
 
 1. **Direct SDK References in Workflows**
+
 ```yaml
 tools:
   slack:
-    sdk: "@slack/web-api"
-  anthropic:
-    sdk: "@anthropic-ai/sdk"
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
 
 steps:
   - action: slack.chat.postMessage
     inputs:
-      channel: "#general"
-      text: "Hello!"
+      channel: '#general'
+      text: 'Hello!'
 ```
 
 2. **Native MCP Support**
+
 ```typescript
 // Direct import, no subprocess spawning
 import { SlackServer } from '@modelcontextprotocol/server-slack';
 ```
 
 3. **Simple CLI**
+
 ```bash
 npx marktoflow init
-npx marktoflow connect slack  # OAuth flow
+npx marktoflow connect gmail  # OAuth flow
 npx marktoflow run workflow.md
 ```
 
-### New Project Structure
+### Project Structure
 
 ```
 packages/
-  core/           # Parser, engine, state
-  cli/            # CLI commands
-  integrations/   # Slack, Jira, Gmail, etc.
+  core/           # Parser, engine, state, security, costs, plugins
+  cli/            # CLI commands, OAuth flows
+  integrations/   # 11 service integrations + AI adapters
+examples/         # 5 production-ready workflow templates
 ```
 
 ---
@@ -64,46 +68,121 @@ packages/
 ## Quick Reference
 
 ### Key Files
-- `TODO.md` - v2.0 TypeScript roadmap
-- `PROGRESS.md` - Development history
-- `FRAMEWORK_ANALYSIS.md` - Analysis and recommendations
 
-### Architecture Documents
-- Python v1.0 code is in `src/marktoflow/` (archived)
-- TypeScript v2.0 will be in `packages/` (to be created)
+- `TODO.md` - v2.0 TypeScript roadmap (feature parity achieved)
+- `PROGRESS.md` - Development history
+- `AGENTS.md` - Detailed development guidelines
+- `examples/` - Production workflows (code-review, daily-standup, incident-response, sprint-planning, dependency-update)
+
+### Test Status
+
+- **145 tests passing** (89 core + 48 integrations + 8 CLI)
+- Goal: Expand to 615+ tests to match Python v1.0
 
 ---
 
 ## Common Tasks
 
-### Starting TypeScript Development
+### Running Tests
+
 ```bash
-# Initialize monorepo
-pnpm init
-pnpm add -D typescript @types/node vitest
-
-# Create packages
-mkdir -p packages/{core,cli,integrations}/src
+pnpm test                    # Run all tests
+pnpm test --filter=@marktoflow/core         # Core only
+pnpm test --filter=@marktoflow/integrations # Integrations only
 ```
 
-### Key Dependencies for v2.0
-```json
-{
-  "@anthropic-ai/sdk": "^0.x",
-  "@slack/web-api": "^7.x",
-  "@octokit/rest": "^21.x",
-  "jira.js": "^4.x",
-  "better-sqlite3": "^11.x",
-  "commander": "^12.x"
-}
+### Building
+
+```bash
+pnpm build                   # Build all packages
+pnpm build --filter=@marktoflow/core        # Core only
 ```
+
+### Running Workflows
+
+```bash
+# Run a workflow
+./marktoflow run examples/daily-standup/workflow.md
+
+# With inputs
+./marktoflow run examples/code-review/workflow.md \
+  --input repo=owner/repo \
+  --input pr_number=123
+
+# Validate workflow
+./marktoflow workflow validate examples/daily-standup/workflow.md
+```
+
+### Available Integrations
+
+**Services (11):**
+
+- `@slack/web-api` - Slack SDK
+- `@octokit/rest` - GitHub SDK
+- `jira.js` - Jira SDK
+- `googleapis` - Gmail SDK
+- `@microsoft/microsoft-graph-client` - Outlook/Calendar SDK
+- `linear` - Linear SDK
+- `notion` - Notion SDK
+- `discord` - Discord SDK
+- `airtable` - Airtable SDK
+- `confluence` - Confluence SDK
+- `http` - Generic HTTP client
+
+**AI Agents (3):**
+
+- `claude-code` - Claude CLI wrapper
+- `opencode` - OpenCode SDK/CLI
+- `ollama` - Local LLM
 
 ---
 
-## Conventions
+## Development Conventions
 
 - Use TypeScript strict mode
 - Use pnpm for package management
 - Use Vitest for testing
 - Keep modules focused and small
 - Prefer composition over inheritance
+- Set `exactOptionalPropertyTypes: false` for packages with external SDK types
+
+---
+
+## Example Workflow
+
+See `examples/code-review/workflow.md` for a complete example using GitHub SDK and Claude AI to automatically review pull requests.
+
+Key pattern:
+
+```yaml
+tools:
+  github:
+    sdk: '@octokit/rest'
+    auth:
+      token: '${GITHUB_TOKEN}'
+
+steps:
+  - action: github.pulls.get
+    inputs:
+      owner: "{{ inputs.repo.split('/')[0] }}"
+      repo: "{{ inputs.repo.split('/')[1] }}"
+      pull_number: '{{ inputs.pr_number }}'
+    output_variable: pr_details
+```
+
+---
+
+## Migration from Python v1.0
+
+The Python implementation has been archived. All example workflows have been rewritten to use TypeScript v2.0 native SDK integrations.
+
+**Old (Python):** Separate Python tool scripts
+**New (TypeScript):** Direct SDK method calls in YAML
+
+Benefits:
+
+- No subprocess overhead
+- Full TypeScript type safety
+- Better error messages
+- Easier debugging
+- Direct access to all SDK features

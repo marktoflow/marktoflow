@@ -240,13 +240,20 @@ function getNestedValue(obj: unknown, path: string): unknown {
 // Engine Implementation
 // ============================================================================
 
+interface InternalEngineConfig {
+  defaultTimeout: number;
+  maxRetries: number;
+  retryBaseDelay: number;
+  retryMaxDelay: number;
+}
+
 export class WorkflowEngine {
-  private config: Required<EngineConfig>;
+  private config: InternalEngineConfig;
   private retryPolicy: RetryPolicy;
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
   private events: EngineEvents;
   private stateStore?: StateStore | undefined;
-  private rollbackRegistry?: RollbackRegistry;
+  private rollbackRegistry?: RollbackRegistry | undefined;
   private failoverConfig: FailoverConfig;
   private healthTracker: AgentHealthTracker;
   private failoverEvents: FailoverEvent[] = [];
@@ -257,9 +264,6 @@ export class WorkflowEngine {
       maxRetries: config.maxRetries ?? 3,
       retryBaseDelay: config.retryBaseDelay ?? 1000,
       retryMaxDelay: config.retryMaxDelay ?? 30000,
-      rollbackRegistry: config.rollbackRegistry ?? undefined,
-      failoverConfig: config.failoverConfig ?? undefined,
-      healthTracker: config.healthTracker ?? undefined,
     };
 
     this.retryPolicy = new RetryPolicy(

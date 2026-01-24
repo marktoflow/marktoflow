@@ -22,7 +22,7 @@ import { MCPTool } from './tools/mcp-tool.js';
 export class ToolRegistry {
   private definitions = new Map<string, ToolDefinition>();
   private tools = new Map<string, Map<string, Tool>>();
-  private registryPath?: string;
+  private registryPath: string | undefined;
 
   constructor(registryPath?: string) {
     this.registryPath = registryPath ? resolve(registryPath) : undefined;
@@ -42,36 +42,43 @@ export class ToolRegistry {
 
   private parseToolDefinition(data: Record<string, unknown>): ToolDefinition {
     const implementations = (data.implementations as Array<Record<string, unknown>> | undefined) ?? [];
-    const parsedImplementations: ToolImplementation[] = implementations.map((impl) => ({
-      type: (impl.type as ToolType) ?? ToolType.CUSTOM,
-      priority: (impl.priority as number) ?? 1,
-      configPath: impl.config_path as string | undefined,
-      specPath: impl.spec_path as string | undefined,
-      specUrl: impl.spec_url as string | undefined,
-      adapterPath: impl.adapter_path as string | undefined,
-      packageName: impl.package as string | undefined,
-      agentCompatibility: (impl.agent_compatibility as Record<string, string>) ?? {},
-    }));
+    const parsedImplementations: ToolImplementation[] = implementations.map((impl) => {
+      const result: ToolImplementation = {
+        type: (impl.type as ToolType) ?? ToolType.CUSTOM,
+        priority: (impl.priority as number) ?? 1,
+        agentCompatibility: (impl.agent_compatibility as Record<string, string>) ?? {},
+      };
+      if (impl.config_path) result.configPath = impl.config_path as string;
+      if (impl.spec_path) result.specPath = impl.spec_path as string;
+      if (impl.spec_url) result.specUrl = impl.spec_url as string;
+      if (impl.adapter_path) result.adapterPath = impl.adapter_path as string;
+      if (impl.package) result.packageName = impl.package as string;
+      return result;
+    });
 
     const authData = (data.authentication as Record<string, unknown>) ?? {};
-    const auth: ToolAuth | undefined = authData && Object.keys(authData).length
-      ? {
-          type: (authData.type as string) ?? 'none',
-          tokenEnv: authData.token_env as string | undefined,
-          scopes: (authData.scopes as string[]) ?? [],
-          provider: authData.provider as string | undefined,
-          extra: (authData.extra as Record<string, unknown>) ?? {},
-        }
-      : undefined;
+    let auth: ToolAuth | undefined;
+    if (authData && Object.keys(authData).length) {
+      auth = {
+        type: (authData.type as string) ?? 'none',
+        scopes: (authData.scopes as string[]) ?? [],
+        extra: (authData.extra as Record<string, unknown>) ?? {},
+      };
+      if (authData.token_env) auth.tokenEnv = authData.token_env as string;
+      if (authData.provider) auth.provider = authData.provider as string;
+    }
 
-    return {
+    const result: ToolDefinition = {
       name: (data.name as string) ?? '',
-      description: data.description as string | undefined,
-      category: data.category as string | undefined,
       implementations: parsedImplementations,
-      authentication: auth,
       rateLimits: (data.rate_limits as Record<string, unknown>) ?? {},
     };
+
+    if (data.description) result.description = data.description as string;
+    if (data.category) result.category = data.category as string;
+    if (auth) result.authentication = auth;
+
+    return result;
   }
 
   register(definition: ToolDefinition): void {

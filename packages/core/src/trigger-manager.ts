@@ -68,7 +68,13 @@ export class TriggerManager {
       const methods = (trigger.config.methods as string[]) ?? ['POST'];
       const provider = trigger.config.provider as string | undefined;
 
-      const endpoint = createEndpoint(path, { secret: provider === 'github' ? secret : undefined, methods: provider === 'graph' ? ['POST', 'GET'] : methods });
+      const endpointOptions: { secret?: string; methods?: string[] } = {
+        methods: provider === 'graph' ? ['POST', 'GET'] : methods,
+      };
+      if (provider === 'github' && secret) {
+        endpointOptions.secret = secret;
+      }
+      const endpoint = createEndpoint(path, endpointOptions);
       this.webhookReceiver.registerEndpoint(endpoint, async (event: WebhookEvent): Promise<WebhookResponse> => {
         if (provider === 'graph' && event.method === 'GET') {
           const validationToken = event.query['validationToken'] || event.query['validationtoken'];

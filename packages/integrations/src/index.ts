@@ -13,11 +13,6 @@ import { AirtableInitializer } from './services/airtable.js';
 import { ConfluenceInitializer } from './services/confluence.js';
 import { HttpInitializer } from './services/http.js';
 
-// Triggers
-import { SlackSocketTrigger } from './services/slack-socket.js';
-import { GmailTrigger } from './services/gmail-trigger.js';
-import { OutlookTrigger } from './services/outlook-trigger.js';
-
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
 import { ClaudeCodeInitializer } from './adapters/claude-code.js';
@@ -65,19 +60,58 @@ export function registerIntegrations(registry: SDKRegistry) {
 export * from './services/slack.js';
 export * from './services/github.js';
 export * from './services/jira.js';
-export * from './services/gmail.js';
-export * from './services/outlook.js';
+export {
+  GmailActions,
+  GmailInitializer,
+  GmailEmail,
+  type GetEmailsOptions as GmailGetEmailsOptions,
+  type GetEmailsResult as GmailGetEmailsResult,
+  type SendEmailOptions as GmailSendEmailOptions,
+  type CreateDraftOptions as GmailCreateDraftOptions,
+} from './services/gmail.js';
+export {
+  GmailTrigger,
+  type GmailTriggerConfig,
+  type GmailTriggerPayload,
+  type GmailPubSubMessage,
+  createGmailWebhookHandler,
+} from './services/gmail-trigger.js';
+export {
+  OutlookActions,
+  OutlookInitializer,
+  OutlookEmail,
+  CalendarEvent,
+  type GetEmailsOptions as OutlookGetEmailsOptions,
+  type GetEmailsResult as OutlookGetEmailsResult,
+  type SendEmailOptions as OutlookSendEmailOptions,
+  type CreateDraftOptions as OutlookCreateDraftOptions,
+} from './services/outlook.js';
+export {
+  OutlookTrigger,
+  type OutlookTriggerConfig,
+  type OutlookTriggerPayload,
+  type GraphSubscription,
+  type GraphNotification,
+  createOutlookWebhookHandler,
+} from './services/outlook-trigger.js';
 export * from './services/linear.js';
-export * from './services/notion.js';
+export {
+  NotionClient,
+  NotionInitializer,
+  NotionPage,
+  NotionDatabase,
+  NotionBlock,
+  type CreatePageOptions as NotionCreatePageOptions,
+  type QueryDatabaseOptions,
+  type SearchOptions as NotionSearchOptions,
+} from './services/notion.js';
 export * from './services/discord.js';
 export * from './services/airtable.js';
 export * from './services/confluence.js';
 export * from './services/http.js';
 
 // Export triggers
-export * from './services/slack-socket.js';
-export * from './services/gmail-trigger.js';
-export * from './services/outlook-trigger.js';
+export { SlackSocketTrigger } from './services/slack-socket.js';
 
 // Export AI adapters
 export * from './adapters/ollama.js';
