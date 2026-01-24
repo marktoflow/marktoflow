@@ -1,18 +1,18 @@
 {
   "name": "@marktoflow/core",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.3",
   "description": "Core engine for marktoflow - parser, executor, state management",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/scottgl9/marktoflow-automation.git",
+    "url": "https://github.com/scottgl9/marktoflow.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/scottgl9/marktoflow-automation#readme",
+  "homepage": "https://github.com/scottgl9/marktoflow#readme",
   "bugs": {
-    "url": "https://github.com/scottgl9/marktoflow-automation/issues"
+    "url": "https://github.com/scottgl9/marktoflow/issues"
   },
   "exports": {
     ".": {

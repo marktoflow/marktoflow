@@ -1,21 +1,21 @@
 {
-  "name": "marktoflow",
-  "version": "2.0.0-alpha.1",
+  "name": "@marktoflow/cli",
+  "version": "2.0.0-alpha.3",
   "description": "Universal automation framework with native MCP support",
   "type": "module",
   "bin": {
-    "marktoflow": "./dist/index.js"
+    "marktoflow": "dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/scottgl9/marktoflow-automation.git",
+    "url": "https://github.com/scottgl9/marktoflow.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/scottgl9/marktoflow-automation#readme",
+  "homepage": "https://github.com/scottgl9/marktoflow#readme",
   "bugs": {
-    "url": "https://github.com/scottgl9/marktoflow-automation/issues"
+    "url": "https://github.com/scottgl9/marktoflow/issues"
   },
   "scripts": {
     "build": "tsc",
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.2.0",
-    "@marktoflow/core": "workspace:*",
-    "@marktoflow/integrations": "workspace:*",
+    "@marktoflow/core": "2.0.0-alpha.3",
+    "@marktoflow/integrations": "2.0.0-alpha.3",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "open": "^10.1.0",

@@ -30,29 +30,42 @@ marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subproc
 
 ### Installation
 
-**Option 1: Install from GitHub (Recommended for now)**
+**Option 1: Install from npm (Recommended)**
+
+```bash
+# Install globally from npm
+npm install -g @marktoflow/cli@alpha
+
+# Verify installation
+marktoflow version
+```
+
+After installation, the `marktoflow` command should be available globally. If you encounter a "command not found" error, see [PATH Setup](#path-setup) below.
+
+**Option 2: Use npx (No Installation)**
+
+```bash
+# Run commands directly without installation
+npx @marktoflow/cli@alpha init
+npx @marktoflow/cli@alpha run workflow.md
+```
+
+**Option 3: Install from GitHub**
 
 ```bash
 # Install globally from GitHub
-npm install -g github:scottgl9/marktoflow-automation#main
+npm install -g github:scottgl9/marktoflow#main
 
-# Or use npx directly (no installation)
-npx github:scottgl9/marktoflow-automation init
+# Verify installation
+marktoflow version
 ```
 
-**Option 2: Install from npm (Coming Soon)**
-
-```bash
-# Once published to npm registry
-npm install -g marktoflow
-```
-
-**Option 3: Install from Source**
+**Option 4: Install from Source**
 
 ```bash
 # Clone repository
-git clone https://github.com/scottgl9/marktoflow-automation.git
-cd marktoflow-automation
+git clone https://github.com/scottgl9/marktoflow.git
+cd marktoflow
 
 # Install dependencies
 pnpm install
@@ -63,6 +76,101 @@ pnpm build
 # Link CLI globally
 cd packages/cli
 npm link
+
+# Verify installation
+marktoflow version
+```
+
+### Verifying Installation
+
+After installation, run the verification script:
+
+```bash
+bash scripts/verify-install.sh
+```
+
+This checks if the `marktoflow` command is properly accessible and tests basic functionality.
+
+### PATH Setup
+
+If you see `command not found: marktoflow` after installation, you need to add npm's global bin directory to your PATH.
+
+#### macOS / Linux
+
+**1. Find npm's global bin directory:**
+
+```bash
+npm bin -g
+```
+
+This typically returns:
+
+- `/usr/local/bin` (system-wide npm)
+- `~/.npm-global/bin` (user-local npm)
+- `~/.nvm/versions/node/vX.X.X/bin` (nvm users)
+
+**2. Add to your shell profile:**
+
+For **bash** (add to `~/.bashrc` or `~/.bash_profile`):
+
+```bash
+export PATH="$PATH:$(npm bin -g)"
+```
+
+For **zsh** (add to `~/.zshrc`):
+
+```bash
+export PATH="$PATH:$(npm bin -g)"
+```
+
+For **fish** (add to `~/.config/fish/config.fish`):
+
+```fish
+set -gx PATH $PATH (npm bin -g)
+```
+
+**3. Reload your shell:**
+
+```bash
+source ~/.bashrc  # or ~/.zshrc, ~/.bash_profile, etc.
+```
+
+**4. Verify:**
+
+```bash
+marktoflow version
+```
+
+#### Windows
+
+**1. Find npm's global bin directory:**
+
+```cmd
+npm bin -g
+```
+
+This typically returns: `C:\Users\<username>\AppData\Roaming\npm`
+
+**2. Add to PATH:**
+
+- Open **System Properties** → **Environment Variables**
+- Under **User variables**, select **Path** and click **Edit**
+- Click **New** and add the path from step 1
+- Click **OK** to save
+
+**3. Restart your terminal and verify:**
+
+```cmd
+marktoflow version
+```
+
+#### Alternative: Use npx (No PATH Setup Needed)
+
+If PATH setup is not working, you can always use `npx` to run marktoflow without installation:
+
+```bash
+npx @marktoflow/cli@alpha version
+npx @marktoflow/cli@alpha run workflow.md
 ```
 
 ### Initialize a Project
@@ -331,6 +439,8 @@ marktoflow/
 
 ## Documentation
 
+- [Installation Guide](docs/INSTALLATION.md) - Complete installation guide with troubleshooting
+- [REST API Guide](docs/REST-API-GUIDE.md) - Connect to any REST API
 - [AGENTS.md](AGENTS.md) - Development guidance
 - [GEMINI.md](GEMINI.md) - Port status tracking
 - [PROGRESS.md](PROGRESS.md) - Development history

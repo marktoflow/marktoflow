@@ -4,6 +4,47 @@ This file tracks the TypeScript rewrite of marktoflow for native MCP support and
 
 ---
 
+## npm Publishing & Organization
+
+### Current Status (2026-01-24)
+
+**Published Packages (Under @marktoflow organization)** ✅
+
+- `@marktoflow/cli@2.0.0-alpha.3` - Main CLI package ✅ **WORKING**
+- `@marktoflow/core@2.0.0-alpha.3` - Core engine ✅ **WORKING**
+- `@marktoflow/integrations@2.0.0-alpha.3` - Service integrations ✅ **WORKING**
+
+**Installation**:
+
+```bash
+npm install -g @marktoflow/cli@alpha
+```
+
+**Test Results**:
+
+- ✅ Packages are publicly accessible via npm registry
+- ✅ Successfully installs 297 packages
+- ✅ CLI works: `npx @marktoflow/cli@alpha version` outputs `marktoflow v2.0.0-alpha.1`
+
+### Legacy @scottgl Packages
+
+**Status**: ❌ **BROKEN** - Not installable
+
+**Issue**:
+
+- `@scottgl/marktoflow@2.0.0-alpha.1` and `alpha.2` were published with `workspace:*` dependencies
+- npm cannot resolve `workspace:*` protocol, causing install failures
+- Error: `EUNSUPPORTEDPROTOCOL: Unsupported URL Type "workspace:"`
+
+**Action**:
+
+- [x] Migrated to @marktoflow organization with proper version dependencies
+- [ ] Optional: Deprecate @scottgl packages with message pointing to @marktoflow
+
+**Documentation**: See `docs/PUBLISHING.md` for publishing guide
+
+---
+
 ## Decision: TypeScript Rewrite
 
 **Date:** 2026-01-23
