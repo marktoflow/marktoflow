@@ -495,32 +495,149 @@ templateCmd
 program
   .command('connect <service>')
   .description('Connect a service (OAuth flow)')
-  .action(async (service) => {
+  .option('--client-id <id>', 'OAuth client ID')
+  .option('--client-secret <secret>', 'OAuth client secret')
+  .option('--tenant-id <tenant>', 'Microsoft tenant ID (for Outlook)')
+  .action(async (service, options) => {
+    const serviceLower = service.toLowerCase();
     console.log(chalk.bold(`Connecting ${service}...`));
-    console.log(chalk.yellow('\nOAuth flow not yet implemented.'));
-    console.log('\nFor now, manually set environment variables:');
 
-    switch (service.toLowerCase()) {
+    // Services that support OAuth flow
+    if (serviceLower === 'gmail') {
+      const clientId = options.clientId ?? process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = options.clientSecret ?? process.env.GOOGLE_CLIENT_SECRET;
+
+      if (!clientId || !clientSecret) {
+        console.log(chalk.yellow('\nGmail OAuth requires client credentials.'));
+        console.log('\nTo connect Gmail:');
+        console.log('  1. Go to https://console.cloud.google.com/');
+        console.log('  2. Create OAuth 2.0 credentials (Desktop app type)');
+        console.log('  3. Run: marktoflow connect gmail --client-id YOUR_ID --client-secret YOUR_SECRET');
+        console.log('\nOr set environment variables:');
+        console.log('  export GOOGLE_CLIENT_ID="your-client-id"');
+        console.log('  export GOOGLE_CLIENT_SECRET="your-client-secret"');
+        return;
+      }
+
+      try {
+        const { runGmailOAuth } = await import('./oauth.js');
+        const tokens = await runGmailOAuth({ clientId, clientSecret });
+        console.log(chalk.green('\nGmail connected successfully!'));
+        console.log(chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`));
+        console.log('\nYou can now use Gmail in your workflows:');
+        console.log(chalk.cyan(`  tools:
+    gmail:
+      sdk: "googleapis"
+      auth:
+        client_id: "\${GOOGLE_CLIENT_ID}"
+        client_secret: "\${GOOGLE_CLIENT_SECRET}"
+        redirect_uri: "http://localhost:8484/callback"
+        refresh_token: "\${GMAIL_REFRESH_TOKEN}"`));
+      } catch (error) {
+        console.log(chalk.red(`\nOAuth failed: ${error}`));
+        process.exit(1);
+      }
+      return;
+    }
+
+    if (serviceLower === 'outlook' || serviceLower === 'microsoft') {
+      const clientId = options.clientId ?? process.env.MICROSOFT_CLIENT_ID;
+      const clientSecret = options.clientSecret ?? process.env.MICROSOFT_CLIENT_SECRET;
+      const tenantId = options.tenantId ?? process.env.MICROSOFT_TENANT_ID;
+
+      if (!clientId) {
+        console.log(chalk.yellow('\nOutlook OAuth requires a client ID.'));
+        console.log('\nTo connect Outlook/Microsoft Graph:');
+        console.log('  1. Go to https://portal.azure.com/');
+        console.log('  2. Register an application in Azure AD');
+        console.log('  3. Add redirect URI: http://localhost:8484/callback');
+        console.log('  4. Grant Mail.Read, Mail.Send, Calendars.ReadWrite permissions');
+        console.log('  5. Run: marktoflow connect outlook --client-id YOUR_ID');
+        console.log('\nOr set environment variables:');
+        console.log('  export MICROSOFT_CLIENT_ID="your-client-id"');
+        console.log('  export MICROSOFT_CLIENT_SECRET="your-client-secret"  # optional');
+        console.log('  export MICROSOFT_TENANT_ID="common"  # or your tenant ID');
+        return;
+      }
+
+      try {
+        const { runOutlookOAuth } = await import('./oauth.js');
+        const tokens = await runOutlookOAuth({ clientId, clientSecret, tenantId });
+        console.log(chalk.green('\nOutlook connected successfully!'));
+        console.log(chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`));
+        console.log('\nYou can now use Outlook in your workflows:');
+        console.log(chalk.cyan(`  tools:
+    outlook:
+      sdk: "@microsoft/microsoft-graph-client"
+      auth:
+        token: "\${OUTLOOK_ACCESS_TOKEN}"`));
+      } catch (error) {
+        console.log(chalk.red(`\nOAuth failed: ${error}`));
+        process.exit(1);
+      }
+      return;
+    }
+
+    // Other services - show manual setup instructions
+    console.log('\nManual setup required. Set environment variables:');
+
+    switch (serviceLower) {
       case 'slack':
         console.log(`  export SLACK_BOT_TOKEN="xoxb-your-token"`);
         console.log(`  export SLACK_APP_TOKEN="xapp-your-token"`);
+        console.log(chalk.dim('\n  Get tokens from https://api.slack.com/apps'));
         break;
       case 'github':
         console.log(`  export GITHUB_TOKEN="ghp_your-token"`);
+        console.log(chalk.dim('\n  Create token at https://github.com/settings/tokens'));
         break;
       case 'jira':
         console.log(`  export JIRA_HOST="https://your-domain.atlassian.net"`);
         console.log(`  export JIRA_EMAIL="your-email@example.com"`);
         console.log(`  export JIRA_API_TOKEN="your-api-token"`);
+        console.log(chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'));
+        break;
+      case 'confluence':
+        console.log(`  export CONFLUENCE_HOST="https://your-domain.atlassian.net"`);
+        console.log(`  export CONFLUENCE_EMAIL="your-email@example.com"`);
+        console.log(`  export CONFLUENCE_API_TOKEN="your-api-token"`);
+        console.log(chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'));
+        break;
+      case 'linear':
+        console.log(`  export LINEAR_API_KEY="lin_api_your-key"`);
+        console.log(chalk.dim('\n  Create key at https://linear.app/settings/api'));
+        break;
+      case 'notion':
+        console.log(`  export NOTION_TOKEN="secret_your-token"`);
+        console.log(chalk.dim('\n  Create integration at https://www.notion.so/my-integrations'));
+        break;
+      case 'discord':
+        console.log(`  export DISCORD_BOT_TOKEN="your-bot-token"`);
+        console.log(chalk.dim('\n  Create bot at https://discord.com/developers/applications'));
+        break;
+      case 'airtable':
+        console.log(`  export AIRTABLE_TOKEN="pat_your-token"`);
+        console.log(`  export AIRTABLE_BASE_ID="appXXXXX"  # optional default base`);
+        console.log(chalk.dim('\n  Create token at https://airtable.com/create/tokens'));
         break;
       case 'anthropic':
         console.log(`  export ANTHROPIC_API_KEY="sk-ant-your-key"`);
+        console.log(chalk.dim('\n  Get key at https://console.anthropic.com/'));
         break;
       case 'openai':
         console.log(`  export OPENAI_API_KEY="sk-your-key"`);
+        console.log(chalk.dim('\n  Get key at https://platform.openai.com/api-keys'));
         break;
       default:
         console.log(`  See documentation for ${service} configuration.`);
+        console.log('\n' + chalk.bold('Available services:'));
+        console.log('  Communication: slack, discord');
+        console.log('  Email: gmail, outlook');
+        console.log('  Project management: jira, linear');
+        console.log('  Documentation: notion, confluence');
+        console.log('  Developer: github');
+        console.log('  Data: airtable');
+        console.log('  AI: anthropic, openai');
     }
   });
 
@@ -556,20 +673,41 @@ program
     }
 
     // Check for common environment variables
-    const envChecks = [
+    const envChecks: [string, string][] = [
+      // Communication
       ['SLACK_BOT_TOKEN', 'Slack'],
+      ['DISCORD_BOT_TOKEN', 'Discord'],
+      // Email
+      ['GOOGLE_CLIENT_ID', 'Gmail'],
+      ['MICROSOFT_CLIENT_ID', 'Outlook'],
+      // Project Management
+      ['JIRA_API_TOKEN', 'Jira'],
+      ['LINEAR_API_KEY', 'Linear'],
+      // Documentation
+      ['NOTION_TOKEN', 'Notion'],
+      ['CONFLUENCE_API_TOKEN', 'Confluence'],
+      // Developer
       ['GITHUB_TOKEN', 'GitHub'],
+      // Data
+      ['AIRTABLE_TOKEN', 'Airtable'],
+      // AI
       ['ANTHROPIC_API_KEY', 'Anthropic'],
       ['OPENAI_API_KEY', 'OpenAI'],
     ];
 
     console.log('\n' + chalk.bold('Services:'));
+    let configuredCount = 0;
     for (const [envVar, name] of envChecks) {
       if (process.env[envVar]) {
         console.log(chalk.green('✓') + ` ${name} configured`);
+        configuredCount++;
       } else {
         console.log(chalk.dim('○') + ` ${name} not configured`);
       }
+    }
+
+    if (configuredCount === 0) {
+      console.log(chalk.yellow('\n  Run `marktoflow connect <service>` to set up integrations'));
     }
   });
 

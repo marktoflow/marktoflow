@@ -55,6 +55,6 @@ describe('OpenCode Integration', () => {
 
     const result = await promise;
     expect(result).toBe('Response from OpenCode');
-    expect(spawn).toHaveBeenCalledWith('opencode', ['run', 'Hello']);
+    expect(spawn).toHaveBeenCalledWith('opencode', ['run', 'Hello'], expect.objectContaining({ stdio: ['ignore', 'pipe', 'pipe'] }));
   });
 });

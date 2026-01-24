@@ -119,16 +119,42 @@ npx marktoflow run workflow.md
   - Actions: create_pr, merge, create_issue, search
   - Triggers: push, pull_request, issues (webhooks)
   - Personal access token or GitHub App
-- [ ] **Gmail** (`googleapis`)
+- [x] **Gmail** (`googleapis`)
   - [x] SDK initializer (OAuth2 client)
-  - [ ] Actions: get_emails, send_email, create_draft
-  - [ ] Triggers: email_received (Pub/Sub push)
-  - [ ] OAuth 2.0 with Google (CLI flow)
-- [ ] **Outlook** (`@microsoft/microsoft-graph-client`)
+  - [x] Actions: get_emails, send_email, create_draft (+ getEmail, markAsRead, addLabels, trash, delete, listLabels)
+  - [x] Triggers: email_received (Pub/Sub push via GmailTrigger)
+  - [x] OAuth 2.0 with Google (CLI flow via `marktoflow connect gmail`)
+- [x] **Outlook** (`@microsoft/microsoft-graph-client`)
   - [x] SDK initializer (Graph client)
-  - [ ] Actions: get_emails, send_email, calendar
-  - [ ] Triggers: email_received (Graph subscriptions)
-  - [ ] OAuth 2.0 with Microsoft (CLI flow)
+  - [x] Actions: get_emails, send_email, calendar (+ reply, forward, markAsRead, createEvent, updateEvent, acceptEvent, etc.)
+  - [x] Triggers: email_received (Graph subscriptions via OutlookTrigger)
+  - [x] OAuth 2.0 with Microsoft (CLI flow via `marktoflow connect outlook`)
+
+### Additional Integrations
+- [x] **Linear** (`linear`)
+  - GraphQL API client
+  - Actions: getIssue, createIssue, updateIssue, searchIssues, addComment, archiveIssue
+  - Team, project, and workflow state management
+- [x] **Notion** (`notion`)
+  - Actions: search, getPage, createPage, updatePage, queryDatabase
+  - Block content management (append, delete)
+  - Database queries with filters
+- [x] **Discord** (`discord`)
+  - Actions: sendMessage, editMessage, deleteMessage, getMessages
+  - Thread creation, reactions, webhooks
+  - Guild and channel management
+- [x] **Airtable** (`airtable`)
+  - Actions: listRecords, getRecord, createRecord, updateRecord, deleteRecord
+  - Pagination support, formula filtering
+  - Batch operations (up to 10 records)
+- [x] **Confluence** (`confluence`)
+  - Actions: listPages, getPage, createPage, updatePage, deletePage
+  - Comments, search (CQL), child pages
+  - Space management
+- [x] **HTTP** (`http`)
+  - Generic REST API client
+  - Bearer/Basic/API-Key authentication
+  - GraphQL client helper
 
 ### AI SDKs (Direct YAML Reference)
 - [x] **Anthropic** (`@anthropic-ai/sdk` via Claude Code CLI wrapper)

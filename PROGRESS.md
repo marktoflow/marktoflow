@@ -37,8 +37,34 @@
   - @opencode-ai/sdk support
   - script tool integration
 
+### Session 16 (2026-01-24)
+- [x] Gmail integration complete:
+  - GmailActions class with get_emails, send_email, create_draft, getEmail, markAsRead/Unread, addLabels, removeLabels, trash, delete, listLabels
+  - GmailTrigger class for Pub/Sub push notifications with webhook handler
+  - Updated tests with 6 passing tests
+- [x] Outlook integration complete:
+  - OutlookActions class with email methods (getEmails, sendEmail, createDraft, reply, forward, markAsRead, moveToFolder, delete, listFolders)
+  - OutlookActions calendar methods (getEvents, createEvent, updateEvent, deleteEvent, acceptEvent, declineEvent, tentativelyAcceptEvent)
+  - OutlookTrigger class for Graph subscription notifications with webhook handler
+  - Updated tests with 9 passing tests
+- [x] OAuth CLI flows:
+  - Created oauth.ts module with Gmail and Outlook OAuth flows
+  - Local HTTP server for OAuth callbacks
+  - Token storage in .marktoflow/credentials/
+  - Token refresh support
+  - Updated `marktoflow connect gmail` and `marktoflow connect outlook` commands
+- [x] Fixed opencode test assertion
+- [x] Expanded API support with 6 new integrations:
+  - **Linear**: Issue tracking for dev teams (GraphQL API)
+  - **Notion**: Documentation and knowledge base
+  - **Discord**: Community communication
+  - **Airtable**: Flexible database/spreadsheet
+  - **Confluence**: Enterprise documentation (Atlassian)
+  - **HTTP**: Generic REST API client with GraphQL support
+- [x] 48 passing tests in integrations package
+
 ### In Progress
-- [ ] More built-in integrations (Jira, GitHub, etc.)
+- [ ] Fix core package fernet dependency issue
 - [ ] Native MCP support
 
 ---
