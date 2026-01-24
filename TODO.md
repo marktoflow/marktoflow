@@ -58,31 +58,31 @@ npx marktoflow run workflow.md
 ## Phase 1: Foundation (TypeScript Core)
 
 ### Project Setup
-- [ ] Initialize TypeScript monorepo (pnpm/turborepo)
-- [ ] Create package structure:
+- [x] Initialize TypeScript monorepo (pnpm/turborepo)
+- [x] Create package structure:
   ```
   packages/
     core/           # Parser, engine, state
     cli/            # CLI commands
     integrations/   # Slack, Jira, Gmail, etc.
   ```
-- [ ] Configure TypeScript, ESLint, Prettier
-- [ ] Set up Vitest for testing
+- [x] Configure TypeScript, ESLint, Prettier
+- [x] Set up Vitest for testing
 - [ ] Create CI/CD pipeline
 
 ### Core Engine (Port from Python)
-- [ ] Data models (Workflow, Step, Context, Result)
-- [ ] Workflow parser (YAML frontmatter + markdown)
-- [ ] Step executor with retry/circuit breaker
+- [x] Data models (Workflow, Step, Context, Result)
+- [x] Workflow parser (YAML frontmatter + markdown)
+- [x] Step executor with retry/circuit breaker
 - [ ] State persistence (SQLite via better-sqlite3)
 - [ ] Execution logging
 
 ### CLI (Port from Python)
-- [ ] `marktoflow init` - Project initialization
-- [ ] `marktoflow run` - Workflow execution
-- [ ] `marktoflow workflow list/validate/show`
-- [ ] `marktoflow connect <service>` - OAuth setup (NEW)
-- [ ] `marktoflow doctor` - Environment check
+- [x] `marktoflow init` - Project initialization
+- [x] `marktoflow run` - Workflow execution
+- [x] `marktoflow workflow list/validate/show`
+- [x] `marktoflow connect <service>` - OAuth setup (placeholder)
+- [x] `marktoflow doctor` - Environment check
 
 ---
 

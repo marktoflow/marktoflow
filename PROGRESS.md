@@ -11,9 +11,20 @@
 - [x] Decision to rewrite in TypeScript (see `FRAMEWORK_ANALYSIS.md`)
 - [x] Updated TODO.md with v2.0 roadmap
 - [x] Created comprehensive framework analysis
+- [x] TypeScript project setup (pnpm monorepo + Turborepo)
+- [x] Core package foundation:
+  - Data models with Zod validation
+  - Workflow parser (YAML frontmatter + markdown)
+  - Execution engine with retry/circuit breaker
+  - SDK registry for dynamic loading
+  - Variable template resolution
+  - 29 passing tests
+- [x] CLI package:
+  - Commander-based CLI
+  - Commands: init, run, workflow, connect, doctor, version
 
 ### In Progress
-- [ ] TypeScript project setup
+- [ ] Integrations package (Slack, Jira, GitHub, etc.)
 
 ---
 
