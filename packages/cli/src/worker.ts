@@ -5,6 +5,7 @@ import {
   WorkflowEngine, 
   SDKRegistry, 
   createSDKStepExecutor,
+  StateStore,
   parseFile
 } from '@marktoflow/core';
 import { join } from 'node:path';
@@ -27,7 +28,8 @@ export const workerCommand = new Command('worker')
       process.exit(1);
     }
     
-    const engine = new WorkflowEngine();
+    const stateStore = new StateStore();
+    const engine = new WorkflowEngine({}, {}, stateStore);
     const registry = new SDKRegistry();
     registerIntegrations(registry);
     

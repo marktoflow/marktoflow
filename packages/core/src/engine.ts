@@ -16,6 +16,7 @@ import {
   createExecutionContext,
   createStepResult,
 } from './models.js';
+import { StateStore } from './state.js';
 
 // ============================================================================
 // Types
@@ -230,8 +231,9 @@ export class WorkflowEngine {
   private retryPolicy: RetryPolicy;
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
   private events: EngineEvents;
+  private stateStore?: StateStore | undefined;
 
-  constructor(config: EngineConfig = {}, events: EngineEvents = {}) {
+  constructor(config: EngineConfig = {}, events: EngineEvents = {}, stateStore?: StateStore) {
     this.config = {
       defaultTimeout: config.defaultTimeout ?? 60000,
       maxRetries: config.maxRetries ?? 3,
@@ -246,6 +248,7 @@ export class WorkflowEngine {
     );
 
     this.events = events;
+    this.stateStore = stateStore;
   }
 
   /**
@@ -263,6 +266,23 @@ export class WorkflowEngine {
 
     context.status = WorkflowStatus.RUNNING;
     this.events.onWorkflowStart?.(workflow, context);
+
+    if (this.stateStore) {
+      this.stateStore.createExecution({
+        runId: context.runId,
+        workflowId: workflow.metadata.id,
+        workflowPath: 'unknown',
+        status: WorkflowStatus.RUNNING,
+        startedAt: startedAt,
+        completedAt: null,
+        currentStep: 0,
+        totalSteps: workflow.steps.length,
+        inputs: inputs,
+        outputs: null,
+        error: null,
+        metadata: null
+      });
+    }
 
     try {
       for (let i = 0; i < workflow.steps.length; i++) {
@@ -312,6 +332,14 @@ export class WorkflowEngine {
     } catch (error) {
       context.status = WorkflowStatus.FAILED;
 
+      if (this.stateStore) {
+        this.stateStore.updateExecution(context.runId, {
+          status: WorkflowStatus.FAILED,
+          completedAt: new Date(),
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
       const workflowResult = this.buildWorkflowResult(
         workflow,
         context,
@@ -325,6 +353,15 @@ export class WorkflowEngine {
     }
 
     const workflowResult = this.buildWorkflowResult(workflow, context, stepResults, startedAt);
+    
+    if (this.stateStore) {
+      this.stateStore.updateExecution(context.runId, {
+        status: context.status,
+        completedAt: new Date(),
+        outputs: context.variables
+      });
+    }
+
     this.events.onWorkflowComplete?.(workflow, workflowResult);
     return workflowResult;
   }

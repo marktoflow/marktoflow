@@ -4,6 +4,7 @@ import {
   createJob,
   parseFile,
   WorkflowEngine,
+  StateStore,
   SDKRegistry,
   createSDKStepExecutor
 } from '@marktoflow/core';
@@ -19,7 +20,8 @@ export const triggerCommand = new Command('trigger')
     
     const scheduler = new Scheduler();
     const workflowsDir = join('.marktoflow', 'workflows');
-    const engine = new WorkflowEngine();
+    const stateStore = new StateStore();
+    const engine = new WorkflowEngine({}, {}, stateStore);
     const registry = new SDKRegistry();
     registerIntegrations(registry);
     

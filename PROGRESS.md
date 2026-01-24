@@ -153,6 +153,7 @@ src/marktoflow/
 | 10 | 2026-01-23 | Framework analysis, TypeScript decision |
 | 11 | 2026-01-23 | TypeScript Core tests fix, CLI tests, Integrations setup |
 | 12 | 2026-01-23 | OpenCode SDK, Script Tool, File Watcher, Jira/Ollama/Claude Code integrations |
+| 13 | 2026-01-23 | Reorganized integrations, Engine State Persistence, Worker/Trigger CLI |
 
 ---
 
