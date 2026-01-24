@@ -120,13 +120,15 @@ npx marktoflow run workflow.md
   - Triggers: push, pull_request, issues (webhooks)
   - Personal access token or GitHub App
 - [ ] **Gmail** (`googleapis`)
-  - Actions: get_emails, send_email, create_draft
-  - Triggers: email_received (Pub/Sub push)
-  - OAuth 2.0 with Google
+  - [x] SDK initializer (OAuth2 client)
+  - [ ] Actions: get_emails, send_email, create_draft
+  - [ ] Triggers: email_received (Pub/Sub push)
+  - [ ] OAuth 2.0 with Google (CLI flow)
 - [ ] **Outlook** (`@microsoft/microsoft-graph-client`)
-  - Actions: get_emails, send_email, calendar
-  - Triggers: email_received (Graph subscriptions)
-  - OAuth 2.0 with Microsoft
+  - [x] SDK initializer (Graph client)
+  - [ ] Actions: get_emails, send_email, calendar
+  - [ ] Triggers: email_received (Graph subscriptions)
+  - [ ] OAuth 2.0 with Microsoft (CLI flow)
 
 ### AI SDKs (Direct YAML Reference)
 - [x] **Anthropic** (`@anthropic-ai/sdk` via Claude Code CLI wrapper)
