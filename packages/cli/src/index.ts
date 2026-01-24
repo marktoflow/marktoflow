@@ -19,6 +19,9 @@ import {
   StepStatus,
   WorkflowStatus,
 } from '@marktoflow/core';
+import { registerIntegrations } from '@marktoflow/integrations';
+import { workerCommand } from './worker.js';
+import { triggerCommand } from './trigger.js';
 
 const VERSION = '2.0.0-alpha.1';
 
@@ -32,6 +35,9 @@ program
   .name('marktoflow')
   .description('Universal automation framework with native MCP support')
   .version(VERSION);
+
+program.addCommand(workerCommand);
+program.addCommand(triggerCommand);
 
 // ============================================================================
 // Commands
@@ -183,6 +189,7 @@ program
       );
 
       const registry = new SDKRegistry();
+      registerIntegrations(registry);
       registry.registerTools(workflow.tools);
 
       const result = await engine.execute(

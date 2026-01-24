@@ -89,10 +89,10 @@ npx marktoflow run workflow.md
 ## Phase 2: Native Integrations
 
 ### MCP Integration
-- [ ] MCP server loader (npm package management)
-- [ ] Direct MCP server imports
-- [ ] MCP tool discovery and schema extraction
-- [ ] MCP server lifecycle management
+- [x] MCP server loader (npm package management)
+- [x] Direct MCP server imports
+- [x] MCP tool discovery and schema extraction
+- [x] MCP server lifecycle management
 
 ### Built-in Integrations (via SDKs)
 - [x] **Slack** (`@slack/web-api`, `@slack/bolt`)
@@ -117,17 +117,16 @@ npx marktoflow run workflow.md
   - OAuth 2.0 with Microsoft
 
 ### AI SDKs (Direct YAML Reference)
-- [ ] **Anthropic** (`@anthropic-ai/sdk`)
+- [x] **Anthropic** (`@anthropic-ai/sdk` via Claude Code CLI wrapper)
   - Direct Claude API access
   - Streaming support
   - Tool use
-- [ ] **OpenAI** (`openai`)
-  - GPT-4, GPT-4o access
+- [x] **OpenCode** (`@opencode-ai/sdk`)
+  - SDK + CLI support
   - Function calling
   - Streaming
-- [ ] **Google AI** (`@google/generative-ai`)
-  - Gemini models
-  - Function calling
+- [x] **Ollama** (`ollama`)
+  - Local model support
 
 ---
 
@@ -135,9 +134,9 @@ npx marktoflow run workflow.md
 
 ### Trigger System
 - [ ] Unified trigger manager
-- [ ] Cron-based scheduling (node-cron)
-- [ ] Webhook receiver (Express/Fastify)
-- [ ] File system watcher (chokidar)
+- [x] Cron-based scheduling (node-cron/custom scheduler)
+- [x] Webhook receiver (Express/Fastify/custom)
+- [x] File system watcher (chokidar)
 
 ### External Triggers
 - [ ] Slack Socket Mode (real-time messages)
@@ -177,9 +176,9 @@ npx marktoflow run workflow.md
 ## Phase 5: Production Features
 
 ### From Python v1.0 (Port if needed)
-- [ ] RBAC and permissions
-- [ ] Approval workflows
-- [ ] Audit logging
+- [x] RBAC and permissions
+- [x] Approval workflows
+- [x] Audit logging
 - [ ] Cost tracking
 - [ ] Plugin system
 - [ ] Workflow templates

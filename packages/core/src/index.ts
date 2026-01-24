@@ -142,6 +142,7 @@ export {
   InMemoryQueue,
   RedisQueue,
   RabbitMQQueue,
+  WorkflowQueueManager,
   type QueueMessage,
   type QueueConfig,
   type MessageHandler,

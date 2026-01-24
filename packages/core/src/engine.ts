@@ -291,7 +291,16 @@ export class WorkflowEngine {
 
           if (errorAction === 'stop') {
             context.status = WorkflowStatus.FAILED;
-            break;
+            const workflowError = result.error || `Step ${step.id} failed`;
+            const workflowResult = this.buildWorkflowResult(
+              workflow,
+              context,
+              stepResults,
+              startedAt,
+              workflowError
+            );
+            this.events.onWorkflowComplete?.(workflow, workflowResult);
+            return workflowResult;
           }
           // 'continue' - keep going
           // 'rollback' - would require rollback implementation
@@ -299,9 +308,7 @@ export class WorkflowEngine {
       }
 
       // Determine final status
-      if (context.status !== WorkflowStatus.FAILED) {
-        context.status = WorkflowStatus.COMPLETED;
-      }
+      context.status = WorkflowStatus.COMPLETED;
     } catch (error) {
       context.status = WorkflowStatus.FAILED;
 

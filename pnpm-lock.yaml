@@ -29,6 +29,9 @@ importers:
       '@marktoflow/core':
         specifier: workspace:*
         version: link:../core
+      '@marktoflow/integrations':
+        specifier: workspace:*
+        version: link:../integrations
       chalk:
         specifier: ^5.3.0
         version: 5.6.2
@@ -70,6 +73,9 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@types/amqplib':
+        specifier: ^0.10.8
+        version: 0.10.8
       '@types/better-sqlite3':
         specifier: ^7.6.0
         version: 7.6.13
@@ -607,6 +613,9 @@ packages:
   '@slack/web-api@7.13.0':
     resolution: {integrity: sha512-ERcExbWrnkDN8ovoWWe6Wgt/usanj1dWUd18dJLpctUI4mlPS0nKt81Joh8VI+OPbNnY1lIilVt9gdMBD9U2ig==}
     engines: {node: '>= 18', npm: '>= 8.6.0'}
+
+  '@types/amqplib@0.10.8':
+    resolution: {integrity: sha512-vtDp8Pk1wsE/AuQ8/Rgtm6KUZYqcnTgNvEHwzCkX8rL7AGsC6zqAfKAAJhUZXFhM/Pp++tbnUHiam/8vVpPztA==}
 
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
@@ -1920,6 +1929,10 @@ snapshots:
       retry: 0.13.1
     transitivePeerDependencies:
       - debug
+
+  '@types/amqplib@0.10.8':
+    dependencies:
+      '@types/node': 22.19.7
 
   '@types/better-sqlite3@7.6.13':
     dependencies:

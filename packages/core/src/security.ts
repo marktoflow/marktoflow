@@ -5,8 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { randomUUID, randomBytes } from 'node:crypto';
-import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync } from 'node:fs';
 
 // ============================================================================
@@ -193,16 +192,16 @@ export interface ApprovalRequest {
   workflowId: string;
   requesterId: string;
   title: string;
-  description?: string;
+  description?: string | undefined;
   status: ApprovalStatus;
   requiredApprovers: string[];
   minApprovals: number;
-  approvals: Array<{ approverId: string; comment?: string; timestamp: Date }>;
-  rejections: Array<{ rejectorId: string; reason?: string; timestamp: Date }>;
+  approvals: Array<{ approverId: string; comment?: string | undefined; timestamp: Date }>;
+  rejections: Array<{ rejectorId: string; reason?: string | undefined; timestamp: Date }>;
   metadata: Record<string, unknown>;
   createdAt: Date;
-  expiresAt?: Date;
-  resolvedAt?: Date;
+  expiresAt?: Date | undefined;
+  resolvedAt?: Date | undefined;
 }
 
 export interface ApprovalHandler {
@@ -214,9 +213,9 @@ export interface ApprovalHandler {
 export class ApprovalManager {
   private requests: Map<string, ApprovalRequest> = new Map();
   private handlers: ApprovalHandler[] = [];
-  private rbac?: RBACManager;
+  private rbac?: RBACManager | undefined;
 
-  constructor(rbac?: RBACManager) {
+  constructor(rbac?: RBACManager | undefined) {
     this.rbac = rbac;
   }
 
@@ -352,7 +351,6 @@ export enum AuditEventType {
   WORKFLOW_COMPLETED = 'workflow.completed',
   WORKFLOW_FAILED = 'workflow.failed',
   PERMISSION_DENIED = 'security.permission_denied',
-  // ... others
 }
 
 export interface AuditEvent {

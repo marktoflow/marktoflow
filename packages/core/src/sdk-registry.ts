@@ -184,7 +184,17 @@ export class SDKRegistry {
     }
 
     // Load the SDK module
-    const module = await this.loader.load(instance.config.sdk);
+    let module: unknown;
+    try {
+      module = await this.loader.load(instance.config.sdk);
+    } catch (error) {
+      // If we have an initializer, ignore load error and pass null (e.g. for 'script' tool)
+      if (this.initializers.has(instance.config.sdk)) {
+        module = null;
+      } else {
+        throw error;
+      }
+    }
 
     // Initialize with config
     const initializer = this.initializers.get(instance.config.sdk);

@@ -7,6 +7,7 @@
 import { EventEmitter } from 'node:events';
 import { Redis } from 'ioredis';
 import * as amqp from 'amqplib';
+import { randomUUID } from 'node:crypto';
 
 // ============================================================================
 // Types
@@ -227,12 +228,6 @@ export class RedisQueue extends MessageQueue {
     if (!this.client) throw new Error("Redis not connected");
     
     const key = this.queueKey(queueName);
-    // Use ZSET for priority queue. Score = -priority (so highest priority is first)
-    // Actually Redis ZPOPMIN pops lowest score. So Score = -priority means:
-    // Priority 3 -> Score -3
-    // Priority 0 -> Score 0
-    // ZPOPMIN gets -3 first. Correct.
-    
     await this.client.zadd(key, -message.priority, JSON.stringify(message));
     return message.id;
   }
@@ -244,7 +239,6 @@ export class RedisQueue extends MessageQueue {
     const procKey = this.processingKey(queueName);
 
     while (this.running) {
-      // ZPOPMIN returns [member, score, member, score...]
       const results = await this.client.zpopmin(key, batchSize);
       
       if (results.length === 0) {
@@ -259,7 +253,6 @@ export class RedisQueue extends MessageQueue {
         message.attempts++;
         message.status = MessageStatus.PROCESSING;
         
-        // Save to processing hash
         await this.client.hset(procKey, message.id, JSON.stringify(message));
 
         try {
@@ -322,8 +315,8 @@ export class RedisQueue extends MessageQueue {
 // ============================================================================
 
 export class RabbitMQQueue extends MessageQueue {
-  private connection: amqp.Connection | null = null;
-  private channel: amqp.Channel | null = null;
+  private connection: any = null;
+  private channel: any = null;
   private config: QueueConfig;
   private amqpUrl: string;
   private consumerTag: string | null = null;
@@ -345,7 +338,6 @@ export class RabbitMQQueue extends MessageQueue {
       args['x-dead-letter-exchange'] = '';
       args['x-dead-letter-routing-key'] = this.config.deadLetterQueue;
       
-      // Ensure dead letter queue exists
       await this.channel.assertQueue(this.config.deadLetterQueue, { durable: true });
     }
 
@@ -382,7 +374,7 @@ export class RabbitMQQueue extends MessageQueue {
     
     await this.channel.prefetch(batchSize);
     
-    const { consumerTag } = await this.channel.consume(queue, async (msg) => {
+    const { consumerTag } = await this.channel.consume(queue, async (msg: any) => {
       if (!msg) return;
       
       const message: QueueMessage = JSON.parse(msg.content.toString());
@@ -394,14 +386,8 @@ export class RabbitMQQueue extends MessageQueue {
       } catch (error) {
         message.error = String(error);
         if (message.attempts < message.maxAttempts) {
-          // Requeue
-          // RabbitMQ requeue puts it at the head, or we can nack with requeue=true
-          // But we want delay? RabbitMQ doesn't support delay natively easily without plugins.
-          // For simplicity, we just nack(requeue=true) or publish to delay exchange?
-          // We'll stick to nack(requeue=true) for now.
           this.channel?.nack(msg, false, true);
         } else {
-          // Dead letter or drop
           this.channel?.nack(msg, false, false); 
         }
       }
@@ -410,10 +396,6 @@ export class RabbitMQQueue extends MessageQueue {
     this.consumerTag = consumerTag;
   }
 
-  // RabbitMQ ack/nack is handled in consume callback using the raw msg object.
-  // The abstract methods are less useful here unless we map messageId to msg object.
-  // We'll leave them as no-ops or throw, but consume() implements the logic.
-  
   async acknowledge(_messageId: string): Promise<void> {
     // Handled in consume
   }
@@ -439,5 +421,57 @@ export class RabbitMQQueue extends MessageQueue {
       await this.channel.cancel(this.consumerTag);
       this.consumerTag = null;
     }
+  }
+}
+
+// ============================================================================
+// Workflow Queue Manager
+// ============================================================================
+
+export class WorkflowQueueManager {
+  private queue: MessageQueue;
+  private workflowCallback?: ((workflowId: string, inputs: Record<string, unknown>) => Promise<any>) | undefined;
+
+  constructor(queue: MessageQueue, workflowCallback?: ((workflowId: string, inputs: Record<string, unknown>) => Promise<any>) | undefined) {
+    this.queue = queue;
+    this.workflowCallback = workflowCallback;
+  }
+
+  async enqueueWorkflow(
+    workflowId: string,
+    inputs: Record<string, unknown> = {},
+    priority: MessagePriority = MessagePriority.NORMAL,
+    metadata: Record<string, unknown> = {}
+  ): Promise<string> {
+    const message: QueueMessage = {
+      id: randomUUID(),
+      workflowId,
+      payload: inputs,
+      priority,
+      status: MessageStatus.PENDING,
+      createdAt: new Date(),
+      attempts: 0,
+      maxAttempts: 3,
+      metadata,
+    };
+    return this.queue.publish(message);
+  }
+
+  async startWorker(numWorkers = 1): Promise<void> {
+    if (!this.workflowCallback) {
+      throw new Error("No workflow callback configured");
+    }
+
+    const handler: MessageHandler = async (message) => {
+      if (this.workflowCallback) {
+        await this.workflowCallback(message.workflowId, message.payload);
+      }
+    };
+
+    await this.queue.consume(handler, undefined, numWorkers);
+  }
+
+  async stopWorker(): Promise<void> {
+    await this.queue.stop();
   }
 }
