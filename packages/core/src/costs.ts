@@ -323,6 +323,7 @@ export class CostTracker {
 
 export class CostStore {
   private db: Database.Database;
+  private pricing: PricingRegistry;
 
   constructor(dbPath: string = '.marktoflow/state/costs.db') {
     const dir = dbPath.substring(0, dbPath.lastIndexOf('/'));
@@ -331,6 +332,48 @@ export class CostStore {
     }
     this.db = new Database(dbPath);
     this.init();
+    this.pricing = new PricingRegistry();
+  }
+
+  getPricingRegistry(): PricingRegistry {
+    return this.pricing;
+  }
+
+  calculateCost(modelName: string, inputTokens: number, outputTokens: number): number {
+    return this.pricing.calculateCost(modelName, inputTokens, outputTokens) ?? 0;
+  }
+
+  record(params: {
+    workflowId: string;
+    runId: string;
+    agentName: string;
+    modelName: string;
+    tokenUsage: TokenUsage;
+    stepName?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
+  }): CostRecord {
+    const cost = this.calculateCost(params.modelName, params.tokenUsage.inputTokens, params.tokenUsage.outputTokens);
+    const record: CostRecord = {
+      id: randomUUID(),
+      timestamp: new Date(),
+      workflowId: params.workflowId,
+      runId: params.runId,
+      stepName: params.stepName,
+      agentName: params.agentName,
+      modelName: params.modelName,
+      tokenUsage: {
+        inputTokens: params.tokenUsage.inputTokens,
+        outputTokens: params.tokenUsage.outputTokens,
+        cachedTokens: params.tokenUsage.cachedTokens ?? 0,
+        reasoningTokens: params.tokenUsage.reasoningTokens ?? 0,
+      },
+      estimatedCost: cost,
+      currency: 'USD',
+      metadata: params.metadata ?? {},
+    };
+
+    this.save(record);
+    return record;
   }
 
   private init(): void {
