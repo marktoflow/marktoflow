@@ -261,27 +261,38 @@ npx marktoflow run workflow.md
 
 ### Test Coverage
 
-- [ ] Expand test suite (current: 145 tests, Python had 615+)
-  - [x] Core package: 89 tests
+- [ ] Expand test suite (current: 181 tests, Python had 615+, **29% progress**)
+  - [x] Core package: 125 tests (+36 new) - 119 passing
   - [x] Integrations package: 48 tests
   - [x] CLI package: 8 tests
-  - [ ] Add integration tests for workflows
-  - [ ] Add end-to-end tests
+  - [x] Add integration tests for workflows (13 tests added)
+  - [x] Add end-to-end tests (6 tests added)
+  - [x] Add concurrent execution tests (8 tests added)
+  - [x] Add multi-agent workflow tests (9 tests added)
   - [ ] Add performance/load tests
   - [ ] Add security tests
+  - [ ] Fix 6 failing edge case tests
+
+### Completed Test Coverage
+
+- [x] Full workflow execution scenarios (multi-step, conditionals, error handling)
+- [x] Multi-agent workflows (routing, collaboration, consensus)
+- [x] Error handling and recovery paths (retry, continue, fail)
+- [x] Concurrent execution (parallel steps, rate limiting, resource contention)
+- [x] Multi-service integration (Slack, Jira, GitHub, Gmail, Linear, Notion)
+- [x] Complex variable resolution (nested objects, arrays)
+- [x] Workflow lifecycle events
 
 ### Missing Test Coverage
 
-- [ ] Full workflow execution scenarios
-- [ ] Multi-agent workflows
-- [ ] Error handling and recovery paths
-- [ ] Concurrent execution
 - [ ] Large-scale state management
-- [ ] Plugin lifecycle
+- [ ] Plugin lifecycle edge cases
 - [ ] Template instantiation edge cases
 - [ ] Cost tracking accuracy
 - [ ] RBAC edge cases
 - [ ] Webhook signature verification edge cases
+- [ ] Performance benchmarks
+- [ ] Security penetration tests
 
 ---
 
