@@ -358,12 +358,12 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 - [x] Prompt input component at bottom of screen
 - [x] Prompt history panel
 - [x] Claude API integration for workflow modifications
-- [ ] Prompt engineering for:
-  - [ ] Adding/removing steps
-  - [ ] Modifying step inputs
-  - [ ] Adding error handling
-  - [ ] Creating sub-workflows
-  - [ ] Adding conditions
+- [x] Prompt engineering for:
+  - [x] Adding/removing steps
+  - [x] Modifying step inputs
+  - [x] Adding error handling
+  - [x] Creating sub-workflows
+  - [x] Adding conditions
 - [x] Change preview with diff view
 - [x] Accept/reject workflow changes
 - [x] Real-time canvas refresh after changes

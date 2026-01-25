@@ -10,6 +10,7 @@ import type {
   PromptResult,
   Workflow,
 } from './types.js';
+import { generateSuggestions, AVAILABLE_SERVICES } from './prompts.js';
 
 export class DemoProvider implements AgentProvider {
   readonly id = 'demo';
@@ -41,46 +42,102 @@ export class DemoProvider implements AgentProvider {
     let explanation = '';
     const modifiedWorkflow = { ...workflow, steps: [...(workflow.steps || [])] };
 
+    // Detect which service is being requested
+    const serviceMatch = Object.keys(AVAILABLE_SERVICES).find((s) =>
+      promptLower.includes(s.toLowerCase())
+    );
+
     // Simulate different responses based on prompt patterns
-    if (promptLower.includes('add') && promptLower.includes('slack')) {
-      modifiedWorkflow.steps.push({
-        id: `slack-${Date.now()}`,
-        name: 'Send Slack Notification',
-        action: 'slack.chat.postMessage',
-        inputs: { channel: '#general', text: 'Workflow completed successfully!' },
-        outputVariable: 'slack_result',
-      });
-      explanation = 'Added a Slack notification step at the end of the workflow.';
-    } else if (promptLower.includes('add') && promptLower.includes('github')) {
-      modifiedWorkflow.steps.push({
-        id: `github-${Date.now()}`,
-        name: 'Create GitHub Issue',
-        action: 'github.issues.create',
-        inputs: { owner: '{{ inputs.owner }}', repo: '{{ inputs.repo }}', title: 'New Issue' },
-        outputVariable: 'issue_result',
-      });
-      explanation = 'Added a GitHub issue creation step.';
-    } else if (promptLower.includes('error') || promptLower.includes('retry')) {
+    if (promptLower.includes('add') && serviceMatch) {
+      const service = AVAILABLE_SERVICES[serviceMatch as keyof typeof AVAILABLE_SERVICES];
+      const action = service.commonActions[0];
+      const stepId = `${serviceMatch}-${Date.now().toString(36)}`;
+
+      const newStep: any = {
+        id: stepId,
+        name: `${serviceMatch.charAt(0).toUpperCase() + serviceMatch.slice(1)} Action`,
+        action: `${serviceMatch}.${action}`,
+        inputs: this.generateDefaultInputs(serviceMatch, action),
+        outputVariable: `${serviceMatch}_result`,
+      };
+
+      modifiedWorkflow.steps.push(newStep);
+      explanation = `Added a ${serviceMatch} step using ${serviceMatch}.${action}. The step is configured with default inputs that you should customize.`;
+    } else if (promptLower.includes('error') || promptLower.includes('retry') || promptLower.includes('handling')) {
+      const maxRetries = promptLower.match(/(\d+)\s*(retry|retries|times)/)?.[1] || '3';
       modifiedWorkflow.steps = modifiedWorkflow.steps.map((step) => ({
         ...step,
-        errorHandling: { action: 'retry' as const, maxRetries: 3 },
+        errorHandling: {
+          action: 'retry' as const,
+          maxRetries: parseInt(maxRetries),
+          retryDelay: 1000,
+        },
       }));
-      explanation = 'Added error handling with 3 retries to all steps.';
-    } else if (promptLower.includes('condition')) {
+      explanation = `Added error handling with ${maxRetries} retries to all ${modifiedWorkflow.steps.length} steps.`;
+    } else if (promptLower.includes('condition') || promptLower.includes('if') || promptLower.includes('when')) {
       if (modifiedWorkflow.steps.length > 0) {
+        const condition = this.extractCondition(promptLower);
         modifiedWorkflow.steps[modifiedWorkflow.steps.length - 1] = {
           ...modifiedWorkflow.steps[modifiedWorkflow.steps.length - 1],
-          conditions: ['{{ previous_step.success === true }}'],
+          conditions: [condition],
         };
-        explanation = 'Added a success condition to the last step.';
+        explanation = `Added condition "${condition}" to the last step.`;
+      } else {
+        explanation = 'No steps to add conditions to. Please add some steps first.';
       }
     } else if (promptLower.includes('remove') || promptLower.includes('delete')) {
       if (modifiedWorkflow.steps.length > 0) {
-        const removed = modifiedWorkflow.steps.pop();
-        explanation = `Removed the last step "${removed?.name || removed?.id}".`;
+        // Try to find a specific step to remove
+        const stepNameMatch = promptLower.match(/(?:remove|delete)\s+(?:the\s+)?["']?([^"']+)["']?\s+step/);
+        if (stepNameMatch) {
+          const targetName = stepNameMatch[1].toLowerCase();
+          const index = modifiedWorkflow.steps.findIndex(
+            (s) =>
+              s.id.toLowerCase().includes(targetName) ||
+              (s.name && s.name.toLowerCase().includes(targetName))
+          );
+          if (index >= 0) {
+            const removed = modifiedWorkflow.steps.splice(index, 1)[0];
+            explanation = `Removed step "${removed.name || removed.id}".`;
+          } else {
+            const removed = modifiedWorkflow.steps.pop();
+            explanation = `Could not find a step matching "${targetName}". Removed the last step "${removed?.name || removed?.id}" instead.`;
+          }
+        } else {
+          const removed = modifiedWorkflow.steps.pop();
+          explanation = `Removed the last step "${removed?.name || removed?.id}".`;
+        }
+      } else {
+        explanation = 'No steps to remove.';
       }
+    } else if (promptLower.includes('notification') || promptLower.includes('notify')) {
+      modifiedWorkflow.steps.push({
+        id: `notify-${Date.now().toString(36)}`,
+        name: 'Send Notification',
+        action: 'slack.chat.postMessage',
+        inputs: {
+          channel: '#notifications',
+          text: 'Workflow "{{ workflow.name }}" completed successfully!',
+        },
+        outputVariable: 'notification_result',
+      });
+      explanation = 'Added a Slack notification step at the end of the workflow.';
+    } else if (promptLower.includes('http') || promptLower.includes('api') || promptLower.includes('request')) {
+      const method = promptLower.includes('post') ? 'POST' : promptLower.includes('put') ? 'PUT' : 'GET';
+      modifiedWorkflow.steps.push({
+        id: `http-${Date.now().toString(36)}`,
+        name: `HTTP ${method} Request`,
+        action: 'http.request',
+        inputs: {
+          method,
+          url: '{{ inputs.api_url }}',
+          headers: { 'Content-Type': 'application/json' },
+        },
+        outputVariable: 'api_response',
+      });
+      explanation = `Added an HTTP ${method} request step. Configure the URL and any required headers.`;
     } else {
-      explanation = `Demo mode: I understood "${prompt}". In production, this would use Claude or another AI model to intelligently modify the workflow.`;
+      explanation = `Demo mode: I understood "${prompt}". In production mode with Claude or Ollama, this would intelligently analyze your request and modify the workflow accordingly. For now, try commands like:\n- "Add a Slack notification"\n- "Add error handling with 5 retries"\n- "Add a condition to run only on success"\n- "Remove the last step"`;
     }
 
     return {
@@ -90,33 +147,35 @@ export class DemoProvider implements AgentProvider {
   }
 
   async getSuggestions(workflow: Workflow, selectedStepId?: string): Promise<string[]> {
-    const suggestions: string[] = [];
+    // Use the shared suggestions generator
+    return generateSuggestions(workflow, selectedStepId);
+  }
 
-    if (!workflow || !workflow.steps || workflow.steps.length === 0) {
-      return [
-        'Add a Slack notification step',
-        'Add a GitHub integration',
-        'Add an HTTP request step',
-      ];
+  private generateDefaultInputs(service: string, action: string): Record<string, unknown> {
+    const defaults: Record<string, Record<string, unknown>> = {
+      slack: { channel: '#general', text: 'Hello from Marktoflow!' },
+      github: { owner: '{{ inputs.owner }}', repo: '{{ inputs.repo }}' },
+      jira: { projectKey: '{{ inputs.project }}', summary: 'New Issue' },
+      gmail: { to: '{{ inputs.email }}', subject: 'Notification', body: 'Hello!' },
+      http: { method: 'GET', url: '{{ inputs.url }}' },
+      linear: { title: 'New Issue', teamId: '{{ inputs.team_id }}' },
+      notion: { parent: { database_id: '{{ inputs.database_id }}' } },
+    };
+    return defaults[service] || {};
+  }
+
+  private extractCondition(prompt: string): string {
+    // Try to extract a meaningful condition from the prompt
+    if (prompt.includes('success')) {
+      return '{{ previous_step.success === true }}';
     }
-
-    suggestions.push(
-      'Add error handling to all steps',
-      'Add a notification at the end',
-      'Add a condition to the workflow'
-    );
-
-    if (selectedStepId) {
-      const step = workflow.steps.find((s) => s.id === selectedStepId);
-      if (step) {
-        suggestions.push(
-          `Add retry logic to "${step.name || step.id}"`,
-          `Duplicate "${step.name || step.id}"`
-        );
-      }
+    if (prompt.includes('fail')) {
+      return '{{ previous_step.success === false }}';
     }
-
-    return suggestions.slice(0, 5);
+    if (prompt.includes('production')) {
+      return '{{ inputs.environment === "production" }}';
+    }
+    return '{{ previous_step.success === true }}';
   }
 }
 

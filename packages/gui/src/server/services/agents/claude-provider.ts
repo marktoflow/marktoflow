@@ -12,29 +12,7 @@ import type {
   PromptResult,
   Workflow,
 } from './types.js';
-
-const SYSTEM_PROMPT = `You are an expert workflow automation assistant for Marktoflow, a markdown-based workflow automation framework.
-
-Your role is to help users modify their workflows based on natural language requests. You should:
-
-1. Understand the current workflow structure (YAML frontmatter with steps, inputs, tools)
-2. Make precise modifications based on user requests
-3. Explain what changes you made and why
-
-When modifying workflows, follow these conventions:
-- Each step has: id, name (optional), action (service.method), inputs, output_variable
-- Actions use format: service.method (e.g., slack.chat.postMessage, github.pulls.get)
-- Template variables use: {{ variable_name }} syntax
-- Error handling can specify: action (stop/continue/retry), max_retries
-- Conditions use JavaScript-like expressions
-
-Available services: slack, github, jira, gmail, outlook, linear, notion, discord, airtable, confluence, http, claude, opencode, ollama
-
-Respond with:
-1. A brief explanation of the changes
-2. The complete modified workflow in valid YAML format
-
-Be concise and precise. Only make the requested changes.`;
+import { buildPrompt, generateSuggestions } from './prompts.js';
 
 export class ClaudeProvider implements AgentProvider {
   readonly id = 'claude';
@@ -97,7 +75,11 @@ export class ClaudeProvider implements AgentProvider {
     };
   }
 
-  async processPrompt(prompt: string, workflow: Workflow): Promise<PromptResult> {
+  async processPrompt(
+    prompt: string,
+    workflow: Workflow,
+    context?: { selectedStepId?: string; recentHistory?: string[] }
+  ): Promise<PromptResult> {
     if (!this.client) {
       return {
         explanation: 'Claude provider not initialized. Running in demo mode.',
@@ -106,16 +88,17 @@ export class ClaudeProvider implements AgentProvider {
     }
 
     try {
-      const workflowYaml = yamlStringify(workflow, { indent: 2, lineWidth: 0 });
+      // Build context-aware prompts
+      const { systemPrompt, userPrompt } = buildPrompt(prompt, workflow, context);
 
       const response = await this.client.messages.create({
         model: this.model,
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: [
           {
             role: 'user',
-            content: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}`,
+            content: userPrompt,
           },
         ],
       });
@@ -135,60 +118,34 @@ export class ClaudeProvider implements AgentProvider {
   }
 
   async getSuggestions(workflow: Workflow, selectedStepId?: string): Promise<string[]> {
-    const suggestions: string[] = [];
-
-    if (!workflow || !workflow.steps) {
-      return [
-        'Add your first step',
-        'Import a template workflow',
-        'Connect to a service',
-      ];
-    }
-
-    suggestions.push(
-      'Add error handling to all steps',
-      'Add a notification step at the end',
-      'Convert steps to a sub-workflow'
-    );
-
-    if (selectedStepId) {
-      const step = workflow.steps.find((s) => s.id === selectedStepId);
-      if (step) {
-        if (!step.errorHandling) {
-          suggestions.push(`Add retry logic to "${step.name || step.id}"`);
-        }
-        suggestions.push(
-          `Add a condition to "${step.name || step.id}"`,
-          `Duplicate "${step.name || step.id}"`
-        );
-      }
-    }
-
-    return suggestions.slice(0, 5);
+    // Use the prompt engineering module for context-aware suggestions
+    return generateSuggestions(workflow, selectedStepId);
   }
 
   async streamPrompt(
     prompt: string,
     workflow: Workflow,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    context?: { selectedStepId?: string; recentHistory?: string[] }
   ): Promise<PromptResult> {
     if (!this.client) {
-      return this.processPrompt(prompt, workflow);
+      return this.processPrompt(prompt, workflow, context);
     }
 
-    const workflowYaml = yamlStringify(workflow, { indent: 2, lineWidth: 0 });
+    // Build context-aware prompts
+    const { systemPrompt, userPrompt } = buildPrompt(prompt, workflow, context);
     let fullResponse = '';
 
     try {
       const stream = await this.client.messages.create({
         model: this.model,
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         stream: true,
         messages: [
           {
             role: 'user',
-            content: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}`,
+            content: userPrompt,
           },
         ],
       });

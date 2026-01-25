@@ -24,6 +24,7 @@
 
 export * from './types.js';
 export * from './registry.js';
+export * from './prompts.js';
 export { ClaudeProvider, createClaudeProvider } from './claude-provider.js';
 export { DemoProvider, createDemoProvider } from './demo-provider.js';
 export { OllamaProvider, createOllamaProvider } from './ollama-provider.js';
