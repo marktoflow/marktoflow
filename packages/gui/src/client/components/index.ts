@@ -2,6 +2,8 @@
 export { Canvas } from './Canvas/Canvas';
 export { StepNode } from './Canvas/StepNode';
 export { SubWorkflowNode } from './Canvas/SubWorkflowNode';
+export { TriggerNode } from './Canvas/TriggerNode';
+export { OutputNode } from './Canvas/OutputNode';
 export { Toolbar } from './Canvas/Toolbar';
 export { ExecutionOverlay } from './Canvas/ExecutionOverlay';
 export { NodeContextMenu, CanvasContextMenu } from './Canvas/NodeContextMenu';

@@ -10,12 +10,20 @@ interface WorkflowStep {
   conditions?: string[];
 }
 
+interface WorkflowTrigger {
+  type: 'manual' | 'schedule' | 'webhook' | 'event';
+  cron?: string;
+  path?: string;
+  events?: string[];
+}
+
 interface Workflow {
   metadata: {
     id: string;
     name: string;
   };
   steps: WorkflowStep[];
+  triggers?: WorkflowTrigger[];
 }
 
 interface GraphResult {
@@ -32,6 +40,42 @@ export function workflowToGraph(workflow: Workflow): GraphResult {
 
   const VERTICAL_SPACING = 120;
   const HORIZONTAL_OFFSET = 250;
+  let currentY = 0;
+
+  // Add trigger node if triggers are defined
+  if (workflow.triggers && workflow.triggers.length > 0) {
+    const trigger = workflow.triggers[0]; // Primary trigger
+    const triggerId = `trigger-${workflow.metadata.id}`;
+
+    nodes.push({
+      id: triggerId,
+      type: 'trigger',
+      position: { x: HORIZONTAL_OFFSET, y: currentY },
+      data: {
+        id: triggerId,
+        name: workflow.metadata.name,
+        type: trigger.type || 'manual',
+        cron: trigger.cron,
+        path: trigger.path,
+        events: trigger.events,
+        active: true,
+      },
+    });
+
+    currentY += VERTICAL_SPACING;
+
+    // Edge from trigger to first step
+    if (workflow.steps.length > 0) {
+      edges.push({
+        id: `e-${triggerId}-${workflow.steps[0].id}`,
+        source: triggerId,
+        target: workflow.steps[0].id,
+        type: 'smoothstep',
+        animated: false,
+        style: { stroke: '#ff6d5a', strokeWidth: 2 },
+      });
+    }
+  }
 
   // Create nodes for each step
   workflow.steps.forEach((step, index) => {
@@ -42,7 +86,7 @@ export function workflowToGraph(workflow: Workflow): GraphResult {
       type: isSubWorkflow ? 'subworkflow' : 'step',
       position: {
         x: HORIZONTAL_OFFSET,
-        y: index * VERTICAL_SPACING,
+        y: currentY + index * VERTICAL_SPACING,
       },
       data: {
         id: step.id,
@@ -77,6 +121,40 @@ export function workflowToGraph(workflow: Workflow): GraphResult {
       edges.push(edge);
     }
   });
+
+  // Add output node at the end
+  if (workflow.steps.length > 0) {
+    const outputId = `output-${workflow.metadata.id}`;
+    const lastStep = workflow.steps[workflow.steps.length - 1];
+    const outputY = currentY + workflow.steps.length * VERTICAL_SPACING;
+
+    // Collect all output variables
+    const outputVariables = workflow.steps
+      .filter((s) => s.outputVariable)
+      .map((s) => s.outputVariable as string);
+
+    nodes.push({
+      id: outputId,
+      type: 'output',
+      position: { x: HORIZONTAL_OFFSET, y: outputY },
+      data: {
+        id: outputId,
+        name: 'Workflow Output',
+        variables: outputVariables,
+        status: 'pending',
+      },
+    });
+
+    // Edge from last step to output
+    edges.push({
+      id: `e-${lastStep.id}-${outputId}`,
+      source: lastStep.id,
+      target: outputId,
+      type: 'smoothstep',
+      animated: false,
+      style: { stroke: '#ff6d5a', strokeWidth: 2 },
+    });
+  }
 
   // Add data flow edges based on variable references
   const variableEdges = findVariableDependencies(workflow.steps);
@@ -178,10 +256,26 @@ export function graphToWorkflow(
   _edges: Edge[],
   metadata: Workflow['metadata']
 ): Workflow {
-  // Sort nodes by vertical position to determine step order
-  const sortedNodes = [...nodes].sort((a, b) => a.position.y - b.position.y);
+  // Filter out trigger and output nodes, sort by vertical position
+  const stepNodes = nodes
+    .filter((node) => node.type === 'step' || node.type === 'subworkflow')
+    .sort((a, b) => a.position.y - b.position.y);
 
-  const steps: WorkflowStep[] = sortedNodes.map((node) => {
+  // Extract trigger info if present
+  const triggerNode = nodes.find((node) => node.type === 'trigger');
+  const triggers: WorkflowTrigger[] = [];
+
+  if (triggerNode) {
+    const data = triggerNode.data as Record<string, unknown>;
+    triggers.push({
+      type: (data.type as WorkflowTrigger['type']) || 'manual',
+      cron: data.cron as string | undefined,
+      path: data.path as string | undefined,
+      events: data.events as string[] | undefined,
+    });
+  }
+
+  const steps: WorkflowStep[] = stepNodes.map((node) => {
     const data = node.data as Record<string, unknown>;
     const step: WorkflowStep = {
       id: (data.id as string) || node.id,
@@ -200,5 +294,6 @@ export function graphToWorkflow(
   return {
     metadata,
     steps,
+    triggers: triggers.length > 0 ? triggers : undefined,
   };
 }

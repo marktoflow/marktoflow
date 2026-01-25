@@ -11,6 +11,8 @@ import { useCanvasStore } from '../../stores/canvasStore';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { StepNode } from './StepNode';
 import { SubWorkflowNode } from './SubWorkflowNode';
+import { TriggerNode } from './TriggerNode';
+import { OutputNode } from './OutputNode';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
@@ -21,6 +23,8 @@ import type { WorkflowStep } from '@shared/types';
 const nodeTypes = {
   step: StepNode,
   subworkflow: SubWorkflowNode,
+  trigger: TriggerNode,
+  output: OutputNode,
 };
 
 export function Canvas() {
