@@ -12,6 +12,7 @@ import type {
   Workflow,
 } from './types.js';
 import { createClaudeProvider } from './claude-provider.js';
+import { createCopilotProvider } from './copilot-provider.js';
 import { createDemoProvider } from './demo-provider.js';
 import { createOllamaProvider } from './ollama-provider.js';
 
@@ -29,6 +30,11 @@ export class AgentRegistry {
       id: 'claude',
       name: 'Claude (Anthropic)',
       factory: createClaudeProvider,
+    });
+    this.registerProvider({
+      id: 'copilot',
+      name: 'GitHub Copilot',
+      factory: createCopilotProvider,
     });
     this.registerProvider({
       id: 'demo',
@@ -116,6 +122,21 @@ export class AgentRegistry {
       if (claudeProvider.isReady()) {
         this.activeProviderId = 'claude';
         return 'claude';
+      }
+    }
+
+    // Try GitHub Copilot (if CLI is available)
+    const copilotProvider = this.providers.get('copilot');
+    if (copilotProvider) {
+      await copilotProvider.initialize({
+        baseUrl: process.env.COPILOT_CLI_URL,
+        options: {
+          cliPath: process.env.COPILOT_CLI_PATH,
+        },
+      });
+      if (copilotProvider.isReady()) {
+        this.activeProviderId = 'copilot';
+        return 'copilot';
       }
     }
 

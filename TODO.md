@@ -423,6 +423,7 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 
 - [x] Abstract AgentProvider interface
 - [x] Claude provider implementation
+- [x] GitHub Copilot provider implementation
 - [x] Ollama provider implementation (local LLM)
 - [x] Demo provider for testing
 - [x] Auto-detection of available providers
