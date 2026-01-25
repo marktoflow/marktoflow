@@ -1,10 +1,11 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, type DragEvent } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   BackgroundVariant,
+  useReactFlow,
   type NodeMouseHandler,
   type Node,
 } from '@xyflow/react';
@@ -27,6 +28,7 @@ import {
   ContextMenuTrigger,
 } from '../common/ContextMenu';
 import { useCanvas } from '../../hooks/useCanvas';
+import { type ToolDefinition } from '../Sidebar/Sidebar';
 import type { WorkflowStep } from '@shared/types';
 
 // Custom node types
@@ -38,10 +40,11 @@ const nodeTypes = {
 };
 
 export function Canvas() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setNodes } =
     useCanvasStore();
   const { autoLayout, deleteSelected, duplicateSelected } = useCanvas();
   const currentWorkflow = useWorkflowStore((s) => s.currentWorkflow);
+  const { screenToFlowPosition } = useReactFlow();
 
   // Editor state
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
@@ -189,6 +192,52 @@ export function Canvas() {
     []
   );
 
+  // Handle drag over for drop target
+  const onDragOver = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  // Handle drop from tools palette
+  const onDrop = useCallback(
+    (event: DragEvent) => {
+      event.preventDefault();
+
+      const toolData = event.dataTransfer.getData('application/marktoflow-tool');
+      if (!toolData) return;
+
+      try {
+        const tool: ToolDefinition = JSON.parse(toolData);
+
+        // Get the position where the node was dropped
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        // Create a new node
+        const newId = tool.id + '-' + Date.now().toString(36);
+        const newNode: Node = {
+          id: newId,
+          type: 'step',
+          position,
+          data: {
+            id: newId,
+            name: tool.name + ' Action',
+            action: tool.id + '.' + (tool.actions?.[0] || 'action'),
+            status: 'pending',
+          },
+        };
+
+        // Add the node to the canvas
+        setNodes([...nodes, newNode]);
+      } catch (e) {
+        console.error('Failed to parse dropped tool data:', e);
+      }
+    },
+    [nodes, setNodes, screenToFlowPosition]
+  );
+
   // Get available variables for the editing step
   const getAvailableVariables = useCallback((): string[] => {
     if (!currentWorkflow || !editingStep) return [];
@@ -219,7 +268,14 @@ export function Canvas() {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div ref={contextMenuRef} className="w-full h-full" onKeyDown={onKeyDown} tabIndex={0}>
+        <div
+          ref={contextMenuRef}
+          className="w-full h-full"
+          onKeyDown={onKeyDown}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          tabIndex={0}
+        >
           <ReactFlow
             nodes={nodes}
             edges={edges}

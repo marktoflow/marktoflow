@@ -134,21 +134,35 @@ function WorkflowList({
   );
 }
 
-function ToolsPalette() {
-  const tools = [
-    { name: 'Slack', icon: '💬', category: 'Communication' },
-    { name: 'GitHub', icon: '🐙', category: 'Development' },
-    { name: 'Jira', icon: '📋', category: 'Project Management' },
-    { name: 'Gmail', icon: '📧', category: 'Communication' },
-    { name: 'Linear', icon: '📐', category: 'Project Management' },
-    { name: 'Notion', icon: '📝', category: 'Documentation' },
-    { name: 'Discord', icon: '🎮', category: 'Communication' },
-    { name: 'Airtable', icon: '📊', category: 'Database' },
-    { name: 'HTTP', icon: '🌐', category: 'Network' },
-    { name: 'Claude', icon: '🤖', category: 'AI' },
-  ];
+export interface ToolDefinition {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  sdk?: string;
+  actions?: string[];
+}
 
+const tools: ToolDefinition[] = [
+  { id: 'slack', name: 'Slack', icon: '💬', category: 'Communication', sdk: '@slack/web-api', actions: ['chat.postMessage', 'conversations.list'] },
+  { id: 'github', name: 'GitHub', icon: '🐙', category: 'Development', sdk: '@octokit/rest', actions: ['pulls.get', 'pulls.listFiles', 'issues.create'] },
+  { id: 'jira', name: 'Jira', icon: '📋', category: 'Project Management', sdk: 'jira.js', actions: ['issues.search', 'issues.create'] },
+  { id: 'gmail', name: 'Gmail', icon: '📧', category: 'Communication', sdk: 'googleapis', actions: ['messages.send', 'messages.list'] },
+  { id: 'linear', name: 'Linear', icon: '📐', category: 'Project Management', sdk: 'linear', actions: ['issues.create', 'issues.list'] },
+  { id: 'notion', name: 'Notion', icon: '📝', category: 'Documentation', sdk: 'notion', actions: ['pages.create', 'databases.query'] },
+  { id: 'discord', name: 'Discord', icon: '🎮', category: 'Communication', sdk: 'discord', actions: ['messages.create', 'channels.list'] },
+  { id: 'airtable', name: 'Airtable', icon: '📊', category: 'Database', sdk: 'airtable', actions: ['records.create', 'records.list'] },
+  { id: 'http', name: 'HTTP', icon: '🌐', category: 'Network', actions: ['request', 'get', 'post'] },
+  { id: 'claude', name: 'Claude', icon: '🤖', category: 'AI', actions: ['analyze', 'generate', 'summarize'] },
+];
+
+function ToolsPalette() {
   const categories = [...new Set(tools.map((t) => t.category))];
+
+  const handleDragStart = (e: React.DragEvent, tool: ToolDefinition) => {
+    e.dataTransfer.setData('application/marktoflow-tool', JSON.stringify(tool));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
 
   return (
     <div className="space-y-4">
@@ -164,7 +178,9 @@ function ToolsPalette() {
                 <div
                   key={tool.name}
                   draggable
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 cursor-grab active:cursor-grabbing"
+                  onDragStart={(e) => handleDragStart(e, tool)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors"
+                  title={tool.sdk ? 'SDK: ' + tool.sdk : undefined}
                 >
                   <span className="text-lg">{tool.icon}</span>
                   <span className="text-sm">{tool.name}</span>
