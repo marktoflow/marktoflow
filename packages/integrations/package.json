@@ -1,13 +1,13 @@
 {
   "name": "@marktoflow/integrations",
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.5",
   "description": "Standard integrations for marktoflow",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/scottgl9/marktoflow.git",
+    "url": "git+https://github.com/scottgl9/marktoflow.git",
     "directory": "packages/integrations"
   },
   "homepage": "https://github.com/scottgl9/marktoflow#readme",

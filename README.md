@@ -4,7 +4,7 @@
 
 A universal automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.4 (TypeScript)
+**Version:** 2.0.0-alpha.5 (TypeScript)
 
 ## What's New in v2.0
 
@@ -447,55 +447,9 @@ marktoflow/
 - [GEMINI.md](GEMINI.md) - Port status tracking
 - [PROGRESS.md](PROGRESS.md) - Development history
 
-## Publishing to npm
+## Publishing
 
-To publish marktoflow to the npm registry:
-
-### Prerequisites
-
-1. **npm account**: Create at https://www.npmjs.com/signup
-2. **Login**: `npm login`
-3. **Package name availability**: Check if `marktoflow` is available
-
-### Publishing Steps
-
-```bash
-# 1. Ensure all packages are built
-pnpm build
-
-# 2. Update version (if needed)
-npm version patch  # or minor, major
-
-# 3. Publish core package
-cd packages/core
-npm publish --access public
-
-# 4. Publish integrations package
-cd ../integrations
-npm publish --access public
-
-# 5. Publish CLI package (main package)
-cd ../cli
-npm publish --access public
-```
-
-### Package Configuration
-
-The CLI package (`packages/cli/package.json`) is configured with:
-
-- **bin**: Points to `./dist/index.js` for the `marktoflow` command
-- **files**: Includes only the `dist/` directory
-- **dependencies**: Uses `workspace:*` for internal packages (converted to versions on publish)
-
-### Publishing Checklist
-
-- [ ] All tests passing (181/181)
-- [ ] Version bumped in all package.json files
-- [ ] CHANGELOG.md updated
-- [ ] Git tag created (`git tag v2.0.0-alpha.4`)
-- [ ] Built with `pnpm build`
-- [ ] Published to npm registry
-- [ ] Installation tested: `npm install -g marktoflow`
+For information on publishing marktoflow packages to npm, see [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
 ## License
 
