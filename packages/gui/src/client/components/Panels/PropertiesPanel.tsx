@@ -5,9 +5,21 @@ import {
   History,
   X,
   ChevronRight,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  Trash2,
+  Play,
 } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useWorkflowStore } from '../../stores/workflowStore';
+import {
+  useExecutionStore,
+  formatDuration,
+  formatRelativeTime,
+  type ExecutionRun,
+} from '../../stores/executionStore';
 
 type TabId = 'properties' | 'variables' | 'history';
 
@@ -240,38 +252,222 @@ function VariablesTab() {
 }
 
 function HistoryTab() {
-  const runs = [
-    { id: '1', status: 'completed', duration: '2.3s', time: '2 min ago' },
-    { id: '2', status: 'failed', duration: '1.1s', time: '5 min ago' },
-    { id: '3', status: 'completed', duration: '3.5s', time: '1 hour ago' },
-  ];
+  const { runs, clearHistory } = useExecutionStore();
+  const [selectedRun, setSelectedRun] = useState<ExecutionRun | null>(null);
+
+  if (selectedRun) {
+    return <RunDetailView run={selectedRun} onBack={() => setSelectedRun(null)} />;
+  }
+
+  if (runs.length === 0) {
+    return (
+      <div className="p-4 text-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-node-bg flex items-center justify-center">
+          <History className="w-6 h-6 text-gray-500" />
+        </div>
+        <p className="text-sm text-gray-400 mb-1">No execution history</p>
+        <p className="text-xs text-gray-500">
+          Run a workflow to see execution history here
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 space-y-2">
-      {runs.map((run) => (
-        <div
-          key={run.id}
-          className="p-3 bg-node-bg rounded-lg border border-node-border cursor-pointer hover:border-primary transition-colors"
-        >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-white">Run #{run.id}</span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
-                run.status === 'completed'
-                  ? 'bg-success/10 text-success'
-                  : 'bg-error/10 text-error'
-              }`}
-            >
-              {run.status}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-gray-400">
-            <span>{run.duration}</span>
-            <span>{run.time}</span>
-          </div>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        {runs.map((run) => (
+          <button
+            key={run.id}
+            onClick={() => setSelectedRun(run)}
+            className="w-full p-3 bg-node-bg rounded-lg border border-node-border cursor-pointer hover:border-primary transition-colors text-left"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-white truncate max-w-[140px]">
+                {run.workflowName}
+              </span>
+              <RunStatusBadge status={run.status} />
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-400">
+              <span>{run.duration ? formatDuration(run.duration) : '-'}</span>
+              <span>{formatRelativeTime(run.startTime)}</span>
+            </div>
+            {run.steps.length > 0 && (
+              <div className="mt-2 flex items-center gap-1">
+                {run.steps.slice(0, 5).map((step) => (
+                  <StepStatusDot key={step.stepId} status={step.status} />
+                ))}
+                {run.steps.length > 5 && (
+                  <span className="text-xs text-gray-500">+{run.steps.length - 5}</span>
+                )}
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+      {runs.length > 0 && (
+        <div className="p-3 border-t border-node-border">
+          <button
+            onClick={clearHistory}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-gray-400 hover:text-error transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Clear History
+          </button>
         </div>
-      ))}
+      )}
     </div>
+  );
+}
+
+interface RunDetailViewProps {
+  run: ExecutionRun;
+  onBack: () => void;
+}
+
+function RunDetailView({ run, onBack }: RunDetailViewProps) {
+  const [showLogs, setShowLogs] = useState(false);
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-3 border-b border-node-border">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-white mb-2"
+        >
+          <ChevronRight className="w-3 h-3 rotate-180" />
+          Back to history
+        </button>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-white truncate max-w-[180px]">
+            {run.workflowName}
+          </span>
+          <RunStatusBadge status={run.status} />
+        </div>
+        <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
+          <span>{run.duration ? formatDuration(run.duration) : 'Running...'}</span>
+          <span>{new Date(run.startTime).toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-node-border">
+        <button
+          onClick={() => setShowLogs(false)}
+          className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+            !showLogs
+              ? 'text-primary border-b-2 border-primary -mb-px'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Steps ({run.steps.length})
+        </button>
+        <button
+          onClick={() => setShowLogs(true)}
+          className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+            showLogs
+              ? 'text-primary border-b-2 border-primary -mb-px'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Logs ({run.logs.length})
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-3">
+        {showLogs ? (
+          <div className="space-y-1 font-mono text-xs">
+            {run.logs.map((log, i) => (
+              <div key={i} className="text-gray-300 break-words">
+                {log}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {run.steps.map((step) => (
+              <div
+                key={step.stepId}
+                className="p-2 bg-node-bg rounded border border-node-border"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-white truncate">
+                    {step.stepName}
+                  </span>
+                  <StepStatusBadge status={step.status} />
+                </div>
+                {step.duration && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {formatDuration(step.duration)}
+                  </div>
+                )}
+                {step.error && (
+                  <div className="mt-2 p-2 bg-error/10 border border-error/20 rounded text-xs text-error">
+                    {step.error}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RunStatusBadge({ status }: { status: ExecutionRun['status'] }) {
+  const config = {
+    running: { bg: 'bg-warning/10', text: 'text-warning', icon: Loader2 },
+    completed: { bg: 'bg-success/10', text: 'text-success', icon: CheckCircle },
+    failed: { bg: 'bg-error/10', text: 'text-error', icon: XCircle },
+    cancelled: { bg: 'bg-gray-500/10', text: 'text-gray-400', icon: XCircle },
+    pending: { bg: 'bg-gray-500/10', text: 'text-gray-400', icon: Clock },
+  };
+
+  const { bg, text, icon: Icon } = config[status] || config.pending;
+
+  return (
+    <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${bg} ${text}`}>
+      <Icon className={`w-3 h-3 ${status === 'running' ? 'animate-spin' : ''}`} />
+      {status}
+    </span>
+  );
+}
+
+function StepStatusBadge({ status }: { status: string }) {
+  const config: Record<string, { bg: string; text: string }> = {
+    running: { bg: 'bg-warning/10', text: 'text-warning' },
+    completed: { bg: 'bg-success/10', text: 'text-success' },
+    failed: { bg: 'bg-error/10', text: 'text-error' },
+    pending: { bg: 'bg-gray-500/10', text: 'text-gray-400' },
+  };
+
+  const { bg, text } = config[status] || config.pending;
+
+  return (
+    <span className={`text-xs px-1.5 py-0.5 rounded ${bg} ${text}`}>
+      {status}
+    </span>
+  );
+}
+
+function StepStatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    running: 'bg-warning',
+    completed: 'bg-success',
+    failed: 'bg-error',
+    pending: 'bg-gray-500',
+  };
+
+  return (
+    <div
+      className={`w-2 h-2 rounded-full ${colors[status] || colors.pending} ${
+        status === 'running' ? 'animate-pulse' : ''
+      }`}
+      title={status}
+    />
   );
 }
 
