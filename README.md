@@ -4,7 +4,7 @@
 
 A universal automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.5 (TypeScript)
+**Version:** 2.0.0-alpha.6 (TypeScript)
 
 ## What's New in v2.0
 

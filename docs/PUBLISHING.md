@@ -356,13 +356,13 @@ jobs:
 
 ## Current Status
 
-**Latest Published Version**: 2.0.0-alpha.5
+**Latest Published Version**: 2.0.0-alpha.6
 
 **Published Packages**:
 
-- @marktoflow/core@2.0.0-alpha.5
-- @marktoflow/integrations@2.0.0-alpha.5
-- @marktoflow/cli@2.0.0-alpha.5
+- @marktoflow/core@2.0.0-alpha.6
+- @marktoflow/integrations@2.0.0-alpha.6
+- @marktoflow/cli@2.0.0-alpha.6
 
 **Installation**:
 
