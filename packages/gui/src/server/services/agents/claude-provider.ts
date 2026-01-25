@@ -4,7 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { stringify as yamlStringify, parse as yamlParse } from 'yaml';
+import { parse as yamlParse } from 'yaml';
 import type {
   AgentProvider,
   AgentCapabilities,

@@ -151,7 +151,7 @@ export class DemoProvider implements AgentProvider {
     return generateSuggestions(workflow, selectedStepId);
   }
 
-  private generateDefaultInputs(service: string, action: string): Record<string, unknown> {
+  private generateDefaultInputs(service: string, _action: string): Record<string, unknown> {
     const defaults: Record<string, Record<string, unknown>> = {
       slack: { channel: '#general', text: 'Hello from Marktoflow!' },
       github: { owner: '{{ inputs.owner }}', repo: '{{ inputs.repo }}' },

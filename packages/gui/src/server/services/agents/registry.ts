@@ -12,6 +12,7 @@ import type {
   Workflow,
 } from './types.js';
 import { createClaudeProvider } from './claude-provider.js';
+import { createClaudeCodeProvider } from './claude-code-provider.js';
 import { createCopilotProvider } from './copilot-provider.js';
 import { createDemoProvider } from './demo-provider.js';
 import { createOllamaProvider } from './ollama-provider.js';
@@ -26,25 +27,34 @@ export class AgentRegistry {
 
   constructor() {
     // Register built-in providers
+    // SDK-based providers with automatic CLI authentication (recommended)
     this.registerProvider({
-      id: 'claude',
-      name: 'Claude (Anthropic)',
-      factory: createClaudeProvider,
+      id: 'claude-code',
+      name: 'Claude Code (SDK)',
+      factory: createClaudeCodeProvider,
     });
     this.registerProvider({
       id: 'copilot',
-      name: 'GitHub Copilot',
+      name: 'GitHub Copilot (SDK)',
       factory: createCopilotProvider,
     });
+    // API key-based providers
     this.registerProvider({
-      id: 'demo',
-      name: 'Demo Mode',
-      factory: createDemoProvider,
+      id: 'claude',
+      name: 'Claude (API Key)',
+      factory: createClaudeProvider,
     });
+    // Local providers
     this.registerProvider({
       id: 'ollama',
       name: 'Ollama (Local)',
       factory: createOllamaProvider,
+    });
+    // Demo mode (always available)
+    this.registerProvider({
+      id: 'demo',
+      name: 'Demo Mode',
+      factory: createDemoProvider,
     });
   }
 
@@ -111,21 +121,24 @@ export class AgentRegistry {
 
   /**
    * Auto-detect and set the best available provider
+   * Priority: SDK-based (auto-auth) > API key-based > Local > Demo
    */
   async autoDetectProvider(): Promise<string> {
-    // Try Claude first (if API key is available)
-    const claudeProvider = this.providers.get('claude');
-    if (claudeProvider) {
-      await claudeProvider.initialize({
-        apiKey: process.env.ANTHROPIC_API_KEY,
+    // Try Claude Code SDK first (uses automatic CLI authentication)
+    const claudeCodeProvider = this.providers.get('claude-code');
+    if (claudeCodeProvider) {
+      await claudeCodeProvider.initialize({
+        options: {
+          cwd: process.cwd(),
+        },
       });
-      if (claudeProvider.isReady()) {
-        this.activeProviderId = 'claude';
-        return 'claude';
+      if (claudeCodeProvider.isReady()) {
+        this.activeProviderId = 'claude-code';
+        return 'claude-code';
       }
     }
 
-    // Try GitHub Copilot (if CLI is available)
+    // Try GitHub Copilot SDK (uses automatic CLI authentication)
     const copilotProvider = this.providers.get('copilot');
     if (copilotProvider) {
       await copilotProvider.initialize({
@@ -137,6 +150,18 @@ export class AgentRegistry {
       if (copilotProvider.isReady()) {
         this.activeProviderId = 'copilot';
         return 'copilot';
+      }
+    }
+
+    // Try Claude with API key (requires ANTHROPIC_API_KEY)
+    const claudeProvider = this.providers.get('claude');
+    if (claudeProvider) {
+      await claudeProvider.initialize({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+      if (claudeProvider.isReady()) {
+        this.activeProviderId = 'claude';
+        return 'claude';
       }
     }
 

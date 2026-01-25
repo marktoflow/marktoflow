@@ -3,7 +3,8 @@
  * Uses the @github/copilot-sdk for AI capabilities
  */
 
-import { stringify as yamlStringify, parse as yamlParse } from 'yaml';
+import { createRequire } from 'node:module';
+import { parse as yamlParse } from 'yaml';
 import type {
   AgentProvider,
   AgentCapabilities,
@@ -12,6 +13,11 @@ import type {
   Workflow,
 } from './types.js';
 import { buildPrompt, generateSuggestions } from './prompts.js';
+
+// Polyfill require for ESM environments (needed by Copilot SDK dependencies)
+if (typeof globalThis.require === 'undefined') {
+  (globalThis as unknown as { require: NodeRequire }).require = createRequire(import.meta.url);
+}
 
 // Dynamic import types for Copilot SDK
 interface CopilotClient {
@@ -65,11 +71,11 @@ export class CopilotProvider implements AgentProvider {
 
   async initialize(config: AgentConfig): Promise<void> {
     try {
-      // Try to import the Copilot SDK (dynamic import to avoid bundling issues)
-      // Use variable to prevent static analysis
-      const sdkName = '@github/copilot-sdk';
-      const sdkModule = await import(sdkName).catch(() => null);
-      if (!sdkModule) {
+      // Try to import the Copilot SDK (dynamic import with webpackIgnore to avoid bundling issues)
+      const sdkModule = await import(/* webpackIgnore: true */ '@github/copilot-sdk').catch(
+        () => null
+      );
+      if (!sdkModule || !sdkModule.CopilotClient) {
         this.ready = false;
         this.error = 'GitHub Copilot SDK not installed. Run: npm install @github/copilot-sdk';
         return;
@@ -101,14 +107,17 @@ export class CopilotProvider implements AgentProvider {
         this.model = config.model;
       }
 
-      // Test connectivity
+      // Start the client and test connectivity
       try {
-        await this.client.ping();
-        this.ready = true;
-        this.error = undefined;
+        if (this.client) {
+          await this.client.start();
+          await this.client.ping();
+          this.ready = true;
+          this.error = undefined;
+        }
       } catch (pingError) {
         this.ready = false;
-        this.error = 'Cannot connect to GitHub Copilot CLI. Ensure you are authenticated with `copilot auth`.';
+        this.error = `Cannot connect to GitHub Copilot CLI: ${pingError instanceof Error ? pingError.message : 'Unknown error'}`;
       }
     } catch (err) {
       this.ready = false;

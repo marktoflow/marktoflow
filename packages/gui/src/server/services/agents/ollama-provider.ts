@@ -112,7 +112,7 @@ export class OllamaProvider implements AgentProvider {
         throw new Error(`Ollama API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { response: string };
       return this.parseAIResponse(data.response, workflow);
     } catch (err) {
       return {

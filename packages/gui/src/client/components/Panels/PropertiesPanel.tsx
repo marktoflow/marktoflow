@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Settings,
   Variable,
@@ -27,7 +27,8 @@ type TabId = 'properties' | 'variables' | 'history';
 
 export function PropertiesPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('properties');
-  const selectedNodes = useCanvasStore((s) => s.nodes.filter((n) => n.selected));
+  const nodes = useCanvasStore((s) => s.nodes);
+  const selectedNodes = useMemo(() => nodes.filter((n) => n.selected), [nodes]);
   const workflow = useWorkflowStore((s) => s.currentWorkflow);
   const { propertiesPanelOpen, setPropertiesPanelOpen, breakpoint } = useLayoutStore();
 

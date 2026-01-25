@@ -6,13 +6,29 @@ This guide explains how to publish new versions of marktoflow packages to npm.
 
 ## Package Structure
 
-marktoflow is a monorepo with three published packages:
+marktoflow is a monorepo with four published packages:
 
 1. **@marktoflow/core** - Core engine (parser, executor, state management)
 2. **@marktoflow/integrations** - Service integrations (Slack, GitHub, Jira, etc.)
-3. **@marktoflow/cli** - CLI package (main package users install)
+3. **@marktoflow/gui** - Visual workflow designer (web UI with AI assistance)
+4. **@marktoflow/cli** - CLI package (main package users install)
 
 All packages are published under the `@marktoflow` npm organization.
+
+### Package Dependencies
+
+```
+@marktoflow/cli
+├── @marktoflow/core
+├── @marktoflow/integrations
+└── @marktoflow/gui (optional)
+
+@marktoflow/gui
+└── @marktoflow/core
+
+@marktoflow/integrations
+└── @marktoflow/core
+```
 
 ---
 
@@ -85,37 +101,51 @@ For production-ready versions:
 
 ### Step 1: Update Version Numbers
 
-Update `version` in all three package.json files:
+Update `version` in all four package.json files:
 
 ```bash
-# Example: Updating to 2.0.0-alpha.4
+# Example: Updating to 2.0.0-alpha.8
 # packages/core/package.json
 {
   "name": "@marktoflow/core",
-  "version": "2.0.0-alpha.4"
+  "version": "2.0.0-alpha.8"
 }
 
 # packages/integrations/package.json
 {
   "name": "@marktoflow/integrations",
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.8",
   "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.4"
+    "@marktoflow/core": "2.0.0-alpha.8"
+  }
+}
+
+# packages/gui/package.json
+{
+  "name": "@marktoflow/gui",
+  "version": "2.0.0-alpha.8",
+  "dependencies": {
+    "@marktoflow/core": "workspace:*"
   }
 }
 
 # packages/cli/package.json
 {
   "name": "@marktoflow/cli",
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.8",
   "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.4",
-    "@marktoflow/integrations": "2.0.0-alpha.4"
+    "@marktoflow/core": "2.0.0-alpha.8",
+    "@marktoflow/integrations": "2.0.0-alpha.8"
+  },
+  "optionalDependencies": {
+    "@marktoflow/gui": "2.0.0-alpha.8"
   }
 }
 ```
 
 **IMPORTANT**: Ensure dependency versions match the version you're publishing!
+
+**Note**: The GUI package uses `workspace:*` for local development but should reference the exact version when publishing.
 
 ### Step 2: Build Packages
 
@@ -126,12 +156,13 @@ pnpm build
 # Verify build output
 ls -la packages/core/dist
 ls -la packages/integrations/dist
+ls -la packages/gui/dist
 ls -la packages/cli/dist
 ```
 
 ### Step 3: Publish in Order
 
-Publish in dependency order: core → integrations → cli
+Publish in dependency order: core → integrations → gui → cli
 
 #### Publish @marktoflow/core
 
@@ -145,6 +176,14 @@ cd ../..
 
 ```bash
 cd packages/integrations
+npm publish --access public --tag alpha
+cd ../..
+```
+
+#### Publish @marktoflow/gui
+
+```bash
+cd packages/gui
 npm publish --access public --tag alpha
 cd ../..
 ```
@@ -163,6 +202,7 @@ cd ../..
 # Check published versions
 npm view @marktoflow/core@alpha version
 npm view @marktoflow/integrations@alpha version
+npm view @marktoflow/gui@alpha version
 npm view @marktoflow/cli@alpha version
 
 # Search for packages
@@ -220,6 +260,11 @@ cd ../..
 
 # Integrations
 cd packages/integrations
+npm publish --access public
+cd ../..
+
+# GUI
+cd packages/gui
 npm publish --access public
 cd ../..
 
@@ -282,11 +327,12 @@ If users report dependency errors:
 
 ### Alpha Release Checklist
 
-- [ ] Update version in all three package.json files (with `-alpha.X`)
+- [ ] Update version in all four package.json files (with `-alpha.X`)
 - [ ] Update dependency versions to match
 - [ ] Run `pnpm clean && pnpm install && pnpm build`
 - [ ] Publish core: `cd packages/core && npm publish --access public --tag alpha`
 - [ ] Publish integrations: `cd packages/integrations && npm publish --access public --tag alpha`
+- [ ] Publish gui: `cd packages/gui && npm publish --access public --tag alpha`
 - [ ] Publish cli: `cd packages/cli && npm publish --access public --tag alpha`
 - [ ] Verify: `npm view @marktoflow/cli@alpha version`
 - [ ] Update documentation
@@ -295,12 +341,13 @@ If users report dependency errors:
 
 ### Stable Release Checklist
 
-- [ ] Update version in all three package.json files (remove `-alpha.X`)
+- [ ] Update version in all four package.json files (remove `-alpha.X`)
 - [ ] Update dependency versions to match
 - [ ] Run `pnpm clean && pnpm install && pnpm build`
 - [ ] Run full test suite: `pnpm test`
 - [ ] Publish core: `cd packages/core && npm publish --access public`
 - [ ] Publish integrations: `cd packages/integrations && npm publish --access public`
+- [ ] Publish gui: `cd packages/gui && npm publish --access public`
 - [ ] Publish cli: `cd packages/cli && npm publish --access public`
 - [ ] Verify: `npm view @marktoflow/cli version`
 - [ ] Update all documentation (remove `@alpha` tags)
@@ -347,6 +394,7 @@ jobs:
         run: |
           cd packages/core && npm publish --access public
           cd ../integrations && npm publish --access public
+          cd ../gui && npm publish --access public
           cd ../cli && npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -356,18 +404,44 @@ jobs:
 
 ## Current Status
 
-**Latest Published Version**: 2.0.0-alpha.6
+**Latest Published Version**: 2.0.0-alpha.7
 
 **Published Packages**:
 
-- @marktoflow/core@2.0.0-alpha.6
-- @marktoflow/integrations@2.0.0-alpha.6
-- @marktoflow/cli@2.0.0-alpha.6
+- @marktoflow/core@2.0.0-alpha.7
+- @marktoflow/integrations@2.0.0-alpha.7
+- @marktoflow/gui@2.0.0-alpha.1 (new)
+- @marktoflow/cli@2.0.0-alpha.7
 
 **Installation**:
 
 ```bash
+# Install CLI (includes optional GUI)
 npm install -g @marktoflow/cli@alpha
+
+# Install GUI separately (for programmatic use)
+npm install @marktoflow/gui@alpha
+```
+
+**GUI Package Features**:
+
+The new `@marktoflow/gui` package provides:
+
+- Visual drag-and-drop workflow editor
+- AI-powered assistance (Claude Code, GitHub Copilot, Claude API, Ollama)
+- Real-time workflow execution and debugging
+- Light and dark themes
+- Live file sync with workflow files
+
+**Starting the GUI**:
+
+```bash
+# Via CLI
+marktoflow gui
+
+# Programmatically
+import { startServer } from '@marktoflow/gui';
+await startServer({ port: 3001, workflowDir: './workflows' });
 ```
 
 **Next Steps**:

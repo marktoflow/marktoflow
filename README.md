@@ -10,6 +10,7 @@ A universal automation framework that enables markdown-based workflows with nati
 
 marktoflow v2.0 brings powerful new capabilities and integrations:
 
+- ✅ **Visual Workflow Designer** - Web-based drag-and-drop editor with AI assistance
 - ✅ **Native SDK integrations** - Direct SDK method calls with full type safety
 - ✅ **Native MCP support** - Import MCP servers as npm packages
 - ✅ **Sub-workflow composition** - Build reusable workflow components
@@ -20,6 +21,7 @@ marktoflow v2.0 brings powerful new capabilities and integrations:
 
 ## Key Features
 
+- **Visual Workflow Designer**: Web-based drag-and-drop editor with AI-powered assistance
 - **Workflow as Code**: Define workflows in Markdown + YAML
 - **Sub-Workflows**: Compose reusable workflow components with unlimited nesting
 - **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
@@ -465,6 +467,11 @@ marktoflow init                    # Initialize project
 marktoflow version                 # Show version
 marktoflow doctor                  # Check environment
 
+# Visual Designer
+marktoflow gui                     # Start visual workflow designer
+marktoflow gui --port 3000         # Custom port
+marktoflow gui --open              # Open browser automatically
+
 # Workflow operations
 marktoflow new                     # Create workflow from template (interactive)
 marktoflow update <workflow.md>    # Update workflow with AI coding agents
@@ -527,6 +534,58 @@ marktoflow update --list-agents
 4. Review and confirm changes
 5. Agent updates the workflow file
 6. Review diff and test the updated workflow
+
+## Visual Workflow Designer
+
+marktoflow includes a web-based visual workflow editor with AI-powered assistance.
+
+### Starting the GUI
+
+```bash
+# Start the visual designer
+marktoflow gui
+
+# With options
+marktoflow gui --port 3000    # Custom port
+marktoflow gui --open         # Open browser automatically
+```
+
+### Features
+
+- **Drag-and-Drop Editor** - Visual node-based workflow canvas
+- **AI Assistance** - Natural language commands to modify workflows
+- **Multiple AI Backends** - Claude Code, GitHub Copilot, Claude API, Ollama
+- **Real-time Execution** - Run and debug workflows from the UI
+- **Live File Sync** - Changes sync automatically with workflow files
+
+### AI Providers
+
+The GUI supports multiple AI backends:
+
+| Provider | Authentication |
+|----------|----------------|
+| Claude Code | Claude CLI (automatic) |
+| GitHub Copilot | `copilot auth` |
+| Claude API | `ANTHROPIC_API_KEY` |
+| Ollama | Local server |
+
+### Interface
+
+```
++------------------+------------------------+------------------+
+|                  |                        |                  |
+|    Sidebar       |        Canvas          |   Properties     |
+|   (Workflows     |    (Visual Editor)     |     Panel        |
+|    & Tools)      |                        |                  |
++------------------+------------------------+------------------+
+|                     AI Prompt Input                          |
++--------------------------------------------------------------+
+```
+
+For detailed documentation, see:
+- [GUI User Guide](docs/GUI_USER_GUIDE.md)
+- [GUI API Reference](docs/GUI_API_REFERENCE.md)
+- [GUI Developer Guide](docs/GUI_DEVELOPER_GUIDE.md)
 
 ## Advanced Features
 
@@ -595,6 +654,7 @@ marktoflow/
 ├── packages/
 │   ├── core/                 # Engine, State, Security, Queue, Costs, Metrics
 │   ├── cli/                  # Command Line Interface
+│   ├── gui/                  # Visual Workflow Designer (Web UI)
 │   └── integrations/         # Service Integrations
 ├── .marktoflow/              # User configuration
 ├── package.json
