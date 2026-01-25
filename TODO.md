@@ -304,10 +304,133 @@ npx marktoflow run workflow.md
 ### New Features
 
 - [ ] Prometheus metrics integration (Python v1.0 had this)
-- [ ] Visual workflow editor (web UI)
+- [ ] Visual workflow editor (web UI) - **See Phase 7: GUI**
 - [ ] Workflow marketplace
 - [ ] Team collaboration
 - [ ] Hosted webhook service
+
+---
+
+## Phase 7: Visual Workflow Designer (GUI)
+
+A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` for detailed specification.
+
+### Package Setup
+
+- [ ] Initialize `packages/gui` with Vite + React + TypeScript
+- [ ] Configure Tailwind CSS and shadcn/ui components
+- [ ] Set up Express server with basic routing
+- [ ] Add to pnpm workspace configuration
+- [ ] Add `marktoflow gui` CLI command
+
+### Workflow Canvas (React Flow)
+
+- [ ] Implement `workflowToGraph()` converter (Workflow -> React Flow nodes/edges)
+- [ ] Implement `graphToWorkflow()` converter (React Flow -> Workflow)
+- [ ] Create custom StepNode component with service icons
+- [ ] Create SubWorkflowNode with expand/collapse functionality
+- [ ] Create TriggerNode variants (schedule, webhook, file watcher)
+- [ ] Create OutputNode for workflow outputs
+- [ ] Implement DataFlowEdge with variable labels and animation
+- [ ] Implement SequenceEdge with conditional badges
+- [ ] Add auto-layout algorithm (dagre)
+- [ ] Add pan/zoom/minimap controls
+- [ ] Add multi-select and group operations
+- [ ] Add copy/paste functionality
+- [ ] Add undo/redo system
+
+### Step Editor
+
+- [ ] Right-click context menu for steps
+- [ ] Right-click context menu for canvas
+- [ ] Step editor modal with tabs:
+  - [ ] Properties tab (ID, name, action selector)
+  - [ ] Inputs tab with dynamic form generation
+  - [ ] Output tab with variable configuration
+  - [ ] Error handling tab (retry, fallback)
+  - [ ] Conditions tab with expression builder
+  - [ ] YAML tab with Monaco editor
+- [ ] Template variable autocomplete (`{{ variable }}`)
+- [ ] Validation on save
+
+### AI Prompt Interface
+
+- [ ] Prompt input component at bottom of screen
+- [ ] Prompt history panel
+- [ ] Claude API integration for workflow modifications
+- [ ] Prompt engineering for:
+  - [ ] Adding/removing steps
+  - [ ] Modifying step inputs
+  - [ ] Adding error handling
+  - [ ] Creating sub-workflows
+  - [ ] Adding conditions
+- [ ] Change preview with diff view
+- [ ] Accept/reject workflow changes
+- [ ] Real-time canvas refresh after changes
+
+### Sub-workflow Visualization
+
+- [ ] Collapsed view showing step count
+- [ ] Expanded inline view with group box
+- [ ] Drill-down navigation to sub-workflow
+- [ ] Breadcrumb navigation for workflow hierarchy
+- [ ] Tab-based multi-workflow editing
+
+### Properties Panel (Sidebar)
+
+- [ ] Step properties view (inputs, outputs, status)
+- [ ] Workflow properties view (metadata, triggers, tools)
+- [ ] Variables panel showing scope
+- [ ] Execution history panel
+
+### Execution View
+
+- [ ] Execute workflow from GUI
+- [ ] Real-time step status updates
+- [ ] Log viewer panel
+- [ ] Variable inspector at each step
+- [ ] Step-through debugging mode
+
+### Real-time Updates
+
+- [ ] WebSocket server for live updates
+- [ ] File watcher integration
+- [ ] Real-time canvas updates on file change
+- [ ] Execution status streaming
+
+### REST API
+
+- [ ] `GET /api/workflows` - List workflows
+- [ ] `GET /api/workflows/:path` - Get workflow
+- [ ] `POST /api/workflows` - Create workflow
+- [ ] `PUT /api/workflows/:path` - Update workflow
+- [ ] `DELETE /api/workflows/:path` - Delete workflow
+- [ ] `POST /api/workflows/:path/execute` - Execute workflow
+- [ ] `GET /api/workflows/:path/runs` - Execution history
+- [ ] `POST /api/ai/prompt` - AI prompt endpoint
+- [ ] `GET /api/tools` - List available tools/SDKs
+- [ ] `GET /api/tools/:sdk/schema` - Get SDK schemas
+
+### UI/UX Polish
+
+- [ ] n8n-inspired dark theme
+- [ ] Light mode support
+- [ ] Responsive design
+- [ ] Keyboard shortcuts
+- [ ] Accessibility (a11y)
+
+### Testing
+
+- [ ] Unit tests for React components
+- [ ] Integration tests for API endpoints
+- [ ] E2E tests with Playwright
+- [ ] Canvas interaction tests
+
+### Documentation
+
+- [ ] User guide for GUI
+- [ ] Developer documentation
+- [ ] API documentation
 
 ---
 

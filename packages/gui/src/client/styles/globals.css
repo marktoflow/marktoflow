@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* React Flow base styles */
+@import '@xyflow/react/dist/style.css';
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d3d5c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4d4d6c;
+}
+
+/* Canvas overrides */
+.react-flow__background {
+  background-color: #1a1a2e !important;
+}
+
+.react-flow__minimap {
+  background-color: #232340 !important;
+  border-radius: 8px;
+  border: 1px solid #3d3d5c;
+}
+
+.react-flow__controls {
+  background-color: #232340 !important;
+  border-radius: 8px;
+  border: 1px solid #3d3d5c;
+}
+
+.react-flow__controls-button {
+  background-color: #2d2d4a !important;
+  border-color: #3d3d5c !important;
+  color: white !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: #3d3d5c !important;
+}
+
+/* Node base styles */
+.step-node {
+  min-width: 200px;
+  border-radius: 8px;
+  background: #2d2d4a;
+  border: 2px solid #3d3d5c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.step-node:hover {
+  border-color: #ff6d5a;
+}
+
+.step-node.selected {
+  border-color: #ff6d5a;
+  box-shadow: 0 0 0 4px rgba(255, 109, 90, 0.2);
+}
+
+.step-node.running {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.step-node.completed {
+  border-color: #5cb85c;
+}
+
+.step-node.failed {
+  border-color: #d9534f;
+}
+
+/* Edge animation */
+.react-flow__edge-path.animated {
+  stroke-dasharray: 8;
+  animation: flowEdge 1s linear infinite;
+}
+
+@keyframes flowEdge {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Monaco editor overrides */
+.monaco-editor {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Light mode overrides */
+.light .react-flow__background {
+  background-color: #f5f5f7 !important;
+}
+
+.light .step-node {
+  background: #ffffff;
+  border-color: #e5e5e5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
