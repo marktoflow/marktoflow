@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import { Menu, PanelRight, X } from 'lucide-react';
 import { Canvas } from './components/Canvas/Canvas';
 import { Toolbar } from './components/Canvas/Toolbar';
 import { ExecutionOverlay } from './components/Canvas/ExecutionOverlay';
@@ -22,6 +23,7 @@ import { useEditorStore } from './stores/editorStore';
 import { useNavigationStore } from './stores/navigationStore';
 import { useWorkflowStore } from './stores/workflowStore';
 import { useExecutionStore } from './stores/executionStore';
+import { useLayoutStore, getBreakpoint } from './stores/layoutStore';
 import type { WorkflowStep, StepStatus, WorkflowStatus } from '@shared/types';
 
 export default function App() {
@@ -90,6 +92,32 @@ export default function App() {
     addWatchExpression,
     removeWatchExpression,
   } = useExecutionStore();
+
+  // Layout store for responsive behavior
+  const {
+    breakpoint,
+    setBreakpoint,
+    sidebarOpen,
+    setSidebarOpen,
+    propertiesPanelOpen,
+    setPropertiesPanelOpen,
+  } = useLayoutStore();
+
+  // Breakpoint detection on resize
+  useEffect(() => {
+    const handleResize = () => {
+      const newBreakpoint = getBreakpoint(window.innerWidth);
+      if (newBreakpoint !== breakpoint) {
+        setBreakpoint(newBreakpoint);
+      }
+    };
+
+    // Set initial breakpoint
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [breakpoint, setBreakpoint]);
 
   // Local execution state for overlay
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>('pending');
@@ -352,25 +380,48 @@ export default function App() {
 
         {/* Main Canvas Area */}
         <div className="flex flex-1 flex-col relative">
-          {/* Connection status, theme toggle & shortcuts */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-            <ThemeToggle showLabel />
-            <KeyboardShortcutsButton onClick={openShortcuts} />
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
-                connected
-                  ? 'bg-success/10 text-success'
-                  : 'bg-error/10 text-error'
-              }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  connected ? 'bg-success' : 'bg-error'
-                }`}
-              />
-              {connected ? 'Connected' : 'Disconnected'}
+          {/* Mobile Header */}
+          {breakpoint === 'mobile' && (
+            <div className="flex items-center justify-between p-3 border-b border-node-border bg-panel-bg">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5 text-gray-400" />
+              </button>
+              <h1 className="text-sm font-medium text-white">Marktoflow</h1>
+              <button
+                onClick={() => setPropertiesPanelOpen(true)}
+                className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                aria-label="Open properties"
+              >
+                <PanelRight className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
-          </div>
+          )}
+
+          {/* Desktop: Connection status, theme toggle & shortcuts */}
+          {breakpoint !== 'mobile' && (
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+              <ThemeToggle showLabel />
+              <KeyboardShortcutsButton onClick={openShortcuts} />
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
+                  connected
+                    ? 'bg-success/10 text-success'
+                    : 'bg-error/10 text-error'
+                }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    connected ? 'bg-success' : 'bg-error'
+                  }`}
+                />
+                {connected ? 'Connected' : 'Disconnected'}
+              </div>
+            </div>
+          )}
 
           {/* Toolbar */}
           <Toolbar

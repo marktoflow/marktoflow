@@ -5,6 +5,7 @@ import {
   History,
   X,
   ChevronRight,
+  ChevronLeft,
   CheckCircle,
   XCircle,
   Clock,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useWorkflowStore } from '../../stores/workflowStore';
+import { useLayoutStore } from '../../stores/layoutStore';
 import {
   useExecutionStore,
   formatDuration,
@@ -25,17 +27,45 @@ type TabId = 'properties' | 'variables' | 'history';
 
 export function PropertiesPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('properties');
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const selectedNodes = useCanvasStore((s) => s.nodes.filter((n) => n.selected));
   const workflow = useWorkflowStore((s) => s.currentWorkflow);
+  const { propertiesPanelOpen, setPropertiesPanelOpen, breakpoint } = useLayoutStore();
 
-  if (isCollapsed) {
+  // On mobile, show as an overlay when open
+  if (breakpoint === 'mobile') {
+    if (!propertiesPanelOpen) return null;
+
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setPropertiesPanelOpen(false)}
+        />
+        {/* Panel */}
+        <div className="fixed inset-y-0 right-0 w-80 max-w-[85vw] bg-panel-bg border-l border-node-border flex flex-col z-50 animate-slide-in-right">
+          <PropertiesPanelContent
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedNodes={selectedNodes}
+            workflow={workflow}
+            onClose={() => setPropertiesPanelOpen(false)}
+            showClose
+          />
+        </div>
+      </>
+    );
+  }
+
+  // Desktop/Tablet: collapsed state
+  if (!propertiesPanelOpen) {
     return (
       <button
-        onClick={() => setIsCollapsed(false)}
-        className="w-10 bg-panel-bg border-l border-node-border flex flex-col items-center py-4 gap-4"
+        onClick={() => setPropertiesPanelOpen(true)}
+        className="w-10 bg-panel-bg border-l border-node-border flex flex-col items-center py-4 gap-4 hover:bg-white/5 transition-colors"
+        aria-label="Expand properties panel"
       >
-        <ChevronRight className="w-4 h-4 text-gray-400 rotate-180" />
+        <ChevronLeft className="w-4 h-4 text-gray-400" />
         <Settings className="w-5 h-5 text-gray-400" />
       </button>
     );
@@ -43,15 +73,49 @@ export function PropertiesPanel() {
 
   return (
     <div className="w-80 bg-panel-bg border-l border-node-border flex flex-col">
+      <PropertiesPanelContent
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        selectedNodes={selectedNodes}
+        workflow={workflow}
+        onClose={() => setPropertiesPanelOpen(false)}
+        showClose={breakpoint === 'tablet'}
+      />
+    </div>
+  );
+}
+
+interface PropertiesPanelContentProps {
+  activeTab: TabId;
+  setActiveTab: (tab: TabId) => void;
+  selectedNodes: any[];
+  workflow: any;
+  onClose: () => void;
+  showClose?: boolean;
+}
+
+function PropertiesPanelContent({
+  activeTab,
+  setActiveTab,
+  selectedNodes,
+  workflow,
+  onClose,
+  showClose,
+}: PropertiesPanelContentProps) {
+  return (
+    <>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-node-border">
         <h2 className="text-sm font-medium text-white">Properties</h2>
-        <button
-          onClick={() => setIsCollapsed(true)}
-          className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10"
-        >
-          <X className="w-4 h-4 text-gray-400" />
-        </button>
+        {showClose && (
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+            aria-label="Close properties panel"
+          >
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -84,7 +148,7 @@ export function PropertiesPanel() {
         {activeTab === 'variables' && <VariablesTab />}
         {activeTab === 'history' && <HistoryTab />}
       </div>
-    </div>
+    </>
   );
 }
 

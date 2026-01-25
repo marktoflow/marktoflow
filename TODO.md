@@ -415,9 +415,18 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 
 - [x] n8n-inspired dark theme
 - [x] Light mode support
-- [ ] Responsive design
+- [x] Responsive design (mobile/tablet/desktop breakpoints)
 - [x] Keyboard shortcuts
 - [ ] Accessibility (a11y)
+
+### Agent Backend Abstraction
+
+- [x] Abstract AgentProvider interface
+- [x] Claude provider implementation
+- [x] Ollama provider implementation (local LLM)
+- [x] Demo provider for testing
+- [x] Auto-detection of available providers
+- [x] API endpoints for provider management
 
 ### Testing
 
