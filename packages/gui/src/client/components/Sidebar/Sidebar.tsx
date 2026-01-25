@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   FileText,
   FolderTree,
@@ -7,12 +7,20 @@ import {
   Search,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflowStore';
+import { useNavigationStore } from '../../stores/navigationStore';
 
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<'workflows' | 'tools'>(
     'workflows'
   );
   const { workflows, selectedWorkflow, selectWorkflow } = useWorkflowStore();
+  const { resetNavigation } = useNavigationStore();
+
+  // Handle workflow selection - resets sub-workflow navigation
+  const handleSelectWorkflow = useCallback((path: string) => {
+    resetNavigation();
+    selectWorkflow(path);
+  }, [resetNavigation, selectWorkflow]);
 
   return (
     <div className="w-64 bg-panel-bg border-r border-node-border flex flex-col">
@@ -66,7 +74,7 @@ export function Sidebar() {
           <WorkflowList
             workflows={workflows}
             selectedWorkflow={selectedWorkflow}
-            onSelect={selectWorkflow}
+            onSelect={handleSelectWorkflow}
           />
         ) : (
           <ToolsPalette />

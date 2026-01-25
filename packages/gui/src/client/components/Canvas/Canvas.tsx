@@ -39,10 +39,17 @@ export function Canvas() {
   const [yamlViewStep] = useState<WorkflowStep | null>(null);
   const [isYamlViewOpen, setIsYamlViewOpen] = useState(false);
 
-  // Handle node double-click to open editor
+  // Handle node double-click to open editor or drill down
   const onNodeDoubleClick: NodeMouseHandler = useCallback(
     (event, node) => {
       event.preventDefault();
+
+      // Sub-workflow nodes handle their own double-click via the drill-down button
+      // Don't open editor for special node types
+      if (node.type === 'subworkflow' || node.type === 'trigger' || node.type === 'output') {
+        return;
+      }
+
       const step = currentWorkflow?.steps.find((s) => s.id === node.data.id);
       if (step) {
         setEditingStep(step);

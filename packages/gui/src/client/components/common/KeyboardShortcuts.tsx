@@ -31,6 +31,10 @@ const shortcuts: Shortcut[] = [
   { keys: ['Y'], description: 'View YAML', category: 'Editing' },
   { keys: ['Escape'], description: 'Close modal / deselect', category: 'Editing' },
 
+  // Navigation
+  { keys: ['⌘', '←'], description: 'Back to parent workflow', category: 'Navigation' },
+  { keys: ['⌘', '↑'], description: 'Go to root workflow', category: 'Navigation' },
+
   // Execution
   { keys: ['⌘', '↵'], description: 'Execute workflow', category: 'Execution' },
 ];

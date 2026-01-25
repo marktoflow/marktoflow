@@ -13,10 +13,13 @@ import {
   KeyboardShortcutsButton,
   useKeyboardShortcuts,
 } from './components/common/KeyboardShortcuts';
+import { Breadcrumb, type BreadcrumbItem } from './components/common/Breadcrumb';
 import { useWorkflow } from './hooks/useWorkflow';
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePromptStore } from './stores/promptStore';
 import { useEditorStore } from './stores/editorStore';
+import { useNavigationStore } from './stores/navigationStore';
+import { useWorkflowStore } from './stores/workflowStore';
 import type { WorkflowStep, StepStatus, WorkflowStatus } from '@shared/types';
 
 export default function App() {
@@ -40,6 +43,17 @@ export default function App() {
 
   // Keyboard shortcuts
   const { isOpen: isShortcutsOpen, setIsOpen: setShortcutsOpen, openShortcuts } = useKeyboardShortcuts();
+
+  // Navigation for sub-workflow drilling
+  const { breadcrumbs, popToIndex, resetNavigation } = useNavigationStore();
+  const { loadWorkflow } = useWorkflowStore();
+
+  // Handle breadcrumb navigation
+  const handleBreadcrumbNavigate = useCallback((item: BreadcrumbItem, index: number) => {
+    // Navigate to the clicked breadcrumb
+    popToIndex(index);
+    loadWorkflow(item.path || '');
+  }, [popToIndex, loadWorkflow]);
 
   // WebSocket for real-time updates
   const { connected } = useWebSocket({
@@ -179,6 +193,25 @@ export default function App() {
     }
   }, [currentWorkflow, saveWorkflow]);
 
+  // Handle navigating back to parent workflow
+  const handleNavigateBack = useCallback(() => {
+    if (breadcrumbs.length > 1) {
+      const parentIndex = breadcrumbs.length - 2;
+      const parentItem = breadcrumbs[parentIndex];
+      popToIndex(parentIndex);
+      loadWorkflow(parentItem.path);
+    }
+  }, [breadcrumbs, popToIndex, loadWorkflow]);
+
+  // Handle navigating to root workflow
+  const handleNavigateToRoot = useCallback(() => {
+    if (breadcrumbs.length > 1) {
+      const rootItem = breadcrumbs[0];
+      popToIndex(0);
+      loadWorkflow(rootItem.path);
+    }
+  }, [breadcrumbs, popToIndex, loadWorkflow]);
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -209,11 +242,23 @@ export default function App() {
         e.preventDefault();
         handleAddStep();
       }
+
+      // Cmd/Ctrl + Left Arrow: Navigate back to parent workflow
+      if (isMeta && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleNavigateBack();
+      }
+
+      // Cmd/Ctrl + Up Arrow: Navigate to root workflow
+      if (isMeta && e.key === 'ArrowUp') {
+        e.preventDefault();
+        handleNavigateToRoot();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleExecute, handleAddStep]);
+  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot]);
 
   return (
     <ReactFlowProvider>
@@ -248,6 +293,12 @@ export default function App() {
             onExecute={handleExecute}
             onSave={handleSave}
             isExecuting={isExecuting}
+          />
+
+          {/* Breadcrumb for sub-workflow navigation */}
+          <Breadcrumb
+            items={breadcrumbs}
+            onNavigate={handleBreadcrumbNavigate}
           />
 
           {/* Canvas */}

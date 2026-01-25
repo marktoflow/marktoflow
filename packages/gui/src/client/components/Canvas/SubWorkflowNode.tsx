@@ -1,11 +1,14 @@
-import { memo, useState } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import {
   FolderOpen,
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  ArrowRight,
 } from 'lucide-react';
+import { useNavigationStore } from '../../stores/navigationStore';
+import { useWorkflowStore } from '../../stores/workflowStore';
 
 export interface SubWorkflowNodeData extends Record<string, unknown> {
   id: string;
@@ -22,6 +25,30 @@ function SubWorkflowNodeComponent({
   selected,
 }: NodeProps<SubWorkflowNodeType>) {
   const [expanded, setExpanded] = useState(false);
+  const { pushWorkflow, breadcrumbs, setRootWorkflow } = useNavigationStore();
+  const { loadWorkflow, selectedWorkflow, currentWorkflow } = useWorkflowStore();
+
+  // Handle drilling down into sub-workflow
+  const handleDrillDown = useCallback(() => {
+    // If this is the first navigation, set the current workflow as root
+    if (breadcrumbs.length === 0 && selectedWorkflow && currentWorkflow) {
+      setRootWorkflow({
+        id: selectedWorkflow,
+        name: currentWorkflow.metadata?.name || 'Main Workflow',
+        path: selectedWorkflow,
+      });
+    }
+
+    // Push the sub-workflow onto the navigation stack
+    pushWorkflow({
+      id: data.id,
+      name: data.name || data.id,
+      path: data.workflowPath,
+    });
+
+    // Load the sub-workflow
+    loadWorkflow(data.workflowPath);
+  }, [data, pushWorkflow, breadcrumbs, setRootWorkflow, selectedWorkflow, currentWorkflow, loadWorkflow]);
 
   const statusColors = {
     pending: 'border-node-border',
@@ -65,10 +92,11 @@ function SubWorkflowNodeComponent({
           <div className="text-xs text-gray-400">Sub-workflow</div>
         </div>
         <button
-          className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
-          title="Open in new tab"
+          onClick={handleDrillDown}
+          className="w-6 h-6 rounded flex items-center justify-center hover:bg-info/20 transition-colors"
+          title="Drill into sub-workflow"
         >
-          <ExternalLink className="w-4 h-4 text-gray-400" />
+          <ArrowRight className="w-4 h-4 text-info" />
         </button>
       </div>
 
@@ -86,12 +114,17 @@ function SubWorkflowNodeComponent({
         )}
       </div>
 
-      {/* Expanded content placeholder */}
+      {/* Expanded content */}
       {expanded && (
         <div className="border-t border-node-border p-3 bg-black/20">
-          <div className="text-xs text-gray-500 text-center">
-            Sub-workflow steps will be shown here
-          </div>
+          <button
+            onClick={handleDrillDown}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-info/10 hover:bg-info/20 rounded text-sm text-info transition-colors"
+          >
+            <FolderOpen className="w-4 h-4" />
+            Open Sub-workflow
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       )}
 
