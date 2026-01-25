@@ -1,9 +1,9 @@
+/* React Flow base styles - must be before @tailwind */
+@import '@xyflow/react/dist/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* React Flow base styles */
-@import '@xyflow/react/dist/style.css';
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
