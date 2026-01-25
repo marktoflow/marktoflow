@@ -1,4 +1,3 @@
-
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -18,7 +17,7 @@ function runCLI(args: string, cwd?: string): string {
 describe('CLI', () => {
   it('should show version', () => {
     const output = runCLI('version');
-    expect(output).toContain('marktoflow v2.0.0-alpha.1');
+    expect(output).toContain('marktoflow v2.0.0-alpha.7');
   });
 
   it('should run doctor', () => {

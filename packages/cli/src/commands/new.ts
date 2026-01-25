@@ -404,7 +404,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
     });
 
     const workflowDescription = await input({
-      message: 'Description:',
+      message: 'Description (optional):',
       default: selectedTemplate.description,
     });
 

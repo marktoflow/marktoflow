@@ -29,11 +29,12 @@ import { registerIntegrations } from '@marktoflow/integrations';
 import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
 import { runWorkflowWizard, listTemplates } from './commands/new.js';
+import { runUpdateWizard, listAgents } from './commands/update.js';
 import { parse as parseYaml } from 'yaml';
 import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
 import { WorkflowDebugger, parseBreakpoints } from './commands/debug.js';
 
-const VERSION = '2.0.0-alpha.1';
+const VERSION = '2.0.0-alpha.7';
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
@@ -157,6 +158,30 @@ program
       return;
     }
     await runWorkflowWizard(options);
+  });
+
+// --- update ---
+program
+  .command('update [workflow]')
+  .description('Update a workflow using AI coding agents')
+  .option('-a, --agent <id>', 'Coding agent to use (opencode, claude-code, cursor, aider)')
+  .option('-p, --prompt <text>', 'Update description')
+  .option('--list-agents', 'List available coding agents')
+  .action(async (workflow, options) => {
+    if (options.listAgents) {
+      await listAgents();
+      return;
+    }
+    if (!workflow) {
+      console.log(chalk.red('\n❌ Error: workflow argument is required\n'));
+      console.log('Usage: marktoflow update <workflow> [options]');
+      console.log('\nOptions:');
+      console.log('  -a, --agent <id>     Coding agent to use');
+      console.log('  -p, --prompt <text>  Update description');
+      console.log('  --list-agents        List available coding agents');
+      process.exit(1);
+    }
+    await runUpdateWizard({ workflow, ...options });
   });
 
 // --- run ---

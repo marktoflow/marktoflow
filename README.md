@@ -363,6 +363,7 @@ marktoflow doctor                  # Check environment
 
 # Workflow operations
 marktoflow new                     # Create workflow from template (interactive)
+marktoflow update <workflow.md>    # Update workflow with AI coding agents
 marktoflow run <workflow.md>       # Run a workflow
 marktoflow run --dry-run           # Simulate workflow without executing
 marktoflow debug <workflow.md>     # Debug workflow step-by-step
@@ -380,6 +381,48 @@ marktoflow agent list              # List available AI agents
 marktoflow tools list              # List registered tools
 marktoflow bundle list             # List workflow bundles
 ```
+
+### AI-Powered Workflow Updates
+
+The `marktoflow update` command uses AI coding agents to automatically update your workflow files based on natural language descriptions:
+
+```bash
+# Interactive mode (recommended)
+marktoflow update workflow.md
+
+# With prompt
+marktoflow update workflow.md --prompt "Add error handling to all steps"
+
+# Specify agent
+marktoflow update workflow.md --agent opencode --prompt "Refactor to use async/await"
+
+# List available agents
+marktoflow update --list-agents
+```
+
+**Supported Coding Agents:**
+
+- **OpenCode** - Best for general-purpose updates and refactoring
+- **Claude Code** - Great for complex logic changes
+- **Cursor** - IDE integration for visual updates
+- **Aider** - Specialized for code transformations
+
+**Features:**
+
+- ✅ Automatic backup creation before updates
+- ✅ Interactive preview of current workflow
+- ✅ Auto-detects available coding agents on your system
+- ✅ Validates and confirms changes before applying
+- ✅ Shows diff and next steps after update
+
+**Example workflow:**
+
+1. Run `marktoflow update my-workflow.md`
+2. Describe desired changes in natural language
+3. Select from available coding agents
+4. Review and confirm changes
+5. Agent updates the workflow file
+6. Review diff and test the updated workflow
 
 ## Advanced Features
 
