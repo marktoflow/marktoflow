@@ -9,6 +9,7 @@ export interface ExecutionStepResult {
   endTime?: string;
   duration?: number;
   output?: unknown;
+  outputVariable?: string;
   error?: string;
 }
 
@@ -26,14 +27,28 @@ export interface ExecutionRun {
   outputs?: Record<string, unknown>;
 }
 
+export interface DebugState {
+  enabled: boolean;
+  breakpoints: Set<string>;
+  currentStepId: string | null;
+  pausedAtBreakpoint: boolean;
+  stepOverPending: boolean;
+  watchExpressions: string[];
+  callStack: string[];
+}
+
 interface ExecutionState {
   runs: ExecutionRun[];
   currentRunId: string | null;
   isExecuting: boolean;
   isPaused: boolean;
 
+  // Debug mode state
+  debug: DebugState;
+
+  // Existing methods
   startExecution: (workflowId: string, workflowName: string, inputs?: Record<string, unknown>) => string;
-  updateStepStatus: (runId: string, stepId: string, status: StepStatus, output?: unknown, error?: string) => void;
+  updateStepStatus: (runId: string, stepId: string, status: StepStatus, output?: unknown, error?: string, outputVariable?: string) => void;
   completeExecution: (runId: string, status: WorkflowStatus, outputs?: Record<string, unknown>) => void;
   addLog: (runId: string, message: string) => void;
   pauseExecution: () => void;
@@ -41,13 +56,38 @@ interface ExecutionState {
   cancelExecution: (runId: string) => void;
   clearHistory: () => void;
   getRun: (runId: string) => ExecutionRun | undefined;
+
+  // Debug mode methods
+  enableDebugMode: () => void;
+  disableDebugMode: () => void;
+  toggleBreakpoint: (stepId: string) => void;
+  hasBreakpoint: (stepId: string) => boolean;
+  clearAllBreakpoints: () => void;
+  stepOver: () => void;
+  stepInto: () => void;
+  stepOut: () => void;
+  setCurrentDebugStep: (stepId: string | null) => void;
+  addWatchExpression: (expression: string) => void;
+  removeWatchExpression: (expression: string) => void;
+  updateCallStack: (stack: string[]) => void;
 }
+
+const initialDebugState: DebugState = {
+  enabled: false,
+  breakpoints: new Set(),
+  currentStepId: null,
+  pausedAtBreakpoint: false,
+  stepOverPending: false,
+  watchExpressions: [],
+  callStack: [],
+};
 
 export const useExecutionStore = create<ExecutionState>((set, get) => ({
   runs: [],
   currentRunId: null,
   isExecuting: false,
   isPaused: false,
+  debug: initialDebugState,
 
   startExecution: (workflowId, workflowName, inputs) => {
     const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
@@ -72,7 +112,14 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
     return runId;
   },
 
-  updateStepStatus: (runId, stepId, status, output, error) => {
+  updateStepStatus: (runId, stepId, status, output, error, outputVariable) => {
+    const { debug } = get();
+
+    // Check if we need to pause at breakpoint
+    const shouldPauseAtBreakpoint = debug.enabled &&
+      status === 'running' &&
+      debug.breakpoints.has(stepId);
+
     set({
       runs: get().runs.map((run) => {
         if (run.id !== runId) return run;
@@ -95,6 +142,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
                 endTime,
                 duration,
                 output: output ?? s.output,
+                outputVariable: outputVariable ?? s.outputVariable,
                 error: error ?? s.error,
               };
             }),
@@ -110,13 +158,34 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
                 status,
                 startTime: now,
                 output,
+                outputVariable,
                 error,
               },
             ],
           };
         }
       }),
+      // Update debug state if pausing at breakpoint
+      ...(shouldPauseAtBreakpoint ? {
+        isPaused: true,
+        debug: {
+          ...get().debug,
+          currentStepId: stepId,
+          pausedAtBreakpoint: true,
+          stepOverPending: false,
+        },
+      } : {
+        debug: {
+          ...get().debug,
+          currentStepId: status === 'running' ? stepId : get().debug.currentStepId,
+        },
+      }),
     });
+
+    // Log breakpoint pause
+    if (shouldPauseAtBreakpoint) {
+      get().addLog(runId, `⏸️ Paused at breakpoint: ${stepId}`);
+    }
   },
 
   completeExecution: (runId, status, outputs) => {
@@ -187,6 +256,160 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
 
   getRun: (runId) => {
     return get().runs.find((r) => r.id === runId);
+  },
+
+  // Debug mode methods
+  enableDebugMode: () => {
+    set({
+      debug: {
+        ...get().debug,
+        enabled: true,
+      },
+    });
+    const { currentRunId } = get();
+    if (currentRunId) {
+      get().addLog(currentRunId, '🐛 Debug mode enabled');
+    }
+  },
+
+  disableDebugMode: () => {
+    set({
+      debug: {
+        ...initialDebugState,
+        breakpoints: get().debug.breakpoints, // Preserve breakpoints
+      },
+    });
+    const { currentRunId } = get();
+    if (currentRunId) {
+      get().addLog(currentRunId, '🐛 Debug mode disabled');
+    }
+  },
+
+  toggleBreakpoint: (stepId) => {
+    const { debug } = get();
+    const newBreakpoints = new Set(debug.breakpoints);
+    if (newBreakpoints.has(stepId)) {
+      newBreakpoints.delete(stepId);
+    } else {
+      newBreakpoints.add(stepId);
+    }
+    set({
+      debug: {
+        ...debug,
+        breakpoints: newBreakpoints,
+      },
+    });
+  },
+
+  hasBreakpoint: (stepId) => {
+    return get().debug.breakpoints.has(stepId);
+  },
+
+  clearAllBreakpoints: () => {
+    set({
+      debug: {
+        ...get().debug,
+        breakpoints: new Set(),
+      },
+    });
+    const { currentRunId } = get();
+    if (currentRunId) {
+      get().addLog(currentRunId, 'All breakpoints cleared');
+    }
+  },
+
+  stepOver: () => {
+    const { debug, currentRunId, isPaused } = get();
+    if (!isPaused || !debug.enabled) return;
+
+    set({
+      isPaused: false,
+      debug: {
+        ...debug,
+        stepOverPending: true,
+        pausedAtBreakpoint: false,
+      },
+    });
+
+    if (currentRunId) {
+      get().addLog(currentRunId, '➡️ Step over');
+    }
+  },
+
+  stepInto: () => {
+    const { debug, currentRunId, isPaused } = get();
+    if (!isPaused || !debug.enabled) return;
+
+    set({
+      isPaused: false,
+      debug: {
+        ...debug,
+        stepOverPending: true,
+        pausedAtBreakpoint: false,
+      },
+    });
+
+    if (currentRunId) {
+      get().addLog(currentRunId, '⬇️ Step into');
+    }
+  },
+
+  stepOut: () => {
+    const { debug, currentRunId, isPaused } = get();
+    if (!isPaused || !debug.enabled) return;
+
+    set({
+      isPaused: false,
+      debug: {
+        ...debug,
+        stepOverPending: false,
+        pausedAtBreakpoint: false,
+      },
+    });
+
+    if (currentRunId) {
+      get().addLog(currentRunId, '⬆️ Step out');
+    }
+  },
+
+  setCurrentDebugStep: (stepId) => {
+    set({
+      debug: {
+        ...get().debug,
+        currentStepId: stepId,
+      },
+    });
+  },
+
+  addWatchExpression: (expression) => {
+    const { debug } = get();
+    if (!debug.watchExpressions.includes(expression)) {
+      set({
+        debug: {
+          ...debug,
+          watchExpressions: [...debug.watchExpressions, expression],
+        },
+      });
+    }
+  },
+
+  removeWatchExpression: (expression) => {
+    const { debug } = get();
+    set({
+      debug: {
+        ...debug,
+        watchExpressions: debug.watchExpressions.filter((e) => e !== expression),
+      },
+    });
+  },
+
+  updateCallStack: (stack) => {
+    set({
+      debug: {
+        ...get().debug,
+        callStack: stack,
+      },
+    });
   },
 }));
 

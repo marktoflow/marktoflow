@@ -18,6 +18,7 @@ export { NewStepWizard } from './Editor/NewStepWizard';
 export { Button } from './common/Button';
 export { Modal, ModalFooter } from './common/Modal';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './common/Tabs';
+export { ThemeToggle, ThemePicker } from './common/ThemeToggle';
 export * from './common/ContextMenu';
 
 // Prompt components

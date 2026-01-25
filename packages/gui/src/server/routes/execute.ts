@@ -2,29 +2,7 @@ import { Router, type Router as RouterType } from 'express';
 
 const router: RouterType = Router();
 
-// Execute a workflow
-router.post('/:path(*)', async (req, res) => {
-  try {
-    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
-    const { inputs, dryRun } = req.body;
-
-    // TODO: Integrate with @marktoflow/core WorkflowEngine
-    // For now, return a placeholder response
-
-    res.json({
-      runId: `run-${Date.now()}`,
-      status: 'started',
-      workflowPath,
-      inputs,
-      dryRun: dryRun || false,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Failed to execute workflow',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+// Note: Specific routes must come before catch-all routes
 
 // Get execution status
 router.get('/status/:runId', async (req, res) => {
@@ -61,6 +39,30 @@ router.post('/cancel/:runId', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to cancel execution',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Execute a workflow (catch-all route - must be last)
+router.post('/:path(*)', async (req, res) => {
+  try {
+    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
+    const { inputs, dryRun } = req.body;
+
+    // TODO: Integrate with @marktoflow/core WorkflowEngine
+    // For now, return a placeholder response
+
+    res.json({
+      runId: `run-${Date.now()}`,
+      status: 'started',
+      workflowPath,
+      inputs,
+      dryRun: dryRun || false,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to execute workflow',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }

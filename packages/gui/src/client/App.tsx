@@ -13,6 +13,7 @@ import {
   KeyboardShortcutsButton,
   useKeyboardShortcuts,
 } from './components/common/KeyboardShortcuts';
+import { ThemeToggle } from './components/common/ThemeToggle';
 import { Breadcrumb, type BreadcrumbItem } from './components/common/Breadcrumb';
 import { useWorkflow } from './hooks/useWorkflow';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -77,6 +78,17 @@ export default function App() {
     pauseExecution,
     resumeExecution,
     cancelExecution,
+    // Debug methods
+    debug,
+    enableDebugMode,
+    disableDebugMode,
+    toggleBreakpoint,
+    clearAllBreakpoints,
+    stepOver,
+    stepInto,
+    stepOut,
+    addWatchExpression,
+    removeWatchExpression,
   } = useExecutionStore();
 
   // Local execution state for overlay
@@ -291,11 +303,46 @@ export default function App() {
         e.preventDefault();
         handleNavigateToRoot();
       }
+
+      // Debug keyboard shortcuts
+      // F9: Toggle debug mode
+      if (e.key === 'F9') {
+        e.preventDefault();
+        if (debug.enabled) {
+          disableDebugMode();
+        } else {
+          enableDebugMode();
+        }
+      }
+
+      // F10: Step over (when paused in debug mode)
+      if (e.key === 'F10' && debug.enabled && isPaused) {
+        e.preventDefault();
+        stepOver();
+      }
+
+      // F11: Step into (when paused in debug mode)
+      if (e.key === 'F11' && !e.shiftKey && debug.enabled && isPaused) {
+        e.preventDefault();
+        stepInto();
+      }
+
+      // Shift+F11: Step out (when paused in debug mode)
+      if (e.key === 'F11' && e.shiftKey && debug.enabled && isPaused) {
+        e.preventDefault();
+        stepOut();
+      }
+
+      // F5: Continue execution (when paused)
+      if (e.key === 'F5' && isPaused) {
+        e.preventDefault();
+        resumeExecution();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot]);
+  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot, debug.enabled, isPaused, enableDebugMode, disableDebugMode, stepOver, stepInto, stepOut, resumeExecution]);
 
   return (
     <ReactFlowProvider>
@@ -305,8 +352,9 @@ export default function App() {
 
         {/* Main Canvas Area */}
         <div className="flex flex-1 flex-col relative">
-          {/* Connection status & shortcuts */}
+          {/* Connection status, theme toggle & shortcuts */}
           <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <ThemeToggle showLabel />
             <KeyboardShortcutsButton onClick={openShortcuts} />
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
@@ -359,14 +407,27 @@ export default function App() {
                 }
                 setWorkflowStatus('cancelled');
               }}
-              onStepOver={() => {
-                // TODO: Implement step-over debugging
-              }}
+              onStepOver={() => stepOver()}
               onClose={() => {
                 setWorkflowStatus('pending');
                 setExecutionSteps([]);
                 setExecutionLogs([]);
               }}
+              // Debug props
+              debug={debug}
+              onToggleDebugMode={() => {
+                if (debug.enabled) {
+                  disableDebugMode();
+                } else {
+                  enableDebugMode();
+                }
+              }}
+              onToggleBreakpoint={(stepId) => toggleBreakpoint(stepId)}
+              onStepInto={() => stepInto()}
+              onStepOut={() => stepOut()}
+              onClearBreakpoints={() => clearAllBreakpoints()}
+              onAddWatchExpression={(expr) => addWatchExpression(expr)}
+              onRemoveWatchExpression={(expr) => removeWatchExpression(expr)}
             />
           </div>
 

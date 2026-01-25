@@ -1,7 +1,28 @@
 import { useState } from 'react';
-import { Play, Pause, SkipForward, Square, CheckCircle, XCircle, Loader2, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  SkipForward,
+  Square,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Check,
+  Bug,
+  Circle,
+  ArrowRight,
+  ArrowDown,
+  ArrowUp,
+  Trash2,
+  Plus,
+  X,
+} from 'lucide-react';
 import { Button } from '../common/Button';
 import type { StepStatus, WorkflowStatus } from '@shared/types';
+import type { DebugState } from '../../stores/executionStore';
 
 interface ExecutionStep {
   stepId: string;
@@ -25,6 +46,15 @@ interface ExecutionOverlayProps {
   onStop: () => void;
   onStepOver: () => void;
   onClose: () => void;
+  // Debug props
+  debug?: DebugState;
+  onToggleDebugMode?: () => void;
+  onToggleBreakpoint?: (stepId: string) => void;
+  onStepInto?: () => void;
+  onStepOut?: () => void;
+  onClearBreakpoints?: () => void;
+  onAddWatchExpression?: (expression: string) => void;
+  onRemoveWatchExpression?: (expression: string) => void;
 }
 
 export function ExecutionOverlay({
@@ -39,8 +69,18 @@ export function ExecutionOverlay({
   onStop,
   onStepOver,
   onClose,
+  // Debug props
+  debug,
+  onToggleDebugMode,
+  onToggleBreakpoint,
+  onStepInto,
+  onStepOut,
+  onClearBreakpoints,
+  onAddWatchExpression,
+  onRemoveWatchExpression,
 }: ExecutionOverlayProps) {
-  const [activeTab, setActiveTab] = useState<'steps' | 'variables' | 'logs'>('steps');
+  const [activeTab, setActiveTab] = useState<'steps' | 'variables' | 'logs' | 'debug'>('steps');
+  const isDebugEnabled = debug?.enabled ?? false;
 
   const completedSteps = steps.filter((s) => s.status === 'completed').length;
   const failedSteps = steps.filter((s) => s.status === 'failed').length;
@@ -69,6 +109,19 @@ export function ExecutionOverlay({
 
         {/* Controls */}
         <div className="flex items-center gap-2">
+          {/* Debug mode toggle */}
+          {onToggleDebugMode && (
+            <Button
+              variant={isDebugEnabled ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={onToggleDebugMode}
+              icon={<Bug className="w-4 h-4" />}
+              title={isDebugEnabled ? 'Disable debug mode' : 'Enable debug mode'}
+            >
+              Debug
+            </Button>
+          )}
+
           {isExecuting && (
             <>
               {isPaused ? (
@@ -90,15 +143,57 @@ export function ExecutionOverlay({
                   Pause
                 </Button>
               )}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onStepOver}
-                icon={<SkipForward className="w-4 h-4" />}
-                disabled={!isPaused}
-              >
-                Step
-              </Button>
+
+              {/* Debug stepping controls */}
+              {isDebugEnabled && isPaused && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onStepOver}
+                    icon={<ArrowRight className="w-4 h-4" />}
+                    title="Step Over (F10)"
+                  >
+                    Over
+                  </Button>
+                  {onStepInto && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onStepInto}
+                      icon={<ArrowDown className="w-4 h-4" />}
+                      title="Step Into (F11)"
+                    >
+                      Into
+                    </Button>
+                  )}
+                  {onStepOut && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onStepOut}
+                      icon={<ArrowUp className="w-4 h-4" />}
+                      title="Step Out (Shift+F11)"
+                    >
+                      Out
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {/* Regular step control when not in debug mode */}
+              {!isDebugEnabled && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onStepOver}
+                  icon={<SkipForward className="w-4 h-4" />}
+                  disabled={!isPaused}
+                >
+                  Step
+                </Button>
+              )}
+
               <Button
                 variant="destructive"
                 size="sm"
@@ -163,18 +258,45 @@ export function ExecutionOverlay({
         >
           Logs
         </button>
+        {isDebugEnabled && (
+          <button
+            onClick={() => setActiveTab('debug')}
+            className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1 ${
+              activeTab === 'debug'
+                ? 'text-primary border-b-2 border-primary -mb-px'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Bug className="w-3 h-3" />
+            Debug
+          </button>
+        )}
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'steps' && (
-          <StepsList steps={steps} currentStepId={currentStepId} />
+          <StepsList
+            steps={steps}
+            currentStepId={currentStepId}
+            debugEnabled={isDebugEnabled}
+            breakpoints={debug?.breakpoints}
+            onToggleBreakpoint={onToggleBreakpoint}
+          />
         )}
         {activeTab === 'variables' && (
           <VariableInspector steps={steps} />
         )}
         {activeTab === 'logs' && (
           <LogsViewer logs={logs} />
+        )}
+        {activeTab === 'debug' && isDebugEnabled && (
+          <DebugPanel
+            debug={debug!}
+            onClearBreakpoints={onClearBreakpoints}
+            onAddWatchExpression={onAddWatchExpression}
+            onRemoveWatchExpression={onRemoveWatchExpression}
+          />
         )}
       </div>
     </div>
@@ -184,35 +306,62 @@ export function ExecutionOverlay({
 function StepsList({
   steps,
   currentStepId,
+  debugEnabled,
+  breakpoints,
+  onToggleBreakpoint,
 }: {
   steps: ExecutionStep[];
   currentStepId: string | null;
+  debugEnabled?: boolean;
+  breakpoints?: Set<string>;
+  onToggleBreakpoint?: (stepId: string) => void;
 }) {
   return (
     <div className="space-y-2">
-      {steps.map((step) => (
-        <div
-          key={step.stepId}
-          className={`flex items-center gap-3 p-3 rounded-lg border ${
-            step.stepId === currentStepId
-              ? 'bg-primary/10 border-primary'
-              : 'bg-node-bg border-node-border'
-          }`}
-        >
-          <StepStatusIcon status={step.status} />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-white truncate">
-              {step.stepName || step.stepId}
+      {steps.map((step) => {
+        const hasBreakpoint = breakpoints?.has(step.stepId);
+
+        return (
+          <div
+            key={step.stepId}
+            className={`flex items-center gap-3 p-3 rounded-lg border ${
+              step.stepId === currentStepId
+                ? 'bg-primary/10 border-primary'
+                : hasBreakpoint
+                  ? 'bg-error/10 border-error/50'
+                  : 'bg-node-bg border-node-border'
+            }`}
+          >
+            {/* Breakpoint indicator/toggle */}
+            {debugEnabled && onToggleBreakpoint && (
+              <button
+                onClick={() => onToggleBreakpoint(step.stepId)}
+                className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
+                  hasBreakpoint
+                    ? 'bg-error'
+                    : 'bg-transparent border border-gray-500 hover:border-error hover:bg-error/20'
+                }`}
+                title={hasBreakpoint ? 'Remove breakpoint' : 'Add breakpoint'}
+              >
+                {hasBreakpoint && <Circle className="w-2 h-2 fill-current text-white" />}
+              </button>
+            )}
+
+            <StepStatusIcon status={step.status} />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-white truncate">
+                {step.stepName || step.stepId}
+              </div>
+              {step.error && (
+                <div className="text-xs text-error mt-1 truncate">{step.error}</div>
+              )}
             </div>
-            {step.error && (
-              <div className="text-xs text-error mt-1 truncate">{step.error}</div>
+            {step.duration !== undefined && (
+              <div className="text-xs text-gray-400">{step.duration}ms</div>
             )}
           </div>
-          {step.duration !== undefined && (
-            <div className="text-xs text-gray-400">{step.duration}ms</div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -523,4 +672,176 @@ function getStatusText(status: WorkflowStatus): string {
     default:
       return 'Unknown';
   }
+}
+
+// Debug Panel Component
+function DebugPanel({
+  debug,
+  onClearBreakpoints,
+  onAddWatchExpression,
+  onRemoveWatchExpression,
+}: {
+  debug: DebugState;
+  onClearBreakpoints?: () => void;
+  onAddWatchExpression?: (expression: string) => void;
+  onRemoveWatchExpression?: (expression: string) => void;
+}) {
+  const [newWatchExpr, setNewWatchExpr] = useState('');
+
+  const handleAddWatch = () => {
+    if (newWatchExpr.trim() && onAddWatchExpression) {
+      onAddWatchExpression(newWatchExpr.trim());
+      setNewWatchExpr('');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Breakpoints Section */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-white flex items-center gap-2">
+            <Circle className="w-3 h-3 text-error" />
+            Breakpoints ({debug.breakpoints.size})
+          </h4>
+          {debug.breakpoints.size > 0 && onClearBreakpoints && (
+            <button
+              onClick={onClearBreakpoints}
+              className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clear all
+            </button>
+          )}
+        </div>
+        <div className="bg-node-bg rounded-lg p-3">
+          {debug.breakpoints.size === 0 ? (
+            <div className="text-xs text-gray-500">
+              No breakpoints set. Click the dot next to a step to add one.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {Array.from(debug.breakpoints).map((stepId) => (
+                <div
+                  key={stepId}
+                  className="flex items-center gap-2 text-xs text-gray-300"
+                >
+                  <Circle className="w-2 h-2 fill-current text-error" />
+                  <span className="font-mono">{stepId}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Call Stack Section */}
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium text-white">Call Stack</h4>
+        <div className="bg-node-bg rounded-lg p-3">
+          {debug.callStack.length === 0 ? (
+            <div className="text-xs text-gray-500">No active call stack</div>
+          ) : (
+            <div className="space-y-1">
+              {debug.callStack.map((frame, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center gap-2 text-xs ${
+                    index === 0 ? 'text-primary' : 'text-gray-400'
+                  }`}
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  <span className="font-mono">{frame}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Watch Expressions Section */}
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium text-white">Watch Expressions</h4>
+        <div className="bg-node-bg rounded-lg p-3 space-y-2">
+          {/* Add new watch expression */}
+          {onAddWatchExpression && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newWatchExpr}
+                onChange={(e) => setNewWatchExpr(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddWatch()}
+                placeholder="Add expression..."
+                className="flex-1 bg-transparent border border-node-border rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+              />
+              <button
+                onClick={handleAddWatch}
+                disabled={!newWatchExpr.trim()}
+                className="p-1 text-gray-400 hover:text-white disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Watch list */}
+          {debug.watchExpressions.length === 0 ? (
+            <div className="text-xs text-gray-500">
+              No watch expressions. Add an expression to monitor its value.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {debug.watchExpressions.map((expr) => (
+                <div
+                  key={expr}
+                  className="flex items-center justify-between gap-2 text-xs group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-primary font-mono truncate">{expr}</span>
+                    <span className="text-gray-500">=</span>
+                    <span className="text-gray-300 font-mono truncate">
+                      (not evaluated)
+                    </span>
+                  </div>
+                  {onRemoveWatchExpression && (
+                    <button
+                      onClick={() => onRemoveWatchExpression(expr)}
+                      className="p-1 text-gray-500 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Debug State Info */}
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium text-white">Debug State</h4>
+        <div className="bg-node-bg rounded-lg p-3 text-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">Current Step:</span>
+            <span className="text-white font-mono">
+              {debug.currentStepId || '(none)'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">Paused at Breakpoint:</span>
+            <span className={debug.pausedAtBreakpoint ? 'text-error' : 'text-gray-500'}>
+              {debug.pausedAtBreakpoint ? 'Yes' : 'No'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-400">Step Over Pending:</span>
+            <span className={debug.stepOverPending ? 'text-warning' : 'text-gray-500'}>
+              {debug.stepOverPending ? 'Yes' : 'No'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

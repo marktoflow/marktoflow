@@ -37,6 +37,13 @@ const shortcuts: Shortcut[] = [
 
   // Execution
   { keys: ['⌘', '↵'], description: 'Execute workflow', category: 'Execution' },
+
+  // Debugging
+  { keys: ['F9'], description: 'Toggle debug mode', category: 'Debugging' },
+  { keys: ['F5'], description: 'Continue execution', category: 'Debugging' },
+  { keys: ['F10'], description: 'Step over', category: 'Debugging' },
+  { keys: ['F11'], description: 'Step into', category: 'Debugging' },
+  { keys: ['⇧', 'F11'], description: 'Step out', category: 'Debugging' },
 ];
 
 interface KeyboardShortcutsProps {

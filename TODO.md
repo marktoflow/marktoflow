@@ -389,7 +389,7 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 - [x] Real-time step status updates
 - [x] Log viewer panel
 - [x] Variable inspector at each step
-- [ ] Step-through debugging mode
+- [x] Step-through debugging mode
 
 ### Real-time Updates
 
@@ -414,7 +414,7 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 ### UI/UX Polish
 
 - [x] n8n-inspired dark theme
-- [ ] Light mode support
+- [x] Light mode support
 - [ ] Responsive design
 - [x] Keyboard shortcuts
 - [ ] Accessibility (a11y)
@@ -422,7 +422,7 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 ### Testing
 
 - [x] Unit tests for React components
-- [ ] Integration tests for API endpoints
+- [x] Integration tests for API endpoints
 - [x] E2E tests with Playwright
 - [x] Canvas interaction tests
 

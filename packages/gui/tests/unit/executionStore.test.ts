@@ -9,6 +9,15 @@ describe('executionStore', () => {
       currentRunId: null,
       isExecuting: false,
       isPaused: false,
+      debug: {
+        enabled: false,
+        breakpoints: new Set(),
+        currentStepId: null,
+        pausedAtBreakpoint: false,
+        stepOverPending: false,
+        watchExpressions: [],
+        callStack: [],
+      },
     });
   });
 
@@ -206,6 +215,272 @@ describe('executionStore', () => {
 
       const run = getRun('non-existent');
       expect(run).toBeUndefined();
+    });
+  });
+
+  // Debug mode tests
+  describe('debug mode', () => {
+    describe('enableDebugMode / disableDebugMode', () => {
+      it('should enable debug mode', () => {
+        const { enableDebugMode } = useExecutionStore.getState();
+
+        enableDebugMode();
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.enabled).toBe(true);
+      });
+
+      it('should disable debug mode but preserve breakpoints', () => {
+        const { enableDebugMode, disableDebugMode, toggleBreakpoint } = useExecutionStore.getState();
+
+        enableDebugMode();
+        toggleBreakpoint('step-1');
+        toggleBreakpoint('step-2');
+        disableDebugMode();
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.enabled).toBe(false);
+        expect(state.debug.breakpoints.has('step-1')).toBe(true);
+        expect(state.debug.breakpoints.has('step-2')).toBe(true);
+      });
+
+      it('should reset other debug state when disabling', () => {
+        const { enableDebugMode, disableDebugMode, setCurrentDebugStep, addWatchExpression } = useExecutionStore.getState();
+
+        enableDebugMode();
+        setCurrentDebugStep('step-1');
+        addWatchExpression('variable.foo');
+
+        disableDebugMode();
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.currentStepId).toBeNull();
+        expect(state.debug.pausedAtBreakpoint).toBe(false);
+        expect(state.debug.stepOverPending).toBe(false);
+        expect(state.debug.callStack).toHaveLength(0);
+      });
+    });
+
+    describe('toggleBreakpoint / hasBreakpoint / clearAllBreakpoints', () => {
+      it('should add a breakpoint', () => {
+        const { toggleBreakpoint, hasBreakpoint } = useExecutionStore.getState();
+
+        toggleBreakpoint('step-1');
+
+        expect(hasBreakpoint('step-1')).toBe(true);
+        expect(hasBreakpoint('step-2')).toBe(false);
+      });
+
+      it('should remove a breakpoint when toggled twice', () => {
+        const { toggleBreakpoint, hasBreakpoint } = useExecutionStore.getState();
+
+        toggleBreakpoint('step-1');
+        toggleBreakpoint('step-1');
+
+        expect(hasBreakpoint('step-1')).toBe(false);
+      });
+
+      it('should clear all breakpoints', () => {
+        const { toggleBreakpoint, clearAllBreakpoints, hasBreakpoint } = useExecutionStore.getState();
+
+        toggleBreakpoint('step-1');
+        toggleBreakpoint('step-2');
+        toggleBreakpoint('step-3');
+
+        clearAllBreakpoints();
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.breakpoints.size).toBe(0);
+        expect(hasBreakpoint('step-1')).toBe(false);
+      });
+    });
+
+    describe('stepOver / stepInto / stepOut', () => {
+      it('should set stepOverPending when stepping over', () => {
+        const { enableDebugMode, startExecution, pauseExecution, stepOver } = useExecutionStore.getState();
+
+        enableDebugMode();
+        startExecution('wf-1', 'Test');
+        pauseExecution();
+
+        stepOver();
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(false);
+        expect(state.debug.stepOverPending).toBe(true);
+      });
+
+      it('should not step over when not paused', () => {
+        const { enableDebugMode, startExecution, stepOver } = useExecutionStore.getState();
+
+        enableDebugMode();
+        startExecution('wf-1', 'Test');
+
+        stepOver();
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.stepOverPending).toBe(false);
+      });
+
+      it('should not step over when debug mode is disabled', () => {
+        const { startExecution, pauseExecution, stepOver } = useExecutionStore.getState();
+
+        startExecution('wf-1', 'Test');
+        pauseExecution();
+
+        stepOver();
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(true); // Should still be paused
+      });
+
+      it('stepInto should work like stepOver', () => {
+        const { enableDebugMode, startExecution, pauseExecution, stepInto } = useExecutionStore.getState();
+
+        enableDebugMode();
+        startExecution('wf-1', 'Test');
+        pauseExecution();
+
+        stepInto();
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(false);
+        expect(state.debug.stepOverPending).toBe(true);
+      });
+
+      it('stepOut should resume without stepOverPending', () => {
+        const { enableDebugMode, startExecution, pauseExecution, stepOut } = useExecutionStore.getState();
+
+        enableDebugMode();
+        startExecution('wf-1', 'Test');
+        pauseExecution();
+
+        stepOut();
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(false);
+        expect(state.debug.stepOverPending).toBe(false);
+      });
+    });
+
+    describe('setCurrentDebugStep', () => {
+      it('should set the current debug step', () => {
+        const { setCurrentDebugStep } = useExecutionStore.getState();
+
+        setCurrentDebugStep('step-5');
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.currentStepId).toBe('step-5');
+      });
+
+      it('should clear the current debug step when set to null', () => {
+        const { setCurrentDebugStep } = useExecutionStore.getState();
+
+        setCurrentDebugStep('step-5');
+        setCurrentDebugStep(null);
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.currentStepId).toBeNull();
+      });
+    });
+
+    describe('watch expressions', () => {
+      it('should add a watch expression', () => {
+        const { addWatchExpression } = useExecutionStore.getState();
+
+        addWatchExpression('variable.foo');
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.watchExpressions).toContain('variable.foo');
+      });
+
+      it('should not add duplicate watch expressions', () => {
+        const { addWatchExpression } = useExecutionStore.getState();
+
+        addWatchExpression('variable.foo');
+        addWatchExpression('variable.foo');
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.watchExpressions.filter(e => e === 'variable.foo')).toHaveLength(1);
+      });
+
+      it('should remove a watch expression', () => {
+        const { addWatchExpression, removeWatchExpression } = useExecutionStore.getState();
+
+        addWatchExpression('variable.foo');
+        addWatchExpression('variable.bar');
+        removeWatchExpression('variable.foo');
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.watchExpressions).not.toContain('variable.foo');
+        expect(state.debug.watchExpressions).toContain('variable.bar');
+      });
+    });
+
+    describe('updateCallStack', () => {
+      it('should update the call stack', () => {
+        const { updateCallStack } = useExecutionStore.getState();
+
+        const stack = ['main', 'sub-workflow-1', 'step-3'];
+        updateCallStack(stack);
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.callStack).toEqual(stack);
+      });
+
+      it('should clear the call stack with empty array', () => {
+        const { updateCallStack } = useExecutionStore.getState();
+
+        updateCallStack(['main', 'sub-workflow-1']);
+        updateCallStack([]);
+
+        const state = useExecutionStore.getState();
+        expect(state.debug.callStack).toHaveLength(0);
+      });
+    });
+
+    describe('breakpoint pause behavior', () => {
+      it('should pause at breakpoint when debug mode is enabled', () => {
+        const { enableDebugMode, toggleBreakpoint, startExecution, updateStepStatus } = useExecutionStore.getState();
+
+        enableDebugMode();
+        toggleBreakpoint('step-2');
+
+        const runId = startExecution('wf-1', 'Test');
+        updateStepStatus(runId, 'step-2', 'running');
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(true);
+        expect(state.debug.pausedAtBreakpoint).toBe(true);
+        expect(state.debug.currentStepId).toBe('step-2');
+      });
+
+      it('should not pause at breakpoint when debug mode is disabled', () => {
+        const { toggleBreakpoint, startExecution, updateStepStatus } = useExecutionStore.getState();
+
+        toggleBreakpoint('step-2');
+
+        const runId = startExecution('wf-1', 'Test');
+        updateStepStatus(runId, 'step-2', 'running');
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(false);
+        expect(state.debug.pausedAtBreakpoint).toBe(false);
+      });
+
+      it('should not pause at step without breakpoint', () => {
+        const { enableDebugMode, toggleBreakpoint, startExecution, updateStepStatus } = useExecutionStore.getState();
+
+        enableDebugMode();
+        toggleBreakpoint('step-1'); // Breakpoint on step-1, not step-2
+
+        const runId = startExecution('wf-1', 'Test');
+        updateStepStatus(runId, 'step-2', 'running');
+
+        const state = useExecutionStore.getState();
+        expect(state.isPaused).toBe(false);
+        expect(state.debug.pausedAtBreakpoint).toBe(false);
+      });
     });
   });
 });
