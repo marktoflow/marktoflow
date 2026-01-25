@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   FileText,
   FolderTree,
-  Wrench,
   ChevronRight,
   Plus,
   Search,

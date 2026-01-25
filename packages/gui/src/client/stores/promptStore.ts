@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { useWorkflowStore } from './workflowStore';
-import { useCanvasStore } from './canvasStore';
 
-interface PromptHistoryItem {
+export interface PromptHistoryItem {
   prompt: string;
   response: string;
   timestamp: Date;

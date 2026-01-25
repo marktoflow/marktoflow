@@ -2,9 +2,6 @@ import {
   Plus,
   Play,
   Pause,
-  RotateCcw,
-  Download,
-  Upload,
   Layout,
   ZoomIn,
   ZoomOut,
@@ -14,12 +11,9 @@ import {
   Redo,
   Copy,
   Trash2,
-  Settings,
 } from 'lucide-react';
-import { Button } from '../common/Button';
 import { useCanvas } from '../../hooks/useCanvas';
 import { useEditorStore } from '../../stores/editorStore';
-import { useWorkflowStore } from '../../stores/workflowStore';
 import { useReactFlow } from '@xyflow/react';
 
 interface ToolbarProps {
@@ -38,7 +32,6 @@ export function Toolbar({
   const { autoLayout, fitView, selectedNodes, deleteSelected, duplicateSelected } =
     useCanvas();
   const { undo, redo, undoStack, redoStack } = useEditorStore();
-  const { currentWorkflow } = useWorkflowStore();
   const { zoomIn, zoomOut } = useReactFlow();
 
   const canUndo = undoStack.length > 0;

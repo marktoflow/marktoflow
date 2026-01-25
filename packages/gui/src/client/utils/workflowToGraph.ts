@@ -175,23 +175,24 @@ function findTemplateVariables(inputs: Record<string, unknown>): string[] {
  */
 export function graphToWorkflow(
   nodes: Node[],
-  edges: Edge[],
+  _edges: Edge[],
   metadata: Workflow['metadata']
 ): Workflow {
   // Sort nodes by vertical position to determine step order
   const sortedNodes = [...nodes].sort((a, b) => a.position.y - b.position.y);
 
   const steps: WorkflowStep[] = sortedNodes.map((node) => {
+    const data = node.data as Record<string, unknown>;
     const step: WorkflowStep = {
-      id: node.data.id || node.id,
-      inputs: node.data.inputs || {},
+      id: (data.id as string) || node.id,
+      inputs: (data.inputs as Record<string, unknown>) || {},
     };
 
-    if (node.data.name) step.name = node.data.name;
-    if (node.data.action) step.action = node.data.action;
-    if (node.data.workflowPath) step.workflow = node.data.workflowPath;
-    if (node.data.outputVariable) step.outputVariable = node.data.outputVariable;
-    if (node.data.conditions) step.conditions = node.data.conditions;
+    if (data.name) step.name = data.name as string;
+    if (data.action) step.action = data.action as string;
+    if (data.workflowPath) step.workflow = data.workflowPath as string;
+    if (data.outputVariable) step.outputVariable = data.outputVariable as string;
+    if (data.conditions) step.conditions = data.conditions as string[];
 
     return step;
   });

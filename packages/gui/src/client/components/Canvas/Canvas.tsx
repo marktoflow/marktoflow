@@ -5,7 +5,6 @@ import {
   Controls,
   MiniMap,
   BackgroundVariant,
-  type Node,
   type NodeMouseHandler,
 } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
@@ -33,7 +32,7 @@ export function Canvas() {
   // Editor state
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [yamlViewStep, setYamlViewStep] = useState<WorkflowStep | null>(null);
+  const [yamlViewStep] = useState<WorkflowStep | null>(null);
   const [isYamlViewOpen, setIsYamlViewOpen] = useState(false);
 
   // Handle node double-click to open editor

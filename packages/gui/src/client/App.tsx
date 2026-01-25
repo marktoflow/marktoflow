@@ -18,7 +18,6 @@ export default function App() {
   // Workflow management
   const {
     currentWorkflow,
-    selectedWorkflow,
     saveWorkflow,
     refreshWorkflows,
   } = useWorkflow();

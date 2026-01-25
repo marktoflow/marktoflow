@@ -1,9 +1,9 @@
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { Play, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { getServiceIcon } from '../../utils/serviceIcons';
 
-export interface StepNodeData {
+export interface StepNodeData extends Record<string, unknown> {
   id: string;
   name?: string;
   action: string;
@@ -12,12 +12,17 @@ export interface StepNodeData {
   error?: string;
 }
 
-function StepNodeComponent({ data, selected }: NodeProps<StepNodeData>) {
+export type StepNodeType = Node<StepNodeData, 'step'>;
+
+function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
   const serviceName = data.action?.split('.')[0] || 'unknown';
   const methodName = data.action?.split('.').slice(1).join('.') || data.action;
   const ServiceIcon = getServiceIcon(serviceName);
 
-  const statusConfig = {
+  const statusConfig: Record<
+    NonNullable<StepNodeData['status']>,
+    { icon: typeof Clock; color: string; bgColor: string; animate?: boolean }
+  > = {
     pending: { icon: Clock, color: 'text-gray-400', bgColor: 'bg-gray-400/10' },
     running: {
       icon: Play,
@@ -39,7 +44,8 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeData>) {
   };
 
   const status = data.status || 'pending';
-  const StatusIcon = statusConfig[status].icon;
+  const config = statusConfig[status];
+  const StatusIcon = config.icon;
 
   return (
     <div
@@ -64,10 +70,10 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeData>) {
           <div className="text-xs text-gray-400 truncate">{serviceName}</div>
         </div>
         <div
-          className={`w-6 h-6 rounded-full ${statusConfig[status].bgColor} flex items-center justify-center`}
+          className={`w-6 h-6 rounded-full ${config.bgColor} flex items-center justify-center`}
         >
           <StatusIcon
-            className={`w-4 h-4 ${statusConfig[status].color} ${statusConfig[status].animate ? 'animate-pulse' : ''}`}
+            className={`w-4 h-4 ${config.color} ${config.animate ? 'animate-pulse' : ''}`}
           />
         </div>
       </div>

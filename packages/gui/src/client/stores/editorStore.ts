@@ -71,10 +71,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       isYamlViewOpen: false,
     }),
 
-  openNewStepWizard: (position = null) =>
+  openNewStepWizard: (position) =>
     set({
       isNewStepOpen: true,
-      newStepPosition: position,
+      newStepPosition: position ?? null,
     }),
 
   closeNewStepWizard: () =>

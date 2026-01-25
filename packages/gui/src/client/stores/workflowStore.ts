@@ -1,41 +1,5 @@
 import { create } from 'zustand';
-
-interface WorkflowMetadata {
-  id: string;
-  name: string;
-  version: string;
-  description?: string;
-  author?: string;
-  tags?: string[];
-}
-
-interface WorkflowStep {
-  id: string;
-  name?: string;
-  action?: string;
-  workflow?: string;
-  inputs: Record<string, unknown>;
-  outputVariable?: string;
-  conditions?: string[];
-  errorHandling?: {
-    action: 'stop' | 'continue' | 'retry';
-    maxRetries?: number;
-  };
-  timeout?: number;
-}
-
-interface Workflow {
-  metadata: WorkflowMetadata;
-  steps: WorkflowStep[];
-  tools?: Record<string, unknown>;
-  inputs?: Record<string, unknown>;
-  triggers?: unknown[];
-}
-
-interface WorkflowListItem {
-  path: string;
-  name: string;
-}
+import type { Workflow, WorkflowListItem } from '@shared/types';
 
 interface WorkflowState {
   workflows: WorkflowListItem[];
