@@ -12,6 +12,15 @@ import { DiscordInitializer } from './services/discord.js';
 import { AirtableInitializer } from './services/airtable.js';
 import { ConfluenceInitializer } from './services/confluence.js';
 import { HttpInitializer } from './services/http.js';
+import { GoogleSheetsInitializer } from './services/google-sheets.js';
+import { GoogleCalendarInitializer } from './services/google-calendar.js';
+import { GoogleDriveInitializer } from './services/google-drive.js';
+import { GoogleDocsInitializer } from './services/google-docs.js';
+import { TelegramInitializer } from './services/telegram.js';
+import { WhatsAppInitializer } from './services/whatsapp.js';
+import { SupabaseInitializer } from './services/supabase.js';
+import { PostgresInitializer } from './services/postgres.js';
+import { MySQLInitializer } from './services/mysql.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
@@ -26,6 +35,8 @@ export function registerIntegrations(registry: SDKRegistry) {
   // Communication & Collaboration
   registry.registerInitializer('@slack/web-api', SlackInitializer);
   registry.registerInitializer('discord', DiscordInitializer);
+  registry.registerInitializer('telegram', TelegramInitializer);
+  registry.registerInitializer('whatsapp', WhatsAppInitializer);
 
   // Email
   registry.registerInitializer('googleapis', GmailInitializer);
@@ -44,6 +55,15 @@ export function registerIntegrations(registry: SDKRegistry) {
 
   // Data & Databases
   registry.registerInitializer('airtable', AirtableInitializer);
+  registry.registerInitializer('supabase', SupabaseInitializer);
+  registry.registerInitializer('pg', PostgresInitializer);
+  registry.registerInitializer('mysql2', MySQLInitializer);
+
+  // Google Services
+  registry.registerInitializer('google-sheets', GoogleSheetsInitializer);
+  registry.registerInitializer('google-calendar', GoogleCalendarInitializer);
+  registry.registerInitializer('google-drive', GoogleDriveInitializer);
+  registry.registerInitializer('google-docs', GoogleDocsInitializer);
 
   // Generic HTTP
   registry.registerInitializer('http', HttpInitializer);
@@ -107,10 +127,54 @@ export {
   type QueryDatabaseOptions,
   type SearchOptions as NotionSearchOptions,
 } from './services/notion.js';
-export * from './services/discord.js';
+export {
+  DiscordClient,
+  DiscordInitializer,
+  type DiscordMessage,
+  type DiscordChannel,
+  type DiscordGuild,
+  type SendMessageOptions as DiscordSendMessageOptions,
+} from './services/discord.js';
 export * from './services/airtable.js';
 export * from './services/confluence.js';
 export * from './services/http.js';
+export * from './services/google-sheets.js';
+export * from './services/google-calendar.js';
+export * from './services/google-drive.js';
+export * from './services/google-docs.js';
+export {
+  TelegramClient,
+  TelegramInitializer,
+  type TelegramMessage,
+  type TelegramUser,
+  type SendMessageOptions as TelegramSendMessageOptions,
+} from './services/telegram.js';
+export {
+  WhatsAppClient,
+  WhatsAppInitializer,
+  type WhatsAppMessage,
+  type WhatsAppTemplate,
+  type SendTextOptions as WhatsAppSendTextOptions,
+  type SendTemplateOptions as WhatsAppSendTemplateOptions,
+  type SendMediaOptions as WhatsAppSendMediaOptions,
+  type SendLocationOptions as WhatsAppSendLocationOptions,
+  type SendInteractiveOptions as WhatsAppSendInteractiveOptions,
+} from './services/whatsapp.js';
+export * from './services/supabase.js';
+export {
+  PostgresClient,
+  PostgresInitializer,
+  type PostgresConfig,
+  type QueryResult as PostgresQueryResult,
+  type PostgresTransaction,
+} from './services/postgres.js';
+export {
+  MySQLClient,
+  MySQLInitializer,
+  type MySQLConfig,
+  type QueryResult as MySQLQueryResult,
+  type MySQLTransaction,
+} from './services/mysql.js';
 
 // Export triggers
 export { SlackSocketTrigger } from './services/slack-socket.js';
