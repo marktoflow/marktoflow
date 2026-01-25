@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../common/Tabs';
@@ -11,8 +11,10 @@ import {
   AlertTriangle,
   Filter,
   Code,
+  AlertCircle,
 } from 'lucide-react';
 import type { WorkflowStep } from '@shared/types';
+import { validateStep, getFieldError, type ValidationError } from '../../utils/stepValidation';
 
 interface StepEditorProps {
   open: boolean;
@@ -31,25 +33,60 @@ export function StepEditor({
 }: StepEditorProps) {
   const [editedStep, setEditedStep] = useState<WorkflowStep | null>(null);
   const [activeTab, setActiveTab] = useState('properties');
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     if (step) {
       setEditedStep({ ...step });
       setActiveTab('properties');
+      setValidationErrors([]);
+      setShowErrors(false);
     }
   }, [step]);
+
+  // Validate on every change
+  const validation = useMemo(() => {
+    if (!editedStep) return { valid: true, errors: [] };
+    return validateStep(editedStep);
+  }, [editedStep]);
 
   if (!editedStep) return null;
 
   const handleSave = () => {
-    if (editedStep) {
+    if (!editedStep) return;
+
+    const result = validateStep(editedStep);
+    setValidationErrors(result.errors);
+    setShowErrors(true);
+
+    if (result.valid) {
       onSave(editedStep);
       onOpenChange(false);
+    } else {
+      // Switch to tab with first error
+      const firstError = result.errors[0];
+      if (firstError) {
+        if (firstError.field === 'id' || firstError.field === 'action' || firstError.field === 'workflow' || firstError.field === 'timeout') {
+          setActiveTab('properties');
+        } else if (firstError.field === 'outputVariable') {
+          setActiveTab('output');
+        } else if (firstError.field.startsWith('errorHandling')) {
+          setActiveTab('errors');
+        } else if (firstError.field.startsWith('conditions')) {
+          setActiveTab('conditions');
+        }
+      }
     }
   };
 
   const updateStep = (updates: Partial<WorkflowStep>) => {
     setEditedStep((prev) => (prev ? { ...prev, ...updates } : null));
+  };
+
+  const getError = (field: string): string | undefined => {
+    if (!showErrors) return undefined;
+    return getFieldError(validationErrors, field);
   };
 
   return (
@@ -90,7 +127,7 @@ export function StepEditor({
 
         <div className="p-4">
           <TabsContent value="properties">
-            <PropertiesTab step={editedStep} onChange={updateStep} />
+            <PropertiesTab step={editedStep} onChange={updateStep} getError={getError} />
           </TabsContent>
 
           <TabsContent value="inputs">
@@ -127,6 +164,12 @@ export function StepEditor({
       </Tabs>
 
       <ModalFooter>
+        {showErrors && validationErrors.length > 0 && (
+          <div className="flex-1 flex items-center gap-2 text-error text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{validationErrors.length} validation error{validationErrors.length > 1 ? 's' : ''}</span>
+          </div>
+        )}
         <Button variant="secondary" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
@@ -140,26 +183,39 @@ export function StepEditor({
 function PropertiesTab({
   step,
   onChange,
+  getError,
 }: {
   step: WorkflowStep;
   onChange: (updates: Partial<WorkflowStep>) => void;
+  getError: (field: string) => string | undefined;
 }) {
+  const idError = getError('id');
+  const actionError = getError('action');
+  const workflowError = getError('workflow');
+  const timeoutError = getError('timeout');
+
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Step ID
+          Step ID <span className="text-error">*</span>
         </label>
         <input
           type="text"
           value={step.id}
           onChange={(e) => onChange({ id: e.target.value })}
-          className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
+          className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm focus:outline-none ${
+            idError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
+          }`}
           placeholder="unique-step-id"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          Unique identifier for this step
-        </p>
+        {idError ? (
+          <p className="mt-1 text-xs text-error">{idError}</p>
+        ) : (
+          <p className="mt-1 text-xs text-gray-500">
+            Unique identifier for this step
+          </p>
+        )}
       </div>
 
       <div>
@@ -177,18 +233,24 @@ function PropertiesTab({
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Action
+          Action {!step.workflow && <span className="text-error">*</span>}
         </label>
         <input
           type="text"
           value={step.action || ''}
           onChange={(e) => onChange({ action: e.target.value || undefined })}
-          className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm font-mono focus:outline-none focus:border-primary"
+          className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm font-mono focus:outline-none ${
+            actionError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
+          }`}
           placeholder="service.method (e.g., slack.chat.postMessage)"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          Format: service.method or service.namespace.method
-        </p>
+        {actionError ? (
+          <p className="mt-1 text-xs text-error">{actionError}</p>
+        ) : (
+          <p className="mt-1 text-xs text-gray-500">
+            Format: service.method or service.namespace.method
+          </p>
+        )}
       </div>
 
       {step.workflow && (
@@ -200,9 +262,14 @@ function PropertiesTab({
             type="text"
             value={step.workflow}
             onChange={(e) => onChange({ workflow: e.target.value })}
-            className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm font-mono focus:outline-none focus:border-primary"
+            className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm font-mono focus:outline-none ${
+              workflowError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
+            }`}
             placeholder="./path/to/workflow.md"
           />
+          {workflowError && (
+            <p className="mt-1 text-xs text-error">{workflowError}</p>
+          )}
         </div>
       )}
 
@@ -218,10 +285,15 @@ function PropertiesTab({
               timeout: e.target.value ? parseInt(e.target.value, 10) : undefined,
             })
           }
-          className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
+          className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm focus:outline-none ${
+            timeoutError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
+          }`}
           placeholder="30"
           min="1"
         />
+        {timeoutError && (
+          <p className="mt-1 text-xs text-error">{timeoutError}</p>
+        )}
       </div>
     </div>
   );

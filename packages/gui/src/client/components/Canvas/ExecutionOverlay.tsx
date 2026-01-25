@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Pause, SkipForward, Square, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipForward, Square, CheckCircle, XCircle, Loader2, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
 import { Button } from '../common/Button';
 import type { StepStatus, WorkflowStatus } from '@shared/types';
 
@@ -9,6 +9,8 @@ interface ExecutionStep {
   status: StepStatus;
   duration?: number;
   error?: string;
+  output?: unknown;
+  outputVariable?: string;
 }
 
 interface ExecutionOverlayProps {
@@ -38,7 +40,7 @@ export function ExecutionOverlay({
   onStepOver,
   onClose,
 }: ExecutionOverlayProps) {
-  const [activeTab, setActiveTab] = useState<'steps' | 'logs'>('steps');
+  const [activeTab, setActiveTab] = useState<'steps' | 'variables' | 'logs'>('steps');
 
   const completedSteps = steps.filter((s) => s.status === 'completed').length;
   const failedSteps = steps.filter((s) => s.status === 'failed').length;
@@ -142,6 +144,16 @@ export function ExecutionOverlay({
           Steps
         </button>
         <button
+          onClick={() => setActiveTab('variables')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'variables'
+              ? 'text-primary border-b-2 border-primary -mb-px'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Variables
+        </button>
+        <button
           onClick={() => setActiveTab('logs')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'logs'
@@ -155,9 +167,13 @@ export function ExecutionOverlay({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === 'steps' ? (
+        {activeTab === 'steps' && (
           <StepsList steps={steps} currentStepId={currentStepId} />
-        ) : (
+        )}
+        {activeTab === 'variables' && (
+          <VariableInspector steps={steps} />
+        )}
+        {activeTab === 'logs' && (
           <LogsViewer logs={logs} />
         )}
       </div>
@@ -215,6 +231,251 @@ function LogsViewer({ logs }: { logs: string[] }) {
       )}
     </div>
   );
+}
+
+function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
+  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Filter steps that have output data
+  const stepsWithOutput = steps.filter(
+    (step) => step.output !== undefined && step.outputVariable
+  );
+
+  const toggleStep = (stepId: string) => {
+    setExpandedSteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(stepId)) {
+        next.delete(stepId);
+      } else {
+        next.add(stepId);
+      }
+      return next;
+    });
+  };
+
+  const copyValue = async (key: string, value: unknown) => {
+    try {
+      const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
+  if (stepsWithOutput.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 text-sm">
+        No variables available yet.
+        <br />
+        <span className="text-xs">Variables will appear as steps complete.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {stepsWithOutput.map((step) => {
+        const isExpanded = expandedSteps.has(step.stepId);
+        return (
+          <div
+            key={step.stepId}
+            className="border border-node-border rounded-lg overflow-hidden"
+          >
+            {/* Variable Header */}
+            <button
+              onClick={() => toggleStep(step.stepId)}
+              className="w-full flex items-center gap-2 px-3 py-2 bg-node-bg hover:bg-white/5 transition-colors"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              )}
+              <code className="text-sm text-primary font-mono">
+                {step.outputVariable}
+              </code>
+              <span className="text-xs text-gray-500 ml-auto">
+                {getTypeLabel(step.output)}
+              </span>
+            </button>
+
+            {/* Variable Value */}
+            {isExpanded && (
+              <div className="p-3 bg-panel-bg border-t border-node-border">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 overflow-x-auto">
+                    <ValueRenderer
+                      value={step.output}
+                      onCopy={(key, val) => copyValue(key, val)}
+                      copiedKey={copiedKey}
+                      path={step.outputVariable || ''}
+                    />
+                  </div>
+                  <button
+                    onClick={() => copyValue(step.outputVariable || '', step.output)}
+                    className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                    title="Copy entire value"
+                  >
+                    {copiedKey === step.outputVariable ? (
+                      <Check className="w-4 h-4 text-success" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ValueRenderer({
+  value,
+  onCopy,
+  copiedKey,
+  path,
+  depth = 0,
+}: {
+  value: unknown;
+  onCopy: (key: string, value: unknown) => void;
+  copiedKey: string | null;
+  path: string;
+  depth?: number;
+}) {
+  const [expanded, setExpanded] = useState(depth < 2);
+
+  if (value === null) {
+    return <span className="text-gray-500 font-mono text-xs">null</span>;
+  }
+
+  if (value === undefined) {
+    return <span className="text-gray-500 font-mono text-xs">undefined</span>;
+  }
+
+  if (typeof value === 'boolean') {
+    return (
+      <span className={`font-mono text-xs ${value ? 'text-success' : 'text-error'}`}>
+        {String(value)}
+      </span>
+    );
+  }
+
+  if (typeof value === 'number') {
+    return <span className="text-warning font-mono text-xs">{value}</span>;
+  }
+
+  if (typeof value === 'string') {
+    // Truncate long strings
+    const displayValue = value.length > 200 ? value.substring(0, 200) + '...' : value;
+    return (
+      <span className="text-success font-mono text-xs">
+        &quot;{displayValue}&quot;
+      </span>
+    );
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <span className="text-gray-400 font-mono text-xs">[]</span>;
+    }
+
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+        >
+          {expanded ? (
+            <ChevronDown className="w-3 h-3" />
+          ) : (
+            <ChevronRight className="w-3 h-3" />
+          )}
+          <span className="text-xs font-mono">Array({value.length})</span>
+        </button>
+        {expanded && (
+          <div className="ml-4 pl-2 border-l border-node-border space-y-1">
+            {value.slice(0, 20).map((item, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <span className="text-gray-500 font-mono text-xs">[{index}]:</span>
+                <ValueRenderer
+                  value={item}
+                  onCopy={onCopy}
+                  copiedKey={copiedKey}
+                  path={`${path}[${index}]`}
+                  depth={depth + 1}
+                />
+              </div>
+            ))}
+            {value.length > 20 && (
+              <div className="text-gray-500 text-xs">
+                ... and {value.length - 20} more items
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value);
+    if (entries.length === 0) {
+      return <span className="text-gray-400 font-mono text-xs">{'{}'}</span>;
+    }
+
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+        >
+          {expanded ? (
+            <ChevronDown className="w-3 h-3" />
+          ) : (
+            <ChevronRight className="w-3 h-3" />
+          )}
+          <span className="text-xs font-mono">Object({entries.length} keys)</span>
+        </button>
+        {expanded && (
+          <div className="ml-4 pl-2 border-l border-node-border space-y-1">
+            {entries.slice(0, 30).map(([key, val]) => (
+              <div key={key} className="flex items-start gap-2">
+                <span className="text-primary font-mono text-xs">{key}:</span>
+                <ValueRenderer
+                  value={val}
+                  onCopy={onCopy}
+                  copiedKey={copiedKey}
+                  path={`${path}.${key}`}
+                  depth={depth + 1}
+                />
+              </div>
+            ))}
+            {entries.length > 30 && (
+              <div className="text-gray-500 text-xs">
+                ... and {entries.length - 30} more keys
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return <span className="text-gray-400 font-mono text-xs">{String(value)}</span>;
+}
+
+function getTypeLabel(value: unknown): string {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (Array.isArray(value)) return `array[${value.length}]`;
+  if (typeof value === 'object') return `object`;
+  return typeof value;
 }
 
 function StatusIcon({ status }: { status: WorkflowStatus }) {

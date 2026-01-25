@@ -200,6 +200,9 @@ export function useCanvas() {
     setEdges(edges.map((edge) => ({ ...edge, selected: false })));
   }, [nodes, edges, setNodes, setEdges]);
 
+  // Undo/redo and copy/paste
+  const { undo, redo, canUndo, canRedo, copySelected, paste, canPaste } = useCanvasStore();
+
   return {
     // State
     nodes,
@@ -229,5 +232,16 @@ export function useCanvas() {
     autoLayout,
     fitView,
     zoomToNode,
+
+    // History
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+
+    // Clipboard
+    copySelected,
+    paste,
+    canPaste,
   };
 }

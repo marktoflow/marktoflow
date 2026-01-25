@@ -84,6 +84,9 @@ export function Canvas() {
     return currentWorkflow.steps.find((s) => s.id === selectedNode.data.id) || null;
   }, [currentWorkflow, nodes]);
 
+  // Get undo/redo and copy/paste functions from canvas store
+  const { undo, redo, canUndo, canRedo, copySelected, paste, canPaste } = useCanvasStore();
+
   // Handle keyboard shortcuts
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -102,6 +105,32 @@ export function Canvas() {
       if (isMeta && event.key === 'l') {
         event.preventDefault();
         autoLayout();
+      }
+      // Undo (Cmd/Ctrl + Z)
+      if (isMeta && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        if (canUndo()) {
+          undo();
+        }
+      }
+      // Redo (Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y)
+      if ((isMeta && event.shiftKey && event.key === 'z') || (isMeta && event.key === 'y')) {
+        event.preventDefault();
+        if (canRedo()) {
+          redo();
+        }
+      }
+      // Copy (Cmd/Ctrl + C)
+      if (isMeta && event.key === 'c') {
+        event.preventDefault();
+        copySelected();
+      }
+      // Paste (Cmd/Ctrl + V)
+      if (isMeta && event.key === 'v') {
+        event.preventDefault();
+        if (canPaste()) {
+          paste();
+        }
       }
       // Edit selected step (E key without modifiers)
       if (event.key === 'e' && !isMeta && !event.shiftKey && !event.altKey) {
@@ -122,7 +151,7 @@ export function Canvas() {
         }
       }
     },
-    [deleteSelected, duplicateSelected, autoLayout, getSelectedStep]
+    [deleteSelected, duplicateSelected, autoLayout, getSelectedStep, undo, redo, canUndo, canRedo, copySelected, paste, canPaste]
   );
 
   // Handle step save

@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   FileText,
   FolderTree,
   ChevronRight,
   Plus,
   Search,
+  Loader2,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { useNavigationStore } from '../../stores/navigationStore';
@@ -139,30 +140,71 @@ export interface ToolDefinition {
   name: string;
   icon: string;
   category: string;
+  description?: string;
   sdk?: string;
+  authType?: string;
+  actionCount?: number;
   actions?: string[];
 }
 
-const tools: ToolDefinition[] = [
-  { id: 'slack', name: 'Slack', icon: '💬', category: 'Communication', sdk: '@slack/web-api', actions: ['chat.postMessage', 'conversations.list'] },
-  { id: 'github', name: 'GitHub', icon: '🐙', category: 'Development', sdk: '@octokit/rest', actions: ['pulls.get', 'pulls.listFiles', 'issues.create'] },
-  { id: 'jira', name: 'Jira', icon: '📋', category: 'Project Management', sdk: 'jira.js', actions: ['issues.search', 'issues.create'] },
-  { id: 'gmail', name: 'Gmail', icon: '📧', category: 'Communication', sdk: 'googleapis', actions: ['messages.send', 'messages.list'] },
-  { id: 'linear', name: 'Linear', icon: '📐', category: 'Project Management', sdk: 'linear', actions: ['issues.create', 'issues.list'] },
-  { id: 'notion', name: 'Notion', icon: '📝', category: 'Documentation', sdk: 'notion', actions: ['pages.create', 'databases.query'] },
-  { id: 'discord', name: 'Discord', icon: '🎮', category: 'Communication', sdk: 'discord', actions: ['messages.create', 'channels.list'] },
-  { id: 'airtable', name: 'Airtable', icon: '📊', category: 'Database', sdk: 'airtable', actions: ['records.create', 'records.list'] },
-  { id: 'http', name: 'HTTP', icon: '🌐', category: 'Network', actions: ['request', 'get', 'post'] },
-  { id: 'claude', name: 'Claude', icon: '🤖', category: 'AI', actions: ['analyze', 'generate', 'summarize'] },
+// Fallback tools in case API is unavailable
+const fallbackTools: ToolDefinition[] = [
+  { id: 'slack', name: 'Slack', icon: '💬', category: 'Communication', sdk: '@slack/web-api' },
+  { id: 'github', name: 'GitHub', icon: '🐙', category: 'Development', sdk: '@octokit/rest' },
+  { id: 'jira', name: 'Jira', icon: '📋', category: 'Project Management', sdk: 'jira.js' },
+  { id: 'gmail', name: 'Gmail', icon: '📧', category: 'Communication', sdk: 'googleapis' },
+  { id: 'http', name: 'HTTP', icon: '🌐', category: 'Network' },
+  { id: 'claude', name: 'Claude', icon: '🤖', category: 'AI' },
 ];
 
 function ToolsPalette() {
-  const categories = [...new Set(tools.map((t) => t.category))];
+  const [tools, setTools] = useState<ToolDefinition[]>(fallbackTools);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch tools from API
+  useEffect(() => {
+    async function fetchTools() {
+      try {
+        const response = await fetch('/api/tools');
+        if (response.ok) {
+          const data = await response.json();
+          setTools(data.tools);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tools:', error);
+        // Keep fallback tools
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTools();
+  }, []);
+
+  // Filter tools by search query
+  const filteredTools = searchQuery
+    ? tools.filter(
+        (t) =>
+          t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : tools;
+
+  const categories = [...new Set(filteredTools.map((t) => t.category))];
 
   const handleDragStart = (e: React.DragEvent, tool: ToolDefinition) => {
     e.dataTransfer.setData('application/marktoflow-tool', JSON.stringify(tool));
     e.dataTransfer.effectAllowed = 'copy';
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-5 h-5 text-gray-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -172,23 +214,34 @@ function ToolsPalette() {
             {category}
           </h3>
           <div className="space-y-1">
-            {tools
+            {filteredTools
               .filter((t) => t.category === category)
               .map((tool) => (
                 <div
-                  key={tool.name}
+                  key={tool.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, tool)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors"
-                  title={tool.sdk ? 'SDK: ' + tool.sdk : undefined}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors group"
+                  title={tool.description || (tool.sdk ? 'SDK: ' + tool.sdk : undefined)}
                 >
                   <span className="text-lg">{tool.icon}</span>
-                  <span className="text-sm">{tool.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm block truncate">{tool.name}</span>
+                    {tool.actionCount !== undefined && (
+                      <span className="text-xs text-gray-500">{tool.actionCount} actions</span>
+                    )}
+                  </div>
                 </div>
               ))}
           </div>
         </div>
       ))}
+
+      {filteredTools.length === 0 && (
+        <div className="text-center py-8 text-gray-500 text-sm">
+          No tools found
+        </div>
+      )}
     </div>
   );
 }

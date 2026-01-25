@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, History, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import { usePromptStore } from '../../stores/promptStore';
+import { PromptHistoryPanel } from './PromptHistoryPanel';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { isProcessing, history, sendPrompt } = usePromptStore();
@@ -42,35 +42,13 @@ export function PromptInput() {
   ];
 
   return (
-    <div className="border-t border-node-border bg-panel-bg">
-      {/* History panel */}
-      {showHistory && history.length > 0 && (
-        <div className="border-b border-node-border p-3 max-h-48 overflow-y-auto">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-            Recent Prompts
-          </div>
-          <div className="space-y-2">
-            {history.slice(0, 5).map((item, index) => (
-              <button
-                key={index}
-                onClick={() => setPrompt(item.prompt)}
-                className="w-full text-left p-2 rounded bg-node-bg hover:bg-white/5 transition-colors"
-              >
-                <div className="text-sm text-gray-300 truncate">
-                  {item.prompt}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {new Date(item.timestamp).toLocaleTimeString()}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="bg-panel-bg">
+      {/* History Panel */}
+      <PromptHistoryPanel onSelectPrompt={setPrompt} />
 
       {/* Suggestions */}
       {!prompt && !isProcessing && (
-        <div className="px-4 py-2 border-b border-node-border/50">
+        <div className="px-4 py-2 border-t border-node-border/50">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
             {suggestions.map((suggestion) => (
@@ -87,18 +65,7 @@ export function PromptInput() {
       )}
 
       {/* Input area */}
-      <div className="p-4 flex items-end gap-3">
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-            showHistory
-              ? 'bg-primary/10 text-primary'
-              : 'bg-node-bg text-gray-400 hover:text-white'
-          }`}
-        >
-          <History className="w-5 h-5" />
-        </button>
-
+      <div className="p-4 flex items-end gap-3 border-t border-node-border">
         <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
@@ -130,6 +97,11 @@ export function PromptInput() {
       <div className="px-4 pb-2 text-xs text-gray-500">
         Press <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">⌘</kbd> +{' '}
         <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">Enter</kbd> to send
+        {history.length > 0 && (
+          <span className="ml-4">
+            <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">↑</kbd> for last prompt
+          </span>
+        )}
       </div>
     </div>
   );

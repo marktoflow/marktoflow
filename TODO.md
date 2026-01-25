@@ -317,114 +317,114 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 
 ### Package Setup
 
-- [ ] Initialize `packages/gui` with Vite + React + TypeScript
-- [ ] Configure Tailwind CSS and shadcn/ui components
-- [ ] Set up Express server with basic routing
-- [ ] Add to pnpm workspace configuration
-- [ ] Add `marktoflow gui` CLI command
+- [x] Initialize `packages/gui` with Vite + React + TypeScript
+- [x] Configure Tailwind CSS and shadcn/ui components
+- [x] Set up Express server with basic routing
+- [x] Add to pnpm workspace configuration
+- [x] Add `marktoflow gui` CLI command
 
 ### Workflow Canvas (React Flow)
 
-- [ ] Implement `workflowToGraph()` converter (Workflow -> React Flow nodes/edges)
-- [ ] Implement `graphToWorkflow()` converter (React Flow -> Workflow)
-- [ ] Create custom StepNode component with service icons
-- [ ] Create SubWorkflowNode with expand/collapse functionality
-- [ ] Create TriggerNode variants (schedule, webhook, file watcher)
-- [ ] Create OutputNode for workflow outputs
-- [ ] Implement DataFlowEdge with variable labels and animation
-- [ ] Implement SequenceEdge with conditional badges
-- [ ] Add auto-layout algorithm (dagre)
-- [ ] Add pan/zoom/minimap controls
-- [ ] Add multi-select and group operations
-- [ ] Add copy/paste functionality
-- [ ] Add undo/redo system
+- [x] Implement `workflowToGraph()` converter (Workflow -> React Flow nodes/edges)
+- [x] Implement `graphToWorkflow()` converter (React Flow -> Workflow)
+- [x] Create custom StepNode component with service icons
+- [x] Create SubWorkflowNode with expand/collapse functionality
+- [x] Create TriggerNode variants (schedule, webhook, file watcher)
+- [x] Create OutputNode for workflow outputs
+- [x] Implement DataFlowEdge with variable labels and animation
+- [x] Implement SequenceEdge with conditional badges
+- [x] Add auto-layout algorithm (dagre)
+- [x] Add pan/zoom/minimap controls
+- [x] Add multi-select and group operations
+- [x] Add copy/paste functionality
+- [x] Add undo/redo system
 
 ### Step Editor
 
-- [ ] Right-click context menu for steps
-- [ ] Right-click context menu for canvas
-- [ ] Step editor modal with tabs:
-  - [ ] Properties tab (ID, name, action selector)
-  - [ ] Inputs tab with dynamic form generation
-  - [ ] Output tab with variable configuration
-  - [ ] Error handling tab (retry, fallback)
-  - [ ] Conditions tab with expression builder
-  - [ ] YAML tab with Monaco editor
-- [ ] Template variable autocomplete (`{{ variable }}`)
-- [ ] Validation on save
+- [x] Right-click context menu for steps
+- [x] Right-click context menu for canvas
+- [x] Step editor modal with tabs:
+  - [x] Properties tab (ID, name, action selector)
+  - [x] Inputs tab with dynamic form generation
+  - [x] Output tab with variable configuration
+  - [x] Error handling tab (retry, fallback)
+  - [x] Conditions tab with expression builder
+  - [x] YAML tab with Monaco editor
+- [x] Template variable autocomplete (`{{ variable }}`)
+- [x] Validation on save
 
 ### AI Prompt Interface
 
-- [ ] Prompt input component at bottom of screen
-- [ ] Prompt history panel
-- [ ] Claude API integration for workflow modifications
+- [x] Prompt input component at bottom of screen
+- [x] Prompt history panel
+- [x] Claude API integration for workflow modifications
 - [ ] Prompt engineering for:
   - [ ] Adding/removing steps
   - [ ] Modifying step inputs
   - [ ] Adding error handling
   - [ ] Creating sub-workflows
   - [ ] Adding conditions
-- [ ] Change preview with diff view
-- [ ] Accept/reject workflow changes
-- [ ] Real-time canvas refresh after changes
+- [x] Change preview with diff view
+- [x] Accept/reject workflow changes
+- [x] Real-time canvas refresh after changes
 
 ### Sub-workflow Visualization
 
-- [ ] Collapsed view showing step count
-- [ ] Expanded inline view with group box
-- [ ] Drill-down navigation to sub-workflow
-- [ ] Breadcrumb navigation for workflow hierarchy
+- [x] Collapsed view showing step count
+- [x] Expanded inline view with group box
+- [x] Drill-down navigation to sub-workflow
+- [x] Breadcrumb navigation for workflow hierarchy
 - [ ] Tab-based multi-workflow editing
 
 ### Properties Panel (Sidebar)
 
-- [ ] Step properties view (inputs, outputs, status)
-- [ ] Workflow properties view (metadata, triggers, tools)
-- [ ] Variables panel showing scope
-- [ ] Execution history panel
+- [x] Step properties view (inputs, outputs, status)
+- [x] Workflow properties view (metadata, triggers, tools)
+- [x] Variables panel showing scope
+- [x] Execution history panel
 
 ### Execution View
 
-- [ ] Execute workflow from GUI
-- [ ] Real-time step status updates
-- [ ] Log viewer panel
-- [ ] Variable inspector at each step
+- [x] Execute workflow from GUI
+- [x] Real-time step status updates
+- [x] Log viewer panel
+- [x] Variable inspector at each step
 - [ ] Step-through debugging mode
 
 ### Real-time Updates
 
-- [ ] WebSocket server for live updates
-- [ ] File watcher integration
-- [ ] Real-time canvas updates on file change
-- [ ] Execution status streaming
+- [x] WebSocket server for live updates
+- [x] File watcher integration
+- [x] Real-time canvas updates on file change
+- [x] Execution status streaming
 
 ### REST API
 
-- [ ] `GET /api/workflows` - List workflows
-- [ ] `GET /api/workflows/:path` - Get workflow
-- [ ] `POST /api/workflows` - Create workflow
-- [ ] `PUT /api/workflows/:path` - Update workflow
-- [ ] `DELETE /api/workflows/:path` - Delete workflow
-- [ ] `POST /api/workflows/:path/execute` - Execute workflow
-- [ ] `GET /api/workflows/:path/runs` - Execution history
-- [ ] `POST /api/ai/prompt` - AI prompt endpoint
-- [ ] `GET /api/tools` - List available tools/SDKs
-- [ ] `GET /api/tools/:sdk/schema` - Get SDK schemas
+- [x] `GET /api/workflows` - List workflows
+- [x] `GET /api/workflows/:path` - Get workflow
+- [x] `POST /api/workflows` - Create workflow
+- [x] `PUT /api/workflows/:path` - Update workflow
+- [x] `DELETE /api/workflows/:path` - Delete workflow
+- [x] `POST /api/workflows/:path/execute` - Execute workflow
+- [x] `GET /api/workflows/:path/runs` - Execution history
+- [x] `POST /api/ai/prompt` - AI prompt endpoint
+- [x] `GET /api/tools` - List available tools/SDKs
+- [x] `GET /api/tools/:sdk/schema` - Get SDK schemas
 
 ### UI/UX Polish
 
-- [ ] n8n-inspired dark theme
+- [x] n8n-inspired dark theme
 - [ ] Light mode support
 - [ ] Responsive design
-- [ ] Keyboard shortcuts
+- [x] Keyboard shortcuts
 - [ ] Accessibility (a11y)
 
 ### Testing
 
-- [ ] Unit tests for React components
+- [x] Unit tests for React components
 - [ ] Integration tests for API endpoints
-- [ ] E2E tests with Playwright
-- [ ] Canvas interaction tests
+- [x] E2E tests with Playwright
+- [x] Canvas interaction tests
 
 ### Documentation
 
