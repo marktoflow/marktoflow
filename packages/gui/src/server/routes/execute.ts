@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 
-const router = Router();
+const router: RouterType = Router();
 
 // Execute a workflow
 router.post('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent(req.params.path);
+    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
     const { inputs, dryRun } = req.body;
 
     // TODO: Integrate with @marktoflow/core WorkflowEngine

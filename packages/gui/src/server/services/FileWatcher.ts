@@ -1,14 +1,11 @@
 import { watch, type FSWatcher } from 'chokidar';
 import type { Server as SocketIOServer } from 'socket.io';
-import { relative } from 'path';
 
 export class FileWatcher {
   private watcher: FSWatcher;
   private io: SocketIOServer;
-  private baseDir: string;
 
   constructor(baseDir: string, io: SocketIOServer) {
-    this.baseDir = baseDir;
     this.io = io;
 
     // Watch for workflow files

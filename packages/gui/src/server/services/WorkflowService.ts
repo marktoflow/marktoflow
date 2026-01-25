@@ -1,5 +1,5 @@
 import { readdir, readFile, writeFile, unlink, mkdir } from 'fs/promises';
-import { join, relative, dirname, resolve } from 'path';
+import { join, relative, dirname } from 'path';
 import { existsSync } from 'fs';
 import { stringify as yamlStringify } from 'yaml';
 
@@ -160,7 +160,7 @@ export class WorkflowService {
     }
   }
 
-  async getExecutionHistory(workflowPath: string): Promise<unknown[]> {
+  async getExecutionHistory(_workflowPath: string): Promise<unknown[]> {
     // TODO: Query state store for execution history
     // This will integrate with @marktoflow/core StateStore
     return [];

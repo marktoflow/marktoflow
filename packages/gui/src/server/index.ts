@@ -32,7 +32,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/execute', executeRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '2.0.0-alpha.1' });
 });
 

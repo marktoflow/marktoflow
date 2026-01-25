@@ -1,5 +1,5 @@
-// TODO: Import Anthropic SDK when ANTHROPIC_API_KEY is available
-// import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
+import { stringify as yamlStringify, parse as yamlParse } from 'yaml';
 
 interface Workflow {
   metadata: any;
@@ -46,32 +46,54 @@ Be concise and precise. Only make the requested changes.`;
 
 export class AIService {
   private history: PromptHistoryItem[] = [];
+  private anthropic: Anthropic | null = null;
+
+  constructor() {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+      this.anthropic = new Anthropic({ apiKey });
+    }
+  }
 
   async processPrompt(prompt: string, workflow: Workflow): Promise<PromptResult> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-
-    if (!apiKey) {
+    if (!this.anthropic) {
       // Demo mode: simulate AI response
       return this.simulateResponse(prompt, workflow);
     }
 
     try {
-      // TODO: Use actual Anthropic SDK
-      // const anthropic = new Anthropic({ apiKey });
-      // const response = await anthropic.messages.create({
-      //   model: 'claude-sonnet-4-20250514',
-      //   max_tokens: 4096,
-      //   system: SYSTEM_PROMPT,
-      //   messages: [
-      //     {
-      //       role: 'user',
-      //       content: `Current workflow:\n\`\`\`yaml\n${JSON.stringify(workflow, null, 2)}\n\`\`\`\n\nUser request: ${prompt}`,
-      //     },
-      //   ],
-      // });
+      // Convert workflow to YAML for better readability
+      const workflowYaml = yamlStringify(workflow, { indent: 2, lineWidth: 0 });
 
-      // For now, use simulation
-      return this.simulateResponse(prompt, workflow);
+      const response = await this.anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}`,
+          },
+        ],
+      });
+
+      // Parse the response
+      const responseText = response.content
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map((block) => block.text)
+        .join('');
+
+      // Extract explanation and workflow from response
+      const result = this.parseAIResponse(responseText, workflow);
+
+      this.history.unshift({
+        prompt,
+        response: result.explanation,
+        timestamp: new Date(),
+        success: true,
+      });
+
+      return result;
     } catch (error) {
       this.history.unshift({
         prompt,
@@ -81,6 +103,60 @@ export class AIService {
       });
       throw error;
     }
+  }
+
+  private parseAIResponse(responseText: string, originalWorkflow: Workflow): PromptResult {
+    // Try to extract YAML from the response
+    const yamlMatch = responseText.match(/```yaml\n([\s\S]*?)\n```/);
+    let modifiedWorkflow: Workflow | undefined;
+    let explanation = responseText;
+
+    if (yamlMatch) {
+      try {
+        const parsedYaml = yamlParse(yamlMatch[1]);
+        // Validate that it has the expected workflow structure
+        if (parsedYaml && (parsedYaml.steps || parsedYaml.metadata)) {
+          modifiedWorkflow = parsedYaml as Workflow;
+          // Extract explanation (text before the YAML block)
+          const explanationMatch = responseText.match(/^([\s\S]*?)```yaml/);
+          if (explanationMatch) {
+            explanation = explanationMatch[1].trim();
+          }
+        }
+      } catch {
+        // Failed to parse YAML, return just the explanation
+      }
+    }
+
+    // Generate diff if we have a modified workflow
+    let diff: string | undefined;
+    if (modifiedWorkflow) {
+      diff = this.generateDiff(originalWorkflow, modifiedWorkflow);
+    }
+
+    return {
+      explanation,
+      workflow: modifiedWorkflow,
+      diff,
+    };
+  }
+
+  private generateDiff(original: Workflow, modified: Workflow): string {
+    const originalStepIds = new Set(original.steps?.map((s) => s.id) || []);
+    const modifiedStepIds = new Set(modified.steps?.map((s) => s.id) || []);
+
+    const added = modified.steps?.filter((s) => !originalStepIds.has(s.id)) || [];
+    const removed = original.steps?.filter((s) => !modifiedStepIds.has(s.id)) || [];
+
+    let diff = '';
+    if (added.length > 0) {
+      diff += `+ Added ${added.length} step(s): ${added.map((s) => s.name || s.id).join(', ')}\n`;
+    }
+    if (removed.length > 0) {
+      diff += `- Removed ${removed.length} step(s): ${removed.map((s) => s.name || s.id).join(', ')}\n`;
+    }
+
+    return diff || 'No structural changes detected';
   }
 
   async getHistory(): Promise<PromptHistoryItem[]> {

@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { WorkflowService } from '../services/WorkflowService.js';
 
-const router = Router();
+const router: RouterType = Router();
 const workflowService = new WorkflowService();
 
 // List all workflows
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const workflows = await workflowService.listWorkflows();
     res.json({ workflows });
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 // Get a specific workflow
 router.get('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent(req.params.path);
+    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
     const workflow = await workflowService.getWorkflow(workflowPath);
 
     if (!workflow) {
@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
 // Update a workflow
 router.put('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent(req.params.path);
+    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
     const { workflow } = req.body;
 
     if (!workflow) {
@@ -78,7 +78,7 @@ router.put('/:path(*)', async (req, res) => {
 // Delete a workflow
 router.delete('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent(req.params.path);
+    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
     await workflowService.deleteWorkflow(workflowPath);
     res.json({ success: true });
   } catch (error) {
@@ -92,7 +92,7 @@ router.delete('/:path(*)', async (req, res) => {
 // Get workflow execution history
 router.get('/:path(*)/runs', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent(req.params.path);
+    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
     const runs = await workflowService.getExecutionHistory(workflowPath);
     res.json({ runs });
   } catch (error) {

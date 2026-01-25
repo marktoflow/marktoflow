@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { AIService } from '../services/AIService.js';
 
-const router = Router();
+const router: RouterType = Router();
 const aiService = new AIService();
 
 // Process AI prompt
@@ -24,7 +24,7 @@ router.post('/prompt', async (req, res) => {
 });
 
 // Get prompt history
-router.get('/history', async (req, res) => {
+router.get('/history', async (_req, res) => {
   try {
     const history = await aiService.getHistory();
     res.json({ history });
