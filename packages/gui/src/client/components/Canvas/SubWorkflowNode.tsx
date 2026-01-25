@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import {
   FolderOpen,
   ChevronDown,
@@ -7,7 +7,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-export interface SubWorkflowNodeData {
+export interface SubWorkflowNodeData extends Record<string, unknown> {
   id: string;
   name?: string;
   workflowPath: string;
@@ -15,10 +15,12 @@ export interface SubWorkflowNodeData {
   status?: 'pending' | 'running' | 'completed' | 'failed';
 }
 
+export type SubWorkflowNodeType = Node<SubWorkflowNodeData, 'subworkflow'>;
+
 function SubWorkflowNodeComponent({
   data,
   selected,
-}: NodeProps<SubWorkflowNodeData>) {
+}: NodeProps<SubWorkflowNodeType>) {
   const [expanded, setExpanded] = useState(false);
 
   const statusColors = {

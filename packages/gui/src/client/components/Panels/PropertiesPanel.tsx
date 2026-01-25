@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Settings,
-  Code,
   Variable,
   History,
   X,

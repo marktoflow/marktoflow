@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Play, Pause, SkipForward, Square, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '../common/Button';
 import type { StepStatus, WorkflowStatus } from '@shared/types';

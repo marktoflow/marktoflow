@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, History, ChevronUp, Sparkles } from 'lucide-react';
+import { Send, Loader2, History, Sparkles } from 'lucide-react';
 import { usePromptStore } from '../../stores/promptStore';
 
 export function PromptInput() {
