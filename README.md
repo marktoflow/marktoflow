@@ -12,7 +12,7 @@ marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subproc
 
 - ✅ **No more Python subprocess bridging** - Direct SDK method calls
 - ✅ **Native MCP support** - Import MCP servers as npm packages
-- ✅ **11 built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP
+- ✅ **20 built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Google Suite, Telegram, WhatsApp, databases, and more
 - ✅ **Full type safety** - TypeScript all the way through
 - ✅ **Feature parity achieved** - All Python v1.0 features ported
 
@@ -20,7 +20,7 @@ marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subproc
 
 - **Workflow as Code**: Define workflows in Markdown + YAML
 - **Native MCP Support**: Direct import of MCP server packages (no subprocess spawning)
-- **Direct SDK Integration**: Built-in support for 11+ services with official SDKs
+- **Direct SDK Integration**: Built-in support for 20+ services with official SDKs
 - **AI Agent Integration**: GitHub Copilot, Claude Code, OpenCode, Ollama
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
 - **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
@@ -272,17 +272,26 @@ Integrations / SDK Registry
 
 ## Supported Integrations
 
-marktoflow v2.0 includes native SDK integrations for 11+ services:
+marktoflow v2.0 includes native SDK integrations for 20+ services:
 
 ### Communication & Collaboration
 
 - **Slack** (`@slack/web-api`) - Messages, channels, Socket Mode triggers
 - **Discord** (`discord`) - Messages, threads, webhooks, guild management
+- **Telegram** (`telegram`) - Bot API, messages, photos, documents, inline keyboards, webhooks
+- **WhatsApp** (`whatsapp`) - Business API, text, templates, media, interactive messages, locations
 
 ### Email
 
 - **Gmail** (`googleapis`) - Send/receive emails, Pub/Sub triggers, labels
 - **Outlook** (`@microsoft/microsoft-graph-client`) - Emails, calendar, Graph subscriptions
+
+### Google Workspace
+
+- **Google Sheets** (`googleapis`) - Spreadsheet CRUD, read/write values, formatting, batch updates
+- **Google Calendar** (`googleapis`) - Event management, free/busy queries, conference data, webhooks
+- **Google Drive** (`googleapis`) - File/folder operations, sharing, permissions, search
+- **Google Docs** (`googleapis`) - Document creation/editing, text formatting, tables, images
 
 ### Project Management
 
@@ -298,6 +307,12 @@ marktoflow v2.0 includes native SDK integrations for 11+ services:
 
 - **GitHub** (`@octokit/rest`) - PRs, issues, repos, webhooks
 - **Airtable** (`airtable`) - Records, pagination, batch operations
+
+### Databases
+
+- **Supabase** (`supabase`) - Database CRUD via REST, authentication, file storage, RPC functions
+- **PostgreSQL** (`pg`) - Direct database connection, query execution, transactions, connection pooling
+- **MySQL** (`mysql2`) - Direct database connection, query execution, transactions, connection pooling
 
 ### Universal REST API Client
 
@@ -450,6 +465,10 @@ marktoflow/
 ## Publishing
 
 For information on publishing marktoflow packages to npm, see [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+## Author
+
+**Scott Glover** <scottgl@gmail.com>
 
 ## License
 
