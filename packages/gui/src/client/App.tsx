@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Canvas } from './components/Canvas/Canvas';
 import { Toolbar } from './components/Canvas/Toolbar';
@@ -20,12 +20,14 @@ import { usePromptStore } from './stores/promptStore';
 import { useEditorStore } from './stores/editorStore';
 import { useNavigationStore } from './stores/navigationStore';
 import { useWorkflowStore } from './stores/workflowStore';
+import { useExecutionStore } from './stores/executionStore';
 import type { WorkflowStep, StepStatus, WorkflowStatus } from '@shared/types';
 
 export default function App() {
   // Workflow management
   const {
     currentWorkflow,
+    selectedWorkflow,
     saveWorkflow,
     refreshWorkflows,
   } = useWorkflow();
@@ -62,9 +64,22 @@ export default function App() {
     },
   });
 
-  // Execution state (mock for now)
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  // Execution store
+  const {
+    isExecuting,
+    isPaused,
+    currentRunId,
+    runs,
+    startExecution,
+    updateStepStatus,
+    completeExecution,
+    addLog,
+    pauseExecution,
+    resumeExecution,
+    cancelExecution,
+  } = useExecutionStore();
+
+  // Local execution state for overlay
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>('pending');
   const [executionSteps, setExecutionSteps] = useState<Array<{
     stepId: string;
@@ -75,6 +90,7 @@ export default function App() {
   }>>([]);
   const [executionLogs, setExecutionLogs] = useState<string[]>([]);
   const [currentStepId, setCurrentStepId] = useState<string | null>(null);
+  const runIdRef = useRef<string | null>(null);
 
   // Handle adding a new step
   const handleAddStep = useCallback(() => {
@@ -102,7 +118,9 @@ export default function App() {
   const handleExecute = useCallback(() => {
     if (isExecuting) {
       // Stop execution
-      setIsExecuting(false);
+      if (runIdRef.current) {
+        cancelExecution(runIdRef.current);
+      }
       setWorkflowStatus('cancelled');
       setExecutionLogs((prev) => [...prev, 'Execution cancelled by user']);
       return;
@@ -110,9 +128,15 @@ export default function App() {
 
     if (!currentWorkflow) return;
 
-    // Start execution
-    setIsExecuting(true);
-    setIsPaused(false);
+    // Start execution - store in history
+    const workflowName = currentWorkflow.metadata?.name || 'Untitled Workflow';
+    const runId = startExecution(
+      selectedWorkflow || 'unknown',
+      workflowName
+    );
+    runIdRef.current = runId;
+
+    // Update local state for overlay
     setWorkflowStatus('running');
     setCurrentStepId(null);
     setExecutionLogs(['Starting workflow execution...']);
@@ -127,14 +151,15 @@ export default function App() {
     );
 
     // Simulate execution (replace with actual execution via API)
-    simulateExecution(currentWorkflow.steps);
-  }, [isExecuting, currentWorkflow]);
+    simulateExecution(currentWorkflow.steps, runId);
+  }, [isExecuting, currentWorkflow, selectedWorkflow, startExecution, cancelExecution]);
 
   // Simulate workflow execution
   const simulateExecution = useCallback(
-    async (steps: WorkflowStep[]) => {
+    async (steps: WorkflowStep[], runId: string) => {
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
+        const stepName = step.name || step.id;
 
         // Update current step
         setCurrentStepId(step.id);
@@ -145,45 +170,57 @@ export default function App() {
         );
         setExecutionLogs((prev) => [
           ...prev,
-          `Executing step: ${step.name || step.id}`,
+          'Executing step: ' + stepName,
         ]);
+
+        // Update execution store
+        updateStepStatus(runId, step.id, 'running');
+        addLog(runId, 'Executing step: ' + stepName);
 
         // Simulate step execution
         await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
 
         // Update step status
         const success = Math.random() > 0.1; // 90% success rate
+        const duration = Math.floor(1000 + Math.random() * 1000);
+        const error = success ? undefined : 'Simulated error';
+
         setExecutionSteps((prev) =>
           prev.map((s) =>
             s.stepId === step.id
               ? {
                   ...s,
                   status: success ? ('completed' as StepStatus) : ('failed' as StepStatus),
-                  duration: Math.floor(1000 + Math.random() * 1000),
-                  error: success ? undefined : 'Simulated error',
+                  duration,
+                  error,
                 }
               : s
           )
         );
-        setExecutionLogs((prev) => [
-          ...prev,
-          success
-            ? `✓ Step "${step.name || step.id}" completed`
-            : `✗ Step "${step.name || step.id}" failed`,
-        ]);
+
+        const logMessage = success
+          ? 'Step "' + stepName + '" completed'
+          : 'Step "' + stepName + '" failed';
+        setExecutionLogs((prev) => [...prev, logMessage]);
+
+        // Update execution store
+        updateStepStatus(runId, step.id, success ? 'completed' : 'failed', undefined, error);
+        addLog(runId, logMessage);
 
         if (!success) {
           setWorkflowStatus('failed');
-          setIsExecuting(false);
+          completeExecution(runId, 'failed');
+          runIdRef.current = null;
           return;
         }
       }
 
       setWorkflowStatus('completed');
-      setIsExecuting(false);
       setExecutionLogs((prev) => [...prev, 'Workflow completed successfully!']);
+      completeExecution(runId, 'completed');
+      runIdRef.current = null;
     },
-    []
+    [updateStepStatus, addLog, completeExecution]
   );
 
   // Handle save
@@ -313,10 +350,13 @@ export default function App() {
               currentStepId={currentStepId}
               steps={executionSteps}
               logs={executionLogs}
-              onPause={() => setIsPaused(true)}
-              onResume={() => setIsPaused(false)}
+              onPause={() => pauseExecution()}
+              onResume={() => resumeExecution()}
               onStop={() => {
-                setIsExecuting(false);
+                if (runIdRef.current) {
+                  cancelExecution(runIdRef.current);
+                  runIdRef.current = null;
+                }
                 setWorkflowStatus('cancelled');
               }}
               onStepOver={() => {
