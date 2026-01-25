@@ -25,6 +25,7 @@ import { MySQLInitializer } from './services/mysql.js';
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
 import { ClaudeCodeInitializer } from './adapters/claude-code.js';
+import { ClaudeAgentInitializer } from './adapters/claude-agent.js';
 import { OpenCodeInitializer } from './adapters/opencode.js';
 import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
 
@@ -71,6 +72,8 @@ export function registerIntegrations(registry: SDKRegistry) {
   // AI Adapters
   registry.registerInitializer('ollama', OllamaInitializer);
   registry.registerInitializer('claude-code', ClaudeCodeInitializer);
+  registry.registerInitializer('claude-agent', ClaudeAgentInitializer);
+  registry.registerInitializer('@anthropic-ai/claude-agent-sdk', ClaudeAgentInitializer);
   registry.registerInitializer('opencode', OpenCodeInitializer);
   registry.registerInitializer('github-copilot', GitHubCopilotInitializer);
 
@@ -182,6 +185,10 @@ export { SlackSocketTrigger } from './services/slack-socket.js';
 // Export AI adapters
 export * from './adapters/ollama.js';
 export * from './adapters/claude-code.js';
+export * from './adapters/claude-agent.js';
+export * from './adapters/claude-agent-types.js';
+export * from './adapters/claude-agent-workflow.js';
+export * from './adapters/claude-agent-hooks.js';
 export * from './adapters/opencode.js';
 export * from './adapters/github-copilot.js';
 
