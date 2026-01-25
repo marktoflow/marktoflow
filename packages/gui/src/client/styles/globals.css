@@ -243,3 +243,104 @@
   border-color: #e5e5e5;
   color: #4a4a4a;
 }
+
+/* Responsive animations */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.2s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.2s ease-out forwards;
+}
+
+.animate-slide-out-left {
+  animation: slideOutLeft 0.2s ease-in forwards;
+}
+
+.animate-slide-out-right {
+  animation: slideOutRight 0.2s ease-in forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out forwards;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 767px) {
+  /* Ensure toolbar buttons are touch-friendly */
+  .toolbar-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Adjust canvas controls for mobile */
+  .react-flow__controls {
+    bottom: 80px !important;
+  }
+
+  /* Make prompt input more prominent on mobile */
+  .prompt-input-container {
+    padding: 8px;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Slightly more compact on tablets */
+  .react-flow__minimap {
+    display: none;
+  }
+}

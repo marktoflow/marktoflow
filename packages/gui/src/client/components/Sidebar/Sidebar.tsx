@@ -3,12 +3,15 @@ import {
   FileText,
   FolderTree,
   ChevronRight,
+  ChevronLeft,
   Plus,
   Search,
   Loader2,
+  X,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { useNavigationStore } from '../../stores/navigationStore';
+import { useLayoutStore } from '../../stores/layoutStore';
 
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<'workflows' | 'tools'>(
@@ -16,21 +19,114 @@ export function Sidebar() {
   );
   const { workflows, selectedWorkflow, selectWorkflow } = useWorkflowStore();
   const { resetNavigation } = useNavigationStore();
+  const { sidebarOpen, setSidebarOpen, breakpoint } = useLayoutStore();
 
   // Handle workflow selection - resets sub-workflow navigation
-  const handleSelectWorkflow = useCallback((path: string) => {
-    resetNavigation();
-    selectWorkflow(path);
-  }, [resetNavigation, selectWorkflow]);
+  const handleSelectWorkflow = useCallback(
+    (path: string) => {
+      resetNavigation();
+      selectWorkflow(path);
+      // Close sidebar on mobile after selection
+      if (breakpoint === 'mobile') {
+        setSidebarOpen(false);
+      }
+    },
+    [resetNavigation, selectWorkflow, breakpoint, setSidebarOpen]
+  );
 
+  // Collapsed state for desktop
+  if (!sidebarOpen && breakpoint !== 'mobile') {
+    return (
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="w-12 bg-panel-bg border-r border-node-border flex flex-col items-center py-4 gap-4 hover:bg-white/5 transition-colors"
+        aria-label="Expand sidebar"
+      >
+        <ChevronRight className="w-4 h-4 text-gray-400" />
+        <FolderTree className="w-5 h-5 text-primary" />
+      </button>
+    );
+  }
+
+  // Mobile overlay
+  if (breakpoint === 'mobile') {
+    if (!sidebarOpen) return null;
+
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+        {/* Sidebar */}
+        <div className="fixed inset-y-0 left-0 w-72 bg-panel-bg border-r border-node-border flex flex-col z-50 md:hidden animate-slide-in-left">
+          <SidebarContent
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            workflows={workflows}
+            selectedWorkflow={selectedWorkflow}
+            onSelectWorkflow={handleSelectWorkflow}
+            onClose={() => setSidebarOpen(false)}
+            showClose
+          />
+        </div>
+      </>
+    );
+  }
+
+  // Desktop/Tablet sidebar
   return (
     <div className="w-64 bg-panel-bg border-r border-node-border flex flex-col">
+      <SidebarContent
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        workflows={workflows}
+        selectedWorkflow={selectedWorkflow}
+        onSelectWorkflow={handleSelectWorkflow}
+        onClose={() => setSidebarOpen(false)}
+        showClose={breakpoint === 'tablet'}
+      />
+    </div>
+  );
+}
+
+interface SidebarContentProps {
+  activeTab: 'workflows' | 'tools';
+  setActiveTab: (tab: 'workflows' | 'tools') => void;
+  workflows: Array<{ path: string; name: string }>;
+  selectedWorkflow: string | null;
+  onSelectWorkflow: (path: string) => void;
+  onClose: () => void;
+  showClose?: boolean;
+}
+
+function SidebarContent({
+  activeTab,
+  setActiveTab,
+  workflows,
+  selectedWorkflow,
+  onSelectWorkflow,
+  onClose,
+  showClose,
+}: SidebarContentProps) {
+  return (
+    <>
       {/* Logo/Title */}
-      <div className="p-4 border-b border-node-border">
+      <div className="p-4 border-b border-node-border flex items-center justify-between">
         <h1 className="text-lg font-semibold text-white flex items-center gap-2">
           <FolderTree className="w-5 h-5 text-primary" />
           Marktoflow
         </h1>
+        {showClose && (
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+            aria-label="Close sidebar"
+          >
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        )}
       </div>
 
       {/* Tab buttons */}
@@ -75,7 +171,7 @@ export function Sidebar() {
           <WorkflowList
             workflows={workflows}
             selectedWorkflow={selectedWorkflow}
-            onSelect={handleSelectWorkflow}
+            onSelect={onSelectWorkflow}
           />
         ) : (
           <ToolsPalette />
@@ -91,7 +187,7 @@ export function Sidebar() {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

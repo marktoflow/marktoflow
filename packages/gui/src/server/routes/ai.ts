@@ -50,4 +50,42 @@ router.post('/suggestions', async (req, res) => {
   }
 });
 
+// Get available AI providers and status
+router.get('/providers', async (_req, res) => {
+  try {
+    const status = aiService.getStatus();
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get providers',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Set active AI provider
+router.post('/providers/:providerId', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { apiKey, baseUrl, model } = req.body;
+
+    const success = await aiService.setProvider(providerId, { apiKey, baseUrl, model });
+
+    if (success) {
+      const status = aiService.getStatus();
+      res.json({ success: true, status });
+    } else {
+      res.status(400).json({
+        error: 'Failed to set provider',
+        message: `Provider "${providerId}" is not available or failed to initialize`,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to set provider',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 export { router as aiRoutes };
