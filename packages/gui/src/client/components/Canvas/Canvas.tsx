@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -6,7 +6,9 @@ import {
   MiniMap,
   BackgroundVariant,
   type NodeMouseHandler,
+  type Node,
 } from '@xyflow/react';
+import { Edit, Copy, Trash2, Code, Play } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { StepNode } from './StepNode';
@@ -16,6 +18,14 @@ import { OutputNode } from './OutputNode';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '../common/ContextMenu';
 import { useCanvas } from '../../hooks/useCanvas';
 import type { WorkflowStep } from '@shared/types';
 
@@ -36,8 +46,12 @@ export function Canvas() {
   // Editor state
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [yamlViewStep] = useState<WorkflowStep | null>(null);
+  const [yamlViewStep, setYamlViewStep] = useState<WorkflowStep | null>(null);
   const [isYamlViewOpen, setIsYamlViewOpen] = useState(false);
+
+  // Context menu state
+  const [contextMenuNode, setContextMenuNode] = useState<Node | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // Handle node double-click to open editor or drill down
   const onNodeDoubleClick: NodeMouseHandler = useCallback(
@@ -59,25 +73,53 @@ export function Canvas() {
     [currentWorkflow]
   );
 
+  // Get the currently selected step node
+  const getSelectedStep = useCallback((): WorkflowStep | null => {
+    if (!currentWorkflow) return null;
+    const selectedNode = nodes.find((n) => n.selected && n.type === 'step');
+    if (!selectedNode) return null;
+    return currentWorkflow.steps.find((s) => s.id === selectedNode.data.id) || null;
+  }, [currentWorkflow, nodes]);
+
   // Handle keyboard shortcuts
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      const isMeta = event.metaKey || event.ctrlKey;
+
       // Delete selected nodes
       if (event.key === 'Backspace' || event.key === 'Delete') {
         deleteSelected();
       }
       // Duplicate selected nodes
-      if ((event.metaKey || event.ctrlKey) && event.key === 'd') {
+      if (isMeta && event.key === 'd') {
         event.preventDefault();
         duplicateSelected();
       }
       // Auto-layout
-      if ((event.metaKey || event.ctrlKey) && event.key === 'l') {
+      if (isMeta && event.key === 'l') {
         event.preventDefault();
         autoLayout();
       }
+      // Edit selected step (E key without modifiers)
+      if (event.key === 'e' && !isMeta && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        const step = getSelectedStep();
+        if (step) {
+          setEditingStep(step);
+          setIsEditorOpen(true);
+        }
+      }
+      // View YAML (Y key without modifiers)
+      if (event.key === 'y' && !isMeta && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        const step = getSelectedStep();
+        if (step) {
+          setYamlViewStep(step);
+          setIsYamlViewOpen(true);
+        }
+      }
     },
-    [deleteSelected, duplicateSelected, autoLayout]
+    [deleteSelected, duplicateSelected, autoLayout, getSelectedStep]
   );
 
   // Handle step save
@@ -87,6 +129,62 @@ export function Canvas() {
       console.log('Saving step:', updatedStep);
       setIsEditorOpen(false);
       setEditingStep(null);
+    },
+    []
+  );
+
+  // Context menu handlers
+  const handleContextEdit = useCallback(() => {
+    if (!contextMenuNode || !currentWorkflow) return;
+    const step = currentWorkflow.steps.find((s) => s.id === contextMenuNode.data.id);
+    if (step) {
+      setEditingStep(step);
+      setIsEditorOpen(true);
+    }
+    setContextMenuNode(null);
+  }, [contextMenuNode, currentWorkflow]);
+
+  const handleContextViewYaml = useCallback(() => {
+    if (!contextMenuNode || !currentWorkflow) return;
+    const step = currentWorkflow.steps.find((s) => s.id === contextMenuNode.data.id);
+    if (step) {
+      setYamlViewStep(step);
+      setIsYamlViewOpen(true);
+    }
+    setContextMenuNode(null);
+  }, [contextMenuNode, currentWorkflow]);
+
+  const handleContextDuplicate = useCallback(() => {
+    if (contextMenuNode) {
+      // Select the node first, then duplicate
+      duplicateSelected();
+    }
+    setContextMenuNode(null);
+  }, [contextMenuNode, duplicateSelected]);
+
+  const handleContextDelete = useCallback(() => {
+    if (contextMenuNode) {
+      deleteSelected();
+    }
+    setContextMenuNode(null);
+  }, [contextMenuNode, deleteSelected]);
+
+  const handleContextExecute = useCallback(() => {
+    if (contextMenuNode) {
+      console.log('Execute step:', contextMenuNode.data.id);
+      // TODO: Implement single step execution
+    }
+    setContextMenuNode(null);
+  }, [contextMenuNode]);
+
+  // Handle right-click on node
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      // Only show context menu for step nodes
+      if (node.type === 'step') {
+        setContextMenuNode(node);
+      }
     },
     []
   );
@@ -119,48 +217,83 @@ export function Canvas() {
   }, [currentWorkflow, editingStep]);
 
   return (
-    <div className="w-full h-full" onKeyDown={onKeyDown} tabIndex={0}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeDoubleClick={onNodeDoubleClick}
-        nodeTypes={nodeTypes}
-        fitView
-        snapToGrid
-        snapGrid={[16, 16]}
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          animated: true,
-          style: { stroke: '#ff6d5a', strokeWidth: 2 },
-        }}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={24}
-          size={1}
-          color="#3d3d5c"
-        />
-        <Controls />
-        <MiniMap
-          nodeColor={(node) => {
-            switch (node.data?.status) {
-              case 'running':
-                return '#f0ad4e';
-              case 'completed':
-                return '#5cb85c';
-              case 'failed':
-                return '#d9534f';
-              default:
-                return '#2d2d4a';
-            }
-          }}
-          maskColor="rgba(26, 26, 46, 0.8)"
-        />
-      </ReactFlow>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div ref={contextMenuRef} className="w-full h-full" onKeyDown={onKeyDown} tabIndex={0}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeDoubleClick={onNodeDoubleClick}
+            onNodeContextMenu={onNodeContextMenu}
+            nodeTypes={nodeTypes}
+            fitView
+            snapToGrid
+            snapGrid={[16, 16]}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              animated: true,
+              style: { stroke: '#ff6d5a', strokeWidth: 2 },
+            }}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={24}
+              size={1}
+              color="#3d3d5c"
+            />
+            <Controls />
+            <MiniMap
+              nodeColor={(node) => {
+                switch (node.data?.status) {
+                  case 'running':
+                    return '#f0ad4e';
+                  case 'completed':
+                    return '#5cb85c';
+                  case 'failed':
+                    return '#d9534f';
+                  default:
+                    return '#2d2d4a';
+                }
+              }}
+              maskColor="rgba(26, 26, 46, 0.8)"
+            />
+          </ReactFlow>
+        </div>
+      </ContextMenuTrigger>
+
+      {/* Node Context Menu */}
+      <ContextMenuContent>
+        <ContextMenuItem onClick={handleContextEdit}>
+          <Edit className="w-4 h-4 mr-2" />
+          Edit Step
+          <ContextMenuShortcut>E</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleContextViewYaml}>
+          <Code className="w-4 h-4 mr-2" />
+          View YAML
+          <ContextMenuShortcut>Y</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleContextExecute}>
+          <Play className="w-4 h-4 mr-2" />
+          Execute Step
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleContextDuplicate}>
+          <Copy className="w-4 h-4 mr-2" />
+          Duplicate
+          <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleContextDelete} destructive>
+          <Trash2 className="w-4 h-4 mr-2" />
+          Delete
+          <ContextMenuShortcut>⌫</ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
 
       {/* Step Editor Modal */}
       <StepEditor
@@ -182,6 +315,6 @@ export function Canvas() {
           <YamlViewer value={yamlViewStep} />
         </div>
       </Modal>
-    </div>
+    </ContextMenu>
   );
 }
