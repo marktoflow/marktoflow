@@ -8,6 +8,11 @@ import { PropertiesPanel } from './components/Panels/PropertiesPanel';
 import { PromptInput } from './components/Prompt/PromptInput';
 import { ChangePreview } from './components/Prompt/ChangePreview';
 import { NewStepWizard } from './components/Editor/NewStepWizard';
+import {
+  KeyboardShortcuts,
+  KeyboardShortcutsButton,
+  useKeyboardShortcuts,
+} from './components/common/KeyboardShortcuts';
 import { useWorkflow } from './hooks/useWorkflow';
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePromptStore } from './stores/promptStore';
@@ -32,6 +37,9 @@ export default function App() {
 
   // Prompt state
   const { pendingChanges, acceptChanges, rejectChanges } = usePromptStore();
+
+  // Keyboard shortcuts
+  const { isOpen: isShortcutsOpen, setIsOpen: setShortcutsOpen, openShortcuts } = useKeyboardShortcuts();
 
   // WebSocket for real-time updates
   const { connected } = useWebSocket({
@@ -215,8 +223,9 @@ export default function App() {
 
         {/* Main Canvas Area */}
         <div className="flex flex-1 flex-col relative">
-          {/* Connection status */}
-          <div className="absolute top-4 right-4 z-10">
+          {/* Connection status & shortcuts */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <KeyboardShortcutsButton onClick={openShortcuts} />
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
                 connected
@@ -299,6 +308,9 @@ export default function App() {
             onReject={rejectChanges}
           />
         )}
+
+        {/* Keyboard Shortcuts Modal */}
+        <KeyboardShortcuts open={isShortcutsOpen} onOpenChange={setShortcutsOpen} />
       </div>
     </ReactFlowProvider>
   );
