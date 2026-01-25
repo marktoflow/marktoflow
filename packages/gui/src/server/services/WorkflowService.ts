@@ -2,10 +2,8 @@ import { readdir, readFile, writeFile, unlink, mkdir } from 'fs/promises';
 import { join, relative, dirname } from 'path';
 import { existsSync } from 'fs';
 import { stringify as yamlStringify } from 'yaml';
-
 // Import from @marktoflow/core for proper parsing
-// NOTE: This will be enabled when the package is properly built
-// import { parseFile, Workflow } from '@marktoflow/core';
+import { parseFile as coreParseFile } from '@marktoflow/core';
 
 interface WorkflowListItem {
   path: string;
@@ -110,12 +108,51 @@ export class WorkflowService {
     }
 
     try {
-      const content = await readFile(fullPath, 'utf-8');
-      return this.parseWorkflow(content, workflowPath);
+      // Use core parser for proper workflow parsing
+      const result = await coreParseFile(fullPath);
+      if (result.warnings && result.warnings.length > 0) {
+        console.warn(`Workflow ${workflowPath} has parsing warnings:`, result.warnings);
+      }
+
+      // Convert core Workflow type to GUI Workflow type
+      return this.convertCoreWorkflow(result.workflow, workflowPath);
     } catch (error) {
       console.error(`Error parsing workflow ${workflowPath}:`, error);
-      return null;
+      // Fallback to local parsing if core parser fails
+      try {
+        const content = await readFile(fullPath, 'utf-8');
+        return this.parseWorkflow(content, workflowPath);
+      } catch {
+        return null;
+      }
     }
+  }
+
+  private convertCoreWorkflow(coreWorkflow: any, path: string): Workflow {
+    return {
+      metadata: {
+        id: coreWorkflow.metadata?.id || path,
+        name: coreWorkflow.metadata?.name || path,
+        version: coreWorkflow.metadata?.version,
+        description: coreWorkflow.metadata?.description,
+        author: coreWorkflow.metadata?.author,
+        tags: coreWorkflow.metadata?.tags,
+      },
+      steps: (coreWorkflow.steps || []).map((step: any) => ({
+        id: step.id,
+        name: step.name,
+        action: step.action,
+        workflow: step.workflow,
+        inputs: step.inputs || {},
+        outputVariable: step.outputVariable || step.output_variable,
+        conditions: step.conditions,
+        errorHandling: step.errorHandling || step.error_handling,
+        timeout: step.timeout,
+      })),
+      tools: coreWorkflow.tools,
+      inputs: coreWorkflow.inputs,
+      triggers: coreWorkflow.triggers,
+    };
   }
 
   async createWorkflow(name: string, template?: string): Promise<WorkflowListItem> {
