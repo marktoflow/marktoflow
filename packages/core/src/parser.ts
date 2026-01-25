@@ -211,8 +211,8 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
     try {
       const stepRaw = parseYaml(yamlContent) as Record<string, unknown>;
 
-      // Skip non-step code blocks (e.g., trigger definitions)
-      if (!stepRaw.action) {
+      // Skip non-step code blocks (check for action or workflow field)
+      if (!stepRaw.action && !stepRaw.workflow) {
         continue;
       }
 
@@ -241,6 +241,7 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
     id: raw.id || `step-${index + 1}`,
     name: raw.name,
     action: raw.action,
+    workflow: raw.workflow,
     inputs: raw.inputs || {},
     outputVariable: raw.output_variable || raw.outputVariable,
     conditions: raw.conditions,

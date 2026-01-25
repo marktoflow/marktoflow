@@ -25,6 +25,8 @@ import {
   FailoverReason,
 } from './failover.js';
 import { RollbackRegistry } from './rollback.js';
+import { parseFile } from './parser.js';
+import { resolve, dirname } from 'node:path';
 
 // ============================================================================
 // Types
@@ -264,6 +266,7 @@ export class WorkflowEngine {
   private failoverConfig: FailoverConfig;
   private healthTracker: AgentHealthTracker;
   private failoverEvents: FailoverEvent[] = [];
+  private workflowPath?: string; // Base path for resolving sub-workflows
 
   constructor(config: EngineConfig = {}, events: EngineEvents = {}, stateStore?: StateStore) {
     this.config = {
@@ -428,8 +431,83 @@ export class WorkflowEngine {
     return workflowResult;
   }
 
+  /**
+   * Execute a workflow from a file.
+   * This method automatically sets the workflow path for resolving sub-workflows.
+   */
+  async executeFile(
+    workflowPath: string,
+    inputs: Record<string, unknown> = {},
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<WorkflowResult> {
+    // Parse the workflow file
+    const { workflow } = await parseFile(workflowPath);
+
+    // Set the workflow path for sub-workflow resolution
+    this.workflowPath = resolve(workflowPath);
+
+    // Execute the workflow
+    return this.execute(workflow, inputs, sdkRegistry, stepExecutor);
+  }
+
   getFailoverHistory(): FailoverEvent[] {
     return [...this.failoverEvents];
+  }
+
+  /**
+   * Execute a sub-workflow.
+   */
+  private async executeSubWorkflow(
+    step: WorkflowStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<unknown> {
+    if (!step.workflow) {
+      throw new Error(`Step ${step.id} has no workflow path`);
+    }
+
+    // Resolve the sub-workflow path relative to the parent workflow
+    const subWorkflowPath = this.workflowPath
+      ? resolve(dirname(this.workflowPath), step.workflow)
+      : resolve(step.workflow);
+
+    // Parse the sub-workflow
+    const { workflow: subWorkflow } = await parseFile(subWorkflowPath);
+
+    // Resolve inputs for the sub-workflow
+    const resolvedInputs = resolveTemplates(step.inputs, context) as Record<string, unknown>;
+
+    // Create a new engine instance for the sub-workflow with the same configuration
+    const subEngineConfig: EngineConfig = {
+      defaultTimeout: this.config.defaultTimeout,
+      maxRetries: this.config.maxRetries,
+      retryBaseDelay: this.config.retryBaseDelay,
+      retryMaxDelay: this.config.retryMaxDelay,
+      failoverConfig: this.failoverConfig,
+      healthTracker: this.healthTracker,
+    };
+
+    if (this.rollbackRegistry) {
+      subEngineConfig.rollbackRegistry = this.rollbackRegistry;
+    }
+
+    const subEngine = new WorkflowEngine(subEngineConfig, this.events, this.stateStore);
+
+    // Set the base path for the sub-workflow
+    subEngine.workflowPath = subWorkflowPath;
+
+    // Execute the sub-workflow
+    const result = await subEngine.execute(subWorkflow, resolvedInputs, sdkRegistry, stepExecutor);
+
+    // Check if sub-workflow failed
+    if (result.status === WorkflowStatus.FAILED) {
+      throw new Error(result.error || 'Sub-workflow execution failed');
+    }
+
+    // Return the sub-workflow output
+    return result.output;
   }
 
   /**
@@ -444,6 +522,44 @@ export class WorkflowEngine {
     const maxRetries = step.errorHandling?.maxRetries ?? this.config.maxRetries;
     const startedAt = new Date();
     let lastError: Error | undefined;
+
+    // Handle sub-workflow execution
+    if (step.workflow) {
+      try {
+        this.events.onStepStart?.(step, context);
+        const output = await this.executeWithTimeout(
+          () => this.executeSubWorkflow(step, context, sdkRegistry, stepExecutor),
+          step.timeout ?? this.config.defaultTimeout
+        );
+        const result = createStepResult(step.id, StepStatus.COMPLETED, output, startedAt, 0);
+        this.events.onStepComplete?.(step, result);
+        return result;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        const result = createStepResult(
+          step.id,
+          StepStatus.FAILED,
+          null,
+          startedAt,
+          0,
+          lastError.message
+        );
+        this.events.onStepComplete?.(step, result);
+        return result;
+      }
+    }
+
+    // Regular action step - ensure action is defined
+    if (!step.action) {
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        'Step has neither action nor workflow defined'
+      );
+    }
 
     // Get or create circuit breaker for this step's action
     const [serviceName] = step.action.split('.');
@@ -520,6 +636,12 @@ export class WorkflowEngine {
     stepExecutor: StepExecutor
   ): Promise<StepResult> {
     const primaryResult = await this.executeStepWithRetry(step, context, sdkRegistry, stepExecutor);
+
+    // Sub-workflows don't support failover
+    if (step.workflow || !step.action) {
+      return primaryResult;
+    }
+
     const [primaryTool, ...methodParts] = step.action.split('.');
     const method = methodParts.join('.');
 

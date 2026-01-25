@@ -225,7 +225,8 @@ export interface DryRunOptions {
 
 export interface DryRunStepResult {
   stepId: string;
-  action: string;
+  action?: string; // Optional for sub-workflows
+  workflow?: string; // Path to sub-workflow
   status: 'completed' | 'skipped' | 'would-fail';
   mockOutput: unknown;
   resolvedInputs: Record<string, unknown>;
@@ -285,9 +286,16 @@ export async function executeDryRun(
     // Resolve inputs with template variables
     const resolvedInputs = resolveInputTemplates(step.inputs, context);
 
-    // Generate mock response
-    const mockOutput =
-      stepStatus !== 'skipped' ? generateMockResponse(step.action, resolvedInputs) : null;
+    // Generate mock response (skip for sub-workflows in dry-run mode)
+    let mockOutput = null;
+    if (stepStatus !== 'skipped') {
+      if (step.action) {
+        mockOutput = generateMockResponse(step.action, resolvedInputs);
+      } else if (step.workflow) {
+        // For sub-workflows, generate a simple mock output
+        mockOutput = { subWorkflowResult: 'mock-sub-workflow-output' };
+      }
+    }
 
     // Store output variable
     if (step.outputVariable && mockOutput) {
@@ -299,6 +307,7 @@ export async function executeDryRun(
     const stepResult: DryRunStepResult = {
       stepId: step.id,
       action: step.action,
+      workflow: step.workflow,
       status: stepStatus,
       mockOutput,
       resolvedInputs,
@@ -385,8 +394,10 @@ function displayStepResult(result: DryRunStepResult, options: DryRunOptions): vo
         ? chalk.yellow('○')
         : chalk.red('✗');
 
+  const actionOrWorkflow = result.action || `workflow: ${result.workflow}` || 'unknown';
+
   console.log(
-    `${statusIcon} ${chalk.cyan(result.stepId)} ${chalk.gray('→')} ${chalk.white(result.action)} ${chalk.dim(`(${result.duration.toFixed(0)}ms)`)}`
+    `${statusIcon} ${chalk.cyan(result.stepId)} ${chalk.gray('→')} ${chalk.white(actionOrWorkflow)} ${chalk.dim(`(${result.duration.toFixed(0)}ms)`)}`
   );
 
   if (options.verbose) {

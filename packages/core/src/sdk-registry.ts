@@ -11,7 +11,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 // ============================================================================
 // Types
-// ============================================================================ 
+// ============================================================================
 
 export interface SDKInstance {
   name: string;
@@ -38,9 +38,9 @@ export interface SDKInitializer {
   initialize(module: unknown, config: ToolConfig): Promise<unknown>;
 }
 
-// ============================================================================ 
+// ============================================================================
 // Default SDK Loader (dynamic import)
-// ============================================================================ 
+// ============================================================================
 
 export const defaultSDKLoader: SDKLoader = {
   async load(packageName: string): Promise<unknown> {
@@ -50,16 +50,16 @@ export const defaultSDKLoader: SDKLoader = {
     } catch (error) {
       throw new Error(
         `Failed to load SDK '${packageName}'. ` +
-        `Make sure it's installed: npm install ${packageName}\n` +
-        `Original error: ${error}`
+          `Make sure it's installed: npm install ${packageName}\n` +
+          `Original error: ${error}`
       );
     }
   },
 };
 
-// ============================================================================ 
+// ============================================================================
 // SDK Initializers for common services
-// ============================================================================ 
+// ============================================================================
 
 export const defaultInitializers: Record<string, SDKInitializer> = {
   '@slack/web-api': {
@@ -83,7 +83,8 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
 
   '@anthropic-ai/sdk': {
     async initialize(module: unknown, config: ToolConfig): Promise<unknown> {
-      const Anthropic = (module as { default: new (options: { apiKey: string }) => unknown }).default;
+      const Anthropic = (module as { default: new (options: { apiKey: string }) => unknown })
+        .default;
       const apiKey = config.auth?.['api_key'] as string;
       if (!apiKey) {
         throw new Error('Anthropic SDK requires auth.api_key');
@@ -92,7 +93,7 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
     },
   },
 
-  'openai': {
+  openai: {
     async initialize(module: unknown, config: ToolConfig): Promise<unknown> {
       const OpenAI = (module as { default: new (options: { apiKey: string }) => unknown }).default;
       const apiKey = config.auth?.['api_key'] as string;
@@ -106,7 +107,10 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
   'jira.js': {
     async initialize(module: unknown, config: ToolConfig): Promise<unknown> {
       const { Version3Client } = module as {
-        Version3Client: new (options: { host: string; authentication: { basic: { email: string; apiToken: string } } }) => unknown;
+        Version3Client: new (options: {
+          host: string;
+          authentication: { basic: { email: string; apiToken: string } };
+        }) => unknown;
       };
       const host = config.auth?.['host'] as string;
       const email = config.auth?.['email'] as string;
@@ -126,9 +130,9 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
   },
 };
 
-// ============================================================================ 
+// ============================================================================
 // SDK Registry Implementation
-// ============================================================================ 
+// ============================================================================
 
 export class SDKRegistry {
   private sdks: Map<string, SDKInstance> = new Map();
@@ -207,7 +211,7 @@ export class SDKRegistry {
           const client = await this.mcpLoader.connectModule(module, instance.config);
           instance.sdk = this.createMcpProxy(client);
         } catch (error) {
-           throw new Error(`Failed to connect to MCP module '${instance.config.sdk}': ${error}`);
+          throw new Error(`Failed to connect to MCP module '${instance.config.sdk}': ${error}`);
         }
       } else {
         // No custom initializer - use generic initialization
@@ -238,19 +242,19 @@ export class SDKRegistry {
 
           // Otherwise, treat as tool name
           return async (args: Record<string, unknown>) => {
-             const result = await client.callTool({
-               name: prop,
-               arguments: args
-             });
-             
-             // If tool call fails, it throws? No, Client.callTool throws on error.
-             // Result content handling? 
-             // For now return result.
-             return result;
+            const result = await client.callTool({
+              name: prop,
+              arguments: args,
+            });
+
+            // If tool call fails, it throws? No, Client.callTool throws on error.
+            // Result content handling?
+            // For now return result.
+            return result;
           };
         }
         return Reflect.get(target, prop);
-      }
+      },
     });
   }
 
@@ -299,9 +303,9 @@ export class SDKRegistry {
   }
 }
 
-// ============================================================================ 
+// ============================================================================
 // Step Executor Factory
-// ============================================================================ 
+// ============================================================================
 
 export interface SDKRegistryLike {
   load(sdkName: string): Promise<unknown>;
@@ -313,13 +317,24 @@ export interface SDKRegistryLike {
  */
 export function createSDKStepExecutor() {
   return async (
-    step: { action: string; inputs: Record<string, unknown> },
+    step: { action?: string; workflow?: string; inputs: Record<string, unknown> },
     _context: unknown,
     sdkRegistry: SDKRegistryLike
   ): Promise<unknown> => {
+    // Sub-workflows are handled by the engine, not by this executor
+    if (step.workflow) {
+      throw new Error('Sub-workflow steps should be handled by the engine, not the step executor');
+    }
+
+    if (!step.action) {
+      throw new Error('Step must have either "action" or "workflow" field');
+    }
+
     const parts = step.action.split('.');
     if (parts.length < 2) {
-      throw new Error(`Invalid action format: ${step.action}. Expected: sdk.method or sdk.namespace.method`);
+      throw new Error(
+        `Invalid action format: ${step.action}. Expected: sdk.method or sdk.namespace.method`
+      );
     }
 
     const sdkName = parts[0];

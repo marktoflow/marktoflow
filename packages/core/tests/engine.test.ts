@@ -1,10 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  WorkflowEngine,
-  RetryPolicy,
-  CircuitBreaker,
-  resolveTemplates,
-} from '../src/engine.js';
+import { WorkflowEngine, RetryPolicy, CircuitBreaker, resolveTemplates } from '../src/engine.js';
 import { Workflow, WorkflowStatus, StepStatus, ExecutionContext } from '../src/models.js';
 import { SDKRegistry } from '../src/sdk-registry.js';
 
@@ -96,6 +91,7 @@ describe('resolveTemplates', () => {
     startedAt: new Date(),
     currentStepIndex: 0,
     status: WorkflowStatus.RUNNING,
+    stepMetadata: {},
   };
 
   it('should resolve simple variable', () => {
@@ -177,7 +173,8 @@ describe('WorkflowEngine', () => {
 
     const engine = new WorkflowEngine();
     const registry = createMockSDKRegistry();
-    const executor = vi.fn()
+    const executor = vi
+      .fn()
       .mockResolvedValueOnce({ value: 'first' })
       .mockResolvedValueOnce({ value: 'second' });
 
@@ -204,13 +201,12 @@ describe('WorkflowEngine', () => {
   });
 
   it('should retry on failure', async () => {
-    const workflow = createMockWorkflow([
-      { id: 'step1', action: 'test.action', inputs: {} },
-    ]);
+    const workflow = createMockWorkflow([{ id: 'step1', action: 'test.action', inputs: {} }]);
 
     const engine = new WorkflowEngine({ maxRetries: 2, retryBaseDelay: 10 });
     const registry = createMockSDKRegistry();
-    const executor = vi.fn()
+    const executor = vi
+      .fn()
       .mockRejectedValueOnce(new Error('Fail 1'))
       .mockRejectedValueOnce(new Error('Fail 2'))
       .mockResolvedValue({ success: true });
@@ -222,9 +218,7 @@ describe('WorkflowEngine', () => {
   });
 
   it('should fail after max retries', async () => {
-    const workflow = createMockWorkflow([
-      { id: 'step1', action: 'test.action', inputs: {} },
-    ]);
+    const workflow = createMockWorkflow([{ id: 'step1', action: 'test.action', inputs: {} }]);
 
     const engine = new WorkflowEngine({ maxRetries: 2, retryBaseDelay: 10 });
     const registry = createMockSDKRegistry();
@@ -238,21 +232,22 @@ describe('WorkflowEngine', () => {
   });
 
   it('should call event handlers', async () => {
-    const workflow = createMockWorkflow([
-      { id: 'step1', action: 'test.action', inputs: {} },
-    ]);
+    const workflow = createMockWorkflow([{ id: 'step1', action: 'test.action', inputs: {} }]);
 
     const onStepStart = vi.fn();
     const onStepComplete = vi.fn();
     const onWorkflowStart = vi.fn();
     const onWorkflowComplete = vi.fn();
 
-    const engine = new WorkflowEngine({}, {
-      onStepStart,
-      onStepComplete,
-      onWorkflowStart,
-      onWorkflowComplete,
-    });
+    const engine = new WorkflowEngine(
+      {},
+      {
+        onStepStart,
+        onStepComplete,
+        onWorkflowStart,
+        onWorkflowComplete,
+      }
+    );
 
     const registry = createMockSDKRegistry();
     const executor = vi.fn().mockResolvedValue({});

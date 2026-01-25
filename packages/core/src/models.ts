@@ -66,16 +66,21 @@ export const ErrorHandlingSchema = z.object({
   fallbackAction: z.string().optional(),
 });
 
-export const WorkflowStepSchema = z.object({
-  id: z.string(),
-  name: z.string().optional(),
-  action: z.string(), // e.g., "slack.chat.postMessage"
-  inputs: z.record(z.unknown()).default({}),
-  outputVariable: z.string().optional(),
-  conditions: z.array(z.string()).optional(),
-  errorHandling: ErrorHandlingSchema.optional(),
-  timeout: z.number().optional(), // seconds
-});
+export const WorkflowStepSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().optional(),
+    action: z.string().optional(), // e.g., "slack.chat.postMessage"
+    workflow: z.string().optional(), // Path to sub-workflow markdown file
+    inputs: z.record(z.unknown()).default({}),
+    outputVariable: z.string().optional(),
+    conditions: z.array(z.string()).optional(),
+    errorHandling: ErrorHandlingSchema.optional(),
+    timeout: z.number().optional(), // seconds
+  })
+  .refine((data) => data.action || data.workflow, {
+    message: 'Step must have either "action" or "workflow" field',
+  });
 
 export const TriggerSchema = z.object({
   type: z.enum(['manual', 'schedule', 'webhook', 'event']),

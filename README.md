@@ -4,22 +4,26 @@
 
 A universal automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.6 (TypeScript)
+**Version:** 2.0.0-alpha.7 (TypeScript)
 
 ## What's New in v2.0
 
-marktoflow v2.0 is a complete rewrite in TypeScript that replaces Python subprocess-based tool execution with **native SDK integrations**:
+marktoflow v2.0 brings powerful new capabilities and integrations:
 
-- ✅ **No more Python subprocess bridging** - Direct SDK method calls
+- ✅ **Native SDK integrations** - Direct SDK method calls with full type safety
 - ✅ **Native MCP support** - Import MCP servers as npm packages
-- ✅ **20 built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Google Suite, Telegram, WhatsApp, databases, and more
-- ✅ **Full type safety** - TypeScript all the way through
-- ✅ **Feature parity achieved** - All Python v1.0 features ported
+- ✅ **Sub-workflow composition** - Build reusable workflow components
+- ✅ **Command line tool execution** - Run bash, Python, Node.js scripts directly
+- ✅ **20+ built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Google Suite, Telegram, WhatsApp, databases, and more
+- ✅ **Full TypeScript** - Type-safe workflows and integrations
+- ✅ **Enterprise features** - RBAC, approvals, audit logging, cost tracking
 
 ## Key Features
 
 - **Workflow as Code**: Define workflows in Markdown + YAML
-- **Native MCP Support**: Direct import of MCP server packages (no subprocess spawning)
+- **Sub-Workflows**: Compose reusable workflow components with unlimited nesting
+- **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
+- **Native MCP Support**: Direct import of MCP server packages
 - **Direct SDK Integration**: Built-in support for 20+ services with official SDKs
 - **AI Agent Integration**: GitHub Copilot, Claude Code, OpenCode, Ollama
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
@@ -255,6 +259,105 @@ steps:
 
 See [REST API Guide](docs/REST-API-GUIDE.md) for complete documentation.
 
+### Sub-Workflows: Reusable Workflow Composition
+
+Create modular, reusable workflows by calling other workflows as steps:
+
+```yaml
+---
+workflow:
+  id: user-onboarding
+  name: 'User Onboarding'
+
+steps:
+  # Call validation sub-workflow
+  - id: validate_email
+    workflow: ./common/validate-input.md
+    inputs:
+      data: '{{ inputs.email }}'
+      min_length: 5
+      max_length: 100
+    output_variable: validation_result
+
+  # Call notification sub-workflow
+  - id: notify_team
+    workflow: ./common/send-notification.md
+    inputs:
+      channel: '#onboarding'
+      message: 'New user: {{ inputs.username }}'
+      level: 'info'
+---
+```
+
+**Benefits:**
+
+- ✅ Reusable workflow components
+- ✅ Unlimited nesting depth
+- ✅ Clean separation of concerns
+- ✅ Easy testing and maintenance
+
+See [Sub-Workflows Example](examples/sub-workflows/) for complete guide.
+
+### Execute Command Line Tools
+
+Run any command line tool directly from workflows:
+
+```yaml
+---
+workflow:
+  id: run-scripts
+  name: 'Command Line Execution'
+
+tools:
+  script:
+    sdk: 'script'
+
+steps:
+  # Run shell commands
+  - id: run_bash
+    action: script.execute
+    inputs:
+      code: |
+        #!/bin/bash
+        echo "Hello from bash!"
+        ls -la
+        git status
+    output_variable: bash_result
+
+  # Run Python scripts
+  - id: run_python
+    action: script.execute
+    inputs:
+      code: |
+        import sys
+        print(f"Python {sys.version}")
+        result = {"status": "success", "data": [1, 2, 3]}
+        print(result)
+      interpreter: python3
+    output_variable: python_result
+
+  # Run Node.js scripts
+  - id: run_node
+    action: script.execute
+    inputs:
+      code: |
+        console.log("Hello from Node.js!");
+        const data = { message: "Success" };
+        console.log(JSON.stringify(data));
+      interpreter: node
+    output_variable: node_result
+---
+```
+
+**Supported:**
+
+- ✅ Shell scripts (bash, zsh, sh)
+- ✅ Python scripts
+- ✅ Node.js scripts
+- ✅ Any executable with custom interpreter
+- ✅ Capture stdout/stderr/exit code
+- ✅ Environment variable support
+
 ## Architecture (v2.0)
 
 ```
@@ -346,6 +449,7 @@ All integrations support:
 
 See `examples/` directory for production-ready workflow templates:
 
+- **[sub-workflows](examples/sub-workflows/)** - Reusable workflow composition with sub-workflows
 - **[copilot-code-review](examples/copilot-code-review/)** - AI code review with GitHub Copilot
 - **[code-review](examples/code-review/)** - Automated PR reviews with AI
 - **[daily-standup](examples/daily-standup/)** - Team update aggregation (scheduled)
