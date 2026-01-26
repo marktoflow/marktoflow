@@ -6,6 +6,9 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import type { AIBrowserClient } from './ai-browser.js';
+import type { GitHubCopilotClient } from '../adapters/github-copilot.js';
+import type { ClaudeCodeClient } from '../adapters/claude-code.js';
 
 // Stagehand types (optional dependency for AI features)
 interface StagehandClass {
@@ -82,17 +85,25 @@ export interface PlaywrightConfig {
   /** Auto-save session on close */
   autoSaveSession?: boolean;
 
-  // ========== AI-Powered Automation (Stagehand) ==========
+  // ========== AI-Powered Automation ==========
 
-  /** Enable Stagehand AI-powered automation */
+  /** Enable AI-powered automation */
   enableAI?: boolean;
-  /** AI provider: 'openai' | 'anthropic' */
+
+  // Custom AI Backend (Copilot/Claude Code)
+  /** AI backend to use: 'copilot' | 'claude-code' | 'stagehand' */
+  aiBackend?: 'copilot' | 'claude-code' | 'stagehand';
+  /** Pre-initialized AI client (for copilot/claude-code backends) */
+  aiClient?: unknown;
+
+  // Stagehand-specific (legacy support)
+  /** AI provider for Stagehand: 'openai' | 'anthropic' */
   aiProvider?: 'openai' | 'anthropic';
   /** AI model to use (e.g., 'gpt-4o', 'claude-3-5-sonnet-latest') */
   aiModel?: string;
   /** API key for AI provider (defaults to env var) */
   aiApiKey?: string;
-  /** Enable Stagehand debug mode */
+  /** Enable AI debug mode */
   aiDebug?: boolean;
 }
 
@@ -423,6 +434,7 @@ export class PlaywrightClient {
   private page: import('playwright').Page | null = null;
   private config: PlaywrightConfig;
   private stagehand: unknown = null;
+  private aiBrowser: AIBrowserClient | null = null;
   private sessionPath: string | null = null;
 
   constructor(config: PlaywrightConfig = {}) {
@@ -1349,11 +1361,49 @@ export class PlaywrightClient {
   }
 
   // ==========================================================================
-  // AI-Powered Automation (Stagehand)
+  // AI-Powered Automation
   // ==========================================================================
 
   /**
-   * Initialize Stagehand for AI-powered automation
+   * Initialize custom AI browser automation (Copilot/Claude Code)
+   */
+  private async initAIBrowser(): Promise<AIBrowserClient> {
+    if (this.aiBrowser) {
+      return this.aiBrowser;
+    }
+
+    if (!this.config.enableAI) {
+      throw new Error('AI automation is not enabled. Set enableAI: true in config.');
+    }
+
+    if (!this.config.aiBackend || this.config.aiBackend === 'stagehand') {
+      throw new Error('Custom AI backend not configured. Set aiBackend to "copilot" or "claude-code"');
+    }
+
+    if (!this.config.aiClient) {
+      throw new Error(`AI client not provided. Initialize ${this.config.aiBackend} client first.`);
+    }
+
+    try {
+      const { AIBrowserClient } = await import('./ai-browser.js');
+
+      this.aiBrowser = new AIBrowserClient({
+        backend: this.config.aiBackend as 'copilot' | 'claude-code',
+        aiClient: this.config.aiClient as GitHubCopilotClient | ClaudeCodeClient,
+        playwrightClient: this,
+        debug: this.config.aiDebug,
+      });
+
+      return this.aiBrowser;
+    } catch (error) {
+      throw new Error(
+        `Failed to initialize AI browser automation: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Initialize Stagehand for AI-powered automation (legacy support)
    */
   private async initStagehand(): Promise<unknown> {
     if (this.stagehand) {
@@ -1424,6 +1474,30 @@ export class PlaywrightClient {
    * await browser.act({ instruction: 'Fill in the email field with test@example.com' })
    */
   async act(options: ActOptions): Promise<ActResult> {
+    // Use custom AI backend if configured
+    if (this.config.aiBackend && this.config.aiBackend !== 'stagehand') {
+      const aiBrowser = await this.initAIBrowser();
+
+      try {
+        const result = await aiBrowser.act({ action: options.instruction });
+
+        return {
+          success: result.success,
+          action: result.action,
+          element: result.message,
+        };
+      } catch (error) {
+        if (options.optional) {
+          return {
+            success: false,
+            error: String(error),
+          };
+        }
+        throw error;
+      }
+    }
+
+    // Fall back to Stagehand
     const stagehand = await this.initStagehand() as {
       act: (options: { action: string }) => Promise<{ success: boolean; message?: string; action?: string }>;
     };
@@ -1456,6 +1530,24 @@ export class PlaywrightClient {
    * const result = await browser.observe({ instruction: 'Find all buttons' })
    */
   async observe(options: ObserveOptions = {}): Promise<ObserveResult> {
+    // Use custom AI backend if configured
+    if (this.config.aiBackend && this.config.aiBackend !== 'stagehand') {
+      const aiBrowser = await this.initAIBrowser();
+
+      const elements = await aiBrowser.observe({ instruction: options.instruction });
+
+      return {
+        elements: elements.map(el => ({
+          description: el.description || '',
+          selector: el.selector || '',
+          tagName: el.tagName || 'unknown',
+          text: el.text,
+          actions: el.actions || ['click'],
+        })),
+      };
+    }
+
+    // Fall back to Stagehand
     const stagehand = await this.initStagehand() as {
       observe: (options?: { instruction?: string }) => Promise<Array<{
         description: string;
@@ -1489,6 +1581,19 @@ export class PlaywrightClient {
    * })
    */
   async aiExtract(options: AIExtractOptions): Promise<unknown> {
+    // Use custom AI backend if configured
+    if (this.config.aiBackend && this.config.aiBackend !== 'stagehand') {
+      const aiBrowser = await this.initAIBrowser();
+
+      const result = await aiBrowser.aiExtract({
+        instruction: options.instruction,
+        schema: options.schema,
+      });
+
+      return result.data;
+    }
+
+    // Fall back to Stagehand
     const stagehand = await this.initStagehand() as {
       extract: (options: { instruction: string; schema?: unknown }) => Promise<unknown>;
     };
@@ -1557,6 +1662,8 @@ export const PlaywrightInitializer: SDKInitializer = {
 
       // AI automation
       enableAI: getOption<boolean>('enable_ai', 'enableAI'),
+      aiBackend: getOption<'copilot' | 'claude-code' | 'stagehand'>('ai_backend', 'aiBackend'),
+      aiClient: getOption<unknown>('ai_client', 'aiClient'),
       aiProvider: getOption<'openai' | 'anthropic'>('ai_provider', 'aiProvider'),
       aiModel: getOption<string>('ai_model', 'aiModel'),
       aiApiKey: getOption<string>('ai_api_key', 'aiApiKey'),

@@ -147,6 +147,7 @@ export * from './services/airtable.js';
 export * from './services/confluence.js';
 export * from './services/http.js';
 export * from './services/playwright.js';
+export { AIBrowserClient, AIBrowserConfig, AIBackend } from './services/ai-browser.js';
 export * from './services/google-sheets.js';
 export * from './services/google-calendar.js';
 export * from './services/google-drive.js';

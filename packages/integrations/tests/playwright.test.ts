@@ -828,6 +828,216 @@ describe('Playwright AI Automation', () => {
 });
 
 // ============================================================================
+// Custom AI Backend Tests (Copilot/Claude Code)
+// ============================================================================
+
+describe('Playwright Custom AI Backend', () => {
+  // Mock AI clients
+  const mockCopilotClient = {
+    send: vi.fn().mockResolvedValue('{ "action": "click", "inputs": { "selector": "#button" } }'),
+  };
+
+  const mockClaudeCodeClient = {
+    generate: vi.fn().mockResolvedValue('{ "action": "fill", "inputs": { "selector": "#email", "value": "test@example.com" } }'),
+  };
+
+  it('should create client with Copilot AI backend', () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'copilot',
+      aiClient: mockCopilotClient,
+    });
+
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should create client with Claude Code AI backend', () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'claude-code',
+      aiClient: mockClaudeCodeClient,
+    });
+
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should support Copilot backend in initializer', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        enableAI: true,
+        aiBackend: 'copilot',
+        aiClient: mockCopilotClient,
+        aiDebug: false,
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config) as PlaywrightClient;
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should support Claude Code backend in initializer', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        enable_ai: true,
+        ai_backend: 'claude-code',
+        ai_client: mockClaudeCodeClient,
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config) as PlaywrightClient;
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should perform act() with Copilot backend', async () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'copilot',
+      aiClient: mockCopilotClient,
+    });
+
+    await client.launch();
+
+    const result = await client.act({ instruction: 'Click the login button' });
+
+    expect(result.success).toBe(true);
+    expect(result.action).toBe('Click the login button');
+    expect(mockCopilotClient.send).toHaveBeenCalled();
+
+    await client.close();
+  });
+
+  it('should perform act() with Claude Code backend', async () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'claude-code',
+      aiClient: mockClaudeCodeClient,
+    });
+
+    await client.launch();
+
+    const result = await client.act({ instruction: 'Fill in email field' });
+
+    expect(result.success).toBe(true);
+    expect(result.action).toBe('Fill in email field');
+    expect(mockClaudeCodeClient.generate).toHaveBeenCalled();
+
+    await client.close();
+  });
+
+  it('should perform observe() with custom AI backend', async () => {
+    mockCopilotClient.send.mockResolvedValueOnce(
+      JSON.stringify([
+        {
+          selector: '#email',
+          description: 'Email input field',
+          tagName: 'input',
+          actions: ['fill'],
+        },
+        {
+          selector: '#submit',
+          description: 'Submit button',
+          tagName: 'button',
+          actions: ['click'],
+        },
+      ])
+    );
+
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'copilot',
+      aiClient: mockCopilotClient,
+    });
+
+    await client.launch();
+
+    const result = await client.observe({ instruction: 'Find form elements' });
+
+    expect(result.elements).toBeDefined();
+    expect(result.elements.length).toBeGreaterThan(0);
+    expect(mockCopilotClient.send).toHaveBeenCalled();
+
+    await client.close();
+  });
+
+  it('should perform aiExtract() with custom AI backend', async () => {
+    mockClaudeCodeClient.generate.mockResolvedValueOnce(
+      JSON.stringify({
+        products: [
+          { name: 'Widget A', price: 29.99 },
+          { name: 'Widget B', price: 49.99 },
+        ],
+      })
+    );
+
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'claude-code',
+      aiClient: mockClaudeCodeClient,
+    });
+
+    await client.launch();
+
+    const result = await client.aiExtract({
+      instruction: 'Extract all product names and prices',
+      schema: {
+        type: 'object',
+        properties: {
+          products: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                price: { type: 'number' },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(result).toBeDefined();
+    expect(mockClaudeCodeClient.generate).toHaveBeenCalled();
+
+    await client.close();
+  });
+
+  it('should fall back to Stagehand when no custom AI backend configured', async () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      // No aiBackend specified - should fall back to Stagehand
+    });
+
+    // Don't launch browser in CI - just verify the config is set up correctly
+    expect(client.isAIEnabled()).toBe(true);
+
+    // This would try to use Stagehand if we actually launched and called act()
+    // But we skip the actual execution in tests since Stagehand requires API keys
+  });
+
+  it('should throw error when AI client not provided', async () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiBackend: 'copilot',
+      // No aiClient provided
+    });
+
+    await client.launch();
+
+    await expect(client.act({ instruction: 'Click button' }))
+      .rejects.toThrow('AI client not provided');
+
+    await client.close();
+  });
+});
+
+// ============================================================================
 // Workflow Integration Tests (Session + AI)
 // ============================================================================
 

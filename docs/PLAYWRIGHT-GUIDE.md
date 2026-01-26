@@ -943,19 +943,80 @@ steps:
 ```
 ```
 
-## AI-Powered Automation (Stagehand)
+## AI-Powered Automation
 
-marktoflow integrates with [Stagehand](https://stagehand.dev/) to provide AI-powered browser automation. Stagehand uses vision and language models to understand and interact with web pages using natural language.
+marktoflow supports AI-powered browser automation using either:
 
-### Installation
+1. **Custom AI Backend** - Use your existing GitHub Copilot or Claude Code SDK (no additional API costs)
+2. **Stagehand** - External AI automation service (requires separate API keys)
 
-Stagehand is an optional dependency. Install it separately:
+### Option 1: Custom AI Backend (Recommended)
+
+Use your existing GitHub Copilot or Claude Code integrations without additional API costs.
+
+**Advantages:**
+- No additional API costs beyond your existing Copilot/Claude subscription
+- Native TypeScript integration
+- Consistent with marktoflow's SDK-first philosophy
+- Lower latency (direct client communication)
+
+**Configuration:**
+
+```yaml
+---
+workflow:
+  id: ai-browser-automation
+  name: 'AI Browser Automation'
+
+tools:
+  # Initialize your AI client first
+  copilot:
+    sdk: '@github/copilot-sdk'
+    options:
+      model: 'gpt-4.1'
+
+  # Configure Playwright with custom AI backend
+  browser:
+    sdk: 'playwright'
+    options:
+      headless: true
+      enableAI: true
+      aiBackend: 'copilot'  # or 'claude-code'
+      aiClient: '{{ tools.copilot }}'  # Reference to initialized AI client
+      aiDebug: false
+---
+```
+
+**With Claude Code:**
+
+```yaml
+tools:
+  claude:
+    sdk: 'claude-code'
+    options:
+      model: 'claude-sonnet-4'
+
+  browser:
+    sdk: 'playwright'
+    options:
+      enableAI: true
+      aiBackend: 'claude-code'
+      aiClient: '{{ tools.claude }}'
+```
+
+**No Additional Setup Required** - Uses your existing GitHub Copilot subscription or Claude Code CLI.
+
+### Option 2: Stagehand (Legacy)
+
+Stagehand is an external AI automation service that uses vision and language models.
+
+**Installation:**
 
 ```bash
 npm install @browserbasehq/stagehand
 ```
 
-### Configuration
+**Configuration:**
 
 ```yaml
 tools:
@@ -964,13 +1025,14 @@ tools:
     options:
       headless: true
       enableAI: true
+      aiBackend: 'stagehand'  # Optional: defaults to stagehand if not specified
       aiProvider: 'openai'           # openai | anthropic
       aiModel: 'gpt-4o'              # or 'claude-sonnet-4-20250514'
       aiApiKey: '${OPENAI_API_KEY}'  # or ANTHROPIC_API_KEY
       aiDebug: false
 ```
 
-### Environment Variables
+**Environment Variables:**
 
 ```bash
 # For OpenAI
@@ -1092,7 +1154,7 @@ output_variable: products
 }
 ```
 
-### Example: AI-Powered Form Filling
+### Example: AI-Powered Form Filling (Custom Backend)
 
 ```yaml
 ---
@@ -1101,12 +1163,18 @@ workflow:
   name: 'AI-Powered Form Automation'
 
 tools:
+  copilot:
+    sdk: '@github/copilot-sdk'
+    options:
+      model: 'gpt-4.1'
+
   browser:
     sdk: 'playwright'
     options:
+      headless: true
       enableAI: true
-      aiProvider: 'openai'
-      aiModel: 'gpt-4o'
+      aiBackend: 'copilot'
+      aiClient: '{{ tools.copilot }}'
 
 inputs:
   userInfo:
@@ -1126,41 +1194,41 @@ inputs:
 ```yaml
 action: browser.act
 inputs:
-  action: 'Fill the first name field with "{{ inputs.userInfo.firstName }}"'
+  instruction: 'Fill the first name field with "{{ inputs.userInfo.firstName }}"'
 ```
 
 ```yaml
 action: browser.act
 inputs:
-  action: 'Fill the last name field with "{{ inputs.userInfo.lastName }}"'
+  instruction: 'Fill the last name field with "{{ inputs.userInfo.lastName }}"'
 ```
 
 ```yaml
 action: browser.act
 inputs:
-  action: 'Fill the email field with "{{ inputs.userInfo.email }}"'
+  instruction: 'Fill the email field with "{{ inputs.userInfo.email }}"'
 ```
 
 ```yaml
 action: browser.act
 inputs:
-  action: 'Select "{{ inputs.userInfo.country }}" from the country dropdown'
+  instruction: 'Select "{{ inputs.userInfo.country }}" from the country dropdown'
 ```
 
 ```yaml
 action: browser.act
 inputs:
-  action: 'Click the checkbox to accept terms and conditions'
+  instruction: 'Click the checkbox to accept terms and conditions'
 ```
 
 ```yaml
 action: browser.act
 inputs:
-  action: 'Click the Submit button'
+  instruction: 'Click the Submit button'
 ```
 ```
 
-### Example: AI-Powered Data Extraction
+### Example: AI-Powered Data Extraction (Custom Backend)
 
 ```yaml
 ---
@@ -1169,12 +1237,18 @@ workflow:
   name: 'AI-Powered Web Scraper'
 
 tools:
+  claude:
+    sdk: 'claude-code'
+    options:
+      model: 'claude-sonnet-4'
+
   browser:
     sdk: 'playwright'
     options:
+      headless: true
       enableAI: true
-      aiProvider: 'anthropic'
-      aiModel: 'claude-sonnet-4-20250514'
+      aiBackend: 'claude-code'
+      aiClient: '{{ tools.claude }}'
 ---
 
 ## Navigate to Page
@@ -1215,6 +1289,21 @@ action: browser.close
 ```
 ```
 
+### Choosing Between Custom Backend and Stagehand
+
+**Use Custom AI Backend (Copilot/Claude Code) when:**
+- You already have GitHub Copilot or Claude Code subscriptions
+- You want to minimize API costs (no additional charges)
+- You prefer native TypeScript integration
+- You want faster response times (direct SDK communication)
+- You're comfortable with text-only AI reasoning (no vision capabilities yet)
+
+**Use Stagehand when:**
+- You need vision-based element recognition
+- You require production-tested browser automation patterns
+- You don't have Copilot or Claude subscriptions
+- You prefer specialized browser automation AI
+
 ### When to Use AI Automation
 
 **Use AI (`browser.act`, `browser.aiExtract`) when:**
@@ -1228,6 +1317,16 @@ action: browser.close
 - Performance is critical (AI adds latency)
 - Actions are simple and repetitive
 - Cost optimization is important (AI uses tokens)
+
+### Custom AI Backend Limitations
+
+The custom AI backend currently has these limitations compared to Stagehand:
+
+1. **No Vision Support** - Uses text-based HTML analysis instead of visual element recognition
+2. **Less Specialized** - General-purpose LLMs vs Stagehand's browser-specific models
+3. **Reliability** - May require more prompt tuning for complex scenarios
+
+However, for most automation tasks involving forms, navigation, and data extraction, the custom backend works well and saves costs.
 
 ## Examples
 
