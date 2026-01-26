@@ -31,6 +31,7 @@
     "@marktoflow/core": "workspace:*",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@octokit/rest": "^22.0.1",
+    "@openai/codex-sdk": "^0.91.0",
     "@opencode-ai/sdk": "^1.1.34",
     "@slack/bolt": "^4.0.0",
     "@slack/web-api": "^7.8.0",

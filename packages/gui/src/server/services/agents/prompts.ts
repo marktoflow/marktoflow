@@ -142,6 +142,33 @@ export const AVAILABLE_SERVICES = {
     description: 'Local Ollama LLM for AI tasks',
     commonActions: ['generate', 'chat', 'embeddings'],
   },
+  codex: {
+    sdk: '@openai/codex-sdk',
+    description: 'OpenAI Codex for AI-powered coding workflows',
+    commonActions: [
+      'chat',
+      'codeModify',
+      'codeAnalyze',
+      'codeReview',
+      'webSearch',
+      'execute',
+      'structured',
+      'resume',
+      'withImages',
+    ],
+  },
+  copilot: {
+    sdk: '@github/copilot-sdk',
+    description: 'GitHub Copilot for AI code assistance',
+    commonActions: [
+      'chat',
+      'codeReview',
+      'codeModify',
+      'withTools',
+      'withAgents',
+      'withMcp',
+    ],
+  },
 } as const;
 
 // Base system prompt with comprehensive context

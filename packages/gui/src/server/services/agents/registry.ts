@@ -14,6 +14,7 @@ import type {
 import { createClaudeProvider } from './claude-provider.js';
 import { createClaudeCodeProvider } from './claude-code-provider.js';
 import { createCopilotProvider } from './copilot-provider.js';
+import { createCodexProvider } from './codex-provider.js';
 import { createDemoProvider } from './demo-provider.js';
 import { createOllamaProvider } from './ollama-provider.js';
 
@@ -37,6 +38,11 @@ export class AgentRegistry {
       id: 'copilot',
       name: 'GitHub Copilot (SDK)',
       factory: createCopilotProvider,
+    });
+    this.registerProvider({
+      id: 'codex',
+      name: 'OpenAI Codex (SDK)',
+      factory: createCodexProvider,
     });
     // API key-based providers
     this.registerProvider({
@@ -150,6 +156,21 @@ export class AgentRegistry {
       if (copilotProvider.isReady()) {
         this.activeProviderId = 'copilot';
         return 'copilot';
+      }
+    }
+
+    // Try OpenAI Codex SDK (uses OPENAI_API_KEY)
+    const codexProvider = this.providers.get('codex');
+    if (codexProvider) {
+      await codexProvider.initialize({
+        apiKey: process.env.OPENAI_API_KEY,
+        options: {
+          cwd: process.cwd(),
+        },
+      });
+      if (codexProvider.isReady()) {
+        this.activeProviderId = 'codex';
+        return 'codex';
       }
     }
 
