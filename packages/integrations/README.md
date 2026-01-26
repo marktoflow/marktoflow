@@ -10,27 +10,36 @@ Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, an
 
 ## Features
 
-### Service Integrations (11)
+### Service Integrations (20)
 
 - **Slack** - Send messages, manage channels, socket mode
 - **GitHub** - Create PRs, issues, comments, manage repos
 - **Jira** - Create/update issues, transitions, search
 - **Gmail** - Send emails, read inbox, manage labels, webhook triggers
 - **Outlook** - Send emails, read calendar/inbox, webhook triggers
+- **Google Sheets** - Spreadsheet operations, read/write data
+- **Google Calendar** - Calendar events, scheduling
+- **Google Drive** - File storage and management
+- **Google Docs** - Document creation and editing
 - **Linear** - Issue tracking and project management
 - **Notion** - Database operations, page management
 - **Discord** - Bot interactions, message management
 - **Airtable** - Spreadsheet database operations
 - **Confluence** - Wiki page management
+- **Telegram** - Bot messaging and interactions
+- **WhatsApp** - Business messaging API
+- **Supabase** - PostgreSQL database with real-time subscriptions
+- **PostgreSQL** - Direct PostgreSQL database access
+- **MySQL** - Direct MySQL database access
 - **HTTP** - Generic HTTP requests with auth
 
-### AI Agent Adapters (4)
+### AI Agent Adapters (5)
 
 - **Ollama** - Local LLM integration
-- **Claude Code** - Anthropic Claude integration
+- **Claude Agent** - Anthropic Claude Agent SDK integration
+- **Claude Code** - Anthropic Claude Code CLI integration
 - **OpenCode** - OpenCode AI integration
-- **GitHub Copilot** - GitHub Copilot CLI integration
-- **GitHub Copilot** - GitHub Copilot CLI integration
+- **GitHub Copilot** - GitHub Copilot SDK integration
 
 ## Installation
 
@@ -328,6 +337,231 @@ export CONFLUENCE_API_TOKEN=your-token
 - `updatePage` - Update page
 - `deletePage` - Delete page
 
+### Google Sheets
+
+Spreadsheet operations for Google Sheets.
+
+**Setup**:
+
+```bash
+export GOOGLE_SHEETS_CLIENT_ID=your-client-id
+export GOOGLE_SHEETS_CLIENT_SECRET=your-secret
+export GOOGLE_SHEETS_REFRESH_TOKEN=your-refresh-token
+```
+
+**Actions**:
+
+- `getSpreadsheet` - Get spreadsheet metadata
+- `getValues` - Read cell values
+- `updateValues` - Update cell values
+- `appendValues` - Append rows to sheet
+
+**Example**:
+
+```yaml
+action: google-sheets.updateValues
+inputs:
+  spreadsheetId: '1BxiMVs0XRA5...'
+  range: 'Sheet1!A1:B2'
+  values:
+    - [Name, Email]
+    - [John Doe, john@example.com]
+```
+
+### Google Calendar
+
+Calendar event management.
+
+**Setup**:
+
+```bash
+export GOOGLE_CALENDAR_CLIENT_ID=your-client-id
+export GOOGLE_CALENDAR_CLIENT_SECRET=your-secret
+export GOOGLE_CALENDAR_REFRESH_TOKEN=your-refresh-token
+```
+
+**Actions**:
+
+- `listEvents` - List calendar events
+- `createEvent` - Create calendar event
+- `updateEvent` - Update event
+- `deleteEvent` - Delete event
+
+**Example**:
+
+```yaml
+action: google-calendar.createEvent
+inputs:
+  calendarId: primary
+  summary: 'Team Meeting'
+  start:
+    dateTime: '2024-01-25T14:00:00-07:00'
+  end:
+    dateTime: '2024-01-25T15:00:00-07:00'
+```
+
+### Google Drive
+
+File storage and management.
+
+**Setup**:
+
+```bash
+export GOOGLE_DRIVE_CLIENT_ID=your-client-id
+export GOOGLE_DRIVE_CLIENT_SECRET=your-secret
+export GOOGLE_DRIVE_REFRESH_TOKEN=your-refresh-token
+```
+
+**Actions**:
+
+- `listFiles` - List files in Drive
+- `getFile` - Get file metadata
+- `uploadFile` - Upload file
+- `downloadFile` - Download file
+- `deleteFile` - Delete file
+
+### Google Docs
+
+Document creation and editing.
+
+**Setup**:
+
+```bash
+export GOOGLE_DOCS_CLIENT_ID=your-client-id
+export GOOGLE_DOCS_CLIENT_SECRET=your-secret
+export GOOGLE_DOCS_REFRESH_TOKEN=your-refresh-token
+```
+
+**Actions**:
+
+- `getDocument` - Get document content
+- `createDocument` - Create new document
+- `updateDocument` - Batch update document
+- `appendText` - Append text to document
+
+### Telegram
+
+Telegram bot messaging.
+
+**Setup**:
+
+```bash
+export TELEGRAM_BOT_TOKEN=your-bot-token
+```
+
+**Actions**:
+
+- `sendMessage` - Send message to chat
+- `sendPhoto` - Send photo
+- `sendDocument` - Send document
+- `getUpdates` - Get bot updates
+
+**Example**:
+
+```yaml
+action: telegram.sendMessage
+inputs:
+  chatId: '123456789'
+  text: 'Hello from marktoflow!'
+```
+
+### WhatsApp
+
+WhatsApp Business API messaging.
+
+**Setup**:
+
+```bash
+export WHATSAPP_PHONE_NUMBER_ID=your-phone-id
+export WHATSAPP_ACCESS_TOKEN=your-access-token
+```
+
+**Actions**:
+
+- `sendMessage` - Send text message
+- `sendTemplate` - Send message template
+- `sendMedia` - Send media (image, video, document)
+
+**Example**:
+
+```yaml
+action: whatsapp.sendMessage
+inputs:
+  to: '+1234567890'
+  text: 'Hello from marktoflow!'
+```
+
+### Supabase
+
+PostgreSQL database with real-time capabilities.
+
+**Setup**:
+
+```bash
+export SUPABASE_URL=https://your-project.supabase.co
+export SUPABASE_KEY=your-anon-key
+```
+
+**Actions**:
+
+- `select` - Query records
+- `insert` - Insert records
+- `update` - Update records
+- `delete` - Delete records
+- `rpc` - Call stored procedure
+
+**Example**:
+
+```yaml
+action: supabase.select
+inputs:
+  table: users
+  filters:
+    email: 'eq.user@example.com'
+```
+
+### PostgreSQL
+
+Direct PostgreSQL database access.
+
+**Setup**:
+
+```bash
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5432
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=your-password
+export POSTGRES_DATABASE=mydb
+```
+
+**Actions**:
+
+- `query` - Execute SQL query
+- `insert` - Insert records
+- `update` - Update records
+- `delete` - Delete records
+
+### MySQL
+
+Direct MySQL database access.
+
+**Setup**:
+
+```bash
+export MYSQL_HOST=localhost
+export MYSQL_PORT=3306
+export MYSQL_USER=root
+export MYSQL_PASSWORD=your-password
+export MYSQL_DATABASE=mydb
+```
+
+**Actions**:
+
+- `query` - Execute SQL query
+- `insert` - Insert records
+- `update` - Update records
+- `delete` - Delete records
+
 ### HTTP
 
 Generic HTTP requests with authentication.
@@ -375,9 +609,9 @@ steps:
       prompt: 'Explain quantum computing'
 ```
 
-### Claude Code
+### Claude Agent
 
-Anthropic Claude integration.
+Anthropic Claude Agent SDK integration with agentic workflows.
 
 **Setup**:
 
@@ -385,15 +619,68 @@ Anthropic Claude integration.
 export ANTHROPIC_API_KEY=sk-ant-your-key
 ```
 
-### OpenCode
+**Features**:
 
-OpenCode AI integration.
+- Multi-turn conversations with memory
+- Tool calling and custom tools
+- Streaming responses
+- Extended thinking mode
+
+**Example**:
+
+```yaml
+tools:
+  claude:
+    adapter: claude-agent
+    config:
+      model: claude-3-5-sonnet-20241022
+
+steps:
+  - action: claude.send
+    inputs:
+      prompt: 'Analyze this codebase'
+      tools:
+        - name: read_file
+          description: Read file contents
+    output_variable: analysis
+```
+
+### Claude Code
+
+Anthropic Claude Code CLI integration.
 
 **Setup**:
 
 ```bash
-export OPENCODE_API_KEY=your-key
+# Install Claude Code CLI
+# Follow: https://github.com/anthropics/claude-code
+
+export ANTHROPIC_API_KEY=sk-ant-your-key
 ```
+
+**Features**:
+
+- File-based context awareness
+- Native MCP server integration
+- Extended reasoning capabilities
+
+### OpenCode
+
+OpenCode AI integration supporting 75+ backends.
+
+**Setup**:
+
+```bash
+# Configure OpenCode
+opencode /connect
+```
+
+**Features**:
+
+- GitHub Copilot backend (free with subscription)
+- Ollama for local models
+- Multiple cloud providers
+- CLI and server modes
 
 ### GitHub Copilot
 

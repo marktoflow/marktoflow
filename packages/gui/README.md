@@ -1,5 +1,7 @@
 # @marktoflow/gui
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 Visual workflow designer for marktoflow - a web-based drag-and-drop editor with AI-powered assistance.
 
 ## Features
@@ -176,4 +178,4 @@ pnpm test
 
 ## License
 
-MIT
+Apache-2.0

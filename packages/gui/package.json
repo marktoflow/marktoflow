@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "description": "Visual workflow designer for marktoflow - n8n-inspired web UI",
   "type": "module",
   "main": "./dist/server/index.js",
@@ -92,5 +92,5 @@
     "automation"
   ],
   "author": "Scott Gilroy",
-  "license": "MIT"
+  "license": "Apache-2.0"
 }
