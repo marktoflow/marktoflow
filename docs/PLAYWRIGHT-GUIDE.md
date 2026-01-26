@@ -8,6 +8,8 @@ marktoflow integrates with [Playwright](https://playwright.dev/) to provide powe
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Actions Reference](#actions-reference)
+- [Session Management](#session-management)
+- [AI-Powered Automation (Stagehand)](#ai-powered-automation-stagehand)
 - [Examples](#examples)
 - [Cloud Browser Services](#cloud-browser-services)
 - [Best Practices](#best-practices)
@@ -144,6 +146,19 @@ tools:
 
       # Connect to remote browser
       ws_endpoint: 'ws://browserless:3000'
+
+      # Session Persistence
+      sessionId: 'my-session'          # Named session identifier
+      sessionsDir: '/tmp/sessions'     # Directory for session storage
+      storageState: '/path/state.json' # Direct path to storage state
+      autoSaveSession: true            # Auto-save on close
+
+      # AI-Powered Automation (Stagehand)
+      enableAI: true                   # Enable Stagehand AI
+      aiProvider: 'openai'             # openai | anthropic
+      aiModel: 'gpt-4o'                # Model to use
+      aiApiKey: '${OPENAI_API_KEY}'    # API key (or use env var)
+      aiDebug: false                   # Enable debug logging
 ```
 
 ### Device Emulation
@@ -743,6 +758,476 @@ Close the browser.
 action: browser.close
 inputs: {}
 ```
+
+## Session Management
+
+Session management allows you to persist browser state (cookies, localStorage, sessionStorage) across workflow runs. This is useful for:
+
+- Maintaining login sessions across multiple workflows
+- Avoiding repeated authentication
+- Storing user preferences and state
+
+### Configuration
+
+```yaml
+tools:
+  browser:
+    sdk: 'playwright'
+    options:
+      # Named session (recommended)
+      sessionId: 'my-session'
+      sessionsDir: '/tmp/browser-sessions'
+      autoSaveSession: true
+
+      # Or direct path
+      storageState: '/path/to/state.json'
+```
+
+### Actions
+
+#### `browser.saveSession`
+
+Save the current browser state to a file.
+
+```yaml
+action: browser.saveSession
+inputs:
+  sessionId: 'user-session'  # Optional: session name (uses config default)
+output_variable: result
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "path": "/tmp/browser-sessions/user-session.json"
+}
+```
+
+#### `browser.loadSession`
+
+Load a previously saved session.
+
+```yaml
+action: browser.loadSession
+inputs:
+  sessionId: 'user-session'  # Session name or full path
+output_variable: result
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "path": "/tmp/browser-sessions/user-session.json"
+}
+```
+
+#### `browser.listSessions`
+
+List all saved sessions.
+
+```yaml
+action: browser.listSessions
+inputs: {}
+output_variable: sessions
+```
+
+**Output:**
+```json
+{
+  "sessions": [
+    {
+      "id": "user-session",
+      "path": "/tmp/browser-sessions/user-session.json",
+      "modified": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+#### `browser.deleteSession`
+
+Delete a saved session.
+
+```yaml
+action: browser.deleteSession
+inputs:
+  sessionId: 'user-session'
+output_variable: result
+```
+
+#### `browser.hasSession`
+
+Check if a session exists.
+
+```yaml
+action: browser.hasSession
+inputs:
+  sessionId: 'user-session'
+output_variable: exists
+```
+
+**Output:**
+```json
+{
+  "exists": true,
+  "path": "/tmp/browser-sessions/user-session.json"
+}
+```
+
+### Example: Login Once, Reuse Session
+
+```yaml
+---
+workflow:
+  id: session-example
+  name: 'Session Management Example'
+
+tools:
+  browser:
+    sdk: 'playwright'
+    options:
+      headless: true
+      sessionId: 'my-app-session'
+      sessionsDir: '/tmp/sessions'
+---
+
+## Check for Existing Session
+
+```yaml
+action: browser.hasSession
+inputs:
+  sessionId: 'my-app-session'
+output_variable: sessionCheck
+```
+
+## Load Session if Exists
+
+```yaml
+condition: sessionCheck.exists
+action: browser.loadSession
+inputs:
+  sessionId: 'my-app-session'
+```
+
+## Navigate to App
+
+```yaml
+action: browser.navigate
+inputs:
+  url: 'https://myapp.com/dashboard'
+```
+
+## Login if Needed (no session)
+
+```yaml
+condition: "!sessionCheck.exists"
+type: group
+steps:
+  - action: browser.navigate
+    inputs:
+      url: 'https://myapp.com/login'
+  - action: browser.fillForm
+    inputs:
+      fields:
+        email: '{{ inputs.email }}'
+        password: '{{ inputs.password }}'
+      submit: true
+  - action: browser.wait
+    inputs:
+      url: '/dashboard'
+  - action: browser.saveSession
+    inputs:
+      sessionId: 'my-app-session'
+```
+```
+
+## AI-Powered Automation (Stagehand)
+
+marktoflow integrates with [Stagehand](https://stagehand.dev/) to provide AI-powered browser automation. Stagehand uses vision and language models to understand and interact with web pages using natural language.
+
+### Installation
+
+Stagehand is an optional dependency. Install it separately:
+
+```bash
+npm install @browserbasehq/stagehand
+```
+
+### Configuration
+
+```yaml
+tools:
+  browser:
+    sdk: 'playwright'
+    options:
+      headless: true
+      enableAI: true
+      aiProvider: 'openai'           # openai | anthropic
+      aiModel: 'gpt-4o'              # or 'claude-sonnet-4-20250514'
+      aiApiKey: '${OPENAI_API_KEY}'  # or ANTHROPIC_API_KEY
+      aiDebug: false
+```
+
+### Environment Variables
+
+```bash
+# For OpenAI
+export OPENAI_API_KEY="sk-..."
+
+# For Anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+### Actions
+
+#### `browser.act`
+
+Perform an action described in natural language.
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Click the login button'
+output_variable: result
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Clicked the login button",
+  "action": "Click the login button"
+}
+```
+
+**More Examples:**
+
+```yaml
+# Fill a form field
+action: browser.act
+inputs:
+  action: 'Type "john@example.com" into the email field'
+
+# Navigate
+action: browser.act
+inputs:
+  action: 'Click on "Products" in the navigation menu'
+
+# Complex interactions
+action: browser.act
+inputs:
+  action: 'Select "Large" from the size dropdown and click Add to Cart'
+```
+
+#### `browser.observe`
+
+Observe the current page and identify available actions.
+
+```yaml
+action: browser.observe
+inputs:
+  instruction: 'Find all interactive elements in the form'
+output_variable: elements
+```
+
+**Output:**
+```json
+{
+  "elements": [
+    {
+      "selector": "#email",
+      "description": "Email input field",
+      "action": "fill"
+    },
+    {
+      "selector": "#password",
+      "description": "Password input field",
+      "action": "fill"
+    },
+    {
+      "selector": "#submit",
+      "description": "Submit button",
+      "action": "click"
+    }
+  ]
+}
+```
+
+#### `browser.aiExtract`
+
+Extract structured data using AI vision and understanding.
+
+```yaml
+action: browser.aiExtract
+inputs:
+  instruction: 'Extract all product information from this page'
+  schema:
+    type: object
+    properties:
+      products:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            price:
+              type: number
+            inStock:
+              type: boolean
+output_variable: products
+```
+
+**Output:**
+```json
+{
+  "data": {
+    "products": [
+      { "name": "Widget A", "price": 29.99, "inStock": true },
+      { "name": "Widget B", "price": 49.99, "inStock": false }
+    ]
+  }
+}
+```
+
+### Example: AI-Powered Form Filling
+
+```yaml
+---
+workflow:
+  id: ai-form-fill
+  name: 'AI-Powered Form Automation'
+
+tools:
+  browser:
+    sdk: 'playwright'
+    options:
+      enableAI: true
+      aiProvider: 'openai'
+      aiModel: 'gpt-4o'
+
+inputs:
+  userInfo:
+    type: object
+---
+
+## Navigate to Form
+
+```yaml
+action: browser.navigate
+inputs:
+  url: 'https://example.com/registration'
+```
+
+## Fill Form with AI
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Fill the first name field with "{{ inputs.userInfo.firstName }}"'
+```
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Fill the last name field with "{{ inputs.userInfo.lastName }}"'
+```
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Fill the email field with "{{ inputs.userInfo.email }}"'
+```
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Select "{{ inputs.userInfo.country }}" from the country dropdown'
+```
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Click the checkbox to accept terms and conditions'
+```
+
+```yaml
+action: browser.act
+inputs:
+  action: 'Click the Submit button'
+```
+```
+
+### Example: AI-Powered Data Extraction
+
+```yaml
+---
+workflow:
+  id: ai-scraper
+  name: 'AI-Powered Web Scraper'
+
+tools:
+  browser:
+    sdk: 'playwright'
+    options:
+      enableAI: true
+      aiProvider: 'anthropic'
+      aiModel: 'claude-sonnet-4-20250514'
+---
+
+## Navigate to Page
+
+```yaml
+action: browser.navigate
+inputs:
+  url: 'https://news.ycombinator.com'
+```
+
+## Extract Headlines with AI
+
+```yaml
+action: browser.aiExtract
+inputs:
+  instruction: 'Extract the top 10 news headlines with their URLs and point scores'
+  schema:
+    type: object
+    properties:
+      headlines:
+        type: array
+        items:
+          type: object
+          properties:
+            title:
+              type: string
+            url:
+              type: string
+            points:
+              type: number
+output_variable: news
+```
+
+## Close Browser
+
+```yaml
+action: browser.close
+```
+```
+
+### When to Use AI Automation
+
+**Use AI (`browser.act`, `browser.aiExtract`) when:**
+- Page structure is unknown or changes frequently
+- Elements don't have stable selectors
+- Complex multi-step interactions are needed
+- Natural language is more intuitive
+
+**Use standard Playwright actions when:**
+- You know the exact selectors
+- Performance is critical (AI adds latency)
+- Actions are simple and repetitive
+- Cost optimization is important (AI uses tokens)
 
 ## Examples
 
