@@ -1,6 +1,6 @@
 {
   "name": "marktoflow",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-alpha.8",
   "description": "Universal automation framework with native MCP support and direct SDK integration",
   "private": true,
   "type": "module",

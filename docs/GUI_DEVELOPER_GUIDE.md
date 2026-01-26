@@ -463,6 +463,385 @@ function createCustomNode(step: Step): Node {
 
 ---
 
+## Control Flow Node Components
+
+marktoflow v2.0.0-alpha.8 includes 7 built-in control flow node components for the visual workflow designer.
+
+### Node Component Architecture
+
+All control flow nodes follow a consistent pattern:
+
+```typescript
+import { memo } from 'react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import { IconName, CheckCircle, XCircle, Clock } from 'lucide-react';
+
+export interface NodeData extends Record<string, unknown> {
+  id: string;
+  name?: string;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  // ... type-specific properties
+}
+
+export type NodeType = Node<NodeData, 'node_type'>;
+
+function NodeComponent({ data, selected }: NodeProps<NodeType>) {
+  // Status configuration
+  const statusConfig: Record<NonNullable<NodeData['status']>, Config> = {
+    pending: { icon: Clock, color: 'text-gray-400', bgColor: 'bg-gray-400/10' },
+    running: { icon: IconName, color: 'text-color', bgColor: 'bg-color/10', animate: true },
+    completed: { icon: CheckCircle, color: 'text-success', bgColor: 'bg-success/10' },
+    failed: { icon: XCircle, color: 'text-error', bgColor: 'bg-error/10' },
+    skipped: { icon: XCircle, color: 'text-gray-500', bgColor: 'bg-gray-500/10' },
+  };
+
+  return (
+    <div className={`control-flow-node ${selected ? 'selected' : ''}`}
+         style={{ background: 'linear-gradient(...)' }}>
+      {/* Input handle */}
+      <Handle type="target" position={Position.Top} />
+
+      {/* Header */}
+      <div className="flex items-center gap-3 p-3">
+        <div className="w-8 h-8 rounded-lg bg-white/20">
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-medium text-white">{data.name}</div>
+          <div className="text-xs text-white/70">Type Description</div>
+        </div>
+        <StatusIcon className={animate ? 'animate-pulse' : ''} />
+      </div>
+
+      {/* Body */}
+      <div className="p-3 bg-white/10">
+        {/* Type-specific content */}
+      </div>
+
+      {/* Output handle(s) */}
+      <Handle type="source" position={Position.Bottom} />
+    </div>
+  );
+}
+
+export const NodeName = memo(NodeComponent);
+```
+
+### Control Flow Nodes Reference
+
+#### 1. IfElseNode
+
+**File:** `src/client/components/Canvas/IfElseNode.tsx`
+
+**Features:**
+- Dual output handles (then/else) at 33% and 67% positions
+- Condition display with monospace font
+- Active branch highlighting (green for then, red for else)
+- Purple gradient design (#667eea → #764ba2)
+
+**Data Interface:**
+```typescript
+interface IfElseNodeData {
+  id: string;
+  name?: string;
+  condition: string;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  activeBranch?: 'then' | 'else' | null;
+}
+```
+
+**Usage:**
+```typescript
+const ifNode: Node<IfElseNodeData, 'if'> = {
+  id: 'if-1',
+  type: 'if',
+  position: { x: 100, y: 100 },
+  data: {
+    id: 'if-1',
+    name: 'Check Count',
+    condition: '{{ count > 0 }}',
+    status: 'running',
+    activeBranch: 'then',
+  },
+};
+```
+
+#### 2. ForEachNode
+
+**File:** `src/client/components/Canvas/ForEachNode.tsx`
+
+**Features:**
+- Iteration progress bar with percentage
+- Current/total iterations display
+- Loop metadata info (index, first, last, length)
+- Pink/red gradient design (#f093fb → #f5576c)
+
+**Data Interface:**
+```typescript
+interface ForEachNodeData {
+  id: string;
+  name?: string;
+  items: string;
+  itemVariable?: string;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  currentIteration?: number;
+  totalIterations?: number;
+}
+```
+
+#### 3. WhileNode
+
+**File:** `src/client/components/Canvas/WhileNode.tsx`
+
+**Features:**
+- Condition and max iterations display
+- Current iteration progress bar
+- Warning message about exit condition
+- Orange gradient design (#fb923c → #f97316)
+
+**Data Interface:**
+```typescript
+interface WhileNodeData {
+  id: string;
+  name?: string;
+  condition: string;
+  maxIterations?: number;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  currentIteration?: number;
+}
+```
+
+#### 4. SwitchNode
+
+**File:** `src/client/components/Canvas/SwitchNode.tsx`
+
+**Features:**
+- Dynamic case list (shows up to 4 cases, then "+N more")
+- Multiple output handles (one per case + default)
+- Expression display
+- Active case highlighting with ring effect
+- Purple/magenta gradient design (#a855f7 → #ec4899)
+
+**Data Interface:**
+```typescript
+interface SwitchNodeData {
+  id: string;
+  name?: string;
+  expression: string;
+  cases: Record<string, unknown>;
+  hasDefault?: boolean;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  activeCase?: string | null;
+}
+```
+
+#### 5. ParallelNode
+
+**File:** `src/client/components/Canvas/ParallelNode.tsx`
+
+**Features:**
+- Branch status indicators (active/completed)
+- Shows up to 6 branches, then "+N more"
+- Max concurrent limit badge
+- On-error policy display
+- Blue/cyan gradient design (#4facfe → #00f2fe)
+
+**Data Interface:**
+```typescript
+interface ParallelNodeData {
+  id: string;
+  name?: string;
+  branches: Array<{ id: string; name?: string }>;
+  maxConcurrent?: number;
+  onError?: 'stop' | 'continue';
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  activeBranches?: string[];
+  completedBranches?: string[];
+}
+```
+
+#### 6. TryCatchNode
+
+**File:** `src/client/components/Canvas/TryCatchNode.tsx`
+
+**Features:**
+- Three branch indicators (try/catch/finally)
+- Error indicator with AlertTriangle icon
+- Three output handles at 25%, 50%, 75%
+- Info note that finally always executes
+- Yellow/orange gradient design (#fbbf24 → #f59e0b)
+
+**Data Interface:**
+```typescript
+interface TryCatchNodeData {
+  id: string;
+  name?: string;
+  hasCatch?: boolean;
+  hasFinally?: boolean;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  activeBranch?: 'try' | 'catch' | 'finally' | null;
+  errorOccurred?: boolean;
+}
+```
+
+#### 7. TransformNode
+
+**File:** `src/client/components/Canvas/TransformNode.tsx`
+
+**Features:**
+- Unified component for map/filter/reduce
+- Type-specific icons (ArrowRight, Filter, Minimize2)
+- Expression/condition preview
+- Input/output count display
+- Teal/cyan gradient design (#14b8a6 → #06b6d4)
+
+**Data Interface:**
+```typescript
+interface TransformNodeData {
+  id: string;
+  name?: string;
+  transformType: 'map' | 'filter' | 'reduce';
+  items: string;
+  itemVariable?: string;
+  expression?: string;
+  condition?: string;
+  accumulatorVariable?: string;
+  initialValue?: unknown;
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  inputCount?: number;
+  outputCount?: number;
+}
+```
+
+### Node Registration
+
+Control flow nodes are registered in `Canvas.tsx`:
+
+```typescript
+import { IfElseNode, ForEachNode, WhileNode, SwitchNode,
+         ParallelNode, TryCatchNode, TransformNode } from './Canvas';
+
+const nodeTypes = {
+  // Standard nodes
+  step: StepNode,
+  subworkflow: SubWorkflowNode,
+  trigger: TriggerNode,
+  output: OutputNode,
+
+  // Control flow nodes
+  if: IfElseNode,
+  for_each: ForEachNode,
+  while: WhileNode,
+  switch: SwitchNode,
+  parallel: ParallelNode,
+  try: TryCatchNode,
+
+  // Transform nodes (all use TransformNode component)
+  map: TransformNode,
+  filter: TransformNode,
+  reduce: TransformNode,
+};
+```
+
+### Design System
+
+All control flow nodes follow a consistent design system:
+
+**Color Scheme:**
+```typescript
+const controlFlowColors = {
+  if: { gradient: '#667eea → #764ba2', name: 'Purple' },
+  switch: { gradient: '#a855f7 → #ec4899', name: 'Purple/Magenta' },
+  for_each: { gradient: '#f093fb → #f5576c', name: 'Pink/Red' },
+  while: { gradient: '#fb923c → #f97316', name: 'Orange' },
+  parallel: { gradient: '#4facfe → #00f2fe', name: 'Blue/Cyan' },
+  try: { gradient: '#fbbf24 → #f59e0b', name: 'Yellow/Orange' },
+  transform: { gradient: '#14b8a6 → #06b6d4', name: 'Teal/Cyan' },
+};
+```
+
+**Status Indicators:**
+- Pending: Clock icon, gray
+- Running: Type-specific icon, animated pulse
+- Completed: CheckCircle, green
+- Failed: XCircle, red
+- Skipped: XCircle, gray
+
+**Common Styling:**
+- Header: Icon + name + type + status indicator
+- Body: White/10 opacity background with type-specific content
+- Borders: 2px solid border on selection
+- Rounded corners: 8px border radius
+- Glass-morphism effect with backdrop blur
+
+### Execution Visualization
+
+To update node state during execution:
+
+```typescript
+// Update active branch
+updateNode(nodeId, {
+  data: {
+    ...existingData,
+    status: 'running',
+    activeBranch: 'then', // or 'else', 'catch', etc.
+  },
+});
+
+// Update iteration progress
+updateNode(nodeId, {
+  data: {
+    ...existingData,
+    currentIteration: 5,
+    totalIterations: 10,
+  },
+});
+
+// Update parallel branch status
+updateNode(nodeId, {
+  data: {
+    ...existingData,
+    activeBranches: ['branch-1', 'branch-2'],
+    completedBranches: ['branch-3'],
+  },
+});
+```
+
+### Testing Control Flow Nodes
+
+Example test for a control flow node:
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { ReactFlowProvider } from '@xyflow/react';
+import { IfElseNode } from './IfElseNode';
+
+test('renders if/else node with condition', () => {
+  const mockNode = {
+    id: 'if-1',
+    type: 'if',
+    position: { x: 0, y: 0 },
+    data: {
+      id: 'if-1',
+      name: 'Check Count',
+      condition: '{{ count > 0 }}',
+      status: 'pending' as const,
+    },
+  };
+
+  render(
+    <ReactFlowProvider>
+      <IfElseNode {...mockNode} selected={false} />
+    </ReactFlowProvider>
+  );
+
+  expect(screen.getByText('Check Count')).toBeInTheDocument();
+  expect(screen.getByText('{{ count > 0 }}')).toBeInTheDocument();
+});
+```
+
+---
+
 ## Adding AI Providers
 
 The AI system uses a pluggable provider architecture.

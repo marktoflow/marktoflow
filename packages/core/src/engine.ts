@@ -15,6 +15,26 @@ import {
   WorkflowStatus,
   createExecutionContext,
   createStepResult,
+  isActionStep,
+  isSubWorkflowStep,
+  isIfStep,
+  isSwitchStep,
+  isForEachStep,
+  isWhileStep,
+  isMapStep,
+  isFilterStep,
+  isReduceStep,
+  isParallelStep,
+  isTryStep,
+  type IfStep,
+  type SwitchStep,
+  type ForEachStep,
+  type WhileStep,
+  type MapStep,
+  type FilterStep,
+  type ReduceStep,
+  type ParallelStep,
+  type TryStep,
 } from './models.js';
 import { StateStore } from './state.js';
 import {
@@ -170,6 +190,18 @@ export class CircuitBreaker {
  */
 export function resolveTemplates(value: unknown, context: ExecutionContext): unknown {
   if (typeof value === 'string') {
+    // Check if the entire string is a single template expression
+    const singleTemplateMatch = value.match(/^\{\{([^}]+)\}\}$/);
+    if (singleTemplateMatch) {
+      // Return the actual value without converting to string
+      const path = singleTemplateMatch[1].trim();
+      const resolved = resolveVariablePath(path, context);
+      // For single template expressions, return the actual value (could be object, array, etc.)
+      // If undefined, return empty string for backward compatibility
+      return resolved !== undefined ? resolved : '';
+    }
+
+    // Otherwise, do string interpolation
     return value.replace(/\{\{([^}]+)\}\}/g, (_, varPath) => {
       const path = varPath.trim();
       const resolved = resolveVariablePath(path, context);
@@ -290,6 +322,61 @@ export class WorkflowEngine {
   }
 
   /**
+   * Execute a single step - dispatcher to specialized execution methods.
+   */
+  private async executeStep(
+    step: WorkflowStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    // Check conditions first (applies to all step types)
+    if (step.conditions && !this.evaluateConditions(step.conditions, context)) {
+      return createStepResult(step.id, StepStatus.SKIPPED, null, new Date());
+    }
+
+    // Dispatch to specialized execution method based on step type
+    if (isIfStep(step)) {
+      return this.executeIfStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isSwitchStep(step)) {
+      return this.executeSwitchStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isForEachStep(step)) {
+      return this.executeForEachStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isWhileStep(step)) {
+      return this.executeWhileStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isMapStep(step)) {
+      return this.executeMapStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isFilterStep(step)) {
+      return this.executeFilterStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isReduceStep(step)) {
+      return this.executeReduceStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isParallelStep(step)) {
+      return this.executeParallelStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isTryStep(step)) {
+      return this.executeTryStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    // Default: action or workflow step
+    return this.executeStepWithFailover(step, context, sdkRegistry, stepExecutor);
+  }
+
+  /**
    * Execute a workflow.
    */
   async execute(
@@ -327,15 +414,8 @@ export class WorkflowEngine {
         const step = workflow.steps[i];
         context.currentStepIndex = i;
 
-        // Check conditions
-        if (step.conditions && !this.evaluateConditions(step.conditions, context)) {
-          const skipResult = createStepResult(step.id, StepStatus.SKIPPED, null, new Date());
-          stepResults.push(skipResult);
-          continue;
-        }
-
-        // Execute step with retry
-        const result = await this.executeStepWithFailover(step, context, sdkRegistry, stepExecutor);
+        // Execute step using dispatcher
+        const result = await this.executeStep(step, context, sdkRegistry, stepExecutor);
         stepResults.push(result);
 
         // Store step metadata (status, error, etc.) in separate field for condition evaluation
@@ -353,7 +433,11 @@ export class WorkflowEngine {
 
         // Handle failure
         if (result.status === StepStatus.FAILED) {
-          const errorAction = step.errorHandling?.action ?? 'stop';
+          // Get error action from step if it has error handling
+          let errorAction = 'stop';
+          if ('errorHandling' in step && step.errorHandling?.action) {
+            errorAction = step.errorHandling.action;
+          }
 
           if (errorAction === 'stop') {
             context.status = WorkflowStatus.FAILED;
@@ -464,8 +548,8 @@ export class WorkflowEngine {
     sdkRegistry: SDKRegistryLike,
     stepExecutor: StepExecutor
   ): Promise<unknown> {
-    if (!step.workflow) {
-      throw new Error(`Step ${step.id} has no workflow path`);
+    if (!isSubWorkflowStep(step)) {
+      throw new Error(`Step ${step.id} is not a workflow step`);
     }
 
     // Resolve the sub-workflow path relative to the parent workflow
@@ -519,13 +603,12 @@ export class WorkflowEngine {
     sdkRegistry: SDKRegistryLike,
     stepExecutor: StepExecutor
   ): Promise<StepResult> {
-    const maxRetries = step.errorHandling?.maxRetries ?? this.config.maxRetries;
     const startedAt = new Date();
     let lastError: Error | undefined;
 
     // Handle sub-workflow execution
-    if (step.workflow) {
-      try {
+    if (isSubWorkflowStep(step)) {
+      try{
         this.events.onStepStart?.(step, context);
         const output = await this.executeWithTimeout(
           () => this.executeSubWorkflow(step, context, sdkRegistry, stepExecutor),
@@ -550,16 +633,18 @@ export class WorkflowEngine {
     }
 
     // Regular action step - ensure action is defined
-    if (!step.action) {
+    if (!isActionStep(step)) {
       return createStepResult(
         step.id,
         StepStatus.FAILED,
         null,
         startedAt,
         0,
-        'Step has neither action nor workflow defined'
+        'Step is neither an action nor a workflow'
       );
     }
+
+    const maxRetries = step.errorHandling?.maxRetries ?? this.config.maxRetries;
 
     // Get or create circuit breaker for this step's action
     const [serviceName] = step.action.split('.');
@@ -637,8 +722,8 @@ export class WorkflowEngine {
   ): Promise<StepResult> {
     const primaryResult = await this.executeStepWithRetry(step, context, sdkRegistry, stepExecutor);
 
-    // Sub-workflows don't support failover
-    if (step.workflow || !step.action) {
+    // Sub-workflows and non-action steps don't support failover
+    if (!isActionStep(step)) {
       return primaryResult;
     }
 
@@ -671,7 +756,7 @@ export class WorkflowEngine {
       if (fallbackTool === primaryTool) continue;
       if (attempts >= this.failoverConfig.maxFailoverAttempts) break;
 
-      const fallbackStep: WorkflowStep = { ...step, action: `${fallbackTool}.${method}` };
+      const fallbackStep: WorkflowStep = { ...step, action: `${fallbackTool}.${method}`, type: 'action' as const };
       const result = await this.executeStepWithRetry(
         fallbackStep,
         context,
@@ -774,11 +859,17 @@ export class WorkflowEngine {
    * Handles direct variable references and nested paths.
    */
   private resolveConditionValue(path: string, context: ExecutionContext): unknown {
-    // Try to resolve the path directly from variables
-    const resolved = resolveVariablePath(path, context);
+    // First try to parse as a literal value (true, false, numbers, etc.)
+    const parsedValue = this.parseValue(path);
 
-    // Return the resolved value directly
-    return resolved;
+    // If parseValue returned the same string, try to resolve as a variable
+    if (parsedValue === path) {
+      const resolved = resolveVariablePath(path, context);
+      return resolved;
+    }
+
+    // Return the parsed literal value
+    return parsedValue;
   }
 
   /**
@@ -838,6 +929,639 @@ export class WorkflowEngine {
     for (const breaker of this.circuitBreakers.values()) {
       breaker.reset();
     }
+  }
+
+  // ============================================================================
+  // Control Flow Execution Methods
+  // ============================================================================
+
+  /**
+   * Execute an if/else conditional step.
+   */
+  private async executeIfStep(
+    step: IfStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Evaluate condition
+      const conditionResult = this.evaluateCondition(step.condition, context);
+
+      // Determine which branch to execute
+      const branchSteps = conditionResult
+        ? step.then || step.steps // 'steps' is alias for 'then'
+        : step.else;
+
+      if (!branchSteps || branchSteps.length === 0) {
+        return createStepResult(step.id, StepStatus.SKIPPED, null, startedAt);
+      }
+
+      // Execute the branch steps
+      const branchResults: unknown[] = [];
+      for (const branchStep of branchSteps) {
+        const result = await this.executeStep(branchStep, context, sdkRegistry, stepExecutor);
+
+        if (result.status === StepStatus.COMPLETED && branchStep.outputVariable) {
+          context.variables[branchStep.outputVariable] = result.output;
+          branchResults.push(result.output);
+        }
+
+        if (result.status === StepStatus.FAILED) {
+          return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, result.error);
+        }
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, branchResults, startedAt);
+    } catch (error) {
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a switch/case step.
+   */
+  private async executeSwitchStep(
+    step: SwitchStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve the switch expression
+      const expressionValue = String(
+        resolveTemplates(step.expression, context)
+      );
+
+      // Find matching case
+      const caseSteps = step.cases[expressionValue] || step.default;
+
+      if (!caseSteps || caseSteps.length === 0) {
+        return createStepResult(step.id, StepStatus.SKIPPED, null, startedAt);
+      }
+
+      // Execute case steps
+      const caseResults: unknown[] = [];
+      for (const caseStep of caseSteps) {
+        const result = await this.executeStep(caseStep, context, sdkRegistry, stepExecutor);
+
+        if (result.status === StepStatus.COMPLETED && caseStep.outputVariable) {
+          context.variables[caseStep.outputVariable] = result.output;
+          caseResults.push(result.output);
+        }
+
+        if (result.status === StepStatus.FAILED) {
+          return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, result.error);
+        }
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, caseResults, startedAt);
+    } catch (error) {
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a for-each loop step.
+   */
+  private async executeForEachStep(
+    step: ForEachStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve items array
+      const items = resolveTemplates(step.items, context);
+
+      if (!Array.isArray(items)) {
+        return createStepResult(
+          step.id,
+          StepStatus.FAILED,
+          null,
+          startedAt,
+          0,
+          'Items must be an array'
+        );
+      }
+
+      if (items.length === 0) {
+        return createStepResult(step.id, StepStatus.SKIPPED, [], startedAt);
+      }
+
+      // Execute steps for each item
+      const results: unknown[] = [];
+      for (let i = 0; i < items.length; i++) {
+        // Inject loop variables
+        context.variables[step.itemVariable] = items[i];
+        context.variables['loop'] = {
+          index: i,
+          first: i === 0,
+          last: i === items.length - 1,
+          length: items.length,
+        };
+
+        if (step.indexVariable) {
+          context.variables[step.indexVariable] = i;
+        }
+
+        // Execute iteration steps
+        for (const iterStep of step.steps) {
+          const result = await this.executeStep(iterStep, context, sdkRegistry, stepExecutor);
+
+          if (result.status === StepStatus.COMPLETED && iterStep.outputVariable) {
+            context.variables[iterStep.outputVariable] = result.output;
+          }
+
+          if (result.status === StepStatus.FAILED) {
+            const errorAction = step.errorHandling?.action ?? 'stop';
+            if (errorAction === 'stop') {
+              // Clean up loop variables
+              delete context.variables[step.itemVariable];
+              delete context.variables['loop'];
+              if (step.indexVariable) delete context.variables[step.indexVariable];
+              return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, result.error);
+            }
+            // 'continue' - skip to next iteration
+            break;
+          }
+        }
+
+        results.push(context.variables[step.itemVariable]);
+      }
+
+      // Clean up loop variables
+      delete context.variables[step.itemVariable];
+      delete context.variables['loop'];
+      if (step.indexVariable) delete context.variables[step.indexVariable];
+
+      return createStepResult(step.id, StepStatus.COMPLETED, results, startedAt);
+    } catch (error) {
+      // Clean up loop variables on error
+      delete context.variables[step.itemVariable];
+      delete context.variables['loop'];
+      if (step.indexVariable) delete context.variables[step.indexVariable];
+
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a while loop step.
+   */
+  private async executeWhileStep(
+    step: WhileStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+    let iterations = 0;
+
+    try {
+      while (this.evaluateCondition(step.condition, context)) {
+        if (iterations >= step.maxIterations) {
+          return createStepResult(
+            step.id,
+            StepStatus.FAILED,
+            null,
+            startedAt,
+            0,
+            `Max iterations (${step.maxIterations}) exceeded`
+          );
+        }
+
+        // Execute iteration steps
+        for (const iterStep of step.steps) {
+          const result = await this.executeStep(iterStep, context, sdkRegistry, stepExecutor);
+
+          if (result.status === StepStatus.COMPLETED && iterStep.outputVariable) {
+            context.variables[iterStep.outputVariable] = result.output;
+          }
+
+          if (result.status === StepStatus.FAILED) {
+            const errorAction = step.errorHandling?.action ?? 'stop';
+            if (errorAction === 'stop') {
+              return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, result.error);
+            }
+            // 'continue' - skip to next iteration
+            break;
+          }
+        }
+
+        iterations++;
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, { iterations }, startedAt);
+    } catch (error) {
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a map transformation step.
+   */
+  private async executeMapStep(
+    step: MapStep,
+    context: ExecutionContext,
+    _sdkRegistry: SDKRegistryLike,
+    _stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve items array
+      const items = resolveTemplates(step.items, context);
+
+      if (!Array.isArray(items)) {
+        return createStepResult(
+          step.id,
+          StepStatus.FAILED,
+          null,
+          startedAt,
+          0,
+          'Items must be an array'
+        );
+      }
+
+      // Map each item using the expression
+      const mapped = items.map((item) => {
+        context.variables[step.itemVariable] = item;
+        const result = resolveTemplates(step.expression, context);
+        delete context.variables[step.itemVariable];
+        return result;
+      });
+
+      return createStepResult(step.id, StepStatus.COMPLETED, mapped, startedAt);
+    } catch (error) {
+      delete context.variables[step.itemVariable];
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a filter step.
+   */
+  private async executeFilterStep(
+    step: FilterStep,
+    context: ExecutionContext,
+    _sdkRegistry: SDKRegistryLike,
+    _stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve items array
+      const items = resolveTemplates(step.items, context);
+
+      if (!Array.isArray(items)) {
+        return createStepResult(
+          step.id,
+          StepStatus.FAILED,
+          null,
+          startedAt,
+          0,
+          'Items must be an array'
+        );
+      }
+
+      // Filter items using the condition
+      const filtered = items.filter((item) => {
+        context.variables[step.itemVariable] = item;
+        const result = this.evaluateCondition(step.condition, context);
+        delete context.variables[step.itemVariable];
+        return result;
+      });
+
+      return createStepResult(step.id, StepStatus.COMPLETED, filtered, startedAt);
+    } catch (error) {
+      delete context.variables[step.itemVariable];
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a reduce/aggregate step.
+   */
+  private async executeReduceStep(
+    step: ReduceStep,
+    context: ExecutionContext,
+    _sdkRegistry: SDKRegistryLike,
+    _stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve items array
+      const items = resolveTemplates(step.items, context);
+
+      if (!Array.isArray(items)) {
+        return createStepResult(
+          step.id,
+          StepStatus.FAILED,
+          null,
+          startedAt,
+          0,
+          'Items must be an array'
+        );
+      }
+
+      // Reduce items using the expression
+      let accumulator: unknown = step.initialValue ?? null;
+
+      for (const item of items) {
+        context.variables[step.itemVariable] = item;
+        context.variables[step.accumulatorVariable] = accumulator;
+        accumulator = resolveTemplates(step.expression, context);
+        delete context.variables[step.itemVariable];
+        delete context.variables[step.accumulatorVariable];
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, accumulator, startedAt);
+    } catch (error) {
+      delete context.variables[step.itemVariable];
+      delete context.variables[step.accumulatorVariable];
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute parallel branches.
+   */
+  private async executeParallelStep(
+    step: ParallelStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Execute branches in parallel
+      const branchPromises = step.branches.map(async (branch) => {
+        // Clone context for isolation
+        const branchContext = this.cloneContext(context);
+
+        // Execute branch steps
+        const branchResults: unknown[] = [];
+        for (const branchStep of branch.steps) {
+          const result = await this.executeStep(branchStep, branchContext, sdkRegistry, stepExecutor);
+
+          if (result.status === StepStatus.COMPLETED && branchStep.outputVariable) {
+            branchContext.variables[branchStep.outputVariable] = result.output;
+            branchResults.push(result.output);
+          }
+
+          if (result.status === StepStatus.FAILED) {
+            throw new Error(`Branch ${branch.id} failed: ${result.error}`);
+          }
+        }
+
+        return { branchId: branch.id, context: branchContext, results: branchResults };
+      });
+
+      // Wait for all branches (or limited concurrency)
+      const branchResults = step.maxConcurrent
+        ? await this.executeConcurrentlyWithLimit(branchPromises, step.maxConcurrent)
+        : await Promise.all(branchPromises);
+
+      // Merge branch contexts back into main context
+      for (const { branchId, context: branchContext } of branchResults) {
+        this.mergeContexts(context, branchContext, branchId);
+      }
+
+      const outputs = branchResults.map((br) => br.results);
+      return createStepResult(step.id, StepStatus.COMPLETED, outputs, startedAt);
+    } catch (error) {
+      if (step.onError === 'continue') {
+        return createStepResult(step.id, StepStatus.COMPLETED, null, startedAt);
+      }
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute try/catch/finally step.
+   */
+  private async executeTryStep(
+    step: TryStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+    let tryError: Error | undefined;
+
+    try {
+      // Execute try block
+      for (const tryStep of step.try) {
+        const result = await this.executeStep(tryStep, context, sdkRegistry, stepExecutor);
+
+        if (result.status === StepStatus.COMPLETED && tryStep.outputVariable) {
+          context.variables[tryStep.outputVariable] = result.output;
+        }
+
+        if (result.status === StepStatus.FAILED) {
+          tryError = new Error(result.error || 'Step failed');
+          break;
+        }
+      }
+
+      // If error occurred and catch block exists, execute catch
+      let catchError: Error | undefined;
+      if (tryError && step.catch) {
+        // Inject error object into context
+        context.variables['error'] = {
+          message: tryError.message,
+          step: tryError,
+        };
+
+        for (const catchStep of step.catch) {
+          const result = await this.executeStep(catchStep, context, sdkRegistry, stepExecutor);
+
+          if (result.status === StepStatus.COMPLETED && catchStep.outputVariable) {
+            context.variables[catchStep.outputVariable] = result.output;
+          }
+
+          if (result.status === StepStatus.FAILED) {
+            catchError = new Error(result.error || 'Catch block failed');
+            break;
+          }
+        }
+
+        delete context.variables['error'];
+      }
+
+      // Execute finally block (always runs)
+      if (step.finally) {
+        for (const finallyStep of step.finally) {
+          const result = await this.executeStep(finallyStep, context, sdkRegistry, stepExecutor);
+
+          if (result.status === StepStatus.COMPLETED && finallyStep.outputVariable) {
+            context.variables[finallyStep.outputVariable] = result.output;
+          }
+        }
+      }
+
+      // Return success if catch handled the error, or error if not
+      if (tryError && !step.catch) {
+        // No catch block to handle error
+        return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, tryError.message);
+      }
+
+      if (catchError) {
+        // Catch block also failed
+        return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, catchError.message);
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, null, startedAt);
+    } catch (error) {
+      // Execute finally even on unexpected error
+      if (step.finally) {
+        try {
+          for (const finallyStep of step.finally) {
+            const result = await this.executeStep(finallyStep, context, sdkRegistry, stepExecutor);
+
+            if (result.status === StepStatus.COMPLETED && finallyStep.outputVariable) {
+              context.variables[finallyStep.outputVariable] = result.output;
+            }
+          }
+        } catch {
+          // Ignore finally errors
+        }
+      }
+
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  // ============================================================================
+  // Helper Methods for Control Flow
+  // ============================================================================
+
+  /**
+   * Clone execution context for parallel branches.
+   */
+  private cloneContext(context: ExecutionContext): ExecutionContext {
+    return {
+      ...context,
+      variables: { ...context.variables },
+      inputs: { ...context.inputs },
+      stepMetadata: { ...context.stepMetadata },
+    };
+  }
+
+  /**
+   * Merge branch context back into main context.
+   */
+  private mergeContexts(
+    mainContext: ExecutionContext,
+    branchContext: ExecutionContext,
+    branchId: string
+  ): void {
+    // Merge variables with branch prefix
+    for (const [key, value] of Object.entries(branchContext.variables)) {
+      mainContext.variables[`${branchId}.${key}`] = value;
+    }
+  }
+
+  /**
+   * Execute promises with concurrency limit.
+   */
+  private async executeConcurrentlyWithLimit<T>(
+    promises: Promise<T>[],
+    limit: number
+  ): Promise<T[]> {
+    const results: T[] = [];
+    const executing: Promise<void>[] = [];
+
+    for (const promise of promises) {
+      const p = promise.then((result) => {
+        results.push(result);
+      });
+
+      executing.push(p);
+
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+        executing.splice(
+          executing.findIndex((x) => x === p),
+          1
+        );
+      }
+    }
+
+    await Promise.all(executing);
+    return results;
   }
 }
 

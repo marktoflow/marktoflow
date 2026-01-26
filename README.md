@@ -10,6 +10,7 @@ A universal automation framework that enables markdown-based workflows with nati
 
 marktoflow v2.0 brings powerful new capabilities and integrations:
 
+- ✅ **Workflow Control Flow** - If/else conditionals, switch/case, loops, parallel execution, try/catch error handling
 - ✅ **Visual Workflow Designer** - Web-based drag-and-drop editor with AI assistance
 - ✅ **Native SDK integrations** - Direct SDK method calls with full type safety
 - ✅ **Native MCP support** - Import MCP servers as npm packages
@@ -22,6 +23,7 @@ marktoflow v2.0 brings powerful new capabilities and integrations:
 ## Key Features
 
 - **Visual Workflow Designer**: Web-based drag-and-drop editor with AI-powered assistance
+- **Workflow Control Flow**: If/else, switch/case, for-each/while loops, parallel execution, map/filter/reduce, try/catch
 - **Workflow as Code**: Define workflows in Markdown + YAML
 - **Sub-Workflows**: Compose reusable workflow components with unlimited nesting
 - **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
@@ -588,6 +590,168 @@ For detailed documentation, see:
 - [GUI Developer Guide](docs/GUI_DEVELOPER_GUIDE.md)
 
 ## Advanced Features
+
+### Workflow Control Flow
+
+marktoflow v2.0 introduces comprehensive control flow capabilities for building sophisticated automation workflows:
+
+#### If/Else Conditionals
+
+Branch execution based on conditions:
+
+```yaml
+steps:
+  - type: if
+    condition: "{{ result.count > 0 }}"
+    then:
+      - action: slack.chat.postMessage
+        inputs:
+          text: "Found {{ result.count }} items"
+    else:
+      - action: slack.chat.postMessage
+        inputs:
+          text: "No items found"
+```
+
+#### Switch/Case Routing
+
+Multi-branch routing based on expression values:
+
+```yaml
+steps:
+  - type: switch
+    expression: "{{ incident.severity }}"
+    cases:
+      critical:
+        - action: pagerduty.createIncident
+      high:
+        - action: jira.createIssue
+          inputs:
+            priority: "High"
+      medium:
+        - action: jira.createIssue
+          inputs:
+            priority: "Medium"
+    default:
+      - action: slack.chat.postMessage
+        inputs:
+          text: "Low priority: {{ incident.title }}"
+```
+
+#### For-Each Loops
+
+Iterate over arrays with full loop metadata:
+
+```yaml
+steps:
+  - type: for_each
+    items: "{{ orders }}"
+    item_variable: order
+    steps:
+      - action: process.order
+        inputs:
+          order_id: "{{ order.id }}"
+          index: "{{ loop.index }}"      # 0-based index
+          is_first: "{{ loop.first }}"   # true on first iteration
+          is_last: "{{ loop.last }}"     # true on last iteration
+```
+
+#### While Loops
+
+Repeat steps until a condition becomes false:
+
+```yaml
+steps:
+  - type: while
+    condition: "{{ retries < 3 }}"
+    max_iterations: 10
+    steps:
+      - action: api.call
+      - action: counter.increment
+        output_variable: retries
+```
+
+#### Parallel Execution
+
+Run multiple branches concurrently with optional rate limiting:
+
+```yaml
+steps:
+  - type: parallel
+    max_concurrent: 3
+    on_error: continue
+    branches:
+      - id: fetch_jira
+        steps:
+          - action: jira.issueSearch
+            output_variable: jira_data
+      - id: fetch_github
+        steps:
+          - action: github.issues.list
+            output_variable: github_data
+      - id: fetch_slack
+        steps:
+          - action: slack.conversations.history
+            output_variable: slack_data
+```
+
+#### Map/Filter/Reduce
+
+Collection transformations for data processing:
+
+```yaml
+steps:
+  # Transform each item
+  - type: map
+    items: "{{ orders }}"
+    item_variable: order
+    expression: "{{ order.total }}"
+    output_variable: totals
+
+  # Select matching items
+  - type: filter
+    items: "{{ orders }}"
+    item_variable: order
+    condition: "{{ order.total >= 1000 }}"
+    output_variable: high_value_orders
+
+  # Aggregate to single value
+  - type: reduce
+    items: "{{ totals }}"
+    item_variable: amount
+    accumulator_variable: sum
+    initial_value: 0
+    expression: "{{ sum + amount }}"
+    output_variable: total_revenue
+```
+
+#### Try/Catch Error Handling
+
+Graceful error handling with fallback steps:
+
+```yaml
+steps:
+  - type: try
+    try:
+      - action: primary_api.call
+        output_variable: result
+    catch:
+      - action: fallback_api.call
+        output_variable: result
+      - action: slack.chat.postMessage
+        inputs:
+          text: "Primary API failed: {{ error.message }}"
+    finally:
+      - action: metrics.record
+        inputs:
+          api_call: completed
+```
+
+**Example Workflows:**
+- [Data Pipeline](examples/control-flow/data-pipeline.md) - Map/filter/reduce operations
+- [Parallel Fetch](examples/control-flow/parallel-fetch.md) - Concurrent API calls
+- [Incident Router](examples/control-flow/incident-router.md) - Switch/case routing
+- [Error Handling](examples/control-flow/error-handling.md) - Try/catch patterns
 
 ### Native MCP Support
 

@@ -184,12 +184,33 @@ steps:
 
 ### Node Types
 
+#### Standard Nodes
+
 | Node | Icon | Description |
 |------|------|-------------|
 | **Step** | Service icon | A single action (API call, data transform) |
 | **Sub-workflow** | Folder | Reference to another workflow |
 | **Trigger** | Clock/Webhook | Workflow entry point |
 | **Output** | Terminal | Workflow output |
+
+#### Control Flow Nodes
+
+| Node | Icon | Color | Description |
+|------|------|-------|-------------|
+| **If/Else** | GitBranch | Purple | Conditional branching with then/else paths |
+| **Switch** | GitFork | Purple/Magenta | Multi-branch routing based on expression |
+| **For-Each** | Repeat | Pink/Red | Iterate over array with loop metadata |
+| **While** | RotateCw | Orange | Repeat steps until condition becomes false |
+| **Parallel** | Layers | Blue/Cyan | Execute multiple branches concurrently |
+| **Try/Catch** | Shield | Yellow/Orange | Error handling with fallback steps |
+| **Transform** | ArrowRight/Filter/Minimize2 | Teal/Cyan | Map/Filter/Reduce operations |
+
+**Control Flow Features:**
+- Visual progress indicators during execution
+- Active branch highlighting
+- Iteration counters and progress bars
+- Error state visualization
+- Nested step support
 
 ### Context Menus
 

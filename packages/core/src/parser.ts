@@ -234,20 +234,209 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
 }
 
 /**
- * Normalize a step object, converting snake_case to camelCase.
+ * Normalize a step object, converting snake_case to camelCase and detecting step type.
  */
 function normalizeStep(raw: Record<string, unknown>, index: number): Record<string, unknown> {
-  return {
+  const base = {
     id: raw.id || `step-${index + 1}`,
     name: raw.name,
-    action: raw.action,
-    workflow: raw.workflow,
-    inputs: raw.inputs || {},
-    outputVariable: raw.output_variable || raw.outputVariable,
     conditions: raw.conditions,
-    errorHandling: normalizeErrorHandling(raw.error_handling || raw.errorHandling || raw.on_error),
     timeout: raw.timeout,
+    outputVariable: raw.output_variable || raw.outputVariable,
   };
+
+  // Detect or use explicit type
+  let type = raw.type as string | undefined;
+
+  if (!type) {
+    // Type inference for backward compatibility
+    if (raw.action) {
+      type = 'action';
+    } else if (raw.workflow) {
+      type = 'workflow';
+    } else if (raw.condition && (raw.then || raw.else || raw.steps)) {
+      type = 'if';
+    } else if (raw.expression && raw.cases) {
+      type = 'switch';
+    } else if (raw.items && raw.steps) {
+      type = raw.condition ? 'while' : 'for_each';
+    } else if (raw.items && raw.expression && !raw.steps) {
+      type = 'map';
+    } else if (raw.items && raw.condition && !raw.steps) {
+      type = 'filter';
+    } else if (raw.items && (raw.accumulator_variable || raw.accumulatorVariable)) {
+      type = 'reduce';
+    } else if (raw.branches) {
+      type = 'parallel';
+    } else if (raw.try || raw.catch) {
+      type = 'try';
+    }
+  }
+
+  // Build step based on type
+  switch (type) {
+    case 'action':
+      return {
+        ...base,
+        type: 'action',
+        action: raw.action,
+        inputs: raw.inputs || {},
+        errorHandling: normalizeErrorHandling(
+          raw.error_handling || raw.errorHandling || raw.on_error
+        ),
+      };
+
+    case 'workflow':
+      return {
+        ...base,
+        type: 'workflow',
+        workflow: raw.workflow,
+        inputs: raw.inputs || {},
+        errorHandling: normalizeErrorHandling(
+          raw.error_handling || raw.errorHandling || raw.on_error
+        ),
+      };
+
+    case 'if':
+      return {
+        ...base,
+        type: 'if',
+        condition: raw.condition,
+        then: raw.then ? normalizeSteps(raw.then as Array<Record<string, unknown>>) : undefined,
+        else: raw.else ? normalizeSteps(raw.else as Array<Record<string, unknown>>) : undefined,
+        steps: raw.steps ? normalizeSteps(raw.steps as Array<Record<string, unknown>>) : undefined,
+      };
+
+    case 'switch':
+      return {
+        ...base,
+        type: 'switch',
+        expression: raw.expression,
+        cases: normalizeCases(raw.cases as Record<string, unknown>),
+        default: raw.default
+          ? normalizeSteps(raw.default as Array<Record<string, unknown>>)
+          : undefined,
+      };
+
+    case 'for_each':
+      return {
+        ...base,
+        type: 'for_each',
+        items: raw.items,
+        itemVariable: raw.item_variable || raw.itemVariable || 'item',
+        indexVariable: raw.index_variable || raw.indexVariable,
+        steps: normalizeSteps(raw.steps as Array<Record<string, unknown>>),
+        errorHandling: normalizeErrorHandling(
+          raw.error_handling || raw.errorHandling || raw.on_error
+        ),
+      };
+
+    case 'while':
+      return {
+        ...base,
+        type: 'while',
+        condition: raw.condition,
+        maxIterations: raw.max_iterations || raw.maxIterations || 100,
+        steps: normalizeSteps(raw.steps as Array<Record<string, unknown>>),
+        errorHandling: normalizeErrorHandling(
+          raw.error_handling || raw.errorHandling || raw.on_error
+        ),
+      };
+
+    case 'map':
+      return {
+        ...base,
+        type: 'map',
+        items: raw.items,
+        itemVariable: raw.item_variable || raw.itemVariable || 'item',
+        expression: raw.expression,
+      };
+
+    case 'filter':
+      return {
+        ...base,
+        type: 'filter',
+        items: raw.items,
+        itemVariable: raw.item_variable || raw.itemVariable || 'item',
+        condition: raw.condition,
+      };
+
+    case 'reduce':
+      return {
+        ...base,
+        type: 'reduce',
+        items: raw.items,
+        itemVariable: raw.item_variable || raw.itemVariable || 'item',
+        accumulatorVariable: raw.accumulator_variable || raw.accumulatorVariable || 'accumulator',
+        initialValue: raw.initial_value || raw.initialValue,
+        expression: raw.expression,
+      };
+
+    case 'parallel':
+      return {
+        ...base,
+        type: 'parallel',
+        branches: normalizeBranches(raw.branches as Array<Record<string, unknown>>),
+        maxConcurrent: raw.max_concurrent || raw.maxConcurrent,
+        onError: raw.on_error || raw.onError || 'stop',
+      };
+
+    case 'try':
+      return {
+        ...base,
+        type: 'try',
+        try: normalizeSteps(raw.try as Array<Record<string, unknown>>),
+        catch: raw.catch
+          ? normalizeSteps(raw.catch as Array<Record<string, unknown>>)
+          : undefined,
+        finally: raw.finally
+          ? normalizeSteps(raw.finally as Array<Record<string, unknown>>)
+          : undefined,
+      };
+
+    default:
+      // Fallback for backward compatibility
+      return {
+        ...base,
+        action: raw.action,
+        workflow: raw.workflow,
+        inputs: raw.inputs || {},
+        errorHandling: normalizeErrorHandling(
+          raw.error_handling || raw.errorHandling || raw.on_error
+        ),
+      };
+  }
+}
+
+/**
+ * Normalize an array of steps recursively.
+ */
+function normalizeSteps(steps: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  return steps.map((step, index) => normalizeStep(step, index));
+}
+
+/**
+ * Normalize switch cases (Record<string, steps[]>).
+ */
+function normalizeCases(cases: Record<string, unknown>): Record<string, Array<Record<string, unknown>>> {
+  const normalized: Record<string, Array<Record<string, unknown>>> = {};
+  for (const [key, value] of Object.entries(cases)) {
+    if (Array.isArray(value)) {
+      normalized[key] = normalizeSteps(value as Array<Record<string, unknown>>);
+    }
+  }
+  return normalized;
+}
+
+/**
+ * Normalize parallel branches.
+ */
+function normalizeBranches(branches: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  return branches.map((branch, index) => ({
+    id: branch.id || `branch-${index + 1}`,
+    name: branch.name,
+    steps: normalizeSteps(branch.steps as Array<Record<string, unknown>>),
+  }));
 }
 
 /**

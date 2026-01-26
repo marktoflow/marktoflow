@@ -17,6 +17,33 @@
 
 ### Recent Development
 
+#### Session 18 (2026-01-25) - Control Flow GUI & Documentation
+
+**GUI Components:**
+- Created 4 new control flow node components (SwitchNode, WhileNode, TryCatchNode, TransformNode)
+- Completed all 7 control flow nodes for visual workflow designer
+- Integrated nodes with Canvas (10 new node types registered)
+- Created module exports with full TypeScript types
+- Build verification: 2,266 modules, 858KB bundle (264KB gzipped)
+
+**Version Management:**
+- Updated all packages to v2.0.0-alpha.8
+- Synchronized version across workspace (core, cli, gui, integrations)
+
+**Documentation:**
+- Updated README.md with control flow features (~150 lines)
+- Updated docs/GUI_USER_GUIDE.md with control flow nodes (~25 lines)
+- Updated docs/GUI_DEVELOPER_GUIDE.md with component reference (~350 lines)
+- Created docs/CONTROL-FLOW-GUIDE.md - comprehensive 900+ line reference guide
+
+**Deliverables:**
+- 7 production-ready node components (1,025 lines)
+- Canvas integration complete (65 lines)
+- Comprehensive documentation (1,425 lines)
+- 4 example workflows referenced
+
+**Status:** Phase 1 Complete - Visual display production-ready
+
 #### Session 17 (2026-01-24)
 
 - Fixed TypeScript `exactOptionalPropertyTypes` compilation errors

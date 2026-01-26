@@ -16,6 +16,13 @@ import { StepNode } from './StepNode';
 import { SubWorkflowNode } from './SubWorkflowNode';
 import { TriggerNode } from './TriggerNode';
 import { OutputNode } from './OutputNode';
+import { IfElseNode } from './IfElseNode';
+import { ForEachNode } from './ForEachNode';
+import { WhileNode } from './WhileNode';
+import { SwitchNode } from './SwitchNode';
+import { ParallelNode } from './ParallelNode';
+import { TryCatchNode } from './TryCatchNode';
+import { TransformNode } from './TransformNode';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
@@ -37,6 +44,15 @@ const nodeTypes = {
   subworkflow: SubWorkflowNode,
   trigger: TriggerNode,
   output: OutputNode,
+  if: IfElseNode,
+  for_each: ForEachNode,
+  while: WhileNode,
+  switch: SwitchNode,
+  parallel: ParallelNode,
+  try: TryCatchNode,
+  map: TransformNode,
+  filter: TransformNode,
+  reduce: TransformNode,
 };
 
 export function Canvas() {
@@ -62,8 +78,8 @@ export function Canvas() {
       event.preventDefault();
 
       // Sub-workflow nodes handle their own double-click via the drill-down button
-      // Don't open editor for special node types
-      if (node.type === 'subworkflow' || node.type === 'trigger' || node.type === 'output') {
+      // Don't open editor for special node types that have their own interactions
+      if (node.type === 'trigger' || node.type === 'output') {
         return;
       }
 
@@ -76,10 +92,11 @@ export function Canvas() {
     [currentWorkflow]
   );
 
-  // Get the currently selected step node
+  // Get the currently selected step node (including control flow nodes)
   const getSelectedStep = useCallback((): WorkflowStep | null => {
     if (!currentWorkflow) return null;
-    const selectedNode = nodes.find((n) => n.selected && n.type === 'step');
+    const controlFlowTypes = ['step', 'if', 'for_each', 'while', 'switch', 'parallel', 'try', 'map', 'filter', 'reduce'];
+    const selectedNode = nodes.find((n) => n.selected && controlFlowTypes.includes(n.type || ''));
     if (!selectedNode) return null;
     return currentWorkflow.steps.find((s) => s.id === selectedNode.data.id) || null;
   }, [currentWorkflow, nodes]);
@@ -213,8 +230,9 @@ export function Canvas() {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
-      // Only show context menu for step nodes
-      if (node.type === 'step') {
+      // Show context menu for all control flow nodes
+      const controlFlowTypes = ['step', 'if', 'for_each', 'while', 'switch', 'parallel', 'try', 'map', 'filter', 'reduce', 'subworkflow'];
+      if (controlFlowTypes.includes(node.type || '')) {
         setContextMenuNode(node);
       }
     },
