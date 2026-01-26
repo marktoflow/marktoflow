@@ -1,5 +1,7 @@
 # OpenCode Configuration Examples
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 This directory demonstrates different ways to configure the OpenCode agent adapter.
 
 ## Overview

@@ -1,5 +1,7 @@
 # @marktoflow/cli
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 Universal automation framework with native MCP support - Command Line Interface.
 
 ## Overview

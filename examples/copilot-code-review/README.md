@@ -1,5 +1,7 @@
 # AI Code Review with GitHub Copilot
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 Automated code review workflow that uses GitHub Copilot to analyze pull requests for security vulnerabilities, performance issues, and code quality concerns.
 
 ## Features

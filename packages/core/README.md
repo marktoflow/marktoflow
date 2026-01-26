@@ -1,5 +1,7 @@
 # @marktoflow/core
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 Core engine for marktoflow - parser, executor, and state management.
 
 ## Overview

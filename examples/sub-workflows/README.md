@@ -1,5 +1,7 @@
 # Sub-Workflows Example
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 This example demonstrates how to use sub-workflows in marktoflow to create reusable, composable workflow components.
 
 ## What are Sub-Workflows?

@@ -1,5 +1,7 @@
 # @marktoflow/integrations
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, and more.
 
 ## Overview

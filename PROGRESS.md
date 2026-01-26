@@ -2,249 +2,48 @@
 
 ---
 
-## v2.0 TypeScript Rewrite (Current)
+## v2.0 TypeScript Implementation (Current)
 
 **Started:** 2026-01-23
-**Branch:** `feature/typescript-rewrite`
-
-### Completed
-
-- [x] Decision to rewrite in TypeScript (see `FRAMEWORK_ANALYSIS.md`)
-- [x] Updated TODO.md with v2.0 roadmap
-- [x] Created comprehensive framework analysis
-- [x] TypeScript project setup (pnpm monorepo + Turborepo)
-- [x] Core package foundation:
-  - Data models with Zod validation
-  - Workflow parser (YAML frontmatter + markdown)
-  - Execution engine with retry/circuit breaker
-  - SDK registry for dynamic loading
-  - Variable template resolution
-  - Scheduler, State persistence, Logging
-  - Webhook receiver, File system watcher
-  - Script tool (executable runner)
-  - Queue system (Redis/RabbitMQ/InMemory)
-  - Security (RBAC, Approval Workflows, Audit Logging)
-  - 72 passing tests
-- [x] CLI package:
-  - Commander-based CLI
-  - Commands: init, run, workflow, connect, doctor, version
-  - Basic CLI tests added
-- [x] Integrations package:
-  - @slack/web-api support
-  - @octokit/rest (GitHub) support
-  - jira.js (Jira) support
-  - ollama support
-  - claude-code (CLI) support
-  - @opencode-ai/sdk support
-  - script tool integration
-
-### Session 16 (2026-01-24)
-
-- [x] Gmail integration complete:
-  - GmailActions class with get_emails, send_email, create_draft, getEmail, markAsRead/Unread, addLabels, removeLabels, trash, delete, listLabels
-  - GmailTrigger class for Pub/Sub push notifications with webhook handler
-  - Updated tests with 6 passing tests
-- [x] Outlook integration complete:
-  - OutlookActions class with email methods (getEmails, sendEmail, createDraft, reply, forward, markAsRead, moveToFolder, delete, listFolders)
-  - OutlookActions calendar methods (getEvents, createEvent, updateEvent, deleteEvent, acceptEvent, declineEvent, tentativelyAcceptEvent)
-  - OutlookTrigger class for Graph subscription notifications with webhook handler
-  - Updated tests with 9 passing tests
-- [x] OAuth CLI flows:
-  - Created oauth.ts module with Gmail and Outlook OAuth flows
-  - Local HTTP server for OAuth callbacks
-  - Token storage in .marktoflow/credentials/
-  - Token refresh support
-  - Updated `marktoflow connect gmail` and `marktoflow connect outlook` commands
-- [x] Fixed opencode test assertion
-- [x] Expanded API support with 6 new integrations:
-  - **Linear**: Issue tracking for dev teams (GraphQL API)
-  - **Notion**: Documentation and knowledge base
-  - **Discord**: Community communication
-  - **Airtable**: Flexible database/spreadsheet
-  - **Confluence**: Enterprise documentation (Atlassian)
-  - **HTTP**: Generic REST API client with GraphQL support
-- [x] 48 passing tests in integrations package
-
-### Session 17 (2026-01-24)
-
-- [x] Fixed TypeScript `exactOptionalPropertyTypes` compilation errors:
-  - Disabled strict optional property checking in integrations and CLI packages
-  - Fixed type conflicts between gmail/gmail-trigger and outlook/outlook-trigger exports
-  - Resolved optional property type mismatches with external SDKs
-- [x] All tests passing (145 total):
-  - Core: 89 tests ✅
-  - Integrations: 48 tests ✅
-  - CLI: 8 tests ✅
-- [x] Feature parity review completed:
-  - TypeScript v2.0 has full feature parity with Python v1.0
-  - All core features ported (engine, state, security, costs, plugins, templates, tools)
-  - All CLI commands implemented
-  - Native service integrations added (11 services vs 0 in Python)
-  - Missing: Full test coverage (145 vs 615 tests), Prometheus metrics
-- [x] Updated TODO.md with:
-  - New Phase 6 for quality & testing
-  - Test coverage goals and missing areas
-  - Feature parity status summary
+**Status:** Feature parity achieved, ongoing development
 
 ### Current Status
 
-- ✅ **Core Features**: Feature parity achieved with Python v1.0
-- ✅ **Build**: All packages compile successfully
-- ✅ **Tests**: 145 passing tests across all packages
-- ✅ **Integrations**: 11 native service integrations
-- 🔄 **Test Coverage**: Need to expand from 145 to match Python's 615+ tests
-- 🔄 **Prometheus Metrics**: Basic interface exists, full integration pending
-- 🔄 **Developer Experience**: Phase 4 features pending (wizard, dry-run, debugging)
+- **Core Features**: Feature parity achieved with Python v1.0
+- **Build**: All packages compile successfully
+- **Tests**: 145+ passing tests across all packages
+- **Integrations**: 20+ native service integrations
+- **GUI**: Visual workflow designer with AI assistance
 
-### In Progress
+### Recent Development
 
-- [ ] Expand test coverage to match Python v1.0 (615+ tests)
-- [ ] Add Prometheus metrics integration
-- [ ] Native MCP support enhancements
+#### Session 17 (2026-01-24)
 
----
+- Fixed TypeScript `exactOptionalPropertyTypes` compilation errors
+- All tests passing (145 total: Core 89, Integrations 48, CLI 8)
+- Feature parity review completed
+- Updated roadmap with quality & testing phase
 
-## v1.0 Python Implementation (Archived)
+#### Session 16 (2026-01-24)
 
-**Completed:** 2026-01-22
-**Status:** Feature-complete, archived
+- Gmail integration complete with Pub/Sub triggers
+- Outlook integration with Graph subscriptions
+- OAuth CLI flows for Gmail and Outlook
+- 6 new integrations: Linear, Notion, Discord, Airtable, Confluence, HTTP
 
-### Summary
+### Milestones
 
-The Python implementation achieved all planned goals with 615+ tests passing. The codebase is being archived in favor of a TypeScript rewrite for better MCP ecosystem integration.
-
-### Final Statistics
-
-| Category            | Count                             |
-| ------------------- | --------------------------------- |
-| Total Tests         | 615+                              |
-| Core Modules        | 15                                |
-| Agent Adapters      | 3 (Claude Code, OpenCode, Ollama) |
-| CLI Commands        | 25+                               |
-| Example Workflows   | 5 bundles                         |
-| Documentation Files | 10+                               |
-
-### Features Completed
-
-#### Core Framework
-
-- Workflow parser (YAML frontmatter + markdown)
-- Execution engine with retry/circuit breaker
-- State persistence (SQLite)
-- Execution logging (markdown format)
-
-#### Scheduling & Triggers
-
-- Cron-based scheduler
-- Webhook receiver with signature verification
-- File system watcher (watchdog)
-- Message queue integration (Redis, RabbitMQ)
-
-#### Agent Adapters
-
-- **Claude Code**: CLI + SDK modes, native MCP
-- **OpenCode**: CLI + Server modes, 75+ backends
-- **Ollama**: Local model support
-
-#### Tools
-
-- Tool registry with multi-implementation support
-- MCP bridge for non-native agents
-- OpenAPI tool adapter
-- Custom Python tool adapter
-- Self-contained workflow bundles
-
-#### Enterprise Features
-
-- RBAC with 14 permissions
-- Approval workflows
-- Audit logging (SQLite)
-- Credential encryption (Fernet, Age, GPG)
-- Cost tracking and estimation
-- Plugin system with 17 hook types
-- Workflow template library (7 templates)
-- Agent routing with budget constraints
-
-### Architecture (Python v1.0)
-
-```
-src/marktoflow/
-├── core/
-│   ├── models.py         # Data models
-│   ├── parser.py         # Workflow parser
-│   ├── engine.py         # Execution engine
-│   ├── state.py          # State persistence
-│   ├── scheduler.py      # Cron scheduling
-│   ├── webhook.py        # Webhook receiver
-│   ├── filewatcher.py    # File triggers
-│   ├── queue.py          # Message queues
-│   ├── rollback.py       # Rollback/compensation
-│   ├── costs.py          # Cost tracking
-│   ├── security.py       # RBAC/audit
-│   ├── credentials.py    # Encryption
-│   ├── plugins.py        # Plugin system
-│   ├── templates.py      # Workflow templates
-│   ├── routing.py        # Agent routing
-│   ├── metrics.py        # Prometheus metrics
-│   └── logging.py        # Execution logging
-├── agents/
-│   ├── base.py           # Base adapter
-│   ├── claude_code.py    # Claude Code
-│   ├── opencode.py       # OpenCode
-│   └── ollama.py         # Ollama
-├── tools/
-│   ├── registry.py       # Tool registry
-│   ├── mcp_bridge.py     # MCP bridge
-│   ├── openapi.py        # OpenAPI tools
-│   ├── custom.py         # Custom tools
-│   ├── script.py         # Script tools
-│   └── bundle.py         # Workflow bundles
-└── cli/
-    └── main.py           # CLI commands
-```
-
-### Session History (Condensed)
-
-| Session | Date       | Focus                                                                         |
-| ------- | ---------- | ----------------------------------------------------------------------------- |
-| 1       | 2026-01-22 | Project setup, core models, parser                                            |
-| 2       | 2026-01-22 | Scheduler, state, webhooks, engine enhancements                               |
-| 3       | 2026-01-22 | File watcher, metrics collection                                              |
-| 4       | 2026-01-22 | Message queues, rollback, cost tracking                                       |
-| 5       | 2026-01-22 | Quick wins, RBAC, credentials                                                 |
-| 6       | 2026-01-22 | Workflow bundles, script tools                                                |
-| 7       | 2026-01-22 | Plugin system, templates, agent routing                                       |
-| 8       | 2026-01-22 | OpenCode adapter (production ready)                                           |
-| 9       | 2026-01-22 | Claude Code adapter (CLI mode)                                                |
-| 10      | 2026-01-23 | Framework analysis, TypeScript decision                                       |
-| 11      | 2026-01-23 | TypeScript Core tests fix, CLI tests, Integrations setup                      |
-| 12      | 2026-01-23 | OpenCode SDK, Script Tool, File Watcher, Jira/Ollama/Claude Code integrations |
-| 13      | 2026-01-23 | Reorganized integrations, Engine State Persistence, Worker/Trigger CLI        |
-| 14      | 2026-01-23 | OpenCode CLI hang fix, marktoflow executable creation                         |
-| 15      | 2026-01-23 | Costs tracking, Prometheus metrics, Tests                                     |
+- [x] **M1**: Core framework functional
+- [x] **M2**: Native SDK integrations
+- [x] **M3**: CLI operational
+- [x] **M4**: Production features complete
+- [x] **M5**: Visual workflow designer (GUI)
+- [x] **M6**: GitHub Copilot SDK integration
+- [ ] **M7**: Expand test coverage (145 → 615+ tests)
+- [ ] **M8**: v2.0 stable release
 
 ---
 
-## Milestones
+## Archived History
 
-- [x] **M1**: Core framework functional (v1.0)
-- [x] **M2**: Agent adapters working (v1.0)
-- [x] **M3**: CLI operational (v1.0)
-- [x] **M4**: Production features complete (v1.0)
-- [ ] **M5**: TypeScript v2.0 foundation
-- [ ] **M6**: Native MCP integration
-- [ ] **M7**: Built-in service integrations
-- [ ] **M8**: v2.0 production release
-
----
-
-## Why TypeScript?
-
-The decision to rewrite was based on:
-
-1. **MCP Ecosystem** - All MCP servers are npm packages
-2. **Official SDKs** - Slack, Jira, GitHub are primarily Node.js
-3. **Simplicity** - No Python-Node bridge complexity
-4. **Tool Integration** - Direct imports vs subprocess spawning
-
-See `FRAMEWORK_ANALYSIS.md` for the full analysis.
+For Python v1.0 development history, see [docs/archived/PYTHON_V1_HISTORY.md](docs/archived/PYTHON_V1_HISTORY.md).

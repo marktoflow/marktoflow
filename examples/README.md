@@ -1,5 +1,7 @@
 # Example Workflows
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 This directory contains example workflows demonstrating the marktoflow v2.0 TypeScript framework with native SDK integrations.
 
 ## What's New in v2.0

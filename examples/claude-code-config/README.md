@@ -1,5 +1,7 @@
 # Claude Code Configuration Examples
 
+> **Author:** Scott Glover <scottgl@gmail.com>
+
 This directory demonstrates how to configure the Claude Code agent adapter.
 
 ## Overview
