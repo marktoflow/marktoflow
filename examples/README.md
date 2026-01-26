@@ -13,6 +13,7 @@ All examples have been updated to use **native SDK integrations** instead of Pyt
 - **jira.js** - Official Jira SDK
 - **googleapis** - Official Google APIs
 - **confluence** - Confluence REST API client
+- **playwright** - Browser automation
 - **claude-code** / **opencode** - AI agent integrations
 
 No more subprocess bridging or wrapper scripts! Workflows now call SDK methods directly with full type safety.
@@ -160,6 +161,35 @@ marktoflow run examples/sprint-planning \
 ```
 
 **Scheduled:** Runs automatically every Friday at 2 PM
+
+### 7. Web Automation (`web-automation/`)
+
+**NEW!** Browser automation using Playwright for web scraping, testing, and automation.
+
+**Integrations:** Playwright
+
+**Features:**
+
+- Multi-browser support (Chromium, Firefox, WebKit)
+- Page navigation and interaction
+- Data extraction from web pages
+- Screenshot and PDF generation
+- Form filling automation
+- Cookie and storage management
+- Support for cloud browser services (Browserless, Browserbase)
+
+```bash
+# Basic web scraping
+marktoflow run examples/web-automation/workflow.md
+
+# Advanced scraper with pagination
+marktoflow run examples/web-automation/web-scraper.md -i max_pages=5
+
+# Form automation
+marktoflow run examples/web-automation/form-automation.md
+```
+
+**Requirements:** Playwright browsers (`npx playwright install`)
 
 ## Running Workflows
 

@@ -12,6 +12,7 @@ import { DiscordInitializer } from './services/discord.js';
 import { AirtableInitializer } from './services/airtable.js';
 import { ConfluenceInitializer } from './services/confluence.js';
 import { HttpInitializer } from './services/http.js';
+import { PlaywrightInitializer } from './services/playwright.js';
 import { GoogleSheetsInitializer } from './services/google-sheets.js';
 import { GoogleCalendarInitializer } from './services/google-calendar.js';
 import { GoogleDriveInitializer } from './services/google-drive.js';
@@ -68,6 +69,9 @@ export function registerIntegrations(registry: SDKRegistry) {
 
   // Generic HTTP
   registry.registerInitializer('http', HttpInitializer);
+
+  // Browser Automation
+  registry.registerInitializer('playwright', PlaywrightInitializer);
 
   // AI Adapters
   registry.registerInitializer('ollama', OllamaInitializer);
@@ -142,6 +146,7 @@ export {
 export * from './services/airtable.js';
 export * from './services/confluence.js';
 export * from './services/http.js';
+export * from './services/playwright.js';
 export * from './services/google-sheets.js';
 export * from './services/google-calendar.js';
 export * from './services/google-drive.js';

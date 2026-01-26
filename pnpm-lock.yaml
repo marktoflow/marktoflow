@@ -287,6 +287,9 @@ importers:
       pg:
         specifier: ^8.13.1
         version: 8.17.2
+      playwright:
+        specifier: ^1.50.0
+        version: 1.58.0
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
