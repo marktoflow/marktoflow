@@ -29,6 +29,7 @@ import { ClaudeCodeInitializer } from './adapters/claude-code.js';
 import { ClaudeAgentInitializer } from './adapters/claude-agent.js';
 import { OpenCodeInitializer } from './adapters/opencode.js';
 import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
+import { CodexInitializer } from './adapters/codex.js';
 
 // Tools
 import { ScriptInitializer } from './tools/script.js';
@@ -81,6 +82,8 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('opencode', OpenCodeInitializer);
   registry.registerInitializer('github-copilot', GitHubCopilotInitializer);
   registry.registerInitializer('@github/copilot-sdk', GitHubCopilotInitializer);
+  registry.registerInitializer('codex', CodexInitializer);
+  registry.registerInitializer('@openai/codex-sdk', CodexInitializer);
 
   // Tools
   registry.registerInitializer('script', ScriptInitializer);
@@ -199,6 +202,9 @@ export * from './adapters/claude-agent-hooks.js';
 export * from './adapters/opencode.js';
 export * from './adapters/github-copilot.js';
 export * from './adapters/github-copilot-workflow.js';
+export * from './adapters/codex.js';
+export * from './adapters/codex-types.js';
+export * from './adapters/codex-workflow.js';
 
 // Export tools
 export * from './tools/script.js';
