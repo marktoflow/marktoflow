@@ -7,6 +7,23 @@
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 
+// Stagehand types (optional dependency for AI features)
+interface StagehandClass {
+  new (config?: Record<string, unknown>): StagehandInstance;
+}
+
+interface StagehandInstance {
+  init(options?: { page?: unknown }): Promise<void>;
+  act(options: { action: string }): Promise<{ success?: boolean; message?: string; action?: string }>;
+  observe(options?: { instruction?: string }): Promise<Array<{
+    description?: string;
+    selector?: string;
+    tagName?: string;
+    actions?: string[];
+  }>>;
+  extract(options: { instruction: string; schema?: unknown }): Promise<unknown>;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -53,6 +70,30 @@ export interface PlaywrightConfig {
   };
   /** Connect to existing browser via WebSocket endpoint (e.g., Browserless) */
   wsEndpoint?: string;
+
+  // ========== Session Persistence ==========
+
+  /** Path to storage state file (cookies, localStorage, sessionStorage) */
+  storageState?: string;
+  /** Named session ID for session management */
+  sessionId?: string;
+  /** Directory to store sessions (default: ./sessions) */
+  sessionsDir?: string;
+  /** Auto-save session on close */
+  autoSaveSession?: boolean;
+
+  // ========== AI-Powered Automation (Stagehand) ==========
+
+  /** Enable Stagehand AI-powered automation */
+  enableAI?: boolean;
+  /** AI provider: 'openai' | 'anthropic' */
+  aiProvider?: 'openai' | 'anthropic';
+  /** AI model to use (e.g., 'gpt-4o', 'claude-3-5-sonnet-latest') */
+  aiModel?: string;
+  /** API key for AI provider (defaults to env var) */
+  aiApiKey?: string;
+  /** Enable Stagehand debug mode */
+  aiDebug?: boolean;
 }
 
 export interface NavigateOptions {
@@ -277,11 +318,103 @@ export interface PageInfo {
 }
 
 // ============================================================================
+// Session Management Types
+// ============================================================================
+
+export interface SessionInfo {
+  /** Session ID */
+  id: string;
+  /** Session file path */
+  path: string;
+  /** Creation timestamp */
+  createdAt: string;
+  /** Last used timestamp */
+  lastUsedAt: string;
+  /** Associated URLs/domains */
+  domains: string[];
+}
+
+export interface SessionState {
+  /** Cookies */
+  cookies: Array<{
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+    expires: number;
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite: 'Strict' | 'Lax' | 'None';
+  }>;
+  /** Origins with localStorage/sessionStorage */
+  origins: Array<{
+    origin: string;
+    localStorage: Array<{ name: string; value: string }>;
+  }>;
+}
+
+// ============================================================================
+// AI-Powered Automation Types (Stagehand)
+// ============================================================================
+
+export interface ActOptions {
+  /** Natural language instruction for what action to perform */
+  instruction: string;
+  /** Optional: Make the action optional (don't fail if can't perform) */
+  optional?: boolean;
+  /** Timeout in milliseconds */
+  timeout?: number;
+}
+
+export interface ActResult {
+  /** Whether the action was performed successfully */
+  success: boolean;
+  /** Description of what was done */
+  action?: string;
+  /** Element that was interacted with */
+  element?: string;
+  /** Any error message */
+  error?: string;
+}
+
+export interface AIExtractOptions {
+  /** Natural language description of what to extract */
+  instruction: string;
+  /** Zod-like schema description for structured extraction */
+  schema?: Record<string, string>;
+  /** Timeout in milliseconds */
+  timeout?: number;
+}
+
+export interface ObserveOptions {
+  /** Natural language description of what to observe/find */
+  instruction?: string;
+  /** Return only actionable elements */
+  onlyActionable?: boolean;
+  /** Timeout in milliseconds */
+  timeout?: number;
+}
+
+export interface ObserveResult {
+  /** List of observed elements/actions */
+  elements: Array<{
+    /** Element description */
+    description: string;
+    /** Element selector */
+    selector: string;
+    /** Element tag name */
+    tagName: string;
+    /** Available actions */
+    actions: string[];
+  }>;
+}
+
+// ============================================================================
 // Playwright Client
 // ============================================================================
 
 /**
- * Playwright browser automation client
+ * Playwright browser automation client with session persistence and AI support
  */
 export class PlaywrightClient {
   private playwright: typeof import('playwright') | null = null;
@@ -289,6 +422,8 @@ export class PlaywrightClient {
   private context: import('playwright').BrowserContext | null = null;
   private page: import('playwright').Page | null = null;
   private config: PlaywrightConfig;
+  private stagehand: unknown = null;
+  private sessionPath: string | null = null;
 
   constructor(config: PlaywrightConfig = {}) {
     this.config = {
@@ -296,8 +431,26 @@ export class PlaywrightClient {
       headless: true,
       timeout: 30000,
       viewport: { width: 1280, height: 720 },
+      sessionsDir: './sessions',
+      autoSaveSession: false,
       ...config,
     };
+  }
+
+  /**
+   * Get the session file path for a given session ID
+   */
+  private getSessionPath(sessionId: string): string {
+    const fs = require('fs');
+    const path = require('path');
+    const sessionsDir = this.config.sessionsDir || './sessions';
+
+    // Ensure sessions directory exists
+    if (!fs.existsSync(sessionsDir)) {
+      fs.mkdirSync(sessionsDir, { recursive: true });
+    }
+
+    return path.join(sessionsDir, `${sessionId}.json`);
   }
 
   /**
@@ -339,6 +492,19 @@ export class PlaywrightClient {
       extraHTTPHeaders: this.config.extraHTTPHeaders,
       recordVideo: this.config.recordVideo,
     };
+
+    // Load storage state from session or file
+    if (this.config.sessionId) {
+      const sessionPath = this.getSessionPath(this.config.sessionId);
+      const fs = require('fs');
+      if (fs.existsSync(sessionPath)) {
+        contextOptions.storageState = sessionPath;
+        this.sessionPath = sessionPath;
+      }
+    } else if (this.config.storageState) {
+      contextOptions.storageState = this.config.storageState;
+      this.sessionPath = this.config.storageState;
+    }
 
     // Handle device emulation
     if (this.config.deviceName && this.playwright.devices[this.config.deviceName]) {
@@ -971,6 +1137,11 @@ export class PlaywrightClient {
    * Close the browser
    */
   async close(): Promise<void> {
+    // Auto-save session if configured
+    if (this.config.autoSaveSession && this.config.sessionId && this.context) {
+      await this.saveSession().catch(() => {});
+    }
+
     if (this.page) {
       await this.page.close().catch(() => {});
       this.page = null;
@@ -983,6 +1154,7 @@ export class PlaywrightClient {
       await this.browser.close().catch(() => {});
       this.browser = null;
     }
+    this.stagehand = null;
   }
 
   /**
@@ -1004,6 +1176,344 @@ export class PlaywrightClient {
    */
   getContext(): import('playwright').BrowserContext | null {
     return this.context;
+  }
+
+  // ==========================================================================
+  // Session Management
+  // ==========================================================================
+
+  /**
+   * Save the current session state (cookies, localStorage, sessionStorage)
+   */
+  async saveSession(sessionIdOrPath?: string): Promise<SessionInfo> {
+    if (!this.context) {
+      throw new Error('No browser context to save session from');
+    }
+
+    let savePath: string;
+
+    if (sessionIdOrPath) {
+      // Check if it's a path or session ID
+      if (sessionIdOrPath.includes('/') || sessionIdOrPath.includes('\\') || sessionIdOrPath.endsWith('.json')) {
+        savePath = sessionIdOrPath;
+      } else {
+        savePath = this.getSessionPath(sessionIdOrPath);
+      }
+    } else if (this.config.sessionId) {
+      savePath = this.getSessionPath(this.config.sessionId);
+    } else if (this.sessionPath) {
+      savePath = this.sessionPath;
+    } else {
+      throw new Error('No session ID or path specified');
+    }
+
+    // Save the storage state
+    await this.context.storageState({ path: savePath });
+    this.sessionPath = savePath;
+
+    // Get domains from cookies
+    const cookies = await this.context.cookies();
+    const domains = [...new Set(cookies.map(c => c.domain))];
+
+    // Create session info
+    const sessionId = savePath.split('/').pop()?.replace('.json', '') || 'unknown';
+    const now = new Date().toISOString();
+
+    const sessionInfo: SessionInfo = {
+      id: sessionId,
+      path: savePath,
+      createdAt: now,
+      lastUsedAt: now,
+      domains,
+    };
+
+    return sessionInfo;
+  }
+
+  /**
+   * Load a session state from file
+   */
+  async loadSession(sessionIdOrPath: string): Promise<SessionInfo> {
+    const fs = require('fs');
+    let loadPath: string;
+
+    // Check if it's a path or session ID
+    if (sessionIdOrPath.includes('/') || sessionIdOrPath.includes('\\') || sessionIdOrPath.endsWith('.json')) {
+      loadPath = sessionIdOrPath;
+    } else {
+      loadPath = this.getSessionPath(sessionIdOrPath);
+    }
+
+    if (!fs.existsSync(loadPath)) {
+      throw new Error(`Session file not found: ${loadPath}`);
+    }
+
+    // If browser is already running, we need to create a new context
+    if (this.browser) {
+      // Close existing context
+      if (this.context) {
+        await this.context.close();
+      }
+
+      // Create new context with session state
+      const contextOptions: import('playwright').BrowserContextOptions = {
+        viewport: this.config.viewport,
+        userAgent: this.config.userAgent,
+        locale: this.config.locale,
+        timezoneId: this.config.timezoneId,
+        storageState: loadPath,
+      };
+
+      this.context = await this.browser.newContext(contextOptions);
+      this.page = await this.context.newPage();
+    } else {
+      // Store path for when browser is launched
+      this.config.storageState = loadPath;
+    }
+
+    this.sessionPath = loadPath;
+
+    // Read session to get info
+    const sessionData = JSON.parse(fs.readFileSync(loadPath, 'utf-8'));
+    const domains = [...new Set((sessionData.cookies || []).map((c: { domain: string }) => c.domain))];
+
+    const sessionId = loadPath.split('/').pop()?.replace('.json', '') || 'unknown';
+
+    return {
+      id: sessionId,
+      path: loadPath,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: new Date().toISOString(),
+      domains: domains as string[],
+    };
+  }
+
+  /**
+   * List all saved sessions
+   */
+  async listSessions(): Promise<SessionInfo[]> {
+    const fs = require('fs');
+    const path = require('path');
+    const sessionsDir = this.config.sessionsDir || './sessions';
+
+    if (!fs.existsSync(sessionsDir)) {
+      return [];
+    }
+
+    const files = fs.readdirSync(sessionsDir).filter((f: string) => f.endsWith('.json'));
+    const sessions: SessionInfo[] = [];
+
+    for (const file of files) {
+      const filePath = path.join(sessionsDir, file);
+      try {
+        const stat = fs.statSync(filePath);
+        const sessionData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        const domains = [...new Set((sessionData.cookies || []).map((c: { domain: string }) => c.domain))];
+
+        sessions.push({
+          id: file.replace('.json', ''),
+          path: filePath,
+          createdAt: stat.birthtime.toISOString(),
+          lastUsedAt: stat.mtime.toISOString(),
+          domains: domains as string[],
+        });
+      } catch {
+        // Skip invalid files
+      }
+    }
+
+    return sessions;
+  }
+
+  /**
+   * Delete a saved session
+   */
+  async deleteSession(sessionId: string): Promise<boolean> {
+    const fs = require('fs');
+    const sessionPath = this.getSessionPath(sessionId);
+
+    if (fs.existsSync(sessionPath)) {
+      fs.unlinkSync(sessionPath);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if a session exists
+   */
+  hasSession(sessionId: string): boolean {
+    const fs = require('fs');
+    return fs.existsSync(this.getSessionPath(sessionId));
+  }
+
+  // ==========================================================================
+  // AI-Powered Automation (Stagehand)
+  // ==========================================================================
+
+  /**
+   * Initialize Stagehand for AI-powered automation
+   */
+  private async initStagehand(): Promise<unknown> {
+    if (this.stagehand) {
+      return this.stagehand;
+    }
+
+    if (!this.config.enableAI) {
+      throw new Error('AI automation is not enabled. Set enableAI: true in config.');
+    }
+
+    try {
+      // Dynamically import Stagehand (optional dependency)
+      // Use string variable to bypass TypeScript module resolution
+      const stagehandPackage = '@browserbasehq/stagehand';
+      let stagehandModule: { Stagehand: StagehandClass } | null = null;
+
+      try {
+        stagehandModule = await import(stagehandPackage) as { Stagehand: StagehandClass };
+      } catch {
+        throw new Error(
+          'Stagehand is not installed. Install it with: npm install @browserbasehq/stagehand'
+        );
+      }
+
+      const { Stagehand } = stagehandModule;
+
+      // Ensure browser is launched
+      await this.ensureLaunched();
+
+      // Configure Stagehand
+      const stagehandConfig: Record<string, unknown> = {
+        env: 'LOCAL',
+        enableCaching: true,
+        debugDom: this.config.aiDebug,
+      };
+
+      // Set model configuration
+      if (this.config.aiProvider === 'anthropic') {
+        stagehandConfig.modelName = this.config.aiModel || 'claude-3-5-sonnet-latest';
+        stagehandConfig.modelClientOptions = {
+          apiKey: this.config.aiApiKey || process.env.ANTHROPIC_API_KEY,
+        };
+      } else {
+        // Default to OpenAI
+        stagehandConfig.modelName = this.config.aiModel || 'gpt-4o';
+        stagehandConfig.modelClientOptions = {
+          apiKey: this.config.aiApiKey || process.env.OPENAI_API_KEY,
+        };
+      }
+
+      this.stagehand = new Stagehand(stagehandConfig);
+      await (this.stagehand as StagehandInstance).init({ page: this.page });
+
+      return this.stagehand;
+    } catch (error) {
+      throw new Error(
+        `Failed to initialize Stagehand AI. Make sure @browserbasehq/stagehand is installed: npm install @browserbasehq/stagehand\n` +
+        `Original error: ${error}`
+      );
+    }
+  }
+
+  /**
+   * Perform an action using natural language (AI-powered)
+   *
+   * @example
+   * await browser.act({ instruction: 'Click the login button' })
+   * await browser.act({ instruction: 'Fill in the email field with test@example.com' })
+   */
+  async act(options: ActOptions): Promise<ActResult> {
+    const stagehand = await this.initStagehand() as {
+      act: (options: { action: string }) => Promise<{ success: boolean; message?: string; action?: string }>;
+    };
+
+    try {
+      const result = await stagehand.act({
+        action: options.instruction,
+      });
+
+      return {
+        success: result.success !== false,
+        action: result.action || options.instruction,
+        element: result.message,
+      };
+    } catch (error) {
+      if (options.optional) {
+        return {
+          success: false,
+          error: String(error),
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Observe available actions on the page (AI-powered)
+   *
+   * @example
+   * const result = await browser.observe({ instruction: 'Find all buttons' })
+   */
+  async observe(options: ObserveOptions = {}): Promise<ObserveResult> {
+    const stagehand = await this.initStagehand() as {
+      observe: (options?: { instruction?: string }) => Promise<Array<{
+        description: string;
+        selector: string;
+        tagName?: string;
+        actions?: string[];
+      }>>;
+    };
+
+    const result = await stagehand.observe({
+      instruction: options.instruction,
+    });
+
+    return {
+      elements: (result || []).map(el => ({
+        description: el.description || '',
+        selector: el.selector || '',
+        tagName: el.tagName || 'unknown',
+        actions: el.actions || ['click'],
+      })),
+    };
+  }
+
+  /**
+   * Extract structured data from the page using AI
+   *
+   * @example
+   * const data = await browser.aiExtract({
+   *   instruction: 'Extract the product name and price',
+   *   schema: { name: 'string', price: 'number' }
+   * })
+   */
+  async aiExtract(options: AIExtractOptions): Promise<unknown> {
+    const stagehand = await this.initStagehand() as {
+      extract: (options: { instruction: string; schema?: unknown }) => Promise<unknown>;
+    };
+
+    // Convert simple schema description to format Stagehand expects
+    let schema: unknown = undefined;
+    if (options.schema) {
+      // For now, pass the schema description as-is
+      // Users can use Zod schemas if they import @browserbasehq/stagehand directly
+      schema = options.schema;
+    }
+
+    const result = await stagehand.extract({
+      instruction: options.instruction,
+      schema,
+    });
+
+    return result;
+  }
+
+  /**
+   * Check if AI automation is available
+   */
+  isAIEnabled(): boolean {
+    return this.config.enableAI === true;
   }
 }
 
@@ -1038,6 +1548,19 @@ export const PlaywrightInitializer: SDKInitializer = {
       extraHTTPHeaders: getOption<Record<string, string>>('extra_http_headers', 'extraHTTPHeaders'),
       recordVideo: getOption<PlaywrightConfig['recordVideo']>('record_video', 'recordVideo'),
       wsEndpoint: getOption<string>('ws_endpoint', 'wsEndpoint'),
+
+      // Session persistence
+      storageState: getOption<string>('storage_state', 'storageState'),
+      sessionId: getOption<string>('session_id', 'sessionId'),
+      sessionsDir: getOption<string>('sessions_dir', 'sessionsDir'),
+      autoSaveSession: getOption<boolean>('auto_save_session', 'autoSaveSession'),
+
+      // AI automation
+      enableAI: getOption<boolean>('enable_ai', 'enableAI'),
+      aiProvider: getOption<'openai' | 'anthropic'>('ai_provider', 'aiProvider'),
+      aiModel: getOption<string>('ai_model', 'aiModel'),
+      aiApiKey: getOption<string>('ai_api_key', 'aiApiKey'),
+      aiDebug: getOption<boolean>('ai_debug', 'aiDebug'),
     };
 
     const client = new PlaywrightClient(playwrightConfig);

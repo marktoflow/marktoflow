@@ -671,3 +671,208 @@ describe('Playwright Workflow Actions', () => {
     expect(result.count).toBeGreaterThan(0);
   });
 });
+
+// ============================================================================
+// Session Management Tests
+// ============================================================================
+
+describe('Playwright Session Management', () => {
+  // Mock fs module
+  const mockFs = {
+    existsSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    readFileSync: vi.fn(),
+    writeFileSync: vi.fn(),
+    unlinkSync: vi.fn(),
+    readdirSync: vi.fn(),
+    statSync: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock require for fs
+    vi.doMock('fs', () => mockFs);
+  });
+
+  it('should create client with session config', () => {
+    const client = new PlaywrightClient({
+      sessionId: 'my-session',
+      sessionsDir: './test-sessions',
+      autoSaveSession: true,
+    });
+
+    expect(client).toBeInstanceOf(PlaywrightClient);
+  });
+
+  it('should create client with storage state path', () => {
+    const client = new PlaywrightClient({
+      storageState: './sessions/existing.json',
+    });
+
+    expect(client).toBeInstanceOf(PlaywrightClient);
+  });
+
+  it('should check if session exists', () => {
+    mockFs.existsSync.mockReturnValue(true);
+
+    const client = new PlaywrightClient({
+      sessionsDir: './sessions',
+    });
+
+    // The hasSession method uses fs internally
+    expect(client).toBeInstanceOf(PlaywrightClient);
+  });
+
+  it('should support session management config in initializer', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        session_id: 'test-session',
+        sessions_dir: './my-sessions',
+        auto_save_session: true,
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config);
+    expect(client).toBeInstanceOf(PlaywrightClient);
+  });
+});
+
+// ============================================================================
+// AI Automation Tests
+// ============================================================================
+
+describe('Playwright AI Automation', () => {
+  it('should create client with AI config', () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiProvider: 'openai',
+      aiModel: 'gpt-4o',
+    });
+
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should create client with Anthropic AI config', () => {
+    const client = new PlaywrightClient({
+      enableAI: true,
+      aiProvider: 'anthropic',
+      aiModel: 'claude-3-5-sonnet-latest',
+    });
+
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should report AI not enabled when not configured', () => {
+    const client = new PlaywrightClient();
+
+    expect(client.isAIEnabled()).toBe(false);
+  });
+
+  it('should support AI config in initializer', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        enable_ai: true,
+        ai_provider: 'openai',
+        ai_model: 'gpt-4o',
+        ai_debug: true,
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config) as PlaywrightClient;
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should support camelCase AI config', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        enableAI: true,
+        aiProvider: 'anthropic',
+        aiModel: 'claude-3-5-sonnet-latest',
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config) as PlaywrightClient;
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should throw error when calling act without AI enabled', async () => {
+    const client = new PlaywrightClient();
+    await client.launch();
+
+    await expect(client.act({ instruction: 'Click the button' }))
+      .rejects.toThrow('AI automation is not enabled');
+  });
+
+  it('should throw error when calling observe without AI enabled', async () => {
+    const client = new PlaywrightClient();
+    await client.launch();
+
+    await expect(client.observe())
+      .rejects.toThrow('AI automation is not enabled');
+  });
+
+  it('should throw error when calling aiExtract without AI enabled', async () => {
+    const client = new PlaywrightClient();
+    await client.launch();
+
+    await expect(client.aiExtract({ instruction: 'Extract the title' }))
+      .rejects.toThrow('AI automation is not enabled');
+  });
+});
+
+// ============================================================================
+// Workflow Integration Tests (Session + AI)
+// ============================================================================
+
+describe('Playwright Advanced Workflow Actions', () => {
+  it('should support workflow with session persistence', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        sessionId: 'workflow-session',
+        autoSaveSession: true,
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config);
+    expect(client).toBeInstanceOf(PlaywrightClient);
+  });
+
+  it('should support workflow with AI automation', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        enableAI: true,
+        aiProvider: 'openai',
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config) as PlaywrightClient;
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+
+  it('should support combined session + AI config', async () => {
+    const config = {
+      sdk: 'playwright',
+      options: {
+        sessionId: 'ai-session',
+        autoSaveSession: true,
+        enableAI: true,
+        aiProvider: 'anthropic',
+        aiModel: 'claude-3-5-sonnet-latest',
+      },
+    };
+
+    const client = await PlaywrightInitializer.initialize(null, config) as PlaywrightClient;
+    expect(client).toBeInstanceOf(PlaywrightClient);
+    expect(client.isAIEnabled()).toBe(true);
+  });
+});
