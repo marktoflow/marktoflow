@@ -29,7 +29,7 @@ marktoflow v2.0 brings powerful new capabilities and integrations:
 - **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
 - **Native MCP Support**: Direct import of MCP server packages
 - **Direct SDK Integration**: Built-in support for 20+ services with official SDKs
-- **AI Agent Integration**: GitHub Copilot, Claude Code, OpenCode, Ollama
+- **AI Agent Integration**: GitHub Copilot, Claude Code, OpenCode, Ollama (beta)
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
 - **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
 - **Universal Triggering**: Webhooks, File Watchers, Cron Schedules
@@ -432,10 +432,15 @@ marktoflow v2.0 includes native SDK integrations for 20+ services:
 
 ### AI Agents
 
-- **GitHub Copilot** (`@github/copilot-sdk`) - GitHub Copilot CLI integration with OAuth authentication
-- **Claude Code** - CLI wrapper for Claude with MCP
-- **OpenCode** - SDK + CLI, 75+ AI backends
-- **Ollama** - Local LLM execution
+Use your **existing AI coding agents without extra API keys** - authenticate once via CLI tools and leverage them in workflows:
+
+- **GitHub Copilot** (`@github/copilot-sdk`) - Use your existing GitHub Copilot subscription via `copilot auth`
+- **OpenAI Codex** (`openai-codex-sdk`) - Leverage OpenAI Codex via existing CLI authentication
+- **Claude Code** - Use your existing Claude subscription via Claude CLI
+- **OpenCode** - SDK + CLI supporting 75+ AI backends including GPT-4, Claude, Gemini
+- **Ollama (beta)** - Run local LLMs without any API keys or subscriptions
+
+**No extra costs**: If you already use these AI coding assistants in your IDE, you can use them in marktoflow workflows without paying for separate API access. Authenticate once via the official CLI tools and marktoflow automatically uses your existing credentials.
 
 ### MCP Protocol
 
@@ -515,10 +520,13 @@ marktoflow update --list-agents
 
 **Supported Coding Agents:**
 
-- **OpenCode** - Best for general-purpose updates and refactoring
-- **Claude Code** - Great for complex logic changes
+- **OpenCode** - Best for general-purpose updates and refactoring (75+ AI backends)
+- **Claude Code** - Great for complex logic changes (uses existing Claude subscription)
+- **OpenAI Codex** - Powerful code generation and refactoring (uses existing Codex access)
 - **Cursor** - IDE integration for visual updates
 - **Aider** - Specialized for code transformations
+
+**Authentication**: All agents use your existing CLI authentication. No additional API keys or subscriptions required if you already use these tools in your development workflow.
 
 **Features:**
 
@@ -556,20 +564,24 @@ marktoflow gui --open         # Open browser automatically
 
 - **Drag-and-Drop Editor** - Visual node-based workflow canvas
 - **AI Assistance** - Natural language commands to modify workflows
-- **Multiple AI Backends** - Claude Code, GitHub Copilot, Claude API, Ollama
+- **Multiple AI Backends** - Claude Code, GitHub Copilot, Claude API, Ollama (beta)
 - **Real-time Execution** - Run and debug workflows from the UI
 - **Live File Sync** - Changes sync automatically with workflow files
 
 ### AI Providers
 
-The GUI supports multiple AI backends:
+The GUI supports multiple AI backends. **Use existing subscriptions without extra API keys**:
 
-| Provider | Authentication |
-|----------|----------------|
-| Claude Code | Claude CLI (automatic) |
-| GitHub Copilot | `copilot auth` |
-| Claude API | `ANTHROPIC_API_KEY` |
-| Ollama | Local server |
+| Provider | Authentication | Cost |
+|----------|----------------|------|
+| GitHub Copilot | `copilot auth` (CLI) | Uses existing subscription |
+| OpenAI Codex | Codex CLI authentication | Uses existing Codex access |
+| Claude Code | Claude CLI (automatic) | Uses existing subscription |
+| OpenCode | CLI configuration | Supports 75+ backends |
+| Claude API | `ANTHROPIC_API_KEY` | Direct API usage (pay per use) |
+| Ollama (beta) | Local server | Free (runs locally) |
+
+**Recommended**: Use CLI-authenticated providers (Copilot, Codex, Claude Code) to avoid additional API costs if you already subscribe to these services.
 
 ### Interface
 
@@ -830,7 +842,6 @@ marktoflow/
 - [Installation Guide](docs/INSTALLATION.md) - Complete installation guide with troubleshooting
 - [REST API Guide](docs/REST-API-GUIDE.md) - Connect to any REST API
 - [AGENTS.md](AGENTS.md) - Development guidance
-- [GEMINI.md](GEMINI.md) - Port status tracking
 - [PROGRESS.md](PROGRESS.md) - Development history
 
 ## Publishing
