@@ -20,21 +20,25 @@ if (typeof globalThis.require === 'undefined') {
 }
 
 // Dynamic import types for Copilot SDK
-interface CopilotClient {
-  createSession: (options: {
-    model?: string;
-    streaming?: boolean;
-    systemMessage?: { content: string };
-  }) => Promise<CopilotSession>;
-  ping: () => Promise<{ message: string; timestamp: number }>;
-  stop: () => Promise<Error[]>;
+// Using loose types to handle SDK version differences
+interface CopilotClientConfig {
+  cliPath?: string;
+  cliUrl?: string;
+  autoStart?: boolean;
+  logLevel?: 'error' | 'info' | 'none' | 'warning' | 'debug' | 'all';
 }
 
-interface CopilotSession {
-  sendAndWait: (options: { prompt: string }) => Promise<{ data: { content: string } } | null>;
-  send: (options: { prompt: string }) => Promise<void>;
-  on: (callback: (event: SessionEvent) => void) => void;
-  destroy: () => Promise<void>;
+interface CopilotSessionOptions {
+  model?: string;
+  streaming?: boolean;
+  systemMessage?: { content: string };
+}
+
+interface CopilotSessionResponse {
+  data?: {
+    content?: string;
+    messageId?: string;
+  };
 }
 
 interface SessionEvent {
@@ -62,7 +66,8 @@ export class CopilotProvider implements AgentProvider {
     ],
   };
 
-  private client: CopilotClient | null = null;
+  // Using 'unknown' to handle SDK version differences
+  private client: unknown = null;
   private model: string = 'gpt-4.1';
   private ready: boolean = false;
   private error: string | undefined;
@@ -85,12 +90,7 @@ export class CopilotProvider implements AgentProvider {
       this.cliPath = config.options?.cliPath as string;
       this.cliUrl = config.baseUrl || (config.options?.cliUrl as string);
 
-      const clientConfig: {
-        cliPath?: string;
-        cliUrl?: string;
-        autoStart?: boolean;
-        logLevel?: string;
-      } = {
+      const clientConfig: CopilotClientConfig = {
         autoStart: true,
         logLevel: 'error',
       };
@@ -110,8 +110,14 @@ export class CopilotProvider implements AgentProvider {
       // Start the client and test connectivity
       try {
         if (this.client) {
-          await this.client.start();
-          await this.client.ping();
+          // Some SDK versions have start(), some don't (auto-start)
+          const client = this.client as { start?: () => Promise<void>; ping?: () => Promise<unknown> };
+          if (typeof client.start === 'function') {
+            await client.start();
+          }
+          if (typeof client.ping === 'function') {
+            await client.ping();
+          }
           this.ready = true;
           this.error = undefined;
         }
@@ -153,14 +159,21 @@ export class CopilotProvider implements AgentProvider {
       // Build context-aware prompts
       const { systemPrompt, userPrompt } = buildPrompt(prompt, workflow, context);
 
-      const session = await this.client.createSession({
+      const client = this.client as {
+        createSession: (opts: CopilotSessionOptions) => Promise<{
+          sendAndWait: (opts: { prompt: string }) => Promise<CopilotSessionResponse | null>;
+          destroy: () => Promise<void>;
+        }>;
+      };
+
+      const session = await client.createSession({
         model: this.model,
         systemMessage: { content: systemPrompt },
       });
 
       try {
         const response = await session.sendAndWait({ prompt: userPrompt });
-        const responseText = response?.data.content || '';
+        const responseText = response?.data?.content || '';
         return this.parseAIResponse(responseText, workflow);
       } finally {
         await session.destroy();
@@ -191,7 +204,15 @@ export class CopilotProvider implements AgentProvider {
     let fullResponse = '';
 
     try {
-      const session = await this.client.createSession({
+      const client = this.client as {
+        createSession: (opts: CopilotSessionOptions) => Promise<{
+          send: (opts: { prompt: string }) => Promise<void>;
+          on: (callback: (event: SessionEvent) => void) => void;
+          destroy: () => Promise<void>;
+        }>;
+      };
+
+      const session = await client.createSession({
         model: this.model,
         streaming: true,
         systemMessage: { content: systemPrompt },
@@ -227,7 +248,10 @@ export class CopilotProvider implements AgentProvider {
 
   async cancel(): Promise<void> {
     if (this.client) {
-      await this.client.stop();
+      const client = this.client as { stop?: () => Promise<unknown> };
+      if (typeof client.stop === 'function') {
+        await client.stop();
+      }
     }
   }
 

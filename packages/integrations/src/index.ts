@@ -76,6 +76,7 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('@anthropic-ai/claude-agent-sdk', ClaudeAgentInitializer);
   registry.registerInitializer('opencode', OpenCodeInitializer);
   registry.registerInitializer('github-copilot', GitHubCopilotInitializer);
+  registry.registerInitializer('@github/copilot-sdk', GitHubCopilotInitializer);
 
   // Tools
   registry.registerInitializer('script', ScriptInitializer);
@@ -191,6 +192,7 @@ export * from './adapters/claude-agent-workflow.js';
 export * from './adapters/claude-agent-hooks.js';
 export * from './adapters/opencode.js';
 export * from './adapters/github-copilot.js';
+export * from './adapters/github-copilot-workflow.js';
 
 // Export tools
 export * from './tools/script.js';
