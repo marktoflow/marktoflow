@@ -57,6 +57,90 @@ describe('API Integration Tests', () => {
         expect(githubTool.name).toBe('GitHub');
         expect(githubTool.sdk).toBe('@octokit/rest');
       });
+
+      it('should include all new payment integrations', async () => {
+        const response = await request(app).get('/api/tools');
+        const stripeTool = response.body.tools.find((t: { id: string }) => t.id === 'stripe');
+
+        expect(stripeTool).toBeDefined();
+        expect(stripeTool.name).toBe('Stripe');
+        expect(stripeTool.category).toBe('Payments');
+        expect(stripeTool.sdk).toBe('stripe');
+      });
+
+      it('should include all new communication integrations', async () => {
+        const response = await request(app).get('/api/tools');
+
+        const twilioTool = response.body.tools.find((t: { id: string }) => t.id === 'twilio');
+        expect(twilioTool).toBeDefined();
+        expect(twilioTool.name).toBe('Twilio');
+        expect(twilioTool.category).toBe('Communication');
+
+        const sendgridTool = response.body.tools.find((t: { id: string }) => t.id === 'sendgrid');
+        expect(sendgridTool).toBeDefined();
+        expect(sendgridTool.name).toBe('SendGrid');
+
+        const teamsTool = response.body.tools.find((t: { id: string }) => t.id === 'teams');
+        expect(teamsTool).toBeDefined();
+        expect(teamsTool.name).toBe('Microsoft Teams');
+      });
+
+      it('should include all new e-commerce integrations', async () => {
+        const response = await request(app).get('/api/tools');
+        const shopifyTool = response.body.tools.find((t: { id: string }) => t.id === 'shopify');
+
+        expect(shopifyTool).toBeDefined();
+        expect(shopifyTool.name).toBe('Shopify');
+        expect(shopifyTool.category).toBe('E-commerce');
+        expect(shopifyTool.sdk).toBe('@shopify/shopify-api');
+      });
+
+      it('should include all new support integrations', async () => {
+        const response = await request(app).get('/api/tools');
+        const zendeskTool = response.body.tools.find((t: { id: string }) => t.id === 'zendesk');
+
+        expect(zendeskTool).toBeDefined();
+        expect(zendeskTool.name).toBe('Zendesk');
+        expect(zendeskTool.category).toBe('Support');
+        expect(zendeskTool.sdk).toBe('node-zendesk');
+      });
+
+      it('should include all new marketing integrations', async () => {
+        const response = await request(app).get('/api/tools');
+        const mailchimpTool = response.body.tools.find((t: { id: string }) => t.id === 'mailchimp');
+
+        expect(mailchimpTool).toBeDefined();
+        expect(mailchimpTool.name).toBe('Mailchimp');
+        expect(mailchimpTool.category).toBe('Marketing');
+        expect(mailchimpTool.sdk).toBe('@mailchimp/mailchimp_marketing');
+      });
+
+      it('should include all new project management integrations', async () => {
+        const response = await request(app).get('/api/tools');
+
+        const asanaTool = response.body.tools.find((t: { id: string }) => t.id === 'asana');
+        expect(asanaTool).toBeDefined();
+        expect(asanaTool.name).toBe('Asana');
+        expect(asanaTool.category).toBe('Project Management');
+
+        const trelloTool = response.body.tools.find((t: { id: string }) => t.id === 'trello');
+        expect(trelloTool).toBeDefined();
+        expect(trelloTool.name).toBe('Trello');
+      });
+
+      it('should include all new storage integrations', async () => {
+        const response = await request(app).get('/api/tools');
+
+        const dropboxTool = response.body.tools.find((t: { id: string }) => t.id === 'dropbox');
+        expect(dropboxTool).toBeDefined();
+        expect(dropboxTool.name).toBe('Dropbox');
+        expect(dropboxTool.category).toBe('Storage');
+
+        const s3Tool = response.body.tools.find((t: { id: string }) => t.id === 'aws-s3');
+        expect(s3Tool).toBeDefined();
+        expect(s3Tool.name).toBe('AWS S3');
+        expect(s3Tool.category).toBe('Storage');
+      });
     });
 
     describe('GET /api/tools/:toolId', () => {
@@ -88,6 +172,124 @@ describe('API Integration Tests', () => {
 
         expect(response.status).toBe(404);
         expect(response.body.error).toBe('Tool not found');
+      });
+    });
+
+    describe('GET /api/tools/:toolId - New Integrations', () => {
+      it('should return stripe tool with payment actions', async () => {
+        const response = await request(app).get('/api/tools/stripe');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('stripe');
+        expect(response.body.tool.actions).toBeDefined();
+
+        const createCustomer = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'customers.create'
+        );
+        expect(createCustomer).toBeDefined();
+        expect(createCustomer.name).toBe('Create Customer');
+
+        const createPaymentIntent = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'paymentIntents.create'
+        );
+        expect(createPaymentIntent).toBeDefined();
+      });
+
+      it('should return twilio tool with messaging actions', async () => {
+        const response = await request(app).get('/api/tools/twilio');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('twilio');
+
+        const sendSMS = response.body.tool.actions.find((a: { id: string }) => a.id === 'sendSMS');
+        expect(sendSMS).toBeDefined();
+        expect(sendSMS.name).toBe('Send SMS');
+
+        const sendWhatsApp = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'sendWhatsApp'
+        );
+        expect(sendWhatsApp).toBeDefined();
+      });
+
+      it('should return shopify tool with e-commerce actions', async () => {
+        const response = await request(app).get('/api/tools/shopify');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('shopify');
+
+        const createProduct = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'createProduct'
+        );
+        expect(createProduct).toBeDefined();
+
+        const createOrder = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'createOrder'
+        );
+        expect(createOrder).toBeDefined();
+      });
+
+      it('should return zendesk tool with support actions', async () => {
+        const response = await request(app).get('/api/tools/zendesk');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('zendesk');
+
+        const createTicket = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'createTicket'
+        );
+        expect(createTicket).toBeDefined();
+        expect(createTicket.name).toBe('Create Ticket');
+      });
+
+      it('should return asana tool with project management actions', async () => {
+        const response = await request(app).get('/api/tools/asana');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('asana');
+
+        const createTask = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'createTask'
+        );
+        expect(createTask).toBeDefined();
+
+        const createProject = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'createProject'
+        );
+        expect(createProject).toBeDefined();
+      });
+
+      it('should return dropbox tool with storage actions', async () => {
+        const response = await request(app).get('/api/tools/dropbox');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('dropbox');
+
+        const uploadFile = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'uploadFile'
+        );
+        expect(uploadFile).toBeDefined();
+
+        const createSharedLink = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'createSharedLink'
+        );
+        expect(createSharedLink).toBeDefined();
+      });
+
+      it('should return aws-s3 tool with object storage actions', async () => {
+        const response = await request(app).get('/api/tools/aws-s3');
+
+        expect(response.status).toBe(200);
+        expect(response.body.tool.id).toBe('aws-s3');
+
+        const uploadObject = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'uploadObject'
+        );
+        expect(uploadObject).toBeDefined();
+
+        const listObjects = response.body.tool.actions.find(
+          (a: { id: string }) => a.id === 'listObjects'
+        );
+        expect(listObjects).toBeDefined();
       });
     });
 

@@ -12,6 +12,15 @@ import {
   Bot,
   Zap,
   HelpCircle,
+  Phone,
+  Send,
+  ShoppingCart,
+  Headphones,
+  Users,
+  CheckSquare,
+  Cloud,
+  HardDrive,
+  CreditCard,
 } from 'lucide-react';
 
 type IconComponent = React.ComponentType<{ className?: string }>;
@@ -34,6 +43,18 @@ const serviceIcons: Record<string, IconComponent> = {
   webhook: Zap,
   schedule: Calendar,
   trigger: Zap,
+  stripe: CreditCard,
+  teams: Users,
+  twilio: Phone,
+  sendgrid: Send,
+  shopify: ShoppingCart,
+  zendesk: Headphones,
+  mailchimp: Mail,
+  asana: CheckSquare,
+  trello: Trello,
+  dropbox: Cloud,
+  's3': HardDrive,
+  'aws-s3': HardDrive,
 };
 
 export function getServiceIcon(serviceName: string): IconComponent {
@@ -57,6 +78,18 @@ export function getServiceColor(serviceName: string): string {
     claude: '#CC785C',
     opencode: '#00A67E',
     ollama: '#1a1a2e',
+    stripe: '#635BFF',
+    teams: '#6264A7',
+    twilio: '#F22F46',
+    sendgrid: '#1A82E2',
+    shopify: '#96BF48',
+    zendesk: '#03363D',
+    mailchimp: '#FFE01B',
+    asana: '#F06A6A',
+    trello: '#0079BF',
+    dropbox: '#0061FF',
+    's3': '#FF9900',
+    'aws-s3': '#FF9900',
   };
 
   const normalizedName = serviceName.toLowerCase().split('.')[0];

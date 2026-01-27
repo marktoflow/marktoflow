@@ -24,6 +24,15 @@ import { PostgresInitializer } from './services/postgres.js';
 import { MySQLInitializer } from './services/mysql.js';
 import { StripeInitializer } from './services/stripe.js';
 import { TeamsInitializer } from './services/teams.js';
+import { TwilioInitializer } from './services/twilio.js';
+import { SendGridInitializer } from './services/sendgrid.js';
+import { ShopifyInitializer } from './services/shopify.js';
+import { ZendeskInitializer } from './services/zendesk.js';
+import { MailchimpInitializer } from './services/mailchimp.js';
+import { AsanaInitializer } from './services/asana.js';
+import { TrelloInitializer } from './services/trello.js';
+import { DropboxInitializer } from './services/dropbox.js';
+import { AWSS3Initializer } from './services/aws-s3.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
@@ -67,8 +76,25 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('pg', PostgresInitializer);
   registry.registerInitializer('mysql2', MySQLInitializer);
 
-  // Payments
+  // Payments & E-commerce
   registry.registerInitializer('stripe', StripeInitializer);
+  registry.registerInitializer('@shopify/shopify-api', ShopifyInitializer);
+
+  // Communications
+  registry.registerInitializer('twilio', TwilioInitializer);
+  registry.registerInitializer('@sendgrid/mail', SendGridInitializer);
+  registry.registerInitializer('@mailchimp/mailchimp_marketing', MailchimpInitializer);
+
+  // Customer Support
+  registry.registerInitializer('node-zendesk', ZendeskInitializer);
+
+  // Project Management
+  registry.registerInitializer('asana', AsanaInitializer);
+  registry.registerInitializer('trello', TrelloInitializer);
+
+  // File Storage
+  registry.registerInitializer('dropbox', DropboxInitializer);
+  registry.registerInitializer('@aws-sdk/client-s3', AWSS3Initializer);
 
   // Google Services
   registry.registerInitializer('google-sheets', GoogleSheetsInitializer);
@@ -224,6 +250,73 @@ export {
   type ListChannelsOptions,
   type ListMessagesOptions,
 } from './services/teams.js';
+export {
+  TwilioClientWrapper,
+  TwilioInitializer,
+  type TwilioClient,
+  type SendMessageOptions as TwilioSendMessageOptions,
+  type MakeCallOptions,
+  type SendWhatsAppOptions,
+} from './services/twilio.js';
+export {
+  SendGridClient,
+  SendGridInitializer,
+  type SendEmailOptions as SendGridSendEmailOptions,
+} from './services/sendgrid.js';
+export {
+  ShopifyClient,
+  ShopifyInitializer,
+  type ShopifyProduct,
+  type ShopifyOrder,
+  type ShopifyCustomer,
+} from './services/shopify.js';
+export {
+  ZendeskClient,
+  ZendeskInitializer,
+  type ZendeskTicket,
+  type ZendeskUser,
+  type SearchOptions as ZendeskSearchOptions,
+} from './services/zendesk.js';
+export {
+  MailchimpClient,
+  MailchimpInitializer,
+  type MailchimpMember,
+  type MailchimpCampaign,
+  type SendCampaignOptions,
+} from './services/mailchimp.js';
+export {
+  AsanaClient,
+  AsanaInitializer,
+  type AsanaTask,
+  type AsanaProject,
+  type AsanaSection,
+} from './services/asana.js';
+export {
+  TrelloClient,
+  TrelloInitializer,
+  type TrelloCard,
+  type TrelloList,
+  type TrelloBoard,
+  type TrelloLabel,
+} from './services/trello.js';
+export {
+  DropboxClient,
+  DropboxInitializer,
+  type DropboxFileMetadata,
+  type DropboxFolderMetadata,
+  type UploadOptions as DropboxUploadOptions,
+  type DownloadOptions as DropboxDownloadOptions,
+  type ShareOptions as DropboxShareOptions,
+} from './services/dropbox.js';
+export {
+  AWSS3Client,
+  AWSS3Initializer,
+  type UploadObjectOptions,
+  type GetObjectOptions,
+  type DeleteObjectOptions,
+  type ListObjectsOptions,
+  type CopyObjectOptions,
+} from './services/aws-s3.js';
 
 // Export triggers
 export { SlackSocketTrigger } from './services/slack-socket.js';
