@@ -1,0 +1,714 @@
+# marktoflow YAML API Reference
+
+Complete API reference for marktoflow v2.0 workflow YAML syntax.
+
+---
+
+## Table of Contents
+
+1. [Workflow Structure](#workflow-structure)
+2. [Workflow Metadata](#workflow-metadata)
+3. [Tool Configuration](#tool-configuration)
+4. [Inputs](#inputs)
+5. [Triggers](#triggers)
+6. [Steps](#steps)
+7. [Control Flow](#control-flow)
+8. [Variable Resolution](#variable-resolution)
+9. [Error Handling](#error-handling)
+10. [Service Integrations](./yaml-api/services.md)
+11. [AI Agent Integrations](./yaml-api/ai-agents.md)
+
+---
+
+## Workflow Structure
+
+A marktoflow workflow is a markdown file with YAML frontmatter:
+
+```yaml
+---
+workflow:
+  id: string              # Required: Unique workflow identifier
+  name: string            # Required: Human-readable name
+  version: string         # Optional: Version (default: "1.0.0")
+  description: string     # Optional: Workflow description
+  author: string          # Optional: Author name
+  tags: string[]          # Optional: Tags for categorization
+
+tools:
+  # Tool configurations (see Tool Configuration section)
+
+inputs:
+  # Input parameters (see Inputs section)
+
+triggers:
+  # Trigger configurations (see Triggers section)
+
+steps:
+  # Optional: Steps can be defined here instead of markdown
+---
+
+# Workflow Documentation
+
+Markdown content with step definitions in code blocks...
+
+## Step 1: Example
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: "#general"
+  text: "Hello!"
+```
+```
+
+---
+
+## Workflow Metadata
+
+### `workflow` (required)
+
+Top-level workflow metadata object.
+
+#### Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `id` | `string` | Yes | - | Unique workflow identifier (lowercase, hyphens allowed) |
+| `name` | `string` | Yes | - | Human-readable workflow name |
+| `version` | `string` | No | `"1.0.0"` | Semantic version |
+| `description` | `string` | No | - | Workflow description |
+| `author` | `string` | No | - | Author name or email |
+| `tags` | `string[]` | No | - | Tags for categorization and search |
+
+#### Example
+
+```yaml
+workflow:
+  id: daily-standup-slack
+  name: Daily Standup Slack Notification
+  version: 2.1.0
+  description: Automatically sends daily standup reminders to Slack
+  author: DevOps Team <devops@company.com>
+  tags:
+    - slack
+    - standup
+    - automation
+```
+
+---
+
+## Tool Configuration
+
+### `tools` (optional)
+
+Defines external service integrations and AI agents used in the workflow.
+
+#### Structure
+
+```yaml
+tools:
+  <tool_name>:
+    sdk: string                      # Required: npm package or MCP server
+    auth:                            # Optional: Authentication credentials
+      <key>: string | ${ENV_VAR}
+    options:                         # Optional: Tool-specific options
+      <key>: any
+```
+
+#### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `sdk` | `string` | Yes | npm package name (e.g., `@slack/web-api`) or MCP server name |
+| `auth` | `object` | No | Authentication credentials (tool-specific) |
+| `options` | `object` | No | Additional configuration options |
+
+#### Authentication Types
+
+**OAuth2 (Gmail, Google services, Outlook)**
+```yaml
+auth:
+  client_id: ${GOOGLE_CLIENT_ID}
+  client_secret: ${GOOGLE_CLIENT_SECRET}
+  redirect_uri: http://localhost:3000/callback
+  refresh_token: ${GOOGLE_REFRESH_TOKEN}
+  access_token: ${GOOGLE_ACCESS_TOKEN}
+```
+
+**API Token (Slack, GitHub, Notion, Discord)**
+```yaml
+auth:
+  token: ${SLACK_BOT_TOKEN}
+```
+
+**API Key (Linear, Airtable)**
+```yaml
+auth:
+  api_key: ${LINEAR_API_KEY}
+```
+
+**Email + API Token (Jira, Confluence)**
+```yaml
+auth:
+  host: https://company.atlassian.net
+  email: user@company.com
+  api_token: ${JIRA_API_TOKEN}
+```
+
+**Database (PostgreSQL, MySQL)**
+```yaml
+auth:
+  host: localhost
+  port: 5432
+  database: mydb
+  user: postgres
+  password: ${DB_PASSWORD}
+  ssl: true  # Optional
+```
+
+**Supabase**
+```yaml
+auth:
+  url: https://project.supabase.co
+  key: ${SUPABASE_KEY}
+```
+
+#### Examples
+
+**Slack Integration**
+```yaml
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: ${SLACK_BOT_TOKEN}
+```
+
+**Gmail Integration**
+```yaml
+tools:
+  gmail:
+    sdk: googleapis
+    auth:
+      client_id: ${GOOGLE_CLIENT_ID}
+      client_secret: ${GOOGLE_CLIENT_SECRET}
+      redirect_uri: http://localhost:3000/callback
+      refresh_token: ${GOOGLE_REFRESH_TOKEN}
+      access_token: ${GOOGLE_ACCESS_TOKEN}
+```
+
+**GitHub Copilot Integration**
+```yaml
+tools:
+  copilot:
+    sdk: '@github/copilot-sdk'
+    options:
+      model: gpt-4.1
+      auto_start: true
+      exclude_files:
+        - "node_modules/**"
+        - "dist/**"
+```
+
+**HTTP/GraphQL Integration**
+```yaml
+tools:
+  api:
+    sdk: http
+    auth:
+      type: bearer
+      token: ${API_TOKEN}
+    options:
+      base_url: https://api.example.com
+      headers:
+        Content-Type: application/json
+```
+
+---
+
+## Inputs
+
+### `inputs` (optional)
+
+Defines workflow input parameters with validation.
+
+#### Structure
+
+```yaml
+inputs:
+  <input_name>:
+    type: string | number | boolean | array | object
+    required: boolean
+    default: any
+    description: string
+    enum: any[]        # Optional: Allowed values
+    pattern: string    # Optional: Regex pattern for strings
+    min: number        # Optional: Min value/length
+    max: number        # Optional: Max value/length
+```
+
+#### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `type` | `string` | Yes | Data type: `string`, `number`, `boolean`, `array`, `object` |
+| `required` | `boolean` | No | Whether input is required (default: `false`) |
+| `default` | `any` | No | Default value if not provided |
+| `description` | `string` | No | Human-readable description |
+| `enum` | `any[]` | No | List of allowed values |
+| `pattern` | `string` | No | Regex pattern for string validation |
+| `min` | `number` | No | Minimum value (numbers) or length (strings/arrays) |
+| `max` | `number` | No | Maximum value (numbers) or length (strings/arrays) |
+
+#### Examples
+
+```yaml
+inputs:
+  channel:
+    type: string
+    required: true
+    description: Slack channel to post message
+    pattern: "^#[a-z0-9-]+$"
+
+  message:
+    type: string
+    required: true
+    description: Message text
+    min: 1
+    max: 4000
+
+  priority:
+    type: string
+    default: medium
+    enum: [low, medium, high, critical]
+    description: Message priority level
+
+  send_notification:
+    type: boolean
+    default: true
+    description: Whether to send push notifications
+
+  recipients:
+    type: array
+    default: []
+    description: List of recipient user IDs
+
+  max_retries:
+    type: number
+    default: 3
+    min: 0
+    max: 10
+    description: Maximum retry attempts
+```
+
+#### Accessing Inputs in Steps
+
+Use `{{inputs.<name>}}` template syntax:
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: "{{inputs.channel}}"
+  text: "{{inputs.message}}"
+```
+
+---
+
+## Triggers
+
+### `triggers` (optional)
+
+Defines how the workflow is triggered.
+
+#### Structure
+
+```yaml
+triggers:
+  - type: schedule | webhook | file_watch | manual
+    enabled: boolean          # Optional: Enable/disable trigger (default: true)
+    config:                   # Optional: Trigger-specific configuration
+      <key>: any
+```
+
+#### Trigger Types
+
+##### **schedule** - Cron-based scheduling
+
+```yaml
+triggers:
+  - type: schedule
+    config:
+      cron: "0 9 * * 1-5"     # Every weekday at 9 AM
+      timezone: America/New_York  # Optional: Timezone (default: UTC)
+```
+
+**Cron Format:** `minute hour day month day-of-week`
+
+Common patterns:
+- `"0 9 * * *"` - Every day at 9 AM
+- `"*/15 * * * *"` - Every 15 minutes
+- `"0 0 * * 0"` - Every Sunday at midnight
+- `"0 9 * * 1-5"` - Weekdays at 9 AM
+- `"0 0 1 * *"` - First day of every month
+
+##### **webhook** - HTTP webhook trigger
+
+```yaml
+triggers:
+  - type: webhook
+    config:
+      path: /hooks/deploy          # Webhook URL path
+      method: POST                 # HTTP method (default: POST)
+      secret: ${WEBHOOK_SECRET}    # Optional: Webhook secret for validation
+```
+
+##### **file_watch** - File system watcher
+
+```yaml
+triggers:
+  - type: file_watch
+    config:
+      path: ./data                 # Directory or file to watch
+      pattern: "*.json"            # Optional: File pattern
+      events: [create, update]     # Optional: Events to watch (create, update, delete)
+```
+
+##### **manual** - Manual execution only
+
+```yaml
+triggers:
+  - type: manual
+```
+
+#### Multiple Triggers
+
+A workflow can have multiple triggers:
+
+```yaml
+triggers:
+  - type: schedule
+    config:
+      cron: "0 9 * * 1-5"
+
+  - type: webhook
+    config:
+      path: /hooks/manual-trigger
+
+  - type: manual
+```
+
+---
+
+## Steps
+
+### Step Types
+
+marktoflow supports multiple step types:
+
+1. **Action Step** - Execute a service action
+2. **Workflow Step** - Call another workflow
+3. **If Step** - Conditional branching
+4. **Switch Step** - Multi-way branching
+5. **For-Each Step** - Iterate over arrays
+6. **While Step** - Conditional loops
+7. **Map Step** - Transform arrays
+8. **Filter Step** - Filter arrays
+9. **Reduce Step** - Aggregate arrays
+10. **Parallel Step** - Execute branches in parallel
+11. **Try Step** - Exception handling
+
+### Common Step Properties
+
+All steps support these base properties:
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `id` | `string` | No | Step identifier (auto-generated if not provided) |
+| `name` | `string` | No | Human-readable step name |
+| `type` | `string` | No | Step type (auto-detected if not provided) |
+| `conditions` | `string[]` | No | Conditions that must be true for step to execute |
+| `timeout` | `number` | No | Step timeout in milliseconds (default: 60000) |
+| `output_variable` | `string` | No | Variable name to store step output |
+
+### Action Step
+
+Executes a service action.
+
+#### Syntax
+
+```yaml
+type: action                    # Optional: auto-detected
+action: <tool>.<method>         # Required: Tool action to execute
+inputs:                         # Optional: Action inputs
+  <key>: any
+output_variable: string         # Optional: Store result
+error_handling:                 # Optional: Error handling config
+  action: stop | continue | rollback
+  max_retries: number
+  retry_delay_seconds: number
+  fallback_action: <tool>.<method>
+```
+
+#### Example
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: "#general"
+  text: "{{inputs.message}}"
+output_variable: slack_response
+error_handling:
+  action: stop
+  max_retries: 3
+  retry_delay_seconds: 5
+```
+
+### Workflow Step
+
+Calls another workflow as a sub-workflow.
+
+#### Syntax
+
+```yaml
+type: workflow                  # Optional: auto-detected
+workflow: string                # Required: Path to workflow file
+inputs:                         # Optional: Workflow inputs
+  <key>: any
+output_variable: string         # Optional: Store result
+```
+
+#### Example
+
+```yaml
+workflow: ./workflows/send-notification.md
+inputs:
+  service: slack
+  channel: "{{inputs.channel}}"
+  message: "{{inputs.message}}"
+output_variable: notification_result
+```
+
+---
+
+## Control Flow
+
+See the [Control Flow Guide](./yaml-api/control-flow.md) for detailed documentation on:
+
+- **If/Else** - Conditional branching
+- **Switch/Case** - Multi-way branching
+- **For-Each** - Array iteration
+- **While** - Conditional loops
+- **Map** - Array transformations
+- **Filter** - Array filtering
+- **Reduce** - Array aggregation
+- **Parallel** - Concurrent execution
+- **Try/Catch/Finally** - Exception handling
+
+---
+
+## Variable Resolution
+
+### Template Syntax
+
+Use `{{variable}}` to reference variables in YAML values.
+
+#### Input Variables
+
+Access workflow inputs with `inputs.` prefix:
+
+```yaml
+text: "{{inputs.message}}"
+channel: "{{inputs.channel}}"
+```
+
+#### Step Output Variables
+
+Reference step outputs by their `output_variable` name:
+
+```yaml
+# Step 1: Get user info
+action: slack.users.info
+inputs:
+  user: "{{inputs.user_id}}"
+output_variable: user_info
+
+# Step 2: Use output from Step 1
+action: slack.chat.postMessage
+inputs:
+  channel: "{{inputs.channel}}"
+  text: "Hello {{user_info.user.real_name}}!"
+```
+
+#### Nested Property Access
+
+Access nested properties with dot notation:
+
+```yaml
+text: "{{user_info.user.profile.email}}"
+```
+
+#### Array Access
+
+Access array elements by index:
+
+```yaml
+first_item: "{{results[0]}}"
+```
+
+#### Loop Variables
+
+Special variables available in loops:
+
+```yaml
+# In for_each loops:
+item: "{{item}}"              # Current item
+index: "{{index}}"            # Current index (if index_variable set)
+loop.index: "{{loop.index}}"  # Current iteration index
+loop.first: "{{loop.first}}"  # true if first iteration
+loop.last: "{{loop.last}}"    # true if last iteration
+loop.length: "{{loop.length}}"# Total iterations
+```
+
+#### Step Metadata
+
+Access step execution metadata:
+
+```yaml
+# Check step status
+condition: step_id.status == 'completed'
+
+# Access retry count
+retry_count: "{{step_id.retryCount}}"
+
+# Access error message
+error_msg: "{{step_id.error}}"
+```
+
+### Environment Variables
+
+Reference environment variables in `tools.auth` and `inputs.default`:
+
+```yaml
+auth:
+  token: ${SLACK_BOT_TOKEN}
+
+inputs:
+  api_url:
+    type: string
+    default: ${API_URL}
+```
+
+**Note:** Environment variables use `${VAR}` syntax (dollar sign), while template variables use `{{var}}` (double braces).
+
+---
+
+## Error Handling
+
+### Step-Level Error Handling
+
+Configure error handling per step:
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  channel: "#general"
+  text: "Hello!"
+error_handling:
+  action: stop | continue | rollback
+  max_retries: 3
+  retry_delay_seconds: 5
+  fallback_action: discord.sendMessage
+```
+
+#### Error Actions
+
+| Action | Description |
+|--------|-------------|
+| `stop` | Stop workflow execution (default) |
+| `continue` | Continue to next step |
+| `rollback` | Execute registered rollback handlers and stop |
+
+#### Retry Configuration
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `max_retries` | `number` | `3` | Maximum retry attempts |
+| `retry_delay_seconds` | `number` | `1` | Initial delay between retries (exponential backoff) |
+| `fallback_action` | `string` | - | Alternative action to try if primary fails |
+
+### Try/Catch Block
+
+Use try/catch steps for explicit error handling:
+
+```yaml
+type: try
+try:
+  - action: api.getData
+    inputs:
+      endpoint: /users
+    output_variable: users
+
+catch:
+  - action: slack.chat.postMessage
+    inputs:
+      channel: "#alerts"
+      text: "Failed to fetch users: {{error.message}}"
+
+finally:
+  - action: logger.info
+    inputs:
+      message: "Attempt completed"
+```
+
+#### Error Variable
+
+In `catch` blocks, access the `error` variable:
+
+```yaml
+error.message: "{{error.message}}"   # Error message
+error.step: "{{error.step}}"         # Failed step info
+```
+
+### Circuit Breaker
+
+Automatic circuit breaker protection prevents cascading failures:
+
+- **Failure Threshold:** 5 consecutive failures open the circuit
+- **Recovery Timeout:** 30 seconds before attempting recovery
+- **Half-Open Max Calls:** 3 test calls during recovery
+
+Circuit breaker is enabled automatically per service.
+
+### Failover
+
+Automatic failover to alternative services:
+
+```yaml
+# In engine configuration (not workflow YAML)
+failover_config:
+  failover_on_timeout: true
+  failover_on_step_failure: true
+  fallback_agents:
+    - copilot
+    - claude-code
+    - opencode
+  max_failover_attempts: 2
+```
+
+---
+
+## Next Steps
+
+- **[Service Integrations](./yaml-api/services.md)** - Complete reference for all 20+ service integrations
+- **[AI Agent Integrations](./yaml-api/ai-agents.md)** - Complete reference for AI agents (Copilot, Claude, etc.)
+- **[Control Flow Guide](./yaml-api/control-flow.md)** - Detailed control flow documentation with examples
+- **[Examples](../examples/)** - Production-ready workflow examples
+
+---
+
+## Additional Resources
+
+- [Installation Guide](./INSTALLATION.md)
+- [REST API Guide](./REST-API-GUIDE.md)
+- [Project README](../README.md)
+- [Development Progress](../PROGRESS.md)
