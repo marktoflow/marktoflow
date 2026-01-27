@@ -22,6 +22,7 @@ import { WhatsAppInitializer } from './services/whatsapp.js';
 import { SupabaseInitializer } from './services/supabase.js';
 import { PostgresInitializer } from './services/postgres.js';
 import { MySQLInitializer } from './services/mysql.js';
+import { StripeInitializer } from './services/stripe.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
@@ -61,6 +62,9 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('supabase', SupabaseInitializer);
   registry.registerInitializer('pg', PostgresInitializer);
   registry.registerInitializer('mysql2', MySQLInitializer);
+
+  // Payments
+  registry.registerInitializer('stripe', StripeInitializer);
 
   // Google Services
   registry.registerInitializer('google-sheets', GoogleSheetsInitializer);
@@ -188,6 +192,18 @@ export {
   type QueryResult as MySQLQueryResult,
   type MySQLTransaction,
 } from './services/mysql.js';
+export {
+  StripeClient,
+  StripeInitializer,
+  type StripeCustomer,
+  type StripePaymentIntent,
+  type StripeSubscription,
+  type StripeInvoice,
+  type CreateCustomerOptions,
+  type CreatePaymentIntentOptions,
+  type CreateSubscriptionOptions,
+  type CreateInvoiceOptions,
+} from './services/stripe.js';
 
 // Export triggers
 export { SlackSocketTrigger } from './services/slack-socket.js';
