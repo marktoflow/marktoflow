@@ -287,7 +287,7 @@ npx marktoflow run workflow.md
 
 ## Phase 5: Production Features
 
-### From Python v1.0 (Port if needed)
+### Production Features
 
 - [x] RBAC and permissions
 - [x] Approval workflows
@@ -303,7 +303,7 @@ npx marktoflow run workflow.md
 
 ### New Features
 
-- [ ] Prometheus metrics integration (Python v1.0 had this)
+- [ ] Prometheus metrics integration
 - [ ] Visual workflow editor (web UI) - **See Phase 7: GUI**
 - [ ] Workflow marketplace
 - [ ] Team collaboration
@@ -504,36 +504,6 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 - Python package no longer maintained after v2.0
 - Configuration format changes
 - Some workflow syntax updates for SDK references
-
----
-
-## Python v1.0 - Archived
-
-The Python implementation is feature-complete and archived. See `PROGRESS.md` for completed work.
-
-**Final Python Stats:**
-
-- 615+ tests
-- Production-ready features:
-  - Scheduling, webhooks, file watching
-  - State persistence, retry logic, circuit breakers
-  - RBAC, audit logging, credential encryption
-  - Plugin system, workflow templates
-  - Agent adapters (Claude Code, OpenCode, Ollama)
-
-**TypeScript v2.0 Status:**
-
-- **Core Features**: ✅ Feature parity achieved
-- **Tests**: 145 tests (89 core + 48 integrations + 8 CLI)
-- **Service Integrations**: ✅ 11 native integrations (vs 0 in Python)
-- **Missing from Python v1.0**:
-  - Prometheus metrics integration (basic metrics interface exists)
-  - Full test coverage (615 tests → 145 tests)
-- **New in v2.0**:
-  - Native MCP support (no subprocess bridging)
-  - Direct SDK integration in YAML
-  - OAuth flows for Gmail/Outlook
-  - 6 additional service integrations (Linear, Notion, Discord, Airtable, Confluence, HTTP)
 
 ---
 

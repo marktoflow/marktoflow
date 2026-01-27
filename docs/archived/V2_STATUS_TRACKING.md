@@ -114,29 +114,16 @@ All examples rewritten to use native TypeScript SDKs:
 
 ---
 
-## Migration Complete
+## Implementation Complete
 
-### Removed (Python v1.0)
+### Key Features
 
-- Python source code
-- Python test suite (615+ tests)
-- Python tool scripts in examples
-- `pyproject.toml`, `requirements.txt`
-- Python build artifacts
-
-### What Changed
-
-- No more subprocess spawning for tools
-- No more agent adapters (direct SDK calls)
-- No more Python tool scripts
-- Native MCP support (no bridge needed)
-- Full TypeScript type safety
-
-### What's New in v2.0
-
-- 20+ native service integrations (vs 0 in Python)
-- OAuth CLI flows (Gmail, Outlook)
+- Native SDK integrations - no subprocess spawning
 - Direct SDK method calls in workflows
+- Native MCP support
+- Full TypeScript type safety
+- 20+ native service integrations
+- OAuth CLI flows (Gmail, Outlook)
 - Better error messages
 - Faster execution (no subprocess overhead)
 

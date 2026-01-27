@@ -315,42 +315,6 @@ output_variable: result
 marktoflow run my-workflow.md --input message="Hello World"
 ````
 
-## Key Differences from v1.0 (Python)
-
-### Old Way (Python v1.0)
-
-```yaml
-# Required separate Python tool scripts
-action: slack.post_message
-inputs:
-  channel: '#general'
-  text: 'Hello'
-```
-
-### New Way (TypeScript v2.0)
-
-```yaml
-# Direct SDK method calls
-tools:
-  slack:
-    sdk: '@slack/web-api'
-    auth:
-      token: '${SLACK_BOT_TOKEN}'
-
-action: slack.chat.postMessage
-inputs:
-  channel: '#general'
-  text: 'Hello'
-```
-
-**Benefits:**
-
-- No Python tool scripts needed
-- Type-safe SDK methods
-- Full SDK feature access
-- Better error messages
-- Easier debugging
-
 ## Notes
 
 - All workflows use official SDKs and native integrations
