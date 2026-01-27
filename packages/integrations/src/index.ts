@@ -23,6 +23,7 @@ import { SupabaseInitializer } from './services/supabase.js';
 import { PostgresInitializer } from './services/postgres.js';
 import { MySQLInitializer } from './services/mysql.js';
 import { StripeInitializer } from './services/stripe.js';
+import { TeamsInitializer } from './services/teams.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
@@ -45,6 +46,9 @@ export function registerIntegrations(registry: SDKRegistry) {
   // Email
   registry.registerInitializer('googleapis', GmailInitializer);
   registry.registerInitializer('@microsoft/microsoft-graph-client', OutlookInitializer);
+
+  // Collaboration
+  registry.registerInitializer('teams', TeamsInitializer);
 
   // Project Management & Issue Tracking
   registry.registerInitializer('jira.js', JiraInitializer);
@@ -204,6 +208,22 @@ export {
   type CreateSubscriptionOptions,
   type CreateInvoiceOptions,
 } from './services/stripe.js';
+export {
+  TeamsClient,
+  TeamsInitializer,
+  type TeamsTeam,
+  type TeamsChannel,
+  type TeamsMessage,
+  type TeamsChatMessage,
+  type TeamsOnlineMeeting,
+  type SendMessageOptions as TeamsSendMessageOptions,
+  type SendChatMessageOptions,
+  type CreateChannelOptions as TeamsCreateChannelOptions,
+  type CreateMeetingOptions as TeamsCreateMeetingOptions,
+  type ListTeamsOptions,
+  type ListChannelsOptions,
+  type ListMessagesOptions,
+} from './services/teams.js';
 
 // Export triggers
 export { SlackSocketTrigger } from './services/slack-socket.js';
