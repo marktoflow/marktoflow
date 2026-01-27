@@ -5,7 +5,8 @@ agents:
   claude-code:
     version: "1.0.0"
     provider: anthropic
-    
+    status: supported
+
     capabilities:
       # Core Features
       tool_calling: native
@@ -13,194 +14,279 @@ agents:
       streaming: supported
       code_execution: supported
       file_creation: supported
-      
+
       # MCP Support
       mcp:
         native_support: true
         mcp_servers: auto_discovered
-        
+
       # Advanced Features
       extended_reasoning: true  # Can use <thinking> blocks
       multi_turn: true
       context_window: 200000    # tokens
       web_search: native
       artifacts: supported
-      
+
       # Authentication
-      auth_method: anthropic_managed
-      oauth_flows: [google, microsoft, github, slack]
-      
+      auth_method: cli_oauth
+      cli_command: claude
+
     strengths:
       - Advanced reasoning and decision making
       - Natural language understanding
       - Context-aware responses
       - Native MCP integration
-      
+      - Extended thinking capabilities
+
     limitations:
-      - Cloud-only (no self-hosting)
+      - Requires Claude subscription
       - API rate limits apply
       - Cost per workflow execution
-      
-  opencode:
-    version: "0.1.0"
-    provider: open_source
-    
+
+  github-copilot:
+    version: "1.0.0"
+    provider: github
+    status: supported
+
     capabilities:
       # Core Features
-      tool_calling: supported
-      reasoning: basic          # Standard LLM reasoning
+      tool_calling: native
+      reasoning: advanced
       streaming: supported
       code_execution: supported
       file_creation: supported
-      
+
       # MCP Support
       mcp:
-        native_support: true    # OpenCode supports MCP natively
+        native_support: true
         mcp_servers: via_config
-        
+
+      # Advanced Features
+      extended_reasoning: false
+      multi_turn: true
+      context_window: 128000    # tokens (model-dependent)
+      web_search: not_supported
+      artifacts: not_supported
+
+      # Authentication
+      auth_method: cli_oauth
+      cli_command: copilot auth
+
+      # Model Support
+      supported_models:
+        - gpt-4.1
+        - gpt-5
+        - claude-sonnet-4.5
+
+    strengths:
+      - Uses existing Copilot subscription
+      - No extra API costs
+      - Advanced code generation
+      - Multi-model support
+      - Session persistence
+
+    limitations:
+      - Requires GitHub Copilot subscription
+      - Limited to Copilot CLI models
+
+  openai-codex:
+    version: "0.1.0"
+    provider: openai
+    status: supported
+
+    capabilities:
+      # Core Features
+      tool_calling: supported
+      reasoning: advanced
+      streaming: supported
+      code_execution: sandboxed
+      file_creation: supported
+
+      # MCP Support
+      mcp:
+        native_support: false
+        mcp_servers: via_bridge
+
+      # Advanced Features
+      extended_reasoning: false
+      multi_turn: true
+      context_window: 8000      # tokens
+      web_search: not_supported
+      artifacts: not_supported
+
+      # Authentication
+      auth_method: cli_auth
+      cli_command: codex
+
+    strengths:
+      - Sandboxed code execution
+      - OpenAI ecosystem integration
+      - Uses existing Codex CLI authentication
+      - No extra API costs if using CLI
+
+    limitations:
+      - Requires Codex CLI setup
+      - Smaller context window
+
+  claude-agent:
+    version: "1.0.0"
+    provider: anthropic
+    status: supported
+
+    capabilities:
+      # Core Features
+      tool_calling: native
+      reasoning: advanced
+      streaming: supported
+      code_execution: supported
+      file_creation: supported
+
+      # MCP Support
+      mcp:
+        native_support: false
+        mcp_servers: via_bridge
+
+      # Advanced Features
+      extended_reasoning: true
+      multi_turn: true
+      context_window: 200000    # tokens
+      web_search: not_supported
+      artifacts: not_supported
+
+      # Authentication
+      auth_method: api_key
+      env_var: ANTHROPIC_API_KEY
+
+    strengths:
+      - Claude Agent SDK integration
+      - Advanced agentic workflows
+      - Custom tool definitions
+      - Extended thinking mode
+
+    limitations:
+      - Requires ANTHROPIC_API_KEY
+      - Direct API usage costs
+
+  opencode:
+    version: "0.1.0"
+    provider: open_source
+    status: supported
+
+    capabilities:
+      # Core Features
+      tool_calling: supported
+      reasoning: model_dependent
+      streaming: supported
+      code_execution: supported
+      file_creation: supported
+
+      # MCP Support
+      mcp:
+        native_support: true
+        mcp_servers: via_config
+
       # Advanced Features
       extended_reasoning: model_dependent
       multi_turn: true
       context_window: model_dependent  # Varies by LLM
       web_search: via_tools
       artifacts: not_supported
-      
+
       # Authentication
-      auth_method: local_vault
-      oauth_flows: [google, microsoft, github, slack]
-      
+      auth_method: cli_config
+      cli_command: opencode /connect
+
       # Model Flexibility
-      supported_models:
-        - provider: openai
-          models: [gpt-4, gpt-4-turbo, gpt-4o, o1, o1-mini]
-        - provider: anthropic
-          models: [claude-3-5-sonnet, claude-3-opus, claude-sonnet-4]
-        - provider: google
-          models: [gemini-2.0-flash, gemini-1.5-pro]
-        - provider: ollama
-          models: [llama3, codellama, mistral, qwen]
-        - provider: custom
-          models: [any]
-          
+      supported_backends:
+        - github_copilot  # Free with Copilot subscription
+        - ollama          # Free local models
+        - openai          # gpt-4, gpt-4-turbo, gpt-4o, o1, o1-mini
+        - anthropic       # claude-3-5-sonnet, claude-3-opus, claude-sonnet-4
+        - google          # gemini-2.0-flash, gemini-1.5-pro
+        - custom          # 75+ total backends
+
     strengths:
-      - Self-hosted deployment
-      - Model flexibility (any LLM)
+      - Backend flexibility (75+ AI models)
+      - Can use Copilot subscription for free
+      - Self-hosted deployment option
       - No vendor lock-in
-      - Cost control (local models)
+      - Cost control with local models
       - Native MCP support
-      
+
     limitations:
-      - Requires infrastructure setup
-      - Reasoning quality depends on model
-      
-  aider:
-    version: "0.40.0"
+      - Quality depends on selected backend
+      - Configuration complexity
+
+  ollama:
+    version: "0.1.0"
     provider: open_source
-    
+    status: beta
+
     capabilities:
       # Core Features
-      tool_calling: limited
-      reasoning: basic
+      tool_calling: supported
+      reasoning: model_dependent
       streaming: supported
       code_execution: supported
       file_creation: supported
-      
+
       # MCP Support
       mcp:
         native_support: false
         mcp_servers: not_supported
-        
+
       # Advanced Features
-      extended_reasoning: false
+      extended_reasoning: model_dependent
       multi_turn: true
-      context_window: model_dependent
+      context_window: model_dependent  # Varies by model
       web_search: not_supported
       artifacts: not_supported
-      
+
       # Authentication
-      auth_method: api_keys_only
-      oauth_flows: []
-      
-      # Model Support
+      auth_method: none  # Local server
+      base_url: http://localhost:11434
+
+      # Supported Models
       supported_models:
-        - provider: openai
-          models: [gpt-4, gpt-4-turbo, gpt-4o]
-        - provider: anthropic
-          models: [claude-3-5-sonnet, claude-sonnet-4]
-          
-    strengths:
-      - Excellent for code editing
-      - Git integration
-      - Fast iteration
-      
-    limitations:
-      - Limited tool ecosystem
-      - No MCP support
-      - Focus on coding, not automation
+        - llama3
+        - llama3:70b
+        - codellama
+        - mistral
+        - mixtral
+        - qwen
+        - deepseek-coder
 
-  codex:
-    version: "0.1.0"
-    provider: openai
-    status: planned
-    
-    capabilities:
-      tool_calling: supported
-      reasoning: advanced
-      streaming: supported
-      code_execution: sandboxed
-      file_creation: supported
-      
-      mcp:
-        native_support: false
-        mcp_servers: via_bridge
-        
     strengths:
-      - Sandboxed code execution
-      - OpenAI ecosystem integration
-      
-    limitations:
-      - Cloud-only
-      - Limited tool ecosystem currently
+      - Completely free (runs locally)
+      - No API keys required
+      - No subscription needed
+      - Privacy-focused (data never leaves machine)
+      - Multiple model options
 
-  gemini-cli:
-    version: "0.1.0"
-    provider: google
-    status: planned
-    
-    capabilities:
-      tool_calling: supported
-      reasoning: advanced
-      streaming: supported
-      code_execution: supported
-      file_creation: supported
-      
-      mcp:
-        native_support: false
-        mcp_servers: via_bridge
-        
-    strengths:
-      - Large context window
-      - Multi-modal support
-      - Google ecosystem integration
-      
     limitations:
-      - Cloud-only
-      - API rate limits
+      - Requires local GPU/CPU resources
+      - Quality varies by model
+      - No MCP support currently
+      - Beta status
 
 # Capability-Based Routing Rules
 routing_rules:
   # Use Claude Code for workflows requiring advanced reasoning
   - if: workflow.requires.reasoning == "advanced"
     prefer: claude-code
-    
+
+  # Use GitHub Copilot or OpenCode with Copilot backend for free workflows
+  - if: workflow.requires.cost == "free"
+    prefer: [github-copilot, opencode]
+
+  # Use Ollama for completely offline/local workflows
+  - if: workflow.requires.privacy == "local"
+    prefer: ollama
+
   # Use OpenCode for self-hosted deployments
   - if: deployment.requirement == "self_hosted"
     prefer: opencode
-    
-  # Use OpenCode for cost-sensitive workflows
-  - if: workflow.estimated_cost_per_run > 0.50
-    prefer: opencode
-    
-  # Use Claude Code for MCP-heavy workflows without OpenCode MCP
-  - if: workflow.tools.filter(type="mcp").length > 3 AND NOT opencode.mcp.native_support
+
+  # Use Claude Code for MCP-heavy workflows
+  - if: workflow.tools.filter(type="mcp").length > 3
     prefer: claude-code

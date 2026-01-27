@@ -80,8 +80,10 @@ The GUI supports multiple AI backends for workflow assistance:
 |----------|-----|----------------|
 | Claude Code | `@anthropic-ai/claude-agent-sdk` | Claude CLI (`claude`) |
 | GitHub Copilot | `@github/copilot-sdk` | Copilot CLI (`copilot auth`) |
+| OpenAI Codex | `openai-codex-sdk` | Codex CLI |
+| OpenCode | `@opencode-ai/sdk` | OpenCode CLI (`opencode /connect`) |
 | Claude API | `@anthropic-ai/sdk` | `ANTHROPIC_API_KEY` |
-| Ollama | REST API | Local server |
+| Ollama (beta) | REST API | Local server |
 | Demo Mode | - | Always available |
 
 ### Setting Up AI Providers
@@ -100,6 +102,38 @@ claude
 copilot auth
 
 # The GUI will automatically detect and use Copilot
+```
+
+**OpenAI Codex**
+```bash
+# Authenticate with Codex CLI
+# Follow Codex CLI documentation for setup
+
+# The GUI will automatically detect and use Codex
+```
+
+**OpenCode**
+```bash
+# Configure OpenCode
+opencode /connect
+
+# The GUI will automatically detect and use OpenCode
+```
+
+**Claude API (Direct)**
+```bash
+# Set API key
+export ANTHROPIC_API_KEY=sk-ant-your-key
+
+# The GUI will use direct API access
+```
+
+**Ollama (Local)**
+```bash
+# Start Ollama server
+ollama serve
+
+# The GUI will automatically detect Ollama at localhost:11434
 ```
 
 ## API Endpoints

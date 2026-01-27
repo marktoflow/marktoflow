@@ -33,12 +33,13 @@ Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, an
 - **MySQL** - Direct MySQL database access
 - **HTTP** - Generic HTTP requests with auth
 
-### AI Agent Adapters (5)
+### AI Agent Adapters (6)
 
 - **Ollama** - Local LLM integration
 - **Claude Agent** - Anthropic Claude Agent SDK integration
 - **Claude Code** - Anthropic Claude Code CLI integration
-- **OpenCode** - OpenCode AI integration
+- **OpenAI Codex** - OpenAI Codex SDK integration
+- **OpenCode** - OpenCode AI integration (75+ backends)
 - **GitHub Copilot** - GitHub Copilot SDK integration
 
 ## Installation
@@ -664,6 +665,40 @@ export ANTHROPIC_API_KEY=sk-ant-your-key
 - Native MCP server integration
 - Extended reasoning capabilities
 
+### OpenAI Codex
+
+OpenAI Codex SDK integration with workflow execution capabilities.
+
+**Setup**:
+
+```bash
+# Authenticate via Codex CLI
+# Follow OpenAI Codex documentation for setup
+```
+
+**Features**:
+
+- Code generation and analysis
+- Function calling support
+- Streaming responses
+- Sandboxed execution environment
+
+**Example**:
+
+```yaml
+tools:
+  codex:
+    adapter: openai-codex
+    config:
+      model: codex-latest
+
+steps:
+  - action: codex.complete
+    inputs:
+      prompt: 'Write a function to sort an array'
+    output_variable: code
+```
+
 ### OpenCode
 
 OpenCode AI integration supporting 75+ backends.
@@ -679,8 +714,24 @@ opencode /connect
 
 - GitHub Copilot backend (free with subscription)
 - Ollama for local models
-- Multiple cloud providers
+- Multiple cloud providers (GPT-4, Claude, Gemini)
 - CLI and server modes
+
+**Example**:
+
+```yaml
+tools:
+  opencode:
+    adapter: opencode
+    config:
+      backend: copilot # or ollama, claude, gpt-4, etc.
+
+steps:
+  - action: opencode.complete
+    inputs:
+      prompt: 'Explain async/await in JavaScript'
+    output_variable: explanation
+```
 
 ### GitHub Copilot
 

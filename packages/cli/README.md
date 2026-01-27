@@ -248,6 +248,21 @@ marktoflow connect outlook
 
 This launches a browser for OAuth authentication and stores credentials securely.
 
+### Visual Designer
+
+#### `marktoflow gui`
+
+Start the visual workflow designer.
+
+```bash
+# Start GUI server
+marktoflow gui
+
+# With options
+marktoflow gui --port 3000        # Custom port
+marktoflow gui --open             # Open browser automatically
+```
+
 ### Templates
 
 #### `marktoflow new <template>`

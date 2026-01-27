@@ -1,174 +1,417 @@
 # Tool Registry
-# Central registry of all available tools with multi-implementation support
+# Central registry of all available tools with native SDK integrations
 
 tools:
-  # Jira - Project tracking
-  - name: jira
-    description: "Atlassian Jira for issue tracking and project management"
-    category: project_management
-    
-    implementations:
-      - type: mcp
-        priority: 1
-        package: "@modelcontextprotocol/server-jira"
-        config_path: mcp/jira.yaml
-        agent_compatibility:
-          claude-code: native
-          opencode: native
-          aider: not_supported
-      
-      - type: openapi
-        priority: 2
-        spec_path: openapi/jira.yaml
-        agent_compatibility:
-          claude-code: supported
-          opencode: native
-          aider: supported
-      
-      - type: custom
-        priority: 3
-        adapter_path: custom/jira/adapter.py
-        agent_compatibility:
-          claude-code: supported
-          opencode: native
-          aider: supported
-    
+  # Communication & Collaboration
+  - name: slack
+    description: "Slack for team communication"
+    category: communication
+    sdk: '@slack/web-api'
+    status: supported
+
+    authentication:
+      type: bearer_token
+      env_var: SLACK_BOT_TOKEN
+
+    actions:
+      - chat.postMessage
+      - conversations.list
+      - conversations.create
+      - users.list
+
+  - name: discord
+    description: "Discord bot interactions and messaging"
+    category: communication
+    sdk: 'discord.js'
+    status: supported
+
+    authentication:
+      type: bearer_token
+      env_var: DISCORD_BOT_TOKEN
+
+    actions:
+      - sendMessage
+      - editMessage
+      - deleteMessage
+      - createThread
+
+  - name: telegram
+    description: "Telegram bot messaging API"
+    category: communication
+    sdk: 'node-telegram-bot-api'
+    status: supported
+
+    authentication:
+      type: bearer_token
+      env_var: TELEGRAM_BOT_TOKEN
+
+    actions:
+      - sendMessage
+      - sendPhoto
+      - sendDocument
+      - getUpdates
+
+  - name: whatsapp
+    description: "WhatsApp Business API messaging"
+    category: communication
+    sdk: 'whatsapp-web.js'
+    status: supported
+
+    authentication:
+      type: bearer_token
+      env_vars:
+        - WHATSAPP_PHONE_NUMBER_ID
+        - WHATSAPP_ACCESS_TOKEN
+
+    actions:
+      - sendMessage
+      - sendTemplate
+      - sendMedia
+
+  # Email
+  - name: gmail
+    description: "Gmail for email operations"
+    category: email
+    sdk: 'googleapis'
+    status: supported
+
     authentication:
       type: oauth2
-      scopes: [read:jira-work, write:jira-work]
-      
-    rate_limits:
-      requests_per_minute: 100
-      burst: 10
+      provider: google
+      scopes: [https://www.googleapis.com/auth/gmail.modify]
+      env_vars:
+        - GMAIL_CLIENT_ID
+        - GMAIL_CLIENT_SECRET
+        - GMAIL_REFRESH_TOKEN
 
-  # Outlook - Email
+    actions:
+      - users.messages.send
+      - users.messages.list
+      - users.messages.get
+      - users.labels.list
+
   - name: outlook
     description: "Microsoft Outlook for email operations"
-    category: communication
-    
-    implementations:
-      - type: mcp
-        priority: 1
-        package: "@modelcontextprotocol/server-outlook"
-        config_path: mcp/outlook.yaml
-        agent_compatibility:
-          claude-code: native
-          opencode: native
-          aider: not_supported
-      
-      - type: openapi
-        priority: 2
-        spec_path: openapi/microsoft-graph.yaml
-        agent_compatibility:
-          claude-code: supported
-          opencode: native
-          aider: supported
-    
+    category: email
+    sdk: '@microsoft/microsoft-graph-client'
+    status: supported
+
     authentication:
       type: oauth2
       provider: microsoft
       scopes: [Mail.ReadWrite, Mail.Send]
+      env_vars:
+        - OUTLOOK_CLIENT_ID
+        - OUTLOOK_CLIENT_SECRET
+        - OUTLOOK_TENANT_ID
+        - OUTLOOK_REFRESH_TOKEN
 
-  # Slack - Team messaging
-  - name: slack
-    description: "Slack for team communication"
-    category: communication
-    
-    implementations:
-      - type: mcp
-        priority: 1
-        package: "@modelcontextprotocol/server-slack"
-        config_path: mcp/slack.yaml
-        agent_compatibility:
-          claude-code: native
-          opencode: native
-          aider: not_supported
-      
-      - type: openapi
-        priority: 2
-        spec_path: openapi/slack.yaml
-        agent_compatibility:
-          claude-code: supported
-          opencode: native
-          aider: supported
-    
+    actions:
+      - sendMail
+      - listMessages
+      - createCalendarEvent
+      - listCalendarEvents
+
+  # Google Workspace
+  - name: google-sheets
+    description: "Google Sheets spreadsheet operations"
+    category: productivity
+    sdk: 'googleapis'
+    status: supported
+
     authentication:
       type: oauth2
-      scopes: [chat:write, channels:read, channels:history]
+      provider: google
+      scopes: [https://www.googleapis.com/auth/spreadsheets]
 
-  # GitHub - Version control
+    actions:
+      - spreadsheets.get
+      - spreadsheets.values.get
+      - spreadsheets.values.update
+      - spreadsheets.values.append
+
+  - name: google-calendar
+    description: "Google Calendar event management"
+    category: productivity
+    sdk: 'googleapis'
+    status: supported
+
+    authentication:
+      type: oauth2
+      provider: google
+      scopes: [https://www.googleapis.com/auth/calendar]
+
+    actions:
+      - events.list
+      - events.insert
+      - events.update
+      - events.delete
+
+  - name: google-drive
+    description: "Google Drive file storage and management"
+    category: storage
+    sdk: 'googleapis'
+    status: supported
+
+    authentication:
+      type: oauth2
+      provider: google
+      scopes: [https://www.googleapis.com/auth/drive]
+
+    actions:
+      - files.list
+      - files.get
+      - files.create
+      - files.delete
+
+  - name: google-docs
+    description: "Google Docs document creation and editing"
+    category: productivity
+    sdk: 'googleapis'
+    status: supported
+
+    authentication:
+      type: oauth2
+      provider: google
+      scopes: [https://www.googleapis.com/auth/documents]
+
+    actions:
+      - documents.get
+      - documents.create
+      - documents.batchUpdate
+
+  # Project Management
+  - name: jira
+    description: "Atlassian Jira for issue tracking and project management"
+    category: project_management
+    sdk: 'jira.js'
+    status: supported
+
+    authentication:
+      type: basic_auth
+      env_vars:
+        - JIRA_HOST
+        - JIRA_EMAIL
+        - JIRA_API_TOKEN
+
+    actions:
+      - issues.createIssue
+      - issues.updateIssue
+      - issues.getIssue
+      - issues.searchIssues
+
+  - name: linear
+    description: "Linear issue tracking and project management"
+    category: project_management
+    sdk: '@linear/sdk'
+    status: supported
+
+    authentication:
+      type: api_key
+      env_var: LINEAR_API_KEY
+
+    actions:
+      - getIssue
+      - createIssue
+      - updateIssue
+      - listIssues
+
+  # Documentation & Knowledge
+  - name: notion
+    description: "Notion database and page management"
+    category: documentation
+    sdk: '@notionhq/client'
+    status: supported
+
+    authentication:
+      type: bearer_token
+      env_var: NOTION_TOKEN
+
+    actions:
+      - databases.query
+      - pages.create
+      - pages.update
+      - blocks.children.append
+
+  - name: confluence
+    description: "Atlassian Confluence wiki page management"
+    category: documentation
+    sdk: 'confluence.js'
+    status: supported
+
+    authentication:
+      type: basic_auth
+      env_vars:
+        - CONFLUENCE_HOST
+        - CONFLUENCE_EMAIL
+        - CONFLUENCE_API_TOKEN
+
+    actions:
+      - getPage
+      - createPage
+      - updatePage
+      - deletePage
+
+  # Developer Tools
   - name: github
     description: "GitHub for code repositories and collaboration"
     category: development
-    
-    implementations:
-      - type: mcp
-        priority: 1
-        package: "@modelcontextprotocol/server-github"
-        config_path: mcp/github.yaml
-        agent_compatibility:
-          claude-code: native
-          opencode: native
-          aider: not_supported
-      
-      - type: openapi
-        priority: 2
-        spec_url: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml
-        agent_compatibility:
-          claude-code: supported
-          opencode: native
-          aider: supported
-    
+    sdk: '@octokit/rest'
+    status: supported
+
     authentication:
       type: bearer_token
-      token_env: GITHUB_TOKEN
+      env_var: GITHUB_TOKEN
 
-  # Filesystem - Local file operations
-  - name: filesystem
-    description: "Local filesystem operations"
+    actions:
+      - repos.get
+      - pulls.create
+      - issues.create
+      - issues.createComment
+
+  - name: airtable
+    description: "Airtable spreadsheet database operations"
+    category: database
+    sdk: 'airtable'
+    status: supported
+
+    authentication:
+      type: api_key
+      env_var: AIRTABLE_API_KEY
+
+    actions:
+      - select
+      - find
+      - create
+      - update
+      - destroy
+
+  # Databases
+  - name: supabase
+    description: "Supabase PostgreSQL database with real-time capabilities"
+    category: database
+    sdk: '@supabase/supabase-js'
+    status: supported
+
+    authentication:
+      type: api_key
+      env_vars:
+        - SUPABASE_URL
+        - SUPABASE_KEY
+
+    actions:
+      - from.select
+      - from.insert
+      - from.update
+      - from.delete
+      - rpc
+
+  - name: postgresql
+    description: "PostgreSQL direct database access"
+    category: database
+    sdk: 'pg'
+    status: supported
+
+    authentication:
+      type: connection_string
+      env_vars:
+        - POSTGRES_HOST
+        - POSTGRES_PORT
+        - POSTGRES_USER
+        - POSTGRES_PASSWORD
+        - POSTGRES_DATABASE
+
+    actions:
+      - query
+      - insert
+      - update
+      - delete
+
+  - name: mysql
+    description: "MySQL direct database access"
+    category: database
+    sdk: 'mysql2'
+    status: supported
+
+    authentication:
+      type: connection_string
+      env_vars:
+        - MYSQL_HOST
+        - MYSQL_PORT
+        - MYSQL_USER
+        - MYSQL_PASSWORD
+        - MYSQL_DATABASE
+
+    actions:
+      - query
+      - insert
+      - update
+      - delete
+
+  # Universal HTTP Client
+  - name: http
+    description: "Universal HTTP client for any REST API"
+    category: integration
+    sdk: 'axios'
+    status: supported
+
+    authentication:
+      type: flexible
+      supported:
+        - bearer_token
+        - basic_auth
+        - api_key
+        - custom_headers
+
+    actions:
+      - request
+      - get
+      - post
+      - put
+      - patch
+      - delete
+
+  # Script Execution
+  - name: script
+    description: "Execute command line scripts (bash, Python, Node.js)"
     category: system
-    
-    implementations:
-      - type: mcp
-        priority: 1
-        package: "@modelcontextprotocol/server-filesystem"
-        config_path: mcp/filesystem.yaml
-        agent_compatibility:
-          claude-code: native
-          opencode: native
-          aider: not_supported
-      
-      - type: custom
-        priority: 2
-        adapter_path: custom/filesystem/adapter.py
-        agent_compatibility:
-          claude-code: supported
-          opencode: native
-          aider: supported
-    
+    sdk: 'child_process'
+    status: supported
+
     authentication:
       type: none
-      
-    security:
-      sandboxed: true
-      allowed_paths: []  # Configure in adapter
+
+    actions:
+      - execute
 
 # Tool Categories
 categories:
+  - name: communication
+    description: "Team messaging and collaboration tools"
+
+  - name: email
+    description: "Email services and management"
+
+  - name: productivity
+    description: "Document and calendar management"
+
+  - name: storage
+    description: "File storage and management"
+
   - name: project_management
     description: "Issue tracking and project management tools"
-    
-  - name: communication
-    description: "Email, chat, and notification tools"
-    
+
+  - name: documentation
+    description: "Knowledge base and wiki tools"
+
   - name: development
     description: "Code repositories and development tools"
-    
-  - name: system
-    description: "System and infrastructure tools"
-    
+
   - name: database
     description: "Database and data storage tools"
-    
-  - name: analytics
-    description: "Analytics and monitoring tools"
+
+  - name: integration
+    description: "Universal integration and API tools"
+
+  - name: system
+    description: "System and script execution tools"
