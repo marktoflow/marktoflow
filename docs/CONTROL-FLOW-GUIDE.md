@@ -904,42 +904,6 @@ See [examples/control-flow/error-handling.md](../examples/control-flow/error-han
 
 ---
 
-## Migration from v1.x
-
-marktoflow v2.0 is 100% backward compatible. Existing workflows work without changes:
-
-```yaml
-# v1.x syntax (still works)
-steps:
-  - action: slack.chat.postMessage
-    inputs:
-      text: "Hello"
-
-# v2.0 syntax (new features)
-steps:
-  - type: if
-    condition: "{{ count > 0 }}"
-    then:
-      - action: slack.chat.postMessage
-        inputs:
-          text: "{{ count }} items"
-```
-
-You can mix old and new syntax in the same workflow:
-
-```yaml
-steps:
-  - action: api.fetch         # v1.x style
-    output_variable: data
-
-  - type: if                  # v2.0 style
-    condition: "{{ data.success }}"
-    steps:
-      - action: slack.post    # v1.x style in v2.0 block
-```
-
----
-
 ## Performance Considerations
 
 ### Parallel Execution

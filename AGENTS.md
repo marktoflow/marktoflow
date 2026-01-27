@@ -6,7 +6,7 @@ This file provides guidance for AI coding agents working on this project.
 
 ## Project Overview
 
-**marktoflow v2.0** - Universal automation framework with markdown-based workflows, native MCP support, and direct SDK integration.
+**marktoflow v2.0** - Agent automation framework with markdown-based workflows, native MCP support, and direct SDK integration.
 
 ### Key Principles
 

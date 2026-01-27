@@ -9,7 +9,7 @@
 
 ### Current Status
 
-- **Core Features**: Feature parity achieved with Python v1.0
+- **Core Features**: All core features implemented
 - **Build**: All packages compile successfully
 - **Tests**: 145+ passing tests across all packages
 - **Integrations**: 20+ native service integrations
@@ -71,6 +71,3 @@
 
 ---
 
-## Archived History
-
-For Python v1.0 development history, see [docs/archived/PYTHON_V1_HISTORY.md](docs/archived/PYTHON_V1_HISTORY.md).
