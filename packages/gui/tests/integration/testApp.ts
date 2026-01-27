@@ -24,7 +24,7 @@ export function createTestApp(): Express {
 
   // Health check
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', version: '2.0.0-alpha.1' });
+    res.json({ status: 'ok', version: '2.0.0-alpha.2' });
   });
 
   return app;

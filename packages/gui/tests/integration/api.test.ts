@@ -12,7 +12,7 @@ describe('API Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         status: 'ok',
-        version: '2.0.0-alpha.1',
+        version: '2.0.0-alpha.2',
       });
     });
   });

@@ -116,7 +116,7 @@ marktoflow version
 After installation, verify marktoflow is working:
 
 ```bash
-# Check version (should show 2.0.0-alpha.1 or higher)
+# Check version (should show 2.0.0-alpha.9 or higher)
 marktoflow version
 
 # Check available commands
@@ -129,7 +129,7 @@ marktoflow doctor
 **Expected output for `marktoflow version`:**
 
 ```
-marktoflow v2.0.0-alpha.1
+marktoflow v2.0.0-alpha.9
 ```
 
 If you see `command not found: marktoflow`, proceed to [PATH Configuration](#path-configuration).
@@ -512,5 +512,5 @@ If you continue to experience installation issues:
 
 ---
 
-**Last Updated:** 2026-01-24
-**Version:** 2.0.0-alpha.1
+**Last Updated:** 2026-01-27
+**Version:** 2.0.0-alpha.9
