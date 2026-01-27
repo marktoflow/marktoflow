@@ -297,6 +297,9 @@ importers:
       playwright:
         specifier: ^1.50.0
         version: 1.58.0
+      stripe:
+        specifier: ^18.4.0
+        version: 18.5.0(@types/node@22.19.7)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
@@ -4685,6 +4688,15 @@ packages:
   strip-json-comments@5.0.3:
     resolution: {integrity: sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw==}
     engines: {node: '>=14.16'}
+
+  stripe@18.5.0:
+    resolution: {integrity: sha512-Hp+wFiEQtCB0LlNgcFh5uVyKznpDjzyUZ+CNVEf+I3fhlYvh7rZruIg+jOwzJRCpy0ZTPMjlzm7J2/M2N6d+DA==}
+    engines: {node: '>=12.*'}
+    peerDependencies:
+      '@types/node': '>=12.x.x'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   style-to-js@1.1.21:
     resolution: {integrity: sha512-RjQetxJrrUJLQPHbLku6U/ocGtzyjbJMP9lCNK7Ag0CNh690nSH8woqWH9u16nMjYBAok+i7JO1NP2pOy8IsPQ==}
@@ -10176,6 +10188,12 @@ snapshots:
 
   strip-json-comments@5.0.3:
     optional: true
+
+  stripe@18.5.0(@types/node@22.19.7):
+    dependencies:
+      qs: 6.14.1
+    optionalDependencies:
+      '@types/node': 22.19.7
 
   style-to-js@1.1.21:
     dependencies:
