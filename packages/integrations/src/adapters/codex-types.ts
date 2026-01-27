@@ -333,6 +333,8 @@ export interface CodexThreadOptions {
   approvalPolicy?: ApprovalMode;
   /** Additional directories the agent can access */
   additionalDirectories?: string[];
+  /** Files to exclude from automatic context loading (e.g., ['CLAUDE.md', 'AGENTS.md']) */
+  excludeFiles?: string[];
 }
 
 /**
@@ -435,6 +437,7 @@ export const CodexThreadOptionsSchema = z.object({
   webSearchEnabled: z.boolean().optional(),
   approvalPolicy: z.enum(['never', 'on-request', 'on-failure', 'untrusted']).optional(),
   additionalDirectories: z.array(z.string()).optional(),
+  excludeFiles: z.array(z.string()).optional(),
 });
 
 export const CodexClientConfigSchema = z.object({
@@ -453,6 +456,7 @@ export const CodexWorkflowConfigSchema = z.object({
   webSearchMode: z.enum(['disabled', 'cached', 'live']).optional(),
   approvalPolicy: z.enum(['never', 'on-request', 'on-failure', 'untrusted']).optional(),
   additionalDirectories: z.array(z.string()).optional(),
+  excludeFiles: z.array(z.string()).optional(),
   env: z.record(z.string()).optional(),
 });
 

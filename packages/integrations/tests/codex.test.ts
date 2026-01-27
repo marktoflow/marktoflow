@@ -339,6 +339,17 @@ describe('OpenAI Codex Workflow Actions', () => {
         expect(result.additionalDirectories).toHaveLength(2);
         expect(result.reasoningEffort).toBe('xhigh');
       });
+
+      it('should validate code modify with excludeFiles option', () => {
+        const input = {
+          prompt: 'Refactor the auth module',
+          workingDirectory: '/src',
+          excludeFiles: ['CLAUDE.md', 'AGENTS.md', '.env'],
+        };
+        const result = CodexCodeModifySchema.parse(input);
+        expect(result.excludeFiles).toHaveLength(3);
+        expect(result.excludeFiles).toContain('CLAUDE.md');
+      });
     });
 
     describe('CodexCodeAnalyzeSchema', () => {
@@ -356,6 +367,17 @@ describe('OpenAI Codex Workflow Actions', () => {
         };
         const result = CodexCodeAnalyzeSchema.parse(input);
         expect(result.additionalDirectories).toContain('/lib');
+      });
+
+      it('should validate analyze with excludeFiles option', () => {
+        const input = {
+          prompt: 'Analyze the codebase',
+          workingDirectory: '/src',
+          excludeFiles: ['CLAUDE.md', 'AGENTS.md'],
+        };
+        const result = CodexCodeAnalyzeSchema.parse(input);
+        expect(result.excludeFiles).toHaveLength(2);
+        expect(result.excludeFiles).toContain('AGENTS.md');
       });
     });
 

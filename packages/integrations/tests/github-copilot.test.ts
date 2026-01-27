@@ -68,6 +68,18 @@ describe('GitHub Copilot Adapter', () => {
       const client = await GitHubCopilotInitializer.initialize({}, config);
       expect(client).toBeInstanceOf(GitHubCopilotClient);
     });
+
+    it('should initialize with excludeFiles option', async () => {
+      const config = {
+        sdk: '@github/copilot-sdk',
+        options: {
+          excludeFiles: ['CLAUDE.md', 'AGENTS.md', '.env'],
+        },
+      };
+
+      const client = await GitHubCopilotInitializer.initialize({}, config);
+      expect(client).toBeInstanceOf(GitHubCopilotClient);
+    });
   });
 
   describe('GitHubCopilotClient Construction', () => {
@@ -329,6 +341,16 @@ describe('GitHub Copilot Workflow Actions', () => {
         expect(result.streaming).toBe(true);
         expect(result.attachments).toHaveLength(1);
       });
+
+      it('should validate chat with excludeFiles option', () => {
+        const input = {
+          prompt: 'Explain this code',
+          excludeFiles: ['CLAUDE.md', 'AGENTS.md', '.env'],
+        };
+        const result = CopilotChatSchema.parse(input);
+        expect(result.excludeFiles).toHaveLength(3);
+        expect(result.excludeFiles).toContain('CLAUDE.md');
+      });
     });
 
     describe('CopilotCodeReviewSchema', () => {
@@ -348,6 +370,16 @@ describe('GitHub Copilot Workflow Actions', () => {
         const result = CopilotCodeReviewSchema.parse(input);
         expect(result.files).toHaveLength(2);
         expect(result.focusAreas).toContain('security');
+      });
+
+      it('should validate code review with excludeFiles option', () => {
+        const input = {
+          prompt: 'Review this code',
+          excludeFiles: ['CLAUDE.md', 'AGENTS.md'],
+        };
+        const result = CopilotCodeReviewSchema.parse(input);
+        expect(result.excludeFiles).toHaveLength(2);
+        expect(result.excludeFiles).toContain('AGENTS.md');
       });
     });
 

@@ -52,6 +52,7 @@ export const CodexCodeModifySchema = z.object({
   prompt: z.string().describe('Code modification request'),
   workingDirectory: z.string().optional().describe('Working directory'),
   additionalDirectories: z.array(z.string()).optional().describe('Additional directories to access'),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
   reasoningEffort: z
     .enum(['minimal', 'low', 'medium', 'high', 'xhigh'])
     .optional()
@@ -65,6 +66,7 @@ export const CodexCodeAnalyzeSchema = z.object({
   prompt: z.string().describe('Code analysis request'),
   workingDirectory: z.string().optional().describe('Working directory'),
   additionalDirectories: z.array(z.string()).optional().describe('Additional directories to access'),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -221,6 +223,7 @@ export function createCodexActions(clientConfig?: CodexClientOptions) {
         prompt: parsed.prompt,
         workingDirectory: parsed.workingDirectory,
         additionalDirectories: parsed.additionalDirectories,
+        excludeFiles: parsed.excludeFiles,
         reasoningEffort: parsed.reasoningEffort,
       });
     },
@@ -243,6 +246,7 @@ export function createCodexActions(clientConfig?: CodexClientOptions) {
         prompt: parsed.prompt,
         workingDirectory: parsed.workingDirectory,
         additionalDirectories: parsed.additionalDirectories,
+        excludeFiles: parsed.excludeFiles,
       });
     },
 

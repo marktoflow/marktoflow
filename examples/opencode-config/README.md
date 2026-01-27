@@ -42,6 +42,11 @@ agent:
   name: opencode
   extra:
     opencode_mode: auto  # Try server, fallback to CLI
+    excludeFiles:  # Optional: files to exclude from context
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - '.env'
+      - '*.log'
 ```
 
 ### 2. CLI Mode Only

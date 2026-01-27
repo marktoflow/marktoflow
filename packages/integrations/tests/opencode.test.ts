@@ -57,4 +57,17 @@ describe('OpenCode Integration', () => {
     expect(result).toBe('Response from OpenCode');
     expect(spawn).toHaveBeenCalledWith('opencode', ['run', 'Hello'], expect.objectContaining({ stdio: ['ignore', 'pipe', 'pipe'] }));
   });
+
+  it('should initialize with excludeFiles option', async () => {
+    const config = {
+      sdk: 'opencode',
+      options: {
+        mode: 'cli',
+        excludeFiles: ['CLAUDE.md', 'AGENTS.md', '.env']
+      }
+    };
+
+    const client = await OpenCodeInitializer.initialize({}, config);
+    expect(client).toBeInstanceOf(OpenCodeClient);
+  });
 });

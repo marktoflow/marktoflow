@@ -452,6 +452,7 @@ export class ClaudeAgentClient {
     if (options.model) sdkOptions.model = options.model;
     if (options.cwd) sdkOptions.cwd = options.cwd;
     if (options.additionalDirectories) sdkOptions.additionalDirectories = options.additionalDirectories;
+    if (options.excludeFiles) sdkOptions.excludeFiles = options.excludeFiles;
     if (options.env) sdkOptions.env = options.env;
     if (options.allowedTools) sdkOptions.allowedTools = options.allowedTools;
     if (options.disallowedTools) sdkOptions.disallowedTools = options.disallowedTools;

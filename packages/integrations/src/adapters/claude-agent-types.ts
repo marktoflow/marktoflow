@@ -149,6 +149,8 @@ export interface ClaudeAgentOptions {
   cwd?: string;
   /** Additional directories the agent can access */
   additionalDirectories?: string[];
+  /** Files to exclude from automatic context loading (e.g., ['CLAUDE.md', 'AGENTS.md']) */
+  excludeFiles?: string[];
   /** Environment variables */
   env?: Record<string, string>;
 
@@ -380,6 +382,7 @@ export const ClaudeAgentOptionsSchema = z.object({
   model: z.string().optional(),
   cwd: z.string().optional(),
   additionalDirectories: z.array(z.string()).optional(),
+  excludeFiles: z.array(z.string()).optional(),
   env: z.record(z.string()).optional(),
   allowedTools: z.array(z.string()).optional(),
   disallowedTools: z.array(z.string()).optional(),

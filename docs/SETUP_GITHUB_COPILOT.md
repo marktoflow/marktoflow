@@ -217,11 +217,22 @@ tools:
       model: gpt-4.1
       autoStart: true # Auto-start CLI (default)
       logLevel: info # info, debug, error, warning, none, all
+      excludeFiles: # Files to exclude from automatic context loading
+        - 'CLAUDE.md'
+        - 'AGENTS.md'
+        - '.env'
+        - '*.log'
     auth:
       cli_path: copilot # Custom CLI path
       # OR
       cli_url: localhost:4321 # External server (mutually exclusive)
 ```
+
+**Exclude Files**: Use `excludeFiles` to prevent certain files from being automatically loaded into the AI context. This is useful for:
+- Filtering out large documentation files (CLAUDE.md, AGENTS.md)
+- Excluding sensitive files (.env, credentials)
+- Removing log files and build artifacts
+- Improving context efficiency by focusing on relevant code
 
 ## Complete Example: AI Code Review
 

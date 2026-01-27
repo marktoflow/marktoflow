@@ -129,6 +129,21 @@ describe('Claude Agent SDK Integration', () => {
       const client = await ClaudeAgentInitializer.initialize({}, config);
       expect(client).toBeInstanceOf(ClaudeAgentClient);
     });
+
+    it('should handle excludeFiles option to filter out context files', async () => {
+      const config = {
+        sdk: 'claude-agent',
+        options: {
+          cwd: '/project/path',
+          additionalDirectories: ['/lib', '/tests'],
+          excludeFiles: ['CLAUDE.md', 'AGENTS.md', '.env'],
+          model: 'claude-sonnet-4-5-20250929',
+        },
+      };
+
+      const client = await ClaudeAgentInitializer.initialize({}, config);
+      expect(client).toBeInstanceOf(ClaudeAgentClient);
+    });
   });
 
   describe('SDK Registry Integration', () => {

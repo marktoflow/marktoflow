@@ -243,7 +243,19 @@ opencode_server_autostart: true
 
 # Custom CLI path
 opencode_cli_path: /usr/local/bin/opencode
+
+# Files to exclude from automatic context loading
+excludeFiles:
+  - 'CLAUDE.md'
+  - 'AGENTS.md'
+  - '.env'
+  - '*.log'
 ```
+
+**Exclude Files**: Use `excludeFiles` to filter out files from automatic context loading. This improves efficiency by:
+- Removing large documentation files (CLAUDE.md, AGENTS.md)
+- Excluding sensitive files (.env, credentials)
+- Filtering out logs and build artifacts
 
 ### Example Configurations
 

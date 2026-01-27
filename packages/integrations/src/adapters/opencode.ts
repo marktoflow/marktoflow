@@ -7,6 +7,8 @@ export class OpenCodeClient {
   private serverUrl: string;
   private cliPath: string;
   private model: string | undefined;
+  // @ts-ignore - Stored for future SDK support
+  private excludeFiles: string[] | undefined;
   private sdkClient: OpencodeClient | null = null;
 
   constructor(options: {
@@ -14,12 +16,16 @@ export class OpenCodeClient {
     serverUrl?: string;
     cliPath?: string;
     model?: string;
+    excludeFiles?: string[];
   } = {}) {
     this.mode = options.mode || 'auto';
     this.serverUrl = options.serverUrl || 'http://localhost:4096';
     this.cliPath = options.cliPath || 'opencode';
     this.model = options.model;
-    
+    this.excludeFiles = options.excludeFiles;
+    // NOTE: excludeFiles is stored but not yet passed to SDK
+    // Will be used when underlying @opencode-ai/sdk supports it
+
     if (this.mode === 'server' || this.mode === 'auto') {
       this.sdkClient = createOpencodeClient({
         baseUrl: this.serverUrl,
@@ -132,6 +138,7 @@ export const OpenCodeInitializer: SDKInitializer = {
       serverUrl: options['serverUrl'] as string,
       cliPath: options['cliPath'] as string,
       model: options['model'] as string,
+      excludeFiles: options['excludeFiles'] as string[],
     });
   },
 };

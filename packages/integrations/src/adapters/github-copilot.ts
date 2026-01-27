@@ -46,6 +46,8 @@ export interface CopilotClientConfig {
   logLevel?: LogLevel;
   /** Working directory */
   cwd?: string;
+  /** Files to exclude from automatic context loading (e.g., ['CLAUDE.md', 'AGENTS.md']) */
+  excludeFiles?: string[];
   /** Environment variables */
   env?: Record<string, string | undefined>;
 }
@@ -114,6 +116,8 @@ export interface CopilotSessionConfig {
   availableTools?: string[];
   /** Excluded tools blacklist */
   excludedTools?: string[];
+  /** Files to exclude from automatic context loading (e.g., ['CLAUDE.md', 'AGENTS.md']) */
+  excludeFiles?: string[];
 }
 
 /**

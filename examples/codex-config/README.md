@@ -29,6 +29,11 @@ tools:
       sandboxMode: 'read-only'   # 'read-only' | 'workspace-write' | 'danger-full-access'
       reasoningEffort: 'high'    # 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
       skipGitRepoCheck: true
+      excludeFiles:              # Files to exclude from automatic context loading
+        - 'CLAUDE.md'
+        - 'AGENTS.md'
+        - '.env'
+        - '*.log'
 ```
 
 ## Available Actions

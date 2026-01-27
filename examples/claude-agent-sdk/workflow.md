@@ -366,6 +366,14 @@ tools:
       # Working directory
       cwd: '${WORKSPACE_PATH}'
 
+      # Files to exclude from automatic context loading
+      # Useful for filtering out large documentation files, generated content, or sensitive files
+      excludeFiles:
+        - 'CLAUDE.md'
+        - 'AGENTS.md'
+        - '.env'
+        - '*.log'
+
       # Environment variables passed to tools
       env:
         NODE_ENV: 'production'

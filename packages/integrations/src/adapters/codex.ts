@@ -432,11 +432,13 @@ export class CodexClient {
     prompt: string;
     workingDirectory?: string;
     additionalDirectories?: string[];
+    excludeFiles?: string[];
     reasoningEffort?: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
   }): Promise<CodexResult> {
     return this.sendWithThread(inputs.prompt, {
       workingDirectory: inputs.workingDirectory || process.cwd(),
       additionalDirectories: inputs.additionalDirectories,
+      excludeFiles: inputs.excludeFiles,
       modelReasoningEffort: inputs.reasoningEffort || 'medium',
       sandboxMode: 'workspace-write',
       skipGitRepoCheck: true,
@@ -480,10 +482,12 @@ export class CodexClient {
     prompt: string;
     workingDirectory?: string;
     additionalDirectories?: string[];
+    excludeFiles?: string[];
   }): Promise<CodexResult> {
     return this.sendWithThread(inputs.prompt, {
       workingDirectory: inputs.workingDirectory || process.cwd(),
       additionalDirectories: inputs.additionalDirectories,
+      excludeFiles: inputs.excludeFiles,
       sandboxMode: 'read-only',
       skipGitRepoCheck: true,
     });
@@ -510,6 +514,8 @@ export class CodexClient {
       webSearchEnabled: merged.webSearchEnabled,
       approvalPolicy: merged.approvalPolicy,
       additionalDirectories: merged.additionalDirectories,
+      // NOTE: excludeFiles is stored in merged but not passed to SDK yet
+      // as the underlying Codex SDK doesn't support it yet
     };
   }
 }
@@ -546,6 +552,7 @@ export const CodexInitializer: SDKInitializer = {
         approvalPolicy:
           options['approvalPolicy'] as CodexThreadOptions['approvalPolicy'],
         additionalDirectories: options['additionalDirectories'] as string[],
+        excludeFiles: options['excludeFiles'] as string[],
       },
     });
   },

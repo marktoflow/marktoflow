@@ -24,6 +24,11 @@ tools:
     options:
       model: gpt-4.1
       logLevel: info
+      excludeFiles:  # Files to exclude from automatic context loading
+        - 'CLAUDE.md'
+        - 'AGENTS.md'
+        - '.env'
+        - '*.log'
 
 triggers:
   - type: webhook

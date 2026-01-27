@@ -45,6 +45,7 @@ export const CopilotChatSchema = z.object({
     .describe('File or directory attachments'),
   streaming: z.boolean().optional().describe('Enable streaming mode'),
   sessionId: z.string().optional().describe('Session ID to resume'),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -58,6 +59,7 @@ export const CopilotCodeReviewSchema = z.object({
     .optional()
     .describe('Areas to focus on (security, performance, quality)'),
   outputFormat: z.enum(['markdown', 'json']).optional().describe('Output format'),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -67,6 +69,7 @@ export const CopilotCodeModifySchema = z.object({
   prompt: z.string().describe('Modification request'),
   files: z.array(z.string()).optional().describe('Files to modify'),
   dryRun: z.boolean().optional().describe('Preview changes without applying'),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -85,6 +88,7 @@ export const CopilotWithToolsSchema = z.object({
     .describe('Tool definitions'),
   model: z.string().optional(),
   systemMessage: z.string().optional(),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -104,6 +108,7 @@ export const CopilotWithAgentsSchema = z.object({
     )
     .describe('Custom agent definitions'),
   model: z.string().optional(),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -131,6 +136,7 @@ export const CopilotWithMcpSchema = z.object({
     )
     .describe('MCP server configurations'),
   model: z.string().optional(),
+  excludeFiles: z.array(z.string()).optional().describe('Files to exclude from context'),
 });
 
 /**
@@ -204,6 +210,7 @@ export function createCopilotActions(clientConfig?: CopilotClientConfig) {
         model: parsed.model,
         systemMessage: parsed.systemMessage,
         streaming: parsed.streaming,
+        excludeFiles: parsed.excludeFiles,
       };
 
       if (parsed.sessionId) {
@@ -269,7 +276,7 @@ Be thorough but constructive.`;
 
       return client.sendWithSession(
         { prompt, attachments },
-        { systemMessage, model: 'gpt-4.1' }
+        { systemMessage, model: 'gpt-4.1', excludeFiles: parsed.excludeFiles }
       );
     },
 
@@ -306,7 +313,7 @@ Be thorough but constructive.`;
 
       return client.sendWithSession(
         { prompt, attachments },
-        { model: 'gpt-4.1' }
+        { model: 'gpt-4.1', excludeFiles: parsed.excludeFiles }
       );
     },
 
@@ -352,6 +359,7 @@ Be thorough but constructive.`;
           model: parsed.model,
           systemMessage: parsed.systemMessage,
           tools,
+          excludeFiles: parsed.excludeFiles,
         }
       );
     },
@@ -389,6 +397,7 @@ Be thorough but constructive.`;
         {
           model: parsed.model,
           customAgents,
+          excludeFiles: parsed.excludeFiles,
         }
       );
     },
@@ -416,6 +425,7 @@ Be thorough but constructive.`;
         {
           model: parsed.model,
           mcpServers: parsed.mcpServers as Record<string, CopilotMcpServerConfig>,
+          excludeFiles: parsed.excludeFiles,
         }
       );
     },
