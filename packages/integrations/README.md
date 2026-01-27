@@ -10,9 +10,10 @@ Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, an
 
 ## Features
 
-### Service Integrations (20)
+### Service Integrations (30)
 
 - **Slack** - Send messages, manage channels, socket mode
+- **Microsoft Teams** - Channel messages, chats, meetings, collaboration
 - **GitHub** - Create PRs, issues, comments, manage repos
 - **Jira** - Create/update issues, transitions, search
 - **Gmail** - Send emails, read inbox, manage labels, webhook triggers
@@ -28,6 +29,16 @@ Standard integrations for marktoflow - connect to Slack, GitHub, Jira, Gmail, an
 - **Confluence** - Wiki page management
 - **Telegram** - Bot messaging and interactions
 - **WhatsApp** - Business messaging API
+- **Stripe** - Payment processing, subscriptions, invoicing
+- **Shopify** - E-commerce store management, products, orders
+- **Twilio** - SMS, voice calls, WhatsApp, phone numbers
+- **SendGrid** - Transactional email delivery
+- **Mailchimp** - Email marketing campaigns and automation
+- **Zendesk** - Customer support tickets and users
+- **Asana** - Task and project management
+- **Trello** - Kanban boards and cards
+- **Dropbox** - Cloud file storage and sharing
+- **AWS S3** - Amazon object storage
 - **Supabase** - PostgreSQL database with real-time subscriptions
 - **PostgreSQL** - Direct PostgreSQL database access
 - **MySQL** - Direct MySQL database access
@@ -252,6 +263,117 @@ inputs:
   to: [user@example.com]
   subject: 'Meeting Reminder'
   body: 'Don't forget our meeting at 2pm'
+```
+
+### Microsoft Teams
+
+Team collaboration and communication via Microsoft Graph API.
+
+**Setup**:
+
+```bash
+export TEAMS_ACCESS_TOKEN=your-access-token
+# Or use client credentials:
+export TEAMS_CLIENT_ID=your-client-id
+export TEAMS_CLIENT_SECRET=your-secret
+export TEAMS_TENANT_ID=your-tenant-id
+```
+
+**Actions**:
+
+- `listTeams` - List teams user is a member of
+- `listChannels` - List channels in a team
+- `createChannel` - Create a channel in a team
+- `sendMessage` - Send message to a channel
+- `listMessages` - List messages in a channel
+- `replyToMessage` - Reply to a message
+- `sendChatMessage` - Send message in a chat
+- `createMeeting` - Create an online meeting
+- `listTeamMembers` - List members of a team
+- `addTeamMember` - Add member to a team
+
+**Example**:
+
+```yaml
+tools:
+  teams:
+    sdk: 'teams'
+    auth:
+      access_token: '${TEAMS_ACCESS_TOKEN}'
+
+steps:
+  - action: teams.sendMessage
+    inputs:
+      teamId: '${TEAM_ID}'
+      channelId: '${CHANNEL_ID}'
+      content: 'Deployment complete!'
+      contentType: 'html'
+```
+
+### Stripe
+
+Payment processing and subscription management.
+
+**Setup**:
+
+```bash
+export STRIPE_API_KEY=sk_test_your-key
+```
+
+**Actions**:
+
+**Customers:**
+- `createCustomer` - Create a customer
+- `getCustomer` - Get customer by ID
+- `updateCustomer` - Update customer
+- `deleteCustomer` - Delete customer
+- `listCustomers` - List customers
+
+**Payment Intents:**
+- `createPaymentIntent` - Create payment intent
+- `getPaymentIntent` - Get payment intent
+- `confirmPaymentIntent` - Confirm payment
+- `cancelPaymentIntent` - Cancel payment
+
+**Subscriptions:**
+- `createSubscription` - Create subscription
+- `getSubscription` - Get subscription
+- `updateSubscription` - Update subscription
+- `cancelSubscription` - Cancel subscription
+- `listSubscriptions` - List subscriptions
+
+**Invoices:**
+- `createInvoice` - Create invoice
+- `getInvoice` - Get invoice
+- `finalizeInvoice` - Finalize invoice
+- `payInvoice` - Pay invoice
+- `sendInvoice` - Send invoice
+
+**Example**:
+
+```yaml
+tools:
+  stripe:
+    sdk: 'stripe'
+    auth:
+      api_key: '${STRIPE_API_KEY}'
+
+steps:
+  - action: stripe.createCustomer
+    inputs:
+      email: 'customer@example.com'
+      name: 'John Doe'
+      metadata:
+        source: 'workflow'
+    output_variable: customer
+
+  - action: stripe.createPaymentIntent
+    inputs:
+      amount: 2000
+      currency: 'usd'
+      customer: '{{ customer.id }}'
+      description: 'Service subscription'
+    output_variable: payment
 ```
 
 ### Linear
@@ -582,6 +704,273 @@ inputs:
     Authorization: 'Bearer ${API_TOKEN}'
   body:
     key: value
+```
+
+### Twilio
+
+SMS, voice calls, WhatsApp messaging, and phone number management.
+
+**Setup**:
+
+```bash
+export TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export TWILIO_AUTH_TOKEN=your-auth-token
+```
+
+**Actions**:
+
+- `sendSMS` - Send SMS message
+- `makeCall` - Make phone call
+- `sendWhatsApp` - Send WhatsApp message
+- `listMessages` - List sent/received messages
+- `sendVerification` - Send verification code
+
+**Example**:
+
+```yaml
+action: twilio.sendSMS
+inputs:
+  to: '+1234567890'
+  from: '+0987654321'
+  body: 'Your verification code is 123456'
+```
+
+### SendGrid
+
+Transactional email delivery service.
+
+**Setup**:
+
+```bash
+export SENDGRID_API_KEY=SG.your-api-key
+```
+
+**Actions**:
+
+- `sendEmail` - Send single email
+- `sendMultiple` - Send multiple emails
+
+**Example**:
+
+```yaml
+action: sendgrid.sendEmail
+inputs:
+  to: 'user@example.com'
+  from: 'noreply@yourapp.com'
+  subject: 'Welcome!'
+  html: '<h1>Welcome to our service!</h1>'
+```
+
+### Shopify
+
+E-commerce platform for online stores.
+
+**Setup**:
+
+```bash
+export SHOPIFY_SHOP=your-store.myshopify.com
+export SHOPIFY_ACCESS_TOKEN=shpat_your-token
+```
+
+**Actions**:
+
+- `getProducts` - List products
+- `createProduct` - Create product
+- `createOrder` - Create order
+- `createCustomer` - Create customer
+- `updateInventoryLevel` - Update inventory
+
+**Example**:
+
+```yaml
+action: shopify.createProduct
+inputs:
+  title: 'New Product'
+  body_html: '<p>Product description</p>'
+  vendor: 'Your Brand'
+  variants:
+    - price: '29.99'
+      sku: 'PROD-001'
+```
+
+### Zendesk
+
+Customer support ticketing platform.
+
+**Setup**:
+
+```bash
+export ZENDESK_SUBDOMAIN=your-company
+export ZENDESK_EMAIL=support@yourcompany.com
+export ZENDESK_TOKEN=your-api-token
+```
+
+**Actions**:
+
+- `createTicket` - Create support ticket
+- `updateTicket` - Update ticket
+- `addComment` - Add comment to ticket
+- `createUser` - Create user
+- `search` - Search tickets/users
+
+**Example**:
+
+```yaml
+action: zendesk.createTicket
+inputs:
+  subject: 'Login Issue'
+  comment:
+    body: 'User cannot log in to account'
+  priority: 'high'
+```
+
+### Mailchimp
+
+Email marketing automation platform.
+
+**Setup**:
+
+```bash
+export MAILCHIMP_API_KEY=your-api-key
+export MAILCHIMP_SERVER=us1
+```
+
+**Actions**:
+
+- `getLists` - Get mailing lists
+- `addMember` - Add member to list
+- `createCampaign` - Create email campaign
+- `sendCampaign` - Send campaign
+- `addMemberTags` - Add tags to member
+
+**Example**:
+
+```yaml
+action: mailchimp.addMember
+inputs:
+  email_address: 'user@example.com'
+  status: 'subscribed'
+  merge_fields:
+    FNAME: 'John'
+    LNAME: 'Doe'
+```
+
+### Asana
+
+Task and project management platform.
+
+**Setup**:
+
+```bash
+export ASANA_ACCESS_TOKEN=your-personal-access-token
+```
+
+**Actions**:
+
+- `createTask` - Create task
+- `updateTask` - Update task
+- `getTasksInProject` - Get project tasks
+- `createProject` - Create project
+- `addComment` - Add comment to task
+
+**Example**:
+
+```yaml
+action: asana.createTask
+inputs:
+  name: 'Implement new feature'
+  notes: 'Add user authentication'
+  projects: ['project-gid-123']
+  due_on: '2026-02-01'
+```
+
+### Trello
+
+Visual project management with boards and cards.
+
+**Setup**:
+
+```bash
+export TRELLO_API_KEY=your-api-key
+export TRELLO_TOKEN=your-token
+```
+
+**Actions**:
+
+- `createCard` - Create card
+- `updateCard` - Update card
+- `createList` - Create list
+- `addCommentToCard` - Add comment
+- `addChecklistToCard` - Add checklist
+
+**Example**:
+
+```yaml
+action: trello.createCard
+inputs:
+  name: 'New Task'
+  desc: 'Task description'
+  idList: 'list-id-123'
+  due: '2026-02-01'
+```
+
+### Dropbox
+
+Cloud file storage and collaboration.
+
+**Setup**:
+
+```bash
+export DROPBOX_ACCESS_TOKEN=your-access-token
+```
+
+**Actions**:
+
+- `uploadFile` - Upload file
+- `downloadFile` - Download file
+- `listFolder` - List folder contents
+- `createFolder` - Create folder
+- `createSharedLink` - Create shared link
+
+**Example**:
+
+```yaml
+action: dropbox.uploadFile
+inputs:
+  path: '/documents/report.pdf'
+  contents: '${file_contents}'
+  mode: 'overwrite'
+```
+
+### AWS S3
+
+Amazon Simple Storage Service for object storage.
+
+**Setup**:
+
+```bash
+export AWS_REGION=us-east-1
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
+```
+
+**Actions**:
+
+- `uploadObject` - Upload object
+- `getObject` - Get object
+- `listObjects` - List bucket objects
+- `deleteObject` - Delete object
+- `createBucket` - Create bucket
+
+**Example**:
+
+```yaml
+action: aws-s3.uploadObject
+inputs:
+  bucket: 'my-bucket'
+  key: 'uploads/file.txt'
+  body: 'File contents'
+  contentType: 'text/plain'
 ```
 
 ## AI Agent Adapters
