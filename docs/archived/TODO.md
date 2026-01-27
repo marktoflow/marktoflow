@@ -413,7 +413,7 @@ A web-based visual workflow editor inspired by n8n. See `packages/gui/PLAN.md` f
 
 ### UI/UX Polish
 
-- [x] n8n-inspired dark theme
+- [x] Dark theme
 - [x] Light mode support
 - [x] Responsive design (mobile/tablet/desktop breakpoints)
 - [x] Keyboard shortcuts

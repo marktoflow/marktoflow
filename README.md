@@ -4,7 +4,7 @@
 
 An agent automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.8 (TypeScript)
+**Version:** 2.0.0-alpha.9 (TypeScript)
 
 ---
 
@@ -119,19 +119,23 @@ marktoflow run hello-world.md --dry-run
 
 ## Supported Integrations
 
-marktoflow v2.0 includes native SDK integrations for 20+ services:
+marktoflow v2.0 includes native SDK integrations for 30+ services:
 
 ### Communication & Collaboration
 
 - **Slack** (`@slack/web-api`) - Messages, channels, Socket Mode triggers
+- **Microsoft Teams** (`@microsoft/microsoft-graph-client`) - Teams, channels, messages, chats, online meetings
 - **Discord** (`discord`) - Messages, threads, webhooks, guild management
 - **Telegram** (`telegram`) - Bot API, messages, photos, documents, inline keyboards, webhooks
 - **WhatsApp** (`whatsapp`) - Business API, text, templates, media, interactive messages, locations
+- **Twilio** (`twilio`) - SMS, voice calls, WhatsApp messaging, verification
 
-### Email
+### Email & Marketing
 
 - **Gmail** (`googleapis`) - Send/receive emails, Pub/Sub triggers, labels
 - **Outlook** (`@microsoft/microsoft-graph-client`) - Emails, calendar, Graph subscriptions
+- **SendGrid** (`@sendgrid/mail`) - Transactional email delivery
+- **Mailchimp** (`@mailchimp/mailchimp_marketing`) - Email marketing campaigns and automation
 
 ### Google Workspace
 
@@ -144,6 +148,8 @@ marktoflow v2.0 includes native SDK integrations for 20+ services:
 
 - **Jira** (`jira.js`) - Issues, sprints, transitions, search (JQL)
 - **Linear** (`linear`) - Issues, projects, GraphQL API
+- **Asana** (`asana`) - Tasks, projects, workspaces, portfolios
+- **Trello** (`trello`) - Boards, lists, cards, members, labels
 
 ### Documentation & Knowledge
 
@@ -154,6 +160,20 @@ marktoflow v2.0 includes native SDK integrations for 20+ services:
 
 - **GitHub** (`@octokit/rest`) - PRs, issues, repos, webhooks
 - **Airtable** (`airtable`) - Records, pagination, batch operations
+
+### Payments & E-commerce
+
+- **Stripe** (`stripe`) - Payment processing, subscriptions, invoices, customers, products
+- **Shopify** (`@shopify/shopify-api`) - Products, orders, inventory, customers
+
+### Customer Support
+
+- **Zendesk** (`node-zendesk`) - Tickets, users, organizations, search
+
+### Cloud Storage
+
+- **Dropbox** (`dropbox`) - Files, folders, sharing, search
+- **AWS S3** (`@aws-sdk/client-s3`) - Object storage, buckets, uploads, downloads
 
 ### Databases
 

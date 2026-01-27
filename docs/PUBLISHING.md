@@ -104,26 +104,26 @@ For production-ready versions:
 Update `version` in all four package.json files:
 
 ```bash
-# Example: Updating to 2.0.0-alpha.8
+# Example: Updating to 2.0.0-alpha.9
 # packages/core/package.json
 {
   "name": "@marktoflow/core",
-  "version": "2.0.0-alpha.8"
+  "version": "2.0.0-alpha.9"
 }
 
 # packages/integrations/package.json
 {
   "name": "@marktoflow/integrations",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.8"
+    "@marktoflow/core": "2.0.0-alpha.9"
   }
 }
 
 # packages/gui/package.json
 {
   "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.2",
   "dependencies": {
     "@marktoflow/core": "workspace:*"
   }
@@ -132,13 +132,13 @@ Update `version` in all four package.json files:
 # packages/cli/package.json
 {
   "name": "@marktoflow/cli",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.8",
-    "@marktoflow/integrations": "2.0.0-alpha.8"
+    "@marktoflow/core": "2.0.0-alpha.9",
+    "@marktoflow/integrations": "2.0.0-alpha.9"
   },
   "optionalDependencies": {
-    "@marktoflow/gui": "2.0.0-alpha.8"
+    "@marktoflow/gui": "2.0.0-alpha.2"
   }
 }
 ```
@@ -404,14 +404,14 @@ jobs:
 
 ## Current Status
 
-**Latest Published Version**: 2.0.0-alpha.7
+**Latest Published Version**: 2.0.0-alpha.9
 
 **Published Packages**:
 
-- @marktoflow/core@2.0.0-alpha.7
-- @marktoflow/integrations@2.0.0-alpha.7
-- @marktoflow/gui@2.0.0-alpha.1 (new)
-- @marktoflow/cli@2.0.0-alpha.7
+- @marktoflow/core@2.0.0-alpha.9
+- @marktoflow/integrations@2.0.0-alpha.9
+- @marktoflow/gui@2.0.0-alpha.2
+- @marktoflow/cli@2.0.0-alpha.9
 
 **Installation**:
 

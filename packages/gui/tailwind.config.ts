@@ -6,7 +6,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // n8n-inspired color palette
+        // Primary color palette
         primary: {
           DEFAULT: '#ff6d5a',
           light: '#ff8a7a',
