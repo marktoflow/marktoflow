@@ -568,7 +568,7 @@ For large workflows (50+ nodes):
 
 ### Getting Help
 
-- Check the [GitHub Issues](https://github.com/anthropics/marktoflow/issues)
+- Check the [GitHub Issues](https://github.com/marktoflow/marktoflow/issues)
 - Join the community Discord
 - Read the [API Documentation](./GUI_API_REFERENCE.md)
 

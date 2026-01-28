@@ -38,7 +38,7 @@ npx @marktoflow/cli@alpha <command>
 ### Install from GitHub
 
 ```bash
-npm install -g github:scottgl9/marktoflow#main
+npm install -g github:marktoflow/marktoflow#main
 ```
 
 ## Quick Start
@@ -535,7 +535,7 @@ ls -la .marktoflow/credentials/
 ### Install from source
 
 ```bash
-git clone https://github.com/scottgl9/marktoflow.git
+git clone https://github.com/marktoflow/marktoflow.git
 cd marktoflow
 pnpm install
 pnpm build
@@ -550,17 +550,17 @@ pnpm test
 
 ## Links
 
-- [Main Repository](https://github.com/scottgl9/marktoflow)
-- [Documentation](https://github.com/scottgl9/marktoflow#readme)
-- [Installation Guide](https://github.com/scottgl9/marktoflow/blob/main/docs/INSTALLATION.md)
-- [Publishing Guide](https://github.com/scottgl9/marktoflow/blob/main/docs/PUBLISHING.md)
+- [Main Repository](https://github.com/marktoflow/marktoflow)
+- [Documentation](https://github.com/marktoflow/marktoflow#readme)
+- [Installation Guide](https://github.com/marktoflow/marktoflow/blob/main/docs/INSTALLATION.md)
+- [Publishing Guide](https://github.com/marktoflow/marktoflow/blob/main/docs/PUBLISHING.md)
 - [Core Package](@marktoflow/core)
 - [Integrations Package](@marktoflow/integrations)
 
 ## Support
 
-- [GitHub Issues](https://github.com/scottgl9/marktoflow/issues)
-- [Discussions](https://github.com/scottgl9/marktoflow/discussions)
+- [GitHub Issues](https://github.com/marktoflow/marktoflow/issues)
+- [Discussions](https://github.com/marktoflow/marktoflow/discussions)
 
 ## License
 

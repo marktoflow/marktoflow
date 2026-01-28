@@ -4,7 +4,7 @@
 
 An agent automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.9 (TypeScript)
+**Version:** 2.0.0-alpha.11 (TypeScript)
 
 ---
 
@@ -49,7 +49,7 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 
 ```bash
 # Install globally from npm
-npm install -g @marktoflow/cli@alpha
+npm install -g @marktoflow/cli
 
 # Verify installation
 marktoflow version
@@ -59,8 +59,8 @@ marktoflow version
 
 ```bash
 # Run commands directly without installation
-npx @marktoflow/cli@alpha init
-npx @marktoflow/cli@alpha run workflow.md
+npx @marktoflow/cli init
+npx @marktoflow/cli run workflow.md
 ```
 
 See [Installation Guide](docs/INSTALLATION.md) for complete setup instructions including PATH configuration and troubleshooting.
@@ -282,7 +282,8 @@ See `examples/` directory for production-ready workflow templates:
 ### Development
 
 - [AGENTS.md](AGENTS.md) - Development guidance for AI coding agents
-- [Publishing Guide](docs/PUBLISHING.md) - Publishing packages to npm
+- [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to marktoflow
+- [Publishing Guide](docs/PUBLISHING.md) - Publishing packages to npm (maintainers)
 
 ---
 
@@ -304,11 +305,25 @@ pnpm test
 marktoflow gui
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
+
 ---
 
 ## Publishing
 
-For information on publishing marktoflow packages to npm, see [docs/PUBLISHING.md](docs/PUBLISHING.md).
+**For Maintainers**: Publishing uses an automated, safe process:
+
+```bash
+# Test without publishing
+pnpm publish:dry-run
+
+# Publish for real
+pnpm publish
+```
+
+See [docs/PUBLISHING.md](docs/PUBLISHING.md) for complete guide.
+
+**For Contributors**: You don't need to publish. Focus on code, tests, and docs. Maintainers handle publishing after your PR is merged.
 
 ---
 

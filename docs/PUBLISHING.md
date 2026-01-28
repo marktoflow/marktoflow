@@ -1,6 +1,20 @@
 # Publishing Guide
 
-This guide explains how to publish new versions of marktoflow packages to npm.
+This guide explains how to publish new versions of marktoflow packages to npm using the **automated publishing system**.
+
+---
+
+## Quick Start
+
+```bash
+# Test the entire process without publishing
+pnpm publish:dry-run
+
+# Publish for real
+pnpm publish
+```
+
+**That's it!** The automated system handles workspace:* replacement, building, testing, and publishing.
 
 ---
 
@@ -54,17 +68,15 @@ Ensure you have publish permissions:
 - Visit https://www.npmjs.com/settings/marktoflow/members
 - Your account should have "Owner" or "Admin" role
 
-### 3. Clean Build State
+### 3. Clean Working Tree
 
 ```bash
-# Clean all build artifacts
-pnpm clean
+# Check git status
+git status
+# Should be clean (no uncommitted changes)
 
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
+# All tests passing
+pnpm test
 ```
 
 ---
@@ -97,141 +109,227 @@ For production-ready versions:
 
 ---
 
-## Publishing Process
+## Automated Publishing Process
 
-### Step 1: Update Version Numbers
+### Overview
 
-Update `version` in all four package.json files:
+The automated system provides:
+
+✅ **Automatic workspace:* replacement** with backup
+✅ **Pre-publish testing** (imports, CLI, GUI integration)
+✅ **Correct dependency order** (core → integrations → cli/gui)
+✅ **Automatic rollback** on errors
+✅ **Post-publish verification**
+✅ **Dry-run mode** for safe testing
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm publish` | Full automated publish process |
+| `pnpm publish:dry-run` | Test without actually publishing |
+| `pnpm publish:test` | Run pre-publish tests only |
+| `pnpm publish:prepare` | Replace workspace:* (manual use) |
+| `pnpm publish:restore` | Restore workspace:* (manual use) |
+
+### Step-by-Step Process
+
+#### Step 1: Update Version Numbers
+
+Update `version` in the package.json files that changed:
 
 ```bash
-# Example: Updating to 2.0.0-alpha.9
-# packages/core/package.json
-{
-  "name": "@marktoflow/core",
-  "version": "2.0.0-alpha.9"
-}
-
-# packages/integrations/package.json
-{
-  "name": "@marktoflow/integrations",
-  "version": "2.0.0-alpha.9",
-  "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.9"
-  }
-}
-
-# packages/gui/package.json
-{
-  "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.2",
-  "dependencies": {
-    "@marktoflow/core": "workspace:*"
-  }
-}
-
-# packages/cli/package.json
-{
-  "name": "@marktoflow/cli",
-  "version": "2.0.0-alpha.9",
-  "dependencies": {
-    "@marktoflow/core": "2.0.0-alpha.9",
-    "@marktoflow/integrations": "2.0.0-alpha.9"
-  },
-  "optionalDependencies": {
-    "@marktoflow/gui": "2.0.0-alpha.2"
-  }
-}
+# Example: Updating to 2.0.0-alpha.10
+# Edit the relevant files:
+vi packages/core/package.json        # If core changed
+vi packages/integrations/package.json  # If integrations changed
+vi packages/cli/package.json         # If CLI changed
+vi packages/gui/package.json         # If GUI changed
 ```
 
-**IMPORTANT**: Ensure dependency versions match the version you're publishing!
+**Important**:
+- Keep dependencies as `workspace:*` in the repo
+- The automation will replace them before publishing
+- Only bump versions for packages that actually changed
 
-**Note**: The GUI package uses `workspace:*` for local development but should reference the exact version when publishing.
-
-### Step 2: Build Packages
-
-```bash
-# Build all packages
-pnpm build
-
-# Verify build output
-ls -la packages/core/dist
-ls -la packages/integrations/dist
-ls -la packages/gui/dist
-ls -la packages/cli/dist
-```
-
-### Step 3: Publish in Order
-
-Publish in dependency order: core → integrations → gui → cli
-
-#### Publish @marktoflow/core
+#### Step 2: Commit Version Changes
 
 ```bash
-cd packages/core
-npm publish --access public --tag alpha
-cd ../..
-```
-
-#### Publish @marktoflow/integrations
-
-```bash
-cd packages/integrations
-npm publish --access public --tag alpha
-cd ../..
-```
-
-#### Publish @marktoflow/gui
-
-```bash
-cd packages/gui
-npm publish --access public --tag alpha
-cd ../..
-```
-
-#### Publish @marktoflow/cli
-
-```bash
-cd packages/cli
-npm publish --access public --tag alpha
-cd ../..
-```
-
-### Step 4: Verify Publication
-
-```bash
-# Check published versions
-npm view @marktoflow/core@alpha version
-npm view @marktoflow/integrations@alpha version
-npm view @marktoflow/gui@alpha version
-npm view @marktoflow/cli@alpha version
-
-# Search for packages
-npm search @marktoflow
-```
-
-### Step 5: Update Documentation
-
-Update version references in documentation:
-
-- README.md
-- docs/INSTALLATION.md
-- Any other files mentioning version numbers
-
-### Step 6: Commit and Tag
-
-```bash
-# Add changes
-git add .
-
-# Commit with version number
-git commit -m "chore: release v2.0.0-alpha.4"
-
-# Create git tag
-git tag v2.0.0-alpha.4
-
-# Push to GitHub
+git add packages/*/package.json
+git commit -m "chore: bump version to 2.0.0-alpha.10"
 git push origin main
-git push origin v2.0.0-alpha.4
+```
+
+#### Step 3: Test the Process
+
+**Always test first with dry-run:**
+
+```bash
+pnpm publish:dry-run
+```
+
+This runs the entire process except actual `npm publish`:
+- ✅ Replaces workspace:*
+- ✅ Builds all packages
+- ✅ Tests packages
+- ✅ Shows what would be published
+- ✅ Restores workspace:*
+
+#### Step 4: Publish for Real
+
+```bash
+pnpm publish
+```
+
+**Interactive process:**
+
+1. Shows publish plan with all versions
+2. Asks for confirmation
+3. Checks npm authentication
+4. Prepares packages (replaces workspace:*)
+5. Builds all packages
+6. Tests packages comprehensively
+7. Publishes in dependency order
+8. Restores workspace:*
+9. Verifies publication succeeded
+
+**Example output:**
+
+```
+🚀 marktoflow Package Publisher
+
+📋 Publish Plan
+
+  1. @marktoflow/core@2.0.0-alpha.9
+  2. @marktoflow/integrations@2.0.0-alpha.9
+  3. @marktoflow/cli@2.0.0-alpha.11
+  4. @marktoflow/gui@2.0.0-alpha.5
+
+📝 Process:
+  1. Replace workspace:* with actual versions
+  2. Build all packages
+  3. Run tests
+  4. Publish to npm (with alpha tag)
+  5. Restore workspace:*
+  6. Verify publication
+
+❓ Proceed with publish? (y/N): y
+
+[... automated process runs ...]
+
+✅ Publish complete!
+
+📦 Installation command:
+  npm install @marktoflow/cli @marktoflow/gui
+```
+
+#### Step 5: Create Git Tag
+
+After successful publish, create a git tag:
+
+```bash
+# Create tag
+git tag v2.0.0-alpha.10
+
+# Push tag
+git push origin v2.0.0-alpha.10
+```
+
+#### Step 6: Create GitHub Release
+
+Create a release on GitHub:
+
+1. Go to https://github.com/marktoflow/marktoflow/releases/new
+2. Select the tag you just created
+3. Add release notes describing changes
+4. Publish release
+
+---
+
+## What Gets Tested
+
+The automated testing ensures:
+
+### Package Installation Tests
+✅ All packages install without errors
+✅ Dependencies resolve correctly
+✅ No `workspace:*` in published packages
+
+### Import Tests
+```javascript
+// Core
+import { parseFile, WorkflowEngine } from '@marktoflow/core';
+
+// Integrations
+import { SlackInitializer, GitHubInitializer } from '@marktoflow/integrations';
+
+// GUI
+import { startServer, stopServer } from '@marktoflow/gui';
+```
+
+### CLI Tests
+✅ `marktoflow --help` works
+✅ All commands are available
+✅ Binary is executable
+
+### GUI Integration Test
+```javascript
+await startServer({ port: 3999, workflowDir: './workflows' });
+const response = await fetch('http://localhost:3999/api/health');
+// Verifies: Server starts, responds, serves static files
+stopServer();
+```
+
+These tests catch issues that caused multiple broken alpha releases in the past.
+
+---
+
+## Error Handling
+
+### Automatic Rollback
+
+If any step fails, the system:
+1. Stops immediately
+2. Shows clear error message
+3. **Automatically restores workspace:***
+4. Exits with error code
+
+You never have to manually fix broken package.json files.
+
+### Common Errors
+
+#### Authentication Errors
+
+```
+❌ Not authenticated to npm
+  Run: npm login
+```
+
+**Solution**: Run `npm login` and try again.
+
+#### Test Failures
+
+```
+❌ Tests failed!
+⚠️  DO NOT publish until tests pass
+```
+
+**Solution**: Fix the failing tests, commit the fix, and try again.
+
+#### Version Already Published
+
+```
+npm error 403 You cannot publish over the previously published versions: X.X.X-alpha.X
+```
+
+**Solution**: Increment the version number and try again.
+
+### Emergency Restore
+
+If something goes wrong and workspace:* isn't restored:
+
+```bash
+pnpm publish:restore
 ```
 
 ---
@@ -242,7 +340,7 @@ When ready to publish a stable release (no alpha tag):
 
 ### Step 1: Update Versions (Remove Alpha)
 
-Update all package.json files to remove `-alpha.x`:
+Update package.json files to remove `-alpha.x`:
 
 ```json
 {
@@ -250,76 +348,134 @@ Update all package.json files to remove `-alpha.x`:
 }
 ```
 
-### Step 2: Publish Without Alpha Tag
+### Step 2: Update Publishing Script
 
-```bash
-# Core
-cd packages/core
-npm publish --access public
-cd ../..
+Edit `scripts/publish.js` to remove `--tag alpha`:
 
-# Integrations
-cd packages/integrations
-npm publish --access public
-cd ../..
+```javascript
+// Change this line:
+const command = `npm publish --access public --tag alpha`;
 
-# GUI
-cd packages/gui
-npm publish --access public
-cd ../..
-
-# CLI
-cd packages/cli
-npm publish --access public
-cd ../..
+// To:
+const command = `npm publish --access public`;
 ```
 
-This publishes to the `latest` tag, which users get by default:
+### Step 3: Publish
+
+```bash
+pnpm publish
+```
+
+This publishes to the `latest` tag:
 
 ```bash
 npm install -g @marktoflow/cli  # Gets latest stable version
 ```
 
+### Step 4: Restore Alpha Publishing
+
+After publishing stable, restore the alpha tag in `scripts/publish.js`.
+
+---
+
+## Manual Publishing (Not Recommended)
+
+If you need to publish manually (not recommended):
+
+### Prepare Packages
+
+```bash
+# Replace workspace:*
+pnpm publish:prepare
+
+# Build all
+pnpm build
+```
+
+### Publish in Order
+
+```bash
+# Core
+cd packages/core && npm publish --access public --tag alpha && cd ../..
+
+# Integrations
+cd packages/integrations && npm publish --access public --tag alpha && cd ../..
+
+# GUI
+cd packages/gui && npm publish --access public --tag alpha && cd ../..
+
+# CLI
+cd packages/cli && npm publish --access public --tag alpha && cd ../..
+```
+
+### Restore
+
+```bash
+# IMPORTANT: Restore workspace:*
+pnpm publish:restore
+```
+
+**Why not recommended:**
+- Easy to forget to restore workspace:*
+- No pre-publish testing
+- No automatic rollback on errors
+- Manual process is error-prone
+
 ---
 
 ## Troubleshooting
 
-### Authentication Errors
+### Build Failures
 
-If you see `ENEEDAUTH` errors:
-
-```bash
-# Re-authenticate
-npm login
-
-# Or set token directly
-npm config set //registry.npmjs.org/:_authToken=YOUR_TOKEN
-```
-
-### Permission Errors
-
-If you see `E403` (Forbidden) errors:
-
-- Verify you're a member of @marktoflow organization
-- Check you have publish permissions
-- Visit https://www.npmjs.com/settings/marktoflow/members
-
-### Version Conflicts
-
-If a version already exists:
+If build fails:
 
 ```bash
-npm error 403 You cannot publish over the previously published versions
+# Clean everything
+pnpm clean
+
+# Reinstall
+pnpm install
+
+# Try again
+pnpm build
 ```
 
-Solution: Increment the version number and try again.
+### Port Already in Use
 
-### Dependency Mismatch
+If GUI test fails with "port in use":
 
-If users report dependency errors:
+```bash
+# Find process on port 3999
+lsof -i :3999
 
-- Ensure all internal dependencies use exact version numbers (not `^` or `~`)
-- Verify dependency versions match in all package.json files
+# Kill it
+kill -9 <PID>
+
+# Try again
+pnpm publish:test
+```
+
+### Package Not Found After Publishing
+
+Wait a few minutes for npm to propagate:
+
+```bash
+# Check if published
+npm view @marktoflow/cli@alpha version
+
+# May need to wait 1-2 minutes for npm CDN
+```
+
+---
+
+## Detailed Documentation
+
+For complete details on the publishing system:
+
+- **[scripts/PUBLISHING.md](../scripts/PUBLISHING.md)** - Technical implementation details
+- **[scripts/prepare-publish.js](../scripts/prepare-publish.js)** - Workspace replacement script
+- **[scripts/test-packages.js](../scripts/test-packages.js)** - Testing script
+- **[scripts/publish.js](../scripts/publish.js)** - Main orchestrator
 
 ---
 
@@ -327,124 +483,69 @@ If users report dependency errors:
 
 ### Alpha Release Checklist
 
-- [ ] Update version in all four package.json files (with `-alpha.X`)
-- [ ] Update dependency versions to match
-- [ ] Run `pnpm clean && pnpm install && pnpm build`
-- [ ] Publish core: `cd packages/core && npm publish --access public --tag alpha`
-- [ ] Publish integrations: `cd packages/integrations && npm publish --access public --tag alpha`
-- [ ] Publish gui: `cd packages/gui && npm publish --access public --tag alpha`
-- [ ] Publish cli: `cd packages/cli && npm publish --access public --tag alpha`
-- [ ] Verify: `npm view @marktoflow/cli@alpha version`
-- [ ] Update documentation
-- [ ] Commit and tag: `git commit -m "chore: release vX.X.X-alpha.X"`
-- [ ] Push: `git push origin main && git push origin vX.X.X-alpha.X`
+- [ ] Update version in changed package.json files
+- [ ] Commit: `git commit -m "chore: bump version to vX.X.X-alpha.X"`
+- [ ] Push: `git push origin main`
+- [ ] Test: `pnpm publish:dry-run`
+- [ ] Publish: `pnpm publish`
+- [ ] Tag: `git tag vX.X.X-alpha.X && git push origin vX.X.X-alpha.X`
+- [ ] Create GitHub release
 
 ### Stable Release Checklist
 
-- [ ] Update version in all four package.json files (remove `-alpha.X`)
-- [ ] Update dependency versions to match
-- [ ] Run `pnpm clean && pnpm install && pnpm build`
+- [ ] Update version in all package.json files (remove `-alpha.X`)
+- [ ] Update `scripts/publish.js` (remove `--tag alpha`)
 - [ ] Run full test suite: `pnpm test`
-- [ ] Publish core: `cd packages/core && npm publish --access public`
-- [ ] Publish integrations: `cd packages/integrations && npm publish --access public`
-- [ ] Publish gui: `cd packages/gui && npm publish --access public`
-- [ ] Publish cli: `cd packages/cli && npm publish --access public`
-- [ ] Verify: `npm view @marktoflow/cli version`
-- [ ] Update all documentation (remove `@alpha` tags)
+- [ ] Test: `pnpm publish:dry-run`
+- [ ] Publish: `pnpm publish`
+- [ ] Restore alpha tag in `scripts/publish.js`
+- [ ] Tag: `git tag vX.X.X && git push origin vX.X.X`
 - [ ] Create GitHub release with changelog
-- [ ] Commit and tag: `git commit -m "chore: release vX.X.X"`
-- [ ] Push: `git push origin main && git push origin vX.X.X`
-
----
-
-## Automation (Future)
-
-Consider automating the publishing process with:
-
-- **Changesets**: Automatic version management and changelogs
-- **GitHub Actions**: Publish on tag push
-- **Release Please**: Automated release PR generation
-
-Example GitHub Action:
-
-```yaml
-name: Publish to npm
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test
-
-      - name: Publish packages
-        run: |
-          cd packages/core && npm publish --access public
-          cd ../integrations && npm publish --access public
-          cd ../gui && npm publish --access public
-          cd ../cli && npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-```
+- [ ] Update all documentation (remove `@alpha` references)
 
 ---
 
 ## Current Status
 
-**Latest Published Version**: 2.0.0-alpha.9
-
-**Published Packages**:
+**Latest Published Versions**:
 
 - @marktoflow/core@2.0.0-alpha.9
 - @marktoflow/integrations@2.0.0-alpha.9
-- @marktoflow/gui@2.0.0-alpha.2
-- @marktoflow/cli@2.0.0-alpha.9
+- @marktoflow/cli@2.0.0-alpha.11
+- @marktoflow/gui@2.0.0-alpha.5
 
 **Installation**:
 
 ```bash
 # Install CLI (includes optional GUI)
-npm install -g @marktoflow/cli@alpha
+npm install -g @marktoflow/cli
 
 # Install GUI separately (for programmatic use)
-npm install @marktoflow/gui@alpha
-```
-
-**GUI Package Features**:
-
-The new `@marktoflow/gui` package provides:
-
-- Visual drag-and-drop workflow editor
-- AI-powered assistance (Claude Code, GitHub Copilot, Claude API, Ollama)
-- Real-time workflow execution and debugging
-- Light and dark themes
-- Live file sync with workflow files
-
-**Starting the GUI**:
-
-```bash
-# Via CLI
-marktoflow gui
-
-# Programmatically
-import { startServer } from '@marktoflow/gui';
-await startServer({ port: 3001, workflowDir: './workflows' });
+npm install @marktoflow/gui
 ```
 
 **Next Steps**:
 
 - Continue alpha releases during development
 - Publish 2.0.0 stable when ready for production
+- Consider GitHub Actions for automated publishing on tag push
+
+---
+
+## Benefits of Automated Publishing
+
+| Aspect | Manual Process | Automated Process |
+|--------|---------------|-------------------|
+| Steps | 10+ manual steps | 1 command |
+| Time | 15-20 minutes | 5 minutes |
+| Errors | Frequent | Rare (caught by tests) |
+| Rollback | Manual | Automatic |
+| Testing | After publish | Before publish |
+| Confidence | Low | High |
+| Reproducible | ❌ No | ✅ Yes |
+
+The automated system eliminates common errors:
+- ✅ No more forgotten workspace:* restoration
+- ✅ No more untested publishes
+- ✅ No more broken package releases
+- ✅ No more manual version replacement mistakes

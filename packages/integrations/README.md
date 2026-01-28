@@ -165,7 +165,7 @@ export GITHUB_TOKEN=ghp_your-token
 ```yaml
 action: github.pulls.create
 inputs:
-  owner: scottgl9
+  owner: marktoflow
   repo: marktoflow
   title: 'Add new feature'
   head: feature-branch
@@ -1331,8 +1331,8 @@ npm test
 
 ## Links
 
-- [Main Repository](https://github.com/scottgl9/marktoflow)
-- [Documentation](https://github.com/scottgl9/marktoflow#readme)
+- [Main Repository](https://github.com/marktoflow/marktoflow)
+- [Documentation](https://github.com/marktoflow/marktoflow#readme)
 - [Core Package](@marktoflow/core)
 - [CLI Package](@marktoflow/cli)
 

@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.5",
   "description": "Visual workflow designer for marktoflow - web UI",
   "type": "module",
   "main": "./dist/server/index.js",
@@ -8,13 +8,23 @@
   "bin": {
     "marktoflow-gui": "./dist/server/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marktoflow/marktoflow.git",
+    "directory": "packages/gui"
+  },
+  "homepage": "https://github.com/marktoflow/marktoflow#readme",
+  "bugs": {
+    "url": "https://github.com/marktoflow/marktoflow/issues"
+  },
   "scripts": {
     "dev": "concurrently \"pnpm:dev:*\"",
     "dev:client": "vite",
     "dev:server": "tsx watch src/server/index.ts",
-    "build": "pnpm build:client && pnpm build:server",
+    "build": "pnpm build:client && pnpm build:server && pnpm build:flatten",
     "build:client": "vite build",
     "build:server": "tsc -p tsconfig.server.json",
+    "build:flatten": "node scripts/flatten-dist.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

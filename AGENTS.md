@@ -170,5 +170,58 @@ output_variable: result
 - `README.md` - Project overview and quick start
 - `PROGRESS.md` - Development history
 - `docs/INSTALLATION.md` - Installation guide
+- `docs/PUBLISHING.md` - Publishing packages to npm
 - `docs/REST-API-GUIDE.md` - HTTP integration guide
 - `examples/` - Production workflow examples
+
+---
+
+## Publishing
+
+marktoflow uses an **automated publishing system** to prevent errors and ensure reproducible releases.
+
+### Quick Start
+
+```bash
+# Test the entire process (safe)
+pnpm publish:dry-run
+
+# Publish for real
+pnpm publish
+```
+
+### What It Does
+
+The automated system:
+- ✅ Replaces `workspace:*` with actual versions
+- ✅ Builds all packages
+- ✅ Tests imports, CLI, and GUI integration
+- ✅ Publishes in correct dependency order
+- ✅ Restores `workspace:*` after publishing
+- ✅ Verifies publication succeeded
+- ✅ Rolls back automatically on errors
+
+### Process
+
+1. Update version numbers in package.json files
+2. Commit and push changes
+3. Run `pnpm publish:dry-run` to test
+4. Run `pnpm publish` to publish
+5. Create git tag and GitHub release
+
+### Documentation
+
+See **[docs/PUBLISHING.md](docs/PUBLISHING.md)** for complete publishing guide including:
+- Version management
+- Step-by-step process
+- Error handling
+- Troubleshooting
+
+### Why Automated?
+
+The manual process was error-prone:
+- ❌ Forgot to replace `workspace:*` → published broken packages
+- ❌ Forgot to test → discovered issues after publishing
+- ❌ Forgot to restore `workspace:*` → broke local development
+
+The automated system eliminates these issues with comprehensive pre-publish testing and automatic rollback.
