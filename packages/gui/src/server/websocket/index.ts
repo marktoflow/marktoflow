@@ -70,6 +70,19 @@ export function setupWebSocket(io: SocketIOServer) {
       });
     },
 
+    // Emit execution started
+    emitExecutionStarted(runId: string, data: any) {
+      io.to(`execution:${runId}`).emit('execution:started', {
+        runId,
+        ...data,
+      });
+      // Also broadcast to all clients for global execution history updates
+      io.emit('execution:new', {
+        runId,
+        ...data,
+      });
+    },
+
     // Emit execution step update
     emitExecutionStep(runId: string, data: any) {
       io.to(`execution:${runId}`).emit('execution:step', {

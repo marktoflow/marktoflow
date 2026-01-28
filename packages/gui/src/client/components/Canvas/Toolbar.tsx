@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Play,
@@ -11,10 +12,15 @@ import {
   Redo,
   Copy,
   Trash2,
+  Bot,
+  ChevronDown,
 } from 'lucide-react';
 import { useCanvas } from '../../hooks/useCanvas';
 import { useEditorStore } from '../../stores/editorStore';
 import { useReactFlow } from '@xyflow/react';
+import { getModKey } from '../../utils/platform';
+import { useAgentStore } from '../../stores/agentStore';
+import { ProviderSwitcher } from '../Settings/ProviderSwitcher';
 
 interface ToolbarProps {
   onAddStep: () => void;
@@ -33,10 +39,20 @@ export function Toolbar({
     useCanvas();
   const { undo, redo, undoStack, redoStack } = useEditorStore();
   const { zoomIn, zoomOut } = useReactFlow();
+  const modKey = getModKey();
+  const { providers, activeProviderId, loadProviders } = useAgentStore();
+  const [showProviderSwitcher, setShowProviderSwitcher] = useState(false);
 
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
   const hasSelection = selectedNodes.length > 0;
+
+  // Load providers on mount
+  useEffect(() => {
+    loadProviders();
+  }, [loadProviders]);
+
+  const activeProvider = providers.find((p) => p.id === activeProviderId);
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-1.5 bg-panel-bg/95 backdrop-blur border border-node-border rounded-lg shadow-lg">
@@ -56,14 +72,14 @@ export function Toolbar({
         label="Undo"
         onClick={() => undo()}
         disabled={!canUndo}
-        shortcut="⌘Z"
+        shortcut={`${modKey}Z`}
       />
       <ToolbarButton
         icon={<Redo className="w-4 h-4" />}
         label="Redo"
         onClick={() => redo()}
         disabled={!canRedo}
-        shortcut="⌘⇧Z"
+        shortcut={`${modKey}⇧Z`}
       />
 
       <ToolbarDivider />
@@ -74,7 +90,7 @@ export function Toolbar({
         label="Duplicate"
         onClick={duplicateSelected}
         disabled={!hasSelection}
-        shortcut="⌘D"
+        shortcut={`${modKey}D`}
       />
       <ToolbarButton
         icon={<Trash2 className="w-4 h-4" />}
@@ -91,44 +107,60 @@ export function Toolbar({
         icon={<Layout className="w-4 h-4" />}
         label="Auto Layout"
         onClick={autoLayout}
-        shortcut="⌘L"
+        shortcut={`${modKey}L`}
       />
       <ToolbarButton
         icon={<ZoomIn className="w-4 h-4" />}
         label="Zoom In"
         onClick={() => zoomIn()}
-        shortcut="⌘+"
+        shortcut={`${modKey}+`}
       />
       <ToolbarButton
         icon={<ZoomOut className="w-4 h-4" />}
         label="Zoom Out"
         onClick={() => zoomOut()}
-        shortcut="⌘-"
+        shortcut={`${modKey}-`}
       />
       <ToolbarButton
         icon={<Maximize className="w-4 h-4" />}
         label="Fit View"
         onClick={fitView}
-        shortcut="⌘0"
+        shortcut={`${modKey}0`}
       />
 
       <ToolbarDivider />
 
+      {/* AI Provider */}
+      <button
+        onClick={() => setShowProviderSwitcher(true)}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+        title="Select AI Provider"
+      >
+        <Bot className="w-4 h-4" />
+        <span className="hidden sm:inline text-xs">
+          {activeProvider?.name || 'No Provider'}
+        </span>
+        <ChevronDown className="w-3 h-3" />
+      </button>
+
       {/* Execute */}
       {onExecute && (
-        <ToolbarButton
-          icon={
-            isExecuting ? (
-              <Pause className="w-4 h-4" />
-            ) : (
-              <Play className="w-4 h-4" />
-            )
-          }
-          label={isExecuting ? 'Stop' : 'Execute'}
-          onClick={onExecute}
-          variant={isExecuting ? 'destructive' : 'primary'}
-          shortcut="⌘⏎"
-        />
+        <>
+          <ToolbarDivider />
+          <ToolbarButton
+            icon={
+              isExecuting ? (
+                <Pause className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )
+            }
+            label={isExecuting ? 'Stop' : 'Execute'}
+            onClick={onExecute}
+            variant={isExecuting ? 'destructive' : 'primary'}
+            shortcut={`${modKey}⏎`}
+          />
+        </>
       )}
 
       {/* Save */}
@@ -137,9 +169,15 @@ export function Toolbar({
           icon={<Save className="w-4 h-4" />}
           label="Save"
           onClick={onSave}
-          shortcut="⌘S"
+          shortcut={`${modKey}S`}
         />
       )}
+
+      {/* Provider Switcher Modal */}
+      <ProviderSwitcher
+        open={showProviderSwitcher}
+        onOpenChange={setShowProviderSwitcher}
+      />
     </div>
   );
 }

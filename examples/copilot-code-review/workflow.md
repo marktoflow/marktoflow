@@ -43,7 +43,7 @@ inputs:
     required: true
     description: 'Repository in owner/repo format'
   pull_number:
-    type: integer
+    type: number
     required: true
     description: 'Pull request number'
   focus_areas:
@@ -59,7 +59,7 @@ outputs:
     type: string
     description: 'AI-generated review comment'
   issues_found:
-    type: integer
+    type: number
     description: 'Number of issues found'
 ---
 

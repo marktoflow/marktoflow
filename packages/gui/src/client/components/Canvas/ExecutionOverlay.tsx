@@ -30,6 +30,7 @@ interface ExecutionStep {
   status: StepStatus;
   duration?: number;
   error?: string;
+  inputs?: Record<string, unknown>;
   output?: unknown;
   outputVariable?: string;
 }
@@ -384,11 +385,12 @@ function LogsViewer({ logs }: { logs: string[] }) {
 
 function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+  const [expandedSection, setExpandedSection] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Filter steps that have output data
-  const stepsWithOutput = steps.filter(
-    (step) => step.output !== undefined && step.outputVariable
+  // Filter steps that have input or output data
+  const stepsWithData = steps.filter(
+    (step) => step.inputs !== undefined || (step.output !== undefined && step.outputVariable)
   );
 
   const toggleStep = (stepId: string) => {
@@ -398,6 +400,18 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
         next.delete(stepId);
       } else {
         next.add(stepId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSection((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
       }
       return next;
     });
@@ -414,26 +428,29 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
     }
   };
 
-  if (stepsWithOutput.length === 0) {
+  if (stepsWithData.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500 text-sm">
-        No variables available yet.
+        No data available yet.
         <br />
-        <span className="text-xs">Variables will appear as steps complete.</span>
+        <span className="text-xs">Step inputs and outputs will appear as steps execute.</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      {stepsWithOutput.map((step) => {
+      {stepsWithData.map((step) => {
         const isExpanded = expandedSteps.has(step.stepId);
+        const hasInputs = step.inputs && Object.keys(step.inputs).length > 0;
+        const hasOutput = step.output !== undefined && step.outputVariable;
+
         return (
           <div
             key={step.stepId}
             className="border border-node-border rounded-lg overflow-hidden"
           >
-            {/* Variable Header */}
+            {/* Step Header */}
             <button
               onClick={() => toggleStep(step.stepId)}
               className="w-full flex items-center gap-2 px-3 py-2 bg-node-bg hover:bg-white/5 transition-colors"
@@ -443,38 +460,109 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
               ) : (
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               )}
-              <code className="text-sm text-primary font-mono">
-                {step.outputVariable}
+              <code className="text-sm text-white font-mono">
+                {step.stepName || step.stepId}
               </code>
               <span className="text-xs text-gray-500 ml-auto">
-                {getTypeLabel(step.output)}
+                {hasInputs && `${Object.keys(step.inputs!).length} inputs`}
+                {hasInputs && hasOutput && ' • '}
+                {hasOutput && step.outputVariable}
               </span>
             </button>
 
-            {/* Variable Value */}
+            {/* Step Data */}
             {isExpanded && (
-              <div className="p-3 bg-panel-bg border-t border-node-border">
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 overflow-x-auto">
-                    <ValueRenderer
-                      value={step.output}
-                      onCopy={(key, val) => copyValue(key, val)}
-                      copiedKey={copiedKey}
-                      path={step.outputVariable || ''}
-                    />
-                  </div>
-                  <button
-                    onClick={() => copyValue(step.outputVariable || '', step.output)}
-                    className="p-1.5 hover:bg-white/10 rounded transition-colors"
-                    title="Copy entire value"
-                  >
-                    {copiedKey === step.outputVariable ? (
-                      <Check className="w-4 h-4 text-success" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-gray-400" />
+              <div className="bg-panel-bg border-t border-node-border">
+                {/* Inputs Section */}
+                {hasInputs && (
+                  <div className="border-b border-node-border">
+                    <button
+                      onClick={() => toggleSection(`${step.stepId}-inputs`)}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 transition-colors"
+                    >
+                      {expandedSection.has(`${step.stepId}-inputs`) ? (
+                        <ChevronDown className="w-3 h-3 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                      )}
+                      <span className="text-xs font-medium text-gray-400">
+                        Inputs ({Object.keys(step.inputs!).length})
+                      </span>
+                    </button>
+                    {expandedSection.has(`${step.stepId}-inputs`) && (
+                      <div className="px-3 pb-3">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 overflow-x-auto">
+                            <ValueRenderer
+                              value={step.inputs}
+                              onCopy={(key, val) => copyValue(key, val)}
+                              copiedKey={copiedKey}
+                              path="inputs"
+                            />
+                          </div>
+                          <button
+                            onClick={() => copyValue(`${step.stepId}-inputs`, step.inputs)}
+                            className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                            title="Copy inputs"
+                          >
+                            {copiedKey === `${step.stepId}-inputs` ? (
+                              <Check className="w-4 h-4 text-success" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </button>
-                </div>
+                  </div>
+                )}
+
+                {/* Output Section */}
+                {hasOutput && (
+                  <div>
+                    <button
+                      onClick={() => toggleSection(`${step.stepId}-output`)}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 transition-colors"
+                    >
+                      {expandedSection.has(`${step.stepId}-output`) ? (
+                        <ChevronDown className="w-3 h-3 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                      )}
+                      <span className="text-xs font-medium text-gray-400">
+                        Output
+                      </span>
+                      <code className="text-xs text-primary font-mono ml-auto">
+                        {step.outputVariable}
+                      </code>
+                    </button>
+                    {expandedSection.has(`${step.stepId}-output`) && (
+                      <div className="px-3 pb-3">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 overflow-x-auto">
+                            <ValueRenderer
+                              value={step.output}
+                              onCopy={(key, val) => copyValue(key, val)}
+                              copiedKey={copiedKey}
+                              path={step.outputVariable || 'output'}
+                            />
+                          </div>
+                          <button
+                            onClick={() => copyValue(step.outputVariable || '', step.output)}
+                            className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                            title="Copy output"
+                          >
+                            {copiedKey === step.outputVariable ? (
+                              <Check className="w-4 h-4 text-success" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

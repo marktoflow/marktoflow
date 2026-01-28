@@ -178,6 +178,15 @@ function TransformNodeComponent({ data, selected }: NodeProps<TransformNodeType>
         position={Position.Bottom}
         className="!w-3 !h-3 !bg-primary !border-2 !border-node-bg"
       />
+
+      {/* Loop-back handle for iteration visualization */}
+      <Handle
+        id="loop-back"
+        type="source"
+        position={Position.Left}
+        className="!w-3 !h-3 !bg-teal-500 !border-2 !border-node-bg"
+        style={{ top: '50%', left: '-6px' }}
+      />
     </div>
   );
 }

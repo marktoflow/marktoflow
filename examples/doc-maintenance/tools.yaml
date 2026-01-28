@@ -28,7 +28,7 @@ tools:
         type: array
         description: List of discovered components
       - name: total
-        type: integer
+        type: number
         description: Total number of components found
 
   - id: init_tracking
@@ -38,7 +38,7 @@ tools:
     description: Initialize tracking data structure for workflow execution
     inputs:
       - name: total_components
-        type: integer
+        type: number
         required: true
     outputs:
       - name: tracking_data
@@ -81,7 +81,7 @@ tools:
         type: boolean
         required: true
       - name: issues
-        type: integer
+        type: number
         default: 0
       - name: confidence
         type: string
@@ -91,9 +91,9 @@ tools:
         default: false
     outputs:
       - name: total_processed
-        type: integer
+        type: number
       - name: total_updated
-        type: integer
+        type: number
 
   - id: generate_summary
     name: Generate Summary
@@ -105,7 +105,7 @@ tools:
         type: string
         required: true
       - name: total_processed
-        type: integer
+        type: number
         required: true
       - name: dry_run
         type: boolean

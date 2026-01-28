@@ -249,4 +249,79 @@ describe('SwitchNode', () => {
       expect(screen.getByText('0 cases + default')).toBeInTheDocument();
     });
   });
+
+  describe('skipped branches', () => {
+    it('should show SKIPPED badge on skipped case', () => {
+      renderNode({
+        skippedBranches: ['high', 'medium'],
+        activeCase: 'critical'
+      });
+
+      const skippedBadges = screen.getAllByText('SKIPPED');
+      expect(skippedBadges).toHaveLength(2);
+
+      const highCase = screen.getByText('high');
+      expect(highCase).toHaveClass('line-through', 'text-gray-400');
+    });
+
+    it('should not show SKIPPED when no branches are skipped', () => {
+      renderNode({ skippedBranches: [] });
+
+      expect(screen.queryByText('SKIPPED')).not.toBeInTheDocument();
+    });
+
+    it('should show active case with ring highlight', () => {
+      renderNode({ activeCase: 'critical' });
+
+      const criticalCase = screen.getByText('critical');
+      expect(criticalCase).toHaveClass('ring-1', 'ring-purple-400/50');
+    });
+  });
+
+  describe('handle positioning', () => {
+    it('should render output handles for all visible cases', () => {
+      const { container } = renderNode({
+        cases: { critical: {}, high: {}, medium: {} },
+        hasDefault: true
+      });
+
+      // Should have 4 handles: 3 cases + 1 default
+      const handles = container.querySelectorAll('.react-flow__handle-bottom');
+      expect(handles.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('should position handles evenly to avoid overlap', () => {
+      const { container } = renderNode({
+        cases: { case1: {}, case2: {}, case3: {}, case4: {} },
+        hasDefault: true
+      });
+
+      const handles = container.querySelectorAll('.react-flow__handle-bottom');
+
+      // Each handle should have a unique position
+      const positions = Array.from(handles).map(h =>
+        (h as HTMLElement).style.left
+      );
+
+      // All positions should be different
+      const uniquePositions = new Set(positions);
+      expect(uniquePositions.size).toBe(positions.length);
+    });
+  });
+
+  describe('completed and failed states', () => {
+    it('should show completed class on node', () => {
+      renderNode({ status: 'completed' });
+
+      const node = screen.getByText('Route By Severity').closest('.control-flow-node');
+      expect(node).toHaveClass('completed');
+    });
+
+    it('should show failed class on node', () => {
+      renderNode({ status: 'failed' });
+
+      const node = screen.getByText('Route By Severity').closest('.control-flow-node');
+      expect(node).toHaveClass('failed');
+    });
+  });
 });

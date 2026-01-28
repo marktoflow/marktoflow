@@ -7,10 +7,20 @@ Visual workflow designer for marktoflow - a web-based drag-and-drop editor with 
 ## Features
 
 - **Visual Workflow Editor** - Drag-and-drop interface for creating and editing workflows
+- **Enhanced Control Flow Visualization** - Visual execution state indicators for loops, branches, and parallel execution
 - **AI-Powered Assistance** - Natural language commands to modify workflows
 - **Multiple AI Backends** - Support for Claude Code, GitHub Copilot, and more
-- **Real-time Execution** - Run and debug workflows directly from the UI
+- **Real-time Execution** - Run and debug workflows directly from the UI with live status updates
 - **Live File Sync** - Changes sync automatically with your workflow files
+
+### Control Flow Visual Features
+
+- **Early Exit Indicators** - See when loops exit before completion (break/error)
+- **Skipped Branch Visualization** - Grayed-out branches that weren't executed
+- **Progress Tracking** - Real-time iteration counters and progress bars
+- **Rate Limiting Warnings** - Visual alerts for parallel execution throttling
+- **Failed Branch Tracking** - Red highlighting for failed parallel branches
+- **Execution State Badges** - Contextual icons showing loop exit reasons
 
 ## Installation
 

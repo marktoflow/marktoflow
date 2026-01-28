@@ -5,11 +5,13 @@ import cors from 'cors';
 import { createServer, type Server } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
+import { StateStore } from '@marktoflow/core';
 import { workflowRoutes } from './routes/workflows.js';
 import { aiRoutes } from './routes/ai.js';
 import { executeRoutes } from './routes/execute.js';
 import { toolsRoutes } from './routes/tools.js';
+import { executionRoutes } from './routes/executions.js';
 import { setupWebSocket } from './websocket/index.js';
 import { FileWatcher } from './services/FileWatcher.js';
 
@@ -21,6 +23,17 @@ export interface ServerOptions {
 
 let httpServer: Server | null = null;
 let fileWatcher: FileWatcher | null = null;
+let stateStore: StateStore | null = null;
+
+/**
+ * Get the StateStore instance
+ */
+export function getStateStore(): StateStore {
+  if (!stateStore) {
+    throw new Error('StateStore not initialized. Call startServer() first.');
+  }
+  return stateStore;
+}
 
 /**
  * Start the GUI server programmatically
@@ -29,6 +42,11 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
   const PORT = options.port || parseInt(process.env.PORT || '3001', 10);
   const WORKFLOW_DIR = options.workflowDir || process.env.WORKFLOW_DIR || process.cwd();
   const STATIC_DIR = options.staticDir || process.env.STATIC_DIR;
+
+  // Initialize StateStore
+  const stateDir = join(WORKFLOW_DIR, '.marktoflow', 'state');
+  mkdirSync(stateDir, { recursive: true });
+  stateStore = new StateStore(join(stateDir, 'workflow-state.db'));
 
   const app = express();
   httpServer = createServer(app);
@@ -47,6 +65,7 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
   app.use('/api/workflows', workflowRoutes);
   app.use('/api/ai', aiRoutes);
   app.use('/api/execute', executeRoutes);
+  app.use('/api/executions', executionRoutes);
   app.use('/api/tools', toolsRoutes);
 
   // Health check
@@ -93,6 +112,10 @@ export function stopServer(): void {
   if (fileWatcher) {
     fileWatcher.stop();
     fileWatcher = null;
+  }
+  if (stateStore) {
+    stateStore.close();
+    stateStore = null;
   }
   if (httpServer) {
     httpServer.close();

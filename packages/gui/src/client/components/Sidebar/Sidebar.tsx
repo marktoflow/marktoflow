@@ -8,10 +8,12 @@ import {
   Search,
   Loader2,
   X,
+  Upload,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useLayoutStore } from '../../stores/layoutStore';
+import { ImportDialog } from './ImportDialog';
 
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<'workflows' | 'tools'>(
@@ -110,6 +112,9 @@ function SidebarContent({
   onClose,
   showClose,
 }: SidebarContentProps) {
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const { fetchWorkflows } = useWorkflowStore();
+
   return (
     <>
       {/* Logo/Title */}
@@ -178,15 +183,29 @@ function SidebarContent({
         )}
       </div>
 
-      {/* New workflow button */}
+      {/* New workflow and Import buttons */}
       {activeTab === 'workflows' && (
-        <div className="p-3 border-t border-node-border">
+        <div className="p-3 border-t border-node-border space-y-2">
           <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors">
             <Plus className="w-4 h-4" />
             New Workflow
           </button>
+          <button
+            onClick={() => setShowImportDialog(true)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-node-bg border border-node-border hover:bg-white/5 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
         </div>
       )}
+
+      {/* Import Dialog */}
+      <ImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportComplete={() => fetchWorkflows()}
+      />
     </>
   );
 }

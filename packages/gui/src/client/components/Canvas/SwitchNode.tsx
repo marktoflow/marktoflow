@@ -10,6 +10,7 @@ export interface SwitchNodeData extends Record<string, unknown> {
   hasDefault?: boolean;
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   activeCase?: string | null;
+  skippedBranches?: string[];
 }
 
 export type SwitchNodeType = Node<SwitchNodeData, 'switch'>;
@@ -47,9 +48,16 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
   const displayCases = caseKeys.slice(0, 4); // Show up to 4 cases
   const hasMore = caseKeys.length > 4;
 
+  // Calculate handle positions to avoid overlap
+  const totalHandles = Math.min(caseKeys.length, 4) + (data.hasDefault ? 1 : 0);
+  const getHandlePosition = (index: number) => {
+    if (totalHandles === 1) return 50;
+    return ((index + 1) / (totalHandles + 1)) * 100;
+  };
+
   return (
     <div
-      className={`control-flow-node switch-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''}`}
+      className={`control-flow-node switch-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''} ${status === 'completed' ? 'completed' : ''} ${status === 'failed' ? 'failed' : ''}`}
       style={{
         background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
       }}
@@ -93,27 +101,27 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
           <div className="text-xs text-white/70 font-medium mb-1">Cases:</div>
           {displayCases.map((caseKey, index) => {
             const isActive = data.activeCase === caseKey;
-            const handlePosition = ((index + 1) / (displayCases.length + (data.hasDefault ? 2 : 1))) * 100;
+            const isSkipped = data.skippedBranches?.includes(caseKey);
+            const handlePosition = getHandlePosition(index);
 
             return (
               <div key={caseKey} className="relative">
                 <div
-                  className={`text-xs px-2 py-1.5 rounded font-medium transition-colors ${
+                  className={`text-xs px-2 py-1.5 rounded font-medium transition-colors relative ${
                     isActive
                       ? 'bg-purple-500/30 text-purple-200 ring-1 ring-purple-400/50'
-                      : 'bg-white/5 text-white/70'
+                      : isSkipped
+                        ? 'bg-gray-500/20 text-gray-400 line-through'
+                        : 'bg-white/5 text-white/70'
                   }`}
                 >
                   {caseKey}
+                  {isSkipped && (
+                    <span className="ml-2 text-[8px] px-1 py-0.5 rounded bg-gray-500/30">
+                      SKIPPED
+                    </span>
+                  )}
                 </div>
-                {/* Output handle for this case */}
-                <Handle
-                  type="source"
-                  position={Position.Bottom}
-                  id={`case-${caseKey}`}
-                  style={{ left: `${handlePosition}%` }}
-                  className="!w-2.5 !h-2.5 !bg-purple-400 !border-2 !border-node-bg"
-                />
               </div>
             );
           })}
@@ -136,14 +144,6 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
               >
                 default
               </div>
-              {/* Output handle for default */}
-              <Handle
-                type="source"
-                position={Position.Bottom}
-                id="case-default"
-                style={{ left: '95%' }}
-                className="!w-2.5 !h-2.5 !bg-gray-400 !border-2 !border-node-bg"
-              />
             </div>
           )}
         </div>
@@ -157,6 +157,27 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
           </span>
         </div>
       </div>
+
+      {/* Output handles - positioned independently to avoid overlap */}
+      {displayCases.map((caseKey, index) => (
+        <Handle
+          key={`handle-${caseKey}`}
+          type="source"
+          position={Position.Bottom}
+          id={`case-${caseKey}`}
+          style={{ left: `${getHandlePosition(index)}%` }}
+          className="!w-2.5 !h-2.5 !bg-purple-400 !border-2 !border-node-bg"
+        />
+      ))}
+      {data.hasDefault && (
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="case-default"
+          style={{ left: `${getHandlePosition(displayCases.length)}%` }}
+          className="!w-2.5 !h-2.5 !bg-gray-400 !border-2 !border-node-bg"
+        />
+      )}
     </div>
   );
 }

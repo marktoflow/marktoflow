@@ -9,6 +9,7 @@ interface WorkflowState {
   error: string | null;
 
   loadWorkflows: () => Promise<void>;
+  fetchWorkflows: () => Promise<void>; // Alias for compatibility
   selectWorkflow: (path: string) => void;
   loadWorkflow: (path: string) => Promise<void>;
   saveWorkflow: (workflow: Workflow) => Promise<void>;
@@ -85,8 +86,8 @@ const demoWorkflow: Workflow = {
 
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   workflows: demoWorkflows,
-  selectedWorkflow: demoWorkflows[0].path,
-  currentWorkflow: demoWorkflow,
+  selectedWorkflow: null,
+  currentWorkflow: null,
   isLoading: false,
   error: null,
 
@@ -96,11 +97,18 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       const response = await fetch('/api/workflows');
       if (!response.ok) throw new Error('Failed to load workflows');
       const data = await response.json();
+      console.log('Loaded workflows:', data.workflows.length);
       set({ workflows: data.workflows, isLoading: false });
     } catch (error) {
+      console.error('Failed to load workflows, using demo data:', error);
       // Use demo data if API fails
       set({ workflows: demoWorkflows, isLoading: false });
     }
+  },
+
+  // Alias for compatibility with components
+  fetchWorkflows: async () => {
+    await get().loadWorkflows();
   },
 
   selectWorkflow: (path) => {

@@ -261,4 +261,84 @@ describe('ParallelNode', () => {
       expect(screen.getByText('0')).toBeInTheDocument();
     });
   });
+
+  describe('failed branches', () => {
+    it('should highlight failed branches in red', () => {
+      renderNode({
+        failedBranches: ['branch-1'],
+      });
+
+      const jiraBranch = screen.getByText('Jira');
+      expect(jiraBranch).toHaveClass('bg-red-500/30', 'text-red-200');
+    });
+
+    it('should prioritize failed over completed and active', () => {
+      renderNode({
+        activeBranches: ['branch-1'],
+        completedBranches: ['branch-1'],
+        failedBranches: ['branch-1'],
+      });
+
+      const jiraBranch = screen.getByText('Jira');
+      expect(jiraBranch).toHaveClass('bg-red-500/30', 'text-red-200');
+      expect(jiraBranch).not.toHaveClass('bg-green-500/30');
+      expect(jiraBranch).not.toHaveClass('animate-pulse');
+    });
+  });
+
+  describe('max concurrent exceeded', () => {
+    it('should show rate limiting warning when maxConcurrentExceeded is true', () => {
+      renderNode({
+        maxConcurrent: 2,
+        maxConcurrentExceeded: true,
+      });
+
+      expect(screen.getByText('Rate limiting active')).toBeInTheDocument();
+    });
+
+    it('should highlight max concurrent value in yellow when exceeded', () => {
+      renderNode({
+        maxConcurrent: 2,
+        maxConcurrentExceeded: true,
+      });
+
+      const maxValue = screen.getByText('2');
+      expect(maxValue).toHaveClass('text-yellow-300');
+    });
+
+    it('should not show warning when maxConcurrentExceeded is false', () => {
+      renderNode({
+        maxConcurrent: 2,
+        maxConcurrentExceeded: false,
+      });
+
+      expect(screen.queryByText('Rate limiting active')).not.toBeInTheDocument();
+    });
+
+    it('should not highlight max concurrent value when not exceeded', () => {
+      renderNode({
+        maxConcurrent: 2,
+        maxConcurrentExceeded: false,
+      });
+
+      const maxValue = screen.getByText('2');
+      expect(maxValue).not.toHaveClass('text-yellow-300');
+    });
+  });
+
+  describe('completed and failed states', () => {
+    it('should show completed class on node', () => {
+      renderNode({ status: 'completed' });
+
+      const node = screen.getByText('Fetch Data').closest('.control-flow-node');
+      expect(node).toHaveClass('completed');
+    });
+
+    it('should show failed class on node', () => {
+      renderNode({ status: 'failed' });
+
+      const node = screen.getByText('Fetch Data').closest('.control-flow-node');
+      expect(node).toHaveClass('failed');
+    });
+  });
 });

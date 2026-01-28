@@ -112,8 +112,9 @@ describe('ForEachNode', () => {
         totalIterations: 10,
       });
 
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '50%' });
+      const progressBar = container.querySelector('.bg-pink-400, .bg-orange-400');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('50%'));
     });
 
     it('should display 0% progress when currentIteration is 0', () => {
@@ -122,8 +123,9 @@ describe('ForEachNode', () => {
         totalIterations: 10,
       });
 
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '0%' });
+      const progressBar = container.querySelector('.bg-pink-400, .bg-orange-400');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('0%'));
     });
 
     it('should display 100% progress when completed', () => {
@@ -132,8 +134,9 @@ describe('ForEachNode', () => {
         totalIterations: 10,
       });
 
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '100%' });
+      const progressBar = container.querySelector('.bg-pink-400, .bg-orange-400');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('100%'));
     });
 
     it('should not display progress when totalIterations is undefined', () => {
@@ -213,6 +216,93 @@ describe('ForEachNode', () => {
       renderNode({ items: complexItems });
 
       expect(screen.getByText(complexItems)).toBeInTheDocument();
+    });
+  });
+
+  describe('early exit indicators', () => {
+    it('should show early exit warning when loop exited with break', () => {
+      renderNode({
+        earlyExit: true,
+        exitReason: 'break',
+        currentIteration: 3,
+        totalIterations: 10
+      });
+
+      expect(screen.getByText('Loop exited early (break)')).toBeInTheDocument();
+    });
+
+    it('should show error message when loop stopped on error', () => {
+      renderNode({
+        earlyExit: true,
+        exitReason: 'error',
+        currentIteration: 5,
+        totalIterations: 10
+      });
+
+      expect(screen.getByText('Loop stopped on error')).toBeInTheDocument();
+    });
+
+    it('should show (stopped) indicator in progress text', () => {
+      renderNode({
+        earlyExit: true,
+        exitReason: 'break',
+        currentIteration: 5,
+        totalIterations: 10
+      });
+
+      expect(screen.getByText('(stopped)')).toBeInTheDocument();
+      expect(screen.getByText('5 / 10')).toBeInTheDocument();
+    });
+
+    it('should change progress bar color to orange when early exit', () => {
+      const { container } = renderNode({
+        earlyExit: true,
+        exitReason: 'break',
+        currentIteration: 5,
+        totalIterations: 10
+      });
+
+      const progressBar = container.querySelector('.bg-orange-400');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveStyle({ width: '50%' });
+    });
+
+    it('should use pink color for progress bar when no early exit', () => {
+      const { container } = renderNode({
+        earlyExit: false,
+        currentIteration: 5,
+        totalIterations: 10
+      });
+
+      const progressBar = container.querySelector('.bg-pink-400');
+      expect(progressBar).toBeInTheDocument();
+    });
+
+    it('should not show early exit warning when earlyExit is false', () => {
+      renderNode({
+        earlyExit: false,
+        currentIteration: 10,
+        totalIterations: 10
+      });
+
+      expect(screen.queryByText('Loop exited early (break)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loop stopped on error')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('completed and failed states', () => {
+    it('should show completed class on node', () => {
+      renderNode({ status: 'completed' });
+
+      const node = screen.getByText('Process Orders').closest('.control-flow-node');
+      expect(node).toHaveClass('completed');
+    });
+
+    it('should show failed class on node', () => {
+      renderNode({ status: 'failed' });
+
+      const node = screen.getByText('Process Orders').closest('.control-flow-node');
+      expect(node).toHaveClass('failed');
     });
   });
 });

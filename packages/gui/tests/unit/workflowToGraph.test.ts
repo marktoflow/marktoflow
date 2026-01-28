@@ -49,6 +49,28 @@ describe('workflowToGraph', () => {
       expect(stepNode?.data.action).toBe('github.pulls.get');
       expect(stepNode?.data.status).toBe('pending');
     });
+
+    it('should space steps with 180px vertical spacing', () => {
+      const workflow = {
+        metadata: { id: 'test-1', name: 'Test Workflow' },
+        steps: [
+          { id: 'step-1', name: 'Step 1', action: 'test', inputs: {} },
+          { id: 'step-2', name: 'Step 2', action: 'test', inputs: {} },
+          { id: 'step-3', name: 'Step 3', action: 'test', inputs: {} },
+        ],
+      };
+
+      const { nodes } = workflowToGraph(workflow);
+      const stepNodes = nodes.filter(n => n.type === 'step');
+
+      // Check vertical spacing between steps
+      const step1Y = stepNodes[0].position.y;
+      const step2Y = stepNodes[1].position.y;
+      const step3Y = stepNodes[2].position.y;
+
+      expect(step2Y - step1Y).toBe(180);
+      expect(step3Y - step2Y).toBe(180);
+    });
   });
 
   describe('trigger nodes', () => {

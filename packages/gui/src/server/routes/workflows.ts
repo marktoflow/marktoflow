@@ -1,8 +1,26 @@
 import { Router, type Router as RouterType } from 'express';
+import multer from 'multer';
 import { WorkflowService } from '../services/WorkflowService.js';
 
 const router: RouterType = Router();
 const workflowService = new WorkflowService();
+
+// Configure multer for file uploads (in-memory storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowedExtensions = ['.md', '.yaml', '.yml', '.zip'];
+    const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
+    if (allowedExtensions.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only .md, .yaml, .yml, and .zip files are allowed.'));
+    }
+  },
+});
 
 // List all workflows
 router.get('/', async (_req, res) => {
@@ -20,7 +38,8 @@ router.get('/', async (_req, res) => {
 // Get a specific workflow
 router.get('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
+    // Express captures wildcard routes in params[0]
+    const workflowPath = decodeURIComponent((req.params as any)[0] || '');
     const workflow = await workflowService.getWorkflow(workflowPath);
 
     if (!workflow) {
@@ -98,6 +117,28 @@ router.get('/:path(*)/runs', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get execution history',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Import workflow from file upload
+router.post('/import', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const result = await workflowService.importWorkflow(
+      req.file.buffer,
+      req.file.originalname
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error('Import error:', error);
+    res.status(500).json({
+      error: 'Failed to import workflow',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }

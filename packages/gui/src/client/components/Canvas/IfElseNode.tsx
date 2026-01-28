@@ -8,6 +8,7 @@ export interface IfElseNodeData extends Record<string, unknown> {
   condition: string;
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   activeBranch?: 'then' | 'else' | null;
+  skippedBranch?: 'then' | 'else' | null;
 }
 
 export type IfElseNodeType = Node<IfElseNodeData, 'if'>;
@@ -43,7 +44,7 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
 
   return (
     <div
-      className={`control-flow-node if-else-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''}`}
+      className={`control-flow-node if-else-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''} ${status === 'completed' ? 'completed' : ''} ${status === 'failed' ? 'failed' : ''}`}
       style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       }}
@@ -84,22 +85,36 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
         {/* Branch outputs */}
         <div className="grid grid-cols-2 gap-2">
           <div
-            className={`text-center p-2 rounded text-xs font-medium transition-colors ${
+            className={`text-center p-2 rounded text-xs font-medium transition-colors relative ${
               data.activeBranch === 'then'
-                ? 'bg-green-500/30 text-green-200'
-                : 'bg-white/5 text-white/60'
+                ? 'bg-green-500/30 text-green-200 ring-1 ring-green-400/50'
+                : data.skippedBranch === 'then'
+                  ? 'bg-gray-500/20 text-gray-400'
+                  : 'bg-white/5 text-white/60'
             }`}
           >
             ✓ Then
+            {data.skippedBranch === 'then' && (
+              <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded bg-gray-500/50 text-gray-300">
+                SKIP
+              </span>
+            )}
           </div>
           <div
-            className={`text-center p-2 rounded text-xs font-medium transition-colors ${
+            className={`text-center p-2 rounded text-xs font-medium transition-colors relative ${
               data.activeBranch === 'else'
-                ? 'bg-red-500/30 text-red-200'
-                : 'bg-white/5 text-white/60'
+                ? 'bg-red-500/30 text-red-200 ring-1 ring-red-400/50'
+                : data.skippedBranch === 'else'
+                  ? 'bg-gray-500/20 text-gray-400'
+                  : 'bg-white/5 text-white/60'
             }`}
           >
             ✗ Else
+            {data.skippedBranch === 'else' && (
+              <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded bg-gray-500/50 text-gray-300">
+                SKIP
+              </span>
+            )}
           </div>
         </div>
       </div>
