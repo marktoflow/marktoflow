@@ -30,7 +30,7 @@ triggers:
 
 inputs:
   pr_number:
-    type: integer
+    type: number
     required: true
     description: 'Pull request number to review'
   repo:

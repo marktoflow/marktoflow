@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from './Modal';
 import { Button } from './Button';
 import { Keyboard } from 'lucide-react';
+import { getModKey } from '../../utils/platform';
 
 interface Shortcut {
   keys: string[];
@@ -55,6 +56,9 @@ export function KeyboardShortcuts({ open, onOpenChange }: KeyboardShortcutsProps
   // Group shortcuts by category
   const categories = [...new Set(shortcuts.map((s) => s.category))];
 
+  // Get platform-specific modifier key
+  const modKey = getModKey();
+
   return (
     <Modal
       open={open}
@@ -84,7 +88,7 @@ export function KeyboardShortcuts({ open, onOpenChange }: KeyboardShortcutsProps
                           key={i}
                           className="px-2 py-1 bg-node-bg border border-node-border rounded text-xs font-mono text-gray-300"
                         >
-                          {key}
+                          {key === '⌘' ? modKey : key}
                         </kbd>
                       ))}
                     </div>
@@ -130,11 +134,13 @@ export function useKeyboardShortcuts() {
 
 // Small button to show keyboard shortcuts
 export function KeyboardShortcutsButton({ onClick }: { onClick: () => void }) {
+  const modKey = getModKey();
+
   return (
     <button
       onClick={onClick}
       className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-      title="Keyboard shortcuts (⌘/)"
+      title={`Keyboard shortcuts (${modKey}/)`}
     >
       <Keyboard className="w-3.5 h-3.5" />
       <span className="hidden sm:inline">Shortcuts</span>

@@ -51,7 +51,7 @@ outputs:
     type: string
     description: 'Created PR URL'
   updates_count:
-    type: integer
+    type: number
     description: 'Number of packages updated'
 ---
 

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { Repeat, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Repeat, CheckCircle, XCircle, Clock, LogOut } from 'lucide-react';
 
 export interface ForEachNodeData extends Record<string, unknown> {
   id: string;
@@ -10,6 +10,8 @@ export interface ForEachNodeData extends Record<string, unknown> {
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   currentIteration?: number;
   totalIterations?: number;
+  earlyExit?: boolean;
+  exitReason?: 'break' | 'error';
 }
 
 export type ForEachNodeType = Node<ForEachNodeData, 'for_each'>;
@@ -45,7 +47,7 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
 
   return (
     <div
-      className={`control-flow-node for-each-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''}`}
+      className={`control-flow-node for-each-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''} ${status === 'completed' ? 'completed' : ''} ${status === 'failed' ? 'failed' : ''}`}
       style={{
         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
       }}
@@ -88,6 +90,16 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
           <span className="font-mono">{data.itemVariable || 'item'}</span>
         </div>
 
+        {/* Early exit indicator */}
+        {data.earlyExit && (
+          <div className="mb-3 p-2 bg-orange-500/20 border border-orange-500/30 rounded flex items-center gap-2">
+            <LogOut className="w-4 h-4 text-orange-200" />
+            <span className="text-xs text-orange-200 font-medium">
+              {data.exitReason === 'break' ? 'Loop exited early (break)' : 'Loop stopped on error'}
+            </span>
+          </div>
+        )}
+
         {/* Iteration progress */}
         {data.totalIterations !== undefined && (
           <div className="mt-2 p-2 bg-white/5 rounded">
@@ -95,11 +107,14 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
               <span className="text-xs text-white/70">Progress</span>
               <span className="text-xs text-white font-medium">
                 {data.currentIteration || 0} / {data.totalIterations}
+                {data.earlyExit && (
+                  <span className="ml-1 text-orange-300 text-[10px]">(stopped)</span>
+                )}
               </span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-1.5">
               <div
-                className="bg-orange-400 h-1.5 rounded-full transition-all"
+                className={`h-1.5 rounded-full transition-all ${data.earlyExit ? 'bg-orange-400' : 'bg-pink-400'}`}
                 style={{
                   width: `${((data.currentIteration || 0) / data.totalIterations) * 100}%`,
                 }}
@@ -120,6 +135,15 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
         type="source"
         position={Position.Bottom}
         className="!w-3 !h-3 !bg-primary !border-2 !border-node-bg"
+      />
+
+      {/* Loop-back handle (left side for iteration feedback) */}
+      <Handle
+        id="loop-back"
+        type="source"
+        position={Position.Left}
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-node-bg"
+        style={{ top: '50%', left: '-6px' }}
       />
     </div>
   );

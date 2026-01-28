@@ -97,10 +97,12 @@ steps:
 ### Visual Designer
 
 The If/Else node in the GUI features:
-- Purple gradient design
-- Dual output handles (then/else)
-- Active branch highlighting during execution
+- Purple gradient design (#667eea → #764ba2)
+- Dual output handles (then/else) with colored indicators
+- **Active branch highlighting** with ring border (green for then, red for else)
+- **Skipped branch visualization** - grayed out with "SKIP" badge
 - GitBranch icon
+- Real-time status updates (pending/running/completed/failed)
 
 ---
 
@@ -166,11 +168,14 @@ steps:
 ### Visual Designer
 
 The Switch node features:
-- Purple/magenta gradient design
+- Purple/magenta gradient design (#a855f7 → #ec4899)
+- **Smart handle positioning** - evenly distributed to prevent overlap
 - Multiple output handles (one per case + default)
-- Dynamic case list display
-- Active case highlighting
+- Dynamic case list display (shows up to 4 cases)
+- **Active case highlighting** with purple ring border
+- **Skipped cases visualization** - strikethrough text with "SKIPPED" badge
 - GitFork icon
+- Displays case count and default status
 
 ---
 
@@ -242,11 +247,15 @@ Inside a for-each loop, you have access to:
 ### Visual Designer
 
 The For-Each node features:
-- Pink/red gradient design
-- Iteration progress bar
-- Current/total iterations display
-- Loop metadata info
+- Pink/red gradient design (#f093fb → #f5576c)
+- **Iteration progress bar** with percentage
+- Current/total iterations display (e.g., "5 / 10")
+- **Early exit indicator panel** when loop exits via break or error
+- **Progress bar color change** - pink for normal, orange for early exit
+- **"(stopped)" indicator** in progress text when early exit occurs
+- Loop metadata info (loop.index, loop.first, loop.last access)
 - Repeat icon
+- LogOut icon for early exit warnings
 
 ---
 
@@ -312,11 +321,17 @@ steps:
 ### Visual Designer
 
 The While node features:
-- Orange gradient design
-- Condition display
+- Orange gradient design (#fb923c → #f97316)
+- Condition display with monospace font
 - Current iteration counter
-- Max iterations display
-- Progress bar
+- Max iterations display (default: 100)
+- **Progress bar** showing current vs max iterations
+- **Early exit warnings** with contextual icons:
+  - Break: LogOut icon, "Loop exited early (break)"
+  - Max iterations: AlertTriangle icon, "Max iterations reached"
+  - Error: LogOut icon, "Loop stopped on error"
+- **Progress bar color** - orange for normal, changes on early exit
+- **"(stopped)" indicator** when early exit occurs
 - RotateCw icon
 
 ---
@@ -414,11 +429,19 @@ Each parallel branch gets a cloned context:
 ### Visual Designer
 
 The Parallel node features:
-- Blue/cyan gradient design
-- Branch status indicators (active/completed)
-- Max concurrent badge
-- On-error policy display
+- Blue/cyan gradient design (#4facfe → #00f2fe)
+- **Branch status badges** with color coding:
+  - Gray: Pending
+  - Blue (pulsing): Running
+  - Green: Completed
+  - **Red: Failed** (new)
+- **Rate limiting warning panel** when max concurrent limit is hit
+- Max concurrent badge (highlighted in yellow when limit active)
+- On-error policy display (stop/continue)
+- **Failed branch tracking** with red highlighting
+- Displays up to 6 branches, shows "+N" for overflow
 - Layers icon
+- AlertTriangle icon for rate limiting warnings
 
 ---
 

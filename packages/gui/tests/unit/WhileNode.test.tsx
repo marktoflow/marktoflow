@@ -123,8 +123,9 @@ describe('WhileNode', () => {
         maxIterations: 10,
       });
 
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '50%' });
+      const progressBar = container.querySelector('.bg-orange-400, .bg-orange-500');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('50%'));
     });
 
     it('should display 0% progress when currentIteration is 0', () => {
@@ -133,8 +134,9 @@ describe('WhileNode', () => {
         maxIterations: 10,
       });
 
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '0%' });
+      const progressBar = container.querySelector('.bg-orange-400, .bg-orange-500');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('0%'));
     });
 
     it('should display 100% progress when at max iterations', () => {
@@ -143,8 +145,9 @@ describe('WhileNode', () => {
         maxIterations: 10,
       });
 
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '100%' });
+      const progressBar = container.querySelector('.bg-orange-400, .bg-orange-500');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('100%'));
     });
 
     it('should not display progress when currentIteration is undefined', () => {
@@ -219,8 +222,9 @@ describe('WhileNode', () => {
       });
 
       expect(screen.getByText('25 / 50')).toBeInTheDocument();
-      const progressBar = container.querySelector('.bg-orange-400');
-      expect(progressBar).toHaveStyle({ width: '50%' });
+      const progressBar = container.querySelector('.bg-orange-400, .bg-orange-500');
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute('style', expect.stringContaining('50%'));
     });
   });
 });

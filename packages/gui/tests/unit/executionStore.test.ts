@@ -101,6 +101,46 @@ describe('executionStore', () => {
       const run = state.runs.find(r => r.id === runId);
       expect(run?.steps[0].error).toBe('Something went wrong');
     });
+
+    it('should record step inputs', () => {
+      const { startExecution, updateStepStatus } = useExecutionStore.getState();
+
+      const runId = startExecution('wf-1', 'Test');
+      const inputs = { channel: '#general', message: 'Hello' };
+      updateStepStatus(runId, 'step-1', 'running', undefined, undefined, undefined, inputs);
+
+      const state = useExecutionStore.getState();
+      const run = state.runs.find(r => r.id === runId);
+      expect(run?.steps[0].inputs).toEqual(inputs);
+    });
+
+    it('should record step output and output variable', () => {
+      const { startExecution, updateStepStatus } = useExecutionStore.getState();
+
+      const runId = startExecution('wf-1', 'Test');
+      const output = { ts: '1234567890.123456', ok: true };
+      updateStepStatus(runId, 'step-1', 'running');
+      updateStepStatus(runId, 'step-1', 'completed', output, undefined, 'result');
+
+      const state = useExecutionStore.getState();
+      const run = state.runs.find(r => r.id === runId);
+      expect(run?.steps[0].output).toEqual(output);
+      expect(run?.steps[0].outputVariable).toBe('result');
+    });
+
+    it('should preserve inputs when updating step status', () => {
+      const { startExecution, updateStepStatus } = useExecutionStore.getState();
+
+      const runId = startExecution('wf-1', 'Test');
+      const inputs = { foo: 'bar' };
+      updateStepStatus(runId, 'step-1', 'running', undefined, undefined, undefined, inputs);
+      updateStepStatus(runId, 'step-1', 'completed', { result: 'success' });
+
+      const state = useExecutionStore.getState();
+      const run = state.runs.find(r => r.id === runId);
+      expect(run?.steps[0].inputs).toEqual(inputs);
+      expect(run?.steps[0].output).toEqual({ result: 'success' });
+    });
   });
 
   describe('completeExecution', () => {

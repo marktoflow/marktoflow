@@ -50,7 +50,7 @@ inputs:
     required: true
     description: 'List of team member names'
   sprint_duration:
-    type: integer
+    type: number
     default: 14
     description: 'Sprint duration in days'
   team_channel:
@@ -63,10 +63,10 @@ outputs:
     type: string
     description: 'Created sprint ID'
   selected_stories:
-    type: integer
+    type: number
     description: 'Number of stories selected'
   estimated_points:
-    type: integer
+    type: number
     description: 'Total story points'
 ---
 

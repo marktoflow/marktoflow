@@ -207,10 +207,19 @@ steps:
 
 **Control Flow Features:**
 - Visual progress indicators during execution
-- Active branch highlighting
+- Active branch highlighting with ring borders
 - Iteration counters and progress bars
 - Error state visualization
 - Nested step support
+
+**Enhanced Visual Feedback:**
+- **Skipped Branches** - Grayed-out branches with "SKIP" badges on If/Else and Switch nodes
+- **Early Exit Indicators** - Warning panels when loops exit via break or error
+- **Progress Bar Colors** - Orange for early exits, pink/orange for normal progress
+- **Rate Limiting Warnings** - Yellow alerts when parallel execution hits max concurrent limit
+- **Failed Branch Tracking** - Red highlighting for failed parallel branches
+- **Max Iterations Alerts** - Warning when While loops reach iteration limit
+- **Execution State Badges** - Contextual icons (LogOut, AlertTriangle) showing exit reasons
 
 ### Context Menus
 
@@ -367,6 +376,54 @@ The system auto-detects available providers on startup.
 | Running | Yellow (animated) | Currently executing |
 | Completed | Green | Finished successfully |
 | Failed | Red | Error occurred |
+| Skipped | Gray (muted) | Condition not met, step skipped |
+
+### Control Flow Execution Visualization
+
+Control flow nodes provide rich visual feedback during execution:
+
+**If/Else Nodes:**
+- **Active branch** highlighted with colored background and ring border
+- **Skipped branch** shown in gray with "SKIP" badge
+- Then branch: Green highlight when active
+- Else branch: Red highlight when active
+
+**Switch Nodes:**
+- **Active case** highlighted in purple with ring border
+- **Skipped cases** shown with strikethrough text and "SKIPPED" badge
+- Default case highlighted in gray when active
+- Smart handle positioning prevents overlap with many cases
+
+**For-Each Loops:**
+- **Progress bar** shows current iteration (e.g., "5 / 10")
+- **Early exit panel** appears if loop exits via break or error
+- Progress bar turns **orange** when early exit occurs
+- "(stopped)" indicator in progress text
+- Access to `loop.index`, `loop.first`, `loop.last` variables
+
+**While Loops:**
+- **Iteration counter** with max iterations limit
+- **Progress bar** showing current vs max iterations
+- **Early exit warnings** for:
+  - Break statement: "Loop exited early (break)"
+  - Max iterations: "Max iterations reached"
+  - Error: "Loop stopped on error"
+- Progress bar color indicates exit type
+
+**Parallel Execution:**
+- **Branch status badges** show individual branch states:
+  - Gray: Pending
+  - Blue (pulsing): Running
+  - Green: Completed
+  - Red: Failed
+- **Rate limiting warning** appears when max concurrent limit is hit
+- **Failed branches** highlighted in red
+- Max concurrent value highlighted in yellow when limit active
+
+**Try/Catch Blocks:**
+- **Active branch indicator** shows try/catch/finally execution
+- **Error occurred panel** displays when exception is caught
+- Finally block always highlighted when executing
 
 ### Execution Controls
 

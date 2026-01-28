@@ -185,4 +185,51 @@ describe('IfElseNode', () => {
       expect(screen.getByText(complexCondition)).toBeInTheDocument();
     });
   });
+
+  describe('skipped branch indicators', () => {
+    it('should show SKIP badge on skipped then branch', () => {
+      renderNode({ skippedBranch: 'then' });
+
+      expect(screen.getByText('SKIP')).toBeInTheDocument();
+      const thenBranch = screen.getByText('✓ Then');
+      expect(thenBranch).toHaveClass('bg-gray-500/20', 'text-gray-400');
+    });
+
+    it('should show SKIP badge on skipped else branch', () => {
+      renderNode({ skippedBranch: 'else' });
+
+      expect(screen.getByText('SKIP')).toBeInTheDocument();
+      const elseBranch = screen.getByText('✗ Else');
+      expect(elseBranch).toHaveClass('bg-gray-500/20', 'text-gray-400');
+    });
+
+    it('should highlight active branch with ring when one is active', () => {
+      renderNode({ activeBranch: 'then' });
+
+      const thenBranch = screen.getByText('✓ Then');
+      expect(thenBranch).toHaveClass('ring-1', 'ring-green-400/50');
+    });
+
+    it('should not show SKIP when no branch is skipped', () => {
+      renderNode({ skippedBranch: null });
+
+      expect(screen.queryByText('SKIP')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('completed and failed states', () => {
+    it('should show completed class on node', () => {
+      renderNode({ status: 'completed' });
+
+      const node = screen.getByText('Check Count').closest('.control-flow-node');
+      expect(node).toHaveClass('completed');
+    });
+
+    it('should show failed class on node', () => {
+      renderNode({ status: 'failed' });
+
+      const node = screen.getByText('Check Count').closest('.control-flow-node');
+      expect(node).toHaveClass('failed');
+    });
+  });
 });

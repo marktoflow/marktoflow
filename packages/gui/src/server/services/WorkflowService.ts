@@ -1,9 +1,11 @@
 import { readdir, readFile, writeFile, unlink, mkdir } from 'fs/promises';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, basename, extname } from 'path';
 import { existsSync } from 'fs';
-import { stringify as yamlStringify } from 'yaml';
+import { stringify as yamlStringify, parse as yamlParse } from 'yaml';
+import AdmZip from 'adm-zip';
 // Import from @marktoflow/core for proper parsing
-import { parseFile as coreParseFile } from '@marktoflow/core';
+import { parseFile as coreParseFile, type ExecutionRecord } from '@marktoflow/core';
+import { getStateStore } from '../index.js';
 
 interface WorkflowListItem {
   path: string;
@@ -44,6 +46,7 @@ interface Workflow {
   tools?: Record<string, unknown>;
   inputs?: Record<string, unknown>;
   triggers?: unknown[];
+  markdown?: string;
 }
 
 export class WorkflowService {
@@ -75,17 +78,41 @@ export class WorkflowService {
             entry.isFile() &&
             (entry.name.endsWith('.md') || entry.name.endsWith('.yaml') || entry.name.endsWith('.yml'))
           ) {
-            // Check if it's a workflow file by looking for frontmatter
+            // Skip README files (they're documentation, not workflows)
+            if (entry.name.toLowerCase() === 'readme.md') {
+              continue;
+            }
+
+            // Check if it's a workflow file by verifying YAML frontmatter
             try {
               const content = await readFile(fullPath, 'utf-8');
-              if (content.includes('workflow:') || content.includes('steps:')) {
-                const relativePath = relative(baseDir, fullPath);
-                const workflowInfo = extractWorkflowInfo(content, entry.name);
-                workflows.push({
-                  path: relativePath,
-                  ...workflowInfo,
-                });
+
+              // For markdown files, verify it has YAML frontmatter
+              if (entry.name.endsWith('.md')) {
+                if (!content.trimStart().startsWith('---\n')) {
+                  continue;
+                }
+                const frontmatterMatch = content.match(/^---\n[\s\S]*?\n---/);
+                if (!frontmatterMatch) {
+                  continue;
+                }
+                const frontmatter = frontmatterMatch[0];
+                if (!frontmatter.includes('workflow:') && !frontmatter.includes('steps:')) {
+                  continue;
+                }
+              } else {
+                // For YAML files, check if they contain workflow structure
+                if (!content.includes('workflow:') && !content.includes('steps:')) {
+                  continue;
+                }
               }
+
+              const relativePath = relative(baseDir, fullPath);
+              const workflowInfo = extractWorkflowInfo(content, entry.name);
+              workflows.push({
+                path: relativePath,
+                ...workflowInfo,
+              });
             } catch {
               // Skip files that can't be read
             }
@@ -108,6 +135,9 @@ export class WorkflowService {
     }
 
     try {
+      // Read the raw markdown content for GUI parser
+      const rawContent = await readFile(fullPath, 'utf-8');
+
       // Use core parser for proper workflow parsing
       const result = await coreParseFile(fullPath);
       if (result.warnings && result.warnings.length > 0) {
@@ -115,7 +145,13 @@ export class WorkflowService {
       }
 
       // Convert core Workflow type to GUI Workflow type
-      return this.convertCoreWorkflow(result.workflow, workflowPath);
+      const workflow = this.convertCoreWorkflow(result.workflow, workflowPath);
+
+      // Add raw markdown for GUI control flow parsing
+      return {
+        ...workflow,
+        markdown: rawContent,
+      };
     } catch (error) {
       console.error(`Error parsing workflow ${workflowPath}:`, error);
       // Fallback to local parsing if core parser fails
@@ -197,10 +233,134 @@ export class WorkflowService {
     }
   }
 
-  async getExecutionHistory(_workflowPath: string): Promise<unknown[]> {
-    // TODO: Query state store for execution history
-    // This will integrate with @marktoflow/core StateStore
-    return [];
+  async getExecutionHistory(workflowPath: string): Promise<ExecutionRecord[]> {
+    try {
+      const stateStore = getStateStore();
+      // Use the workflow path as the workflow ID for querying
+      const executions = stateStore.listExecutions({
+        workflowId: workflowPath,
+        limit: 50,
+      });
+      return executions;
+    } catch (error) {
+      console.error('Error getting execution history:', error);
+      return [];
+    }
+  }
+
+  async importWorkflow(
+    fileBuffer: Buffer,
+    originalFilename: string
+  ): Promise<{ success: boolean; results?: Array<{ success: boolean; filename: string; message?: string }>; filename?: string; message?: string }> {
+    const ext = extname(originalFilename).toLowerCase();
+
+    try {
+      // Handle ZIP files - extract and import all workflow files
+      if (ext === '.zip') {
+        return await this.importZipBundle(fileBuffer);
+      }
+
+      // Handle single workflow files (.md, .yaml, .yml)
+      if (['.md', '.yaml', '.yml'].includes(ext)) {
+        const content = fileBuffer.toString('utf-8');
+        await this.importSingleWorkflow(content, originalFilename);
+
+        return {
+          success: true,
+          filename: originalFilename,
+          message: 'Workflow imported successfully',
+        };
+      }
+
+      throw new Error('Unsupported file type');
+    } catch (error) {
+      console.error('Import error:', error);
+      throw error;
+    }
+  }
+
+  private async importSingleWorkflow(content: string, filename: string): Promise<void> {
+    // Validate workflow content
+    try {
+      // Basic validation - try to parse YAML frontmatter or direct YAML
+      if (filename.endsWith('.md')) {
+        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        if (frontmatterMatch) {
+          yamlParse(frontmatterMatch[1]);
+        } else {
+          throw new Error('Invalid markdown workflow: missing YAML frontmatter');
+        }
+      } else {
+        yamlParse(content);
+      }
+    } catch (error) {
+      throw new Error(`Invalid workflow format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Check for filename conflicts
+    let targetFilename = filename;
+    let fullPath = this.resolvePath(targetFilename);
+    let counter = 1;
+
+    while (existsSync(fullPath)) {
+      const nameWithoutExt = basename(filename, extname(filename));
+      targetFilename = `${nameWithoutExt}-${counter}${extname(filename)}`;
+      fullPath = this.resolvePath(targetFilename);
+      counter++;
+    }
+
+    // Write file
+    await writeFile(fullPath, content, 'utf-8');
+  }
+
+  private async importZipBundle(zipBuffer: Buffer): Promise<{ success: boolean; results: Array<{ success: boolean; filename: string; message?: string }> }> {
+    const results: Array<{ success: boolean; filename: string; message?: string }> = [];
+
+    try {
+      const zip = new AdmZip(zipBuffer);
+      const zipEntries = zip.getEntries();
+
+      for (const entry of zipEntries) {
+        // Skip directories and non-workflow files
+        if (entry.isDirectory) continue;
+
+        const filename = basename(entry.entryName);
+        const ext = extname(filename).toLowerCase();
+
+        if (!['.md', '.yaml', '.yml'].includes(ext)) {
+          results.push({
+            success: false,
+            filename,
+            message: 'Skipped: not a workflow file',
+          });
+          continue;
+        }
+
+        try {
+          const content = entry.getData().toString('utf-8');
+          await this.importSingleWorkflow(content, filename);
+
+          results.push({
+            success: true,
+            filename,
+            message: 'Imported successfully',
+          });
+        } catch (error) {
+          results.push({
+            success: false,
+            filename,
+            message: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      return {
+        success: results.some(r => r.success),
+        results,
+      };
+    } catch (error) {
+      throw new Error(`Failed to extract ZIP file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private resolvePath(workflowPath: string): string {

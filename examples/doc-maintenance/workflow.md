@@ -30,7 +30,7 @@ inputs:
     description: Patterns to exclude (node_modules, dist, etc.)
     default: ["node_modules", "dist", "build", "__pycache__", ".git"]
   max_components:
-    type: integer
+    type: number
     description: Maximum number of components to process (0 = unlimited)
     default: 0
 outputs:

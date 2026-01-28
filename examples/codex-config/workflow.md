@@ -40,7 +40,7 @@ inputs:
     required: true
     description: 'Repository in owner/repo format'
   pull_number:
-    type: integer
+    type: number
     required: true
     description: 'Pull request number'
   focus_areas:
@@ -57,7 +57,7 @@ outputs:
     type: string
     description: 'AI-generated review comment'
   issues_found:
-    type: integer
+    type: number
     description: 'Number of issues found'
 ---
 
@@ -172,7 +172,7 @@ inputs:
             file:
               type: string
             line:
-              type: integer
+              type: number
             description:
               type: string
             fix:
@@ -181,13 +181,13 @@ inputs:
         type: object
         properties:
           total:
-            type: integer
+            type: number
           critical:
-            type: integer
+            type: number
           warnings:
-            type: integer
+            type: number
           suggestions:
-            type: integer
+            type: number
     required: ['summary', 'issues', 'stats']
 output_variable: structured_review
 ```

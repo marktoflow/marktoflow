@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { Layers, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Layers, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export interface ParallelNodeData extends Record<string, unknown> {
   id: string;
@@ -11,6 +11,8 @@ export interface ParallelNodeData extends Record<string, unknown> {
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   activeBranches?: string[];
   completedBranches?: string[];
+  failedBranches?: string[];
+  maxConcurrentExceeded?: boolean;
 }
 
 export type ParallelNodeType = Node<ParallelNodeData, 'parallel'>;
@@ -46,7 +48,7 @@ function ParallelNodeComponent({ data, selected }: NodeProps<ParallelNodeType>) 
 
   return (
     <div
-      className={`control-flow-node parallel-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''}`}
+      className={`control-flow-node parallel-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''} ${status === 'completed' ? 'completed' : ''} ${status === 'failed' ? 'failed' : ''}`}
       style={{
         background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
       }}
@@ -80,6 +82,16 @@ function ParallelNodeComponent({ data, selected }: NodeProps<ParallelNodeType>) 
 
       {/* Node body */}
       <div className="p-3 bg-white/10">
+        {/* Max concurrent warning */}
+        {data.maxConcurrentExceeded && (
+          <div className="mb-3 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-yellow-200" />
+            <span className="text-xs text-yellow-200 font-medium">
+              Rate limiting active
+            </span>
+          </div>
+        )}
+
         <div className="text-xs text-white/90 mb-3">
           <span className="text-white/60">Branches:</span>{' '}
           <span className="font-medium">{data.branches?.length || 0}</span>
@@ -87,7 +99,9 @@ function ParallelNodeComponent({ data, selected }: NodeProps<ParallelNodeType>) 
             <>
               {' '}
               <span className="text-white/60">• Max Concurrent:</span>{' '}
-              <span className="font-medium">{data.maxConcurrent}</span>
+              <span className={`font-medium ${data.maxConcurrentExceeded ? 'text-yellow-300' : ''}`}>
+                {data.maxConcurrent}
+              </span>
             </>
           )}
         </div>
@@ -97,15 +111,18 @@ function ParallelNodeComponent({ data, selected }: NodeProps<ParallelNodeType>) 
           {data.branches?.slice(0, 6).map((branch) => {
             const isActive = data.activeBranches?.includes(branch.id);
             const isCompleted = data.completedBranches?.includes(branch.id);
+            const isFailed = data.failedBranches?.includes(branch.id);
             return (
               <div
                 key={branch.id}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                  isCompleted
-                    ? 'bg-green-500/30 text-green-200'
-                    : isActive
-                      ? 'bg-blue-500/30 text-blue-200 animate-pulse'
-                      : 'bg-white/10 text-white/60'
+                  isFailed
+                    ? 'bg-red-500/30 text-red-200'
+                    : isCompleted
+                      ? 'bg-green-500/30 text-green-200'
+                      : isActive
+                        ? 'bg-blue-500/30 text-blue-200 animate-pulse'
+                        : 'bg-white/10 text-white/60'
                 }`}
                 title={branch.name || branch.id}
               >

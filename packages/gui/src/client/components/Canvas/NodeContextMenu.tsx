@@ -20,6 +20,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { getModKey } from '../../utils/platform';
 
 interface NodeContextMenuProps {
   children: React.ReactNode;
@@ -50,6 +51,7 @@ export function NodeContextMenu({
 }: NodeContextMenuProps) {
   const isSubworkflow = node.type === 'subworkflow';
   const hasError = node.data?.status === 'failed';
+  const modKey = getModKey();
 
   return (
     <ContextMenu>
@@ -77,7 +79,7 @@ export function NodeContextMenu({
         <ContextMenuItem onClick={onDuplicate}>
           <Copy className="w-4 h-4 mr-2" />
           Duplicate
-          <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+          <ContextMenuShortcut>{modKey}D</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuSub>
@@ -148,6 +150,8 @@ export function CanvasContextMenu({
   onFitView,
   canPaste,
 }: CanvasContextMenuProps) {
+  const modKey = getModKey();
+
   return (
     <ContextMenu>
       {children}
@@ -168,19 +172,19 @@ export function CanvasContextMenu({
         <ContextMenuItem onClick={onPaste} disabled={!canPaste}>
           <Copy className="w-4 h-4 mr-2" />
           Paste
-          <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+          <ContextMenuShortcut>{modKey}V</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuSeparator />
 
         <ContextMenuItem onClick={onAutoLayout}>
           Auto-layout
-          <ContextMenuShortcut>⌘L</ContextMenuShortcut>
+          <ContextMenuShortcut>{modKey}L</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuItem onClick={onFitView}>
           Fit to View
-          <ContextMenuShortcut>⌘0</ContextMenuShortcut>
+          <ContextMenuShortcut>{modKey}0</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

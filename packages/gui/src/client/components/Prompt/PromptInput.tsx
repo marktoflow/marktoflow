@@ -2,12 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Sparkles } from 'lucide-react';
 import { usePromptStore } from '../../stores/promptStore';
 import { PromptHistoryPanel } from './PromptHistoryPanel';
+import { getModKey } from '../../utils/platform';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { isProcessing, history, sendPrompt } = usePromptStore();
+  const modKey = getModKey();
 
   // Auto-resize textarea
   useEffect(() => {
@@ -95,7 +97,7 @@ export function PromptInput() {
 
       {/* Keyboard hint */}
       <div className="px-4 pb-2 text-xs text-gray-500">
-        Press <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">⌘</kbd> +{' '}
+        Press <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">{modKey}</kbd> +{' '}
         <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">Enter</kbd> to send
         {history.length > 0 && (
           <span className="ml-4">

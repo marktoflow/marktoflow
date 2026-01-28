@@ -227,10 +227,20 @@ marktoflow gui
 Features:
 
 - **Drag-and-Drop Editor** - Visual node-based workflow canvas
+- **Enhanced Control Flow Visualization** - Rich execution state indicators
 - **AI Assistance** - Natural language commands to modify workflows
 - **Multiple AI Backends** - Claude Code, GitHub Copilot, Claude API, Ollama
-- **Real-time Execution** - Run and debug workflows from the UI
+- **Real-time Execution** - Run and debug workflows from the UI with live status
 - **Live File Sync** - Changes sync automatically with workflow files
+
+**Visual Execution Features:**
+
+- **Early Exit Indicators** - See when loops exit early (break/error) with contextual warnings
+- **Skipped Branch Visualization** - Grayed-out branches that weren't executed
+- **Progress Tracking** - Real-time iteration counters and progress bars
+- **Rate Limiting Warnings** - Visual alerts for parallel execution throttling
+- **Failed Branch Tracking** - Red highlighting for failed parallel branches
+- **Execution State Badges** - Contextual icons (LogOut, AlertTriangle) showing exit reasons
 
 **Note**: The visual designer is completely optional. All workflows can be created and managed via CLI and text editor.
 

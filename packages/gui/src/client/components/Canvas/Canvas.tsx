@@ -12,6 +12,7 @@ import {
 import { Edit, Copy, Trash2, Code, Play } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useWorkflowStore } from '../../stores/workflowStore';
+import { getModKey } from '../../utils/platform';
 import { StepNode } from './StepNode';
 import { SubWorkflowNode } from './SubWorkflowNode';
 import { TriggerNode } from './TriggerNode';
@@ -61,6 +62,7 @@ export function Canvas() {
   const { autoLayout, deleteSelected, duplicateSelected } = useCanvas();
   const currentWorkflow = useWorkflowStore((s) => s.currentWorkflow);
   const { screenToFlowPosition } = useReactFlow();
+  const modKey = getModKey();
 
   // Editor state
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
@@ -389,7 +391,7 @@ export function Canvas() {
         <ContextMenuItem onClick={handleContextDuplicate}>
           <Copy className="w-4 h-4 mr-2" />
           Duplicate
-          <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+          <ContextMenuShortcut>{modKey}D</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem onClick={handleContextDelete} destructive>
           <Trash2 className="w-4 h-4 mr-2" />

@@ -8,6 +8,7 @@ export interface ExecutionStepResult {
   startTime?: string;
   endTime?: string;
   duration?: number;
+  inputs?: Record<string, unknown>;
   output?: unknown;
   outputVariable?: string;
   error?: string;
@@ -42,13 +43,14 @@ interface ExecutionState {
   currentRunId: string | null;
   isExecuting: boolean;
   isPaused: boolean;
+  isLoadingHistory: boolean;
 
   // Debug mode state
   debug: DebugState;
 
   // Existing methods
   startExecution: (workflowId: string, workflowName: string, inputs?: Record<string, unknown>) => string;
-  updateStepStatus: (runId: string, stepId: string, status: StepStatus, output?: unknown, error?: string, outputVariable?: string) => void;
+  updateStepStatus: (runId: string, stepId: string, status: StepStatus, output?: unknown, error?: string, outputVariable?: string, inputs?: Record<string, unknown>) => void;
   completeExecution: (runId: string, status: WorkflowStatus, outputs?: Record<string, unknown>) => void;
   addLog: (runId: string, message: string) => void;
   pauseExecution: () => void;
@@ -56,6 +58,10 @@ interface ExecutionState {
   cancelExecution: (runId: string) => void;
   clearHistory: () => void;
   getRun: (runId: string) => ExecutionRun | undefined;
+
+  // API sync methods
+  loadHistory: (workflowId?: string) => Promise<void>;
+  syncRunWithBackend: (runId: string) => Promise<void>;
 
   // Debug mode methods
   enableDebugMode: () => void;
@@ -87,6 +93,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   currentRunId: null,
   isExecuting: false,
   isPaused: false,
+  isLoadingHistory: false,
   debug: initialDebugState,
 
   startExecution: (workflowId, workflowName, inputs) => {
@@ -112,7 +119,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
     return runId;
   },
 
-  updateStepStatus: (runId, stepId, status, output, error, outputVariable) => {
+  updateStepStatus: (runId, stepId, status, output, error, outputVariable, inputs) => {
     const { debug } = get();
 
     // Check if we need to pause at breakpoint
@@ -141,6 +148,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
                 status,
                 endTime,
                 duration,
+                inputs: inputs ?? s.inputs,
                 output: output ?? s.output,
                 outputVariable: outputVariable ?? s.outputVariable,
                 error: error ?? s.error,
@@ -157,6 +165,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
                 stepName: stepId,
                 status,
                 startTime: now,
+                inputs,
                 output,
                 outputVariable,
                 error,
@@ -410,6 +419,59 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
         callStack: stack,
       },
     });
+  },
+
+  // API sync methods
+  loadHistory: async (workflowId) => {
+    set({ isLoadingHistory: true });
+    try {
+      const url = workflowId
+        ? `/api/executions?workflowId=${encodeURIComponent(workflowId)}&limit=50`
+        : '/api/executions?limit=50';
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to load execution history');
+      }
+
+      const executions = await response.json();
+
+      // Convert backend ExecutionRecord format to ExecutionRun format
+      const runs: ExecutionRun[] = executions.map((exec: any) => ({
+        id: exec.runId,
+        workflowId: exec.workflowId,
+        workflowName: exec.workflowPath.split('/').pop()?.replace('.md', '') || exec.workflowId,
+        status: exec.status,
+        startTime: exec.startedAt,
+        endTime: exec.completedAt || undefined,
+        duration: exec.completedAt
+          ? new Date(exec.completedAt).getTime() - new Date(exec.startedAt).getTime()
+          : undefined,
+        steps: [],
+        logs: [],
+        inputs: exec.inputs || undefined,
+        outputs: exec.outputs || undefined,
+      }));
+
+      // Merge with existing runs, avoiding duplicates
+      const existingRunIds = new Set(get().runs.map((r) => r.id));
+      const newRuns = runs.filter((r) => !existingRunIds.has(r.id));
+
+      set({
+        runs: [...get().runs, ...newRuns].slice(0, 50),
+        isLoadingHistory: false,
+      });
+    } catch (error) {
+      console.error('Error loading execution history:', error);
+      set({ isLoadingHistory: false });
+    }
+  },
+
+  syncRunWithBackend: async (runId) => {
+    // This would be called to persist a run to the backend
+    // For now, the backend integration will happen via WebSocket events
+    // This is a placeholder for future direct API sync
+    console.log('Syncing run with backend:', runId);
   },
 }));
 

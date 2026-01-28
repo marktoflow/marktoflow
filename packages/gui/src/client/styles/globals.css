@@ -82,6 +82,112 @@
   border-color: #d9534f;
 }
 
+/* Control flow node base styles */
+.control-flow-node {
+  min-width: 220px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.control-flow-node:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+.control-flow-node.selected {
+  box-shadow: 0 0 0 4px rgba(255, 109, 90, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 109, 90, 0.5);
+}
+
+.control-flow-node.running {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.control-flow-node.completed {
+  box-shadow: 0 0 0 2px rgba(92, 184, 92, 0.4), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.control-flow-node.failed {
+  box-shadow: 0 0 0 2px rgba(217, 83, 79, 0.4), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Control flow specific node types */
+.if-else-node {
+  position: relative;
+}
+
+.switch-node {
+  position: relative;
+}
+
+.for-each-node,
+.while-node {
+  position: relative;
+}
+
+.parallel-node {
+  position: relative;
+}
+
+.try-catch-node {
+  position: relative;
+}
+
+.transform-node {
+  position: relative;
+}
+
+/* Execution overlays for control flow nodes */
+.control-flow-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.control-flow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.control-flow-badge.early-exit {
+  background: rgba(255, 152, 0, 0.2);
+  border: 1px solid rgba(255, 152, 0, 0.5);
+  color: #ff9800;
+}
+
+.control-flow-badge.skipped {
+  background: rgba(128, 128, 128, 0.2);
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  color: #999;
+}
+
+.control-flow-badge.max-concurrent {
+  background: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  color: #ffc107;
+}
+
 /* Edge animation */
 .react-flow__edge-path.animated {
   stroke-dasharray: 8;

@@ -43,7 +43,7 @@ inputs:
     required: true
     description: 'JIRA project key'
   lookback_hours:
-    type: integer
+    type: number
     default: 24
     description: 'Hours to look back for updates'
 
@@ -52,7 +52,7 @@ outputs:
     type: string
     description: 'Generated standup summary'
   active_issues:
-    type: integer
+    type: number
     description: 'Number of active issues'
 ---
 
