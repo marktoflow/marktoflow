@@ -3,7 +3,7 @@
 /**
  * marktoflow CLI
  *
- * Universal automation framework with native MCP support.
+ * Agent automation framework with native MCP support.
  */
 
 import { Command } from 'commander';
@@ -34,7 +34,7 @@ import { parse as parseYaml } from 'yaml';
 import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
 import { WorkflowDebugger, parseBreakpoints } from './commands/debug.js';
 
-const VERSION = '2.0.0-alpha.7';
+const VERSION = '2.0.0-alpha.11';
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
@@ -62,7 +62,7 @@ const program = new Command();
 
 program
   .name('marktoflow')
-  .description('Universal automation framework with native MCP support')
+  .description('Agent automation framework with native MCP support')
   .version(VERSION);
 
 program.addCommand(workerCommand);
@@ -862,22 +862,20 @@ program
     try {
       // Check if @marktoflow/gui is available
       let guiModule;
+      let guiPackagePath;
       try {
         guiModule = await import('@marktoflow/gui');
+        // Find the GUI package location
+        const { createRequire } = await import('node:module');
+        const require = createRequire(import.meta.url);
+        guiPackagePath = require.resolve('@marktoflow/gui');
       } catch {
         spinner.fail('@marktoflow/gui package not found');
         console.log(chalk.yellow('\nTo use the GUI, install the gui package:'));
-        console.log(chalk.cyan('  pnpm add @marktoflow/gui'));
+        console.log(chalk.cyan('  npm install @marktoflow/gui@alpha'));
         console.log('\nOr run from the monorepo:');
         console.log(chalk.cyan('  pnpm --filter @marktoflow/gui dev'));
         process.exit(1);
-      }
-
-      // Set environment variables for the server
-      process.env.PORT = options.port;
-      process.env.WORKFLOW_DIR = options.dir;
-      if (options.workflow) {
-        process.env.INITIAL_WORKFLOW = options.workflow;
       }
 
       spinner.succeed(`GUI server starting on http://localhost:${options.port}`);
@@ -895,9 +893,20 @@ program
       console.log(`  Workflows: ${chalk.cyan(options.dir)}`);
       console.log('\n  Press ' + chalk.bold('Ctrl+C') + ' to stop\n');
 
+      // Find the static files directory
+      // guiPackagePath is .../node_modules/@marktoflow/gui/dist/server/index.js
+      // We need to go up to the package root: dist/server -> dist -> package root
+      const { dirname, join } = await import('node:path');
+      const guiPackageDir = dirname(dirname(dirname(guiPackagePath)));
+      const staticDir = join(guiPackageDir, 'dist', 'client');
+
       // The GUI package will handle the server
       if (guiModule.startServer) {
-        await guiModule.startServer();
+        await guiModule.startServer({
+          port: parseInt(options.port, 10),
+          workflowDir: options.dir,
+          staticDir: staticDir,
+        });
       }
     } catch (error) {
       spinner.fail(`Failed to start GUI: ${error}`);

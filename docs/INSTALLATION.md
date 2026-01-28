@@ -19,7 +19,7 @@ Complete installation guide for marktoflow CLI with troubleshooting.
 Install from the npm registry:
 
 ```bash
-npm install -g @marktoflow/cli@alpha
+npm install -g @marktoflow/cli
 ```
 
 **Pros:**
@@ -28,19 +28,15 @@ npm install -g @marktoflow/cli@alpha
 - Official npm package
 - Easy updates with `npm update -g @marktoflow/cli`
 
-**Cons:**
-
-- Currently in alpha (use `@alpha` tag)
-
 ### Method 2: Use npx (No Installation)
 
 Run marktoflow commands without installing:
 
 ```bash
 # Run any command with npx
-npx @marktoflow/cli@alpha version
-npx @marktoflow/cli@alpha init
-npx @marktoflow/cli@alpha run workflow.md
+npx @marktoflow/cli version
+npx @marktoflow/cli init
+npx @marktoflow/cli run workflow.md
 ```
 
 **Pros:**
@@ -60,7 +56,7 @@ npx @marktoflow/cli@alpha run workflow.md
 Install the latest development version directly from GitHub:
 
 ```bash
-npm install -g github:scottgl9/marktoflow#main
+npm install -g github:marktoflow/marktoflow#main
 ```
 
 **Pros:**
@@ -79,7 +75,7 @@ For development or contributing:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/scottgl9/marktoflow.git
+git clone https://github.com/marktoflow/marktoflow.git
 cd marktoflow
 
 # 2. Install dependencies (requires pnpm)
@@ -116,7 +112,7 @@ marktoflow version
 After installation, verify marktoflow is working:
 
 ```bash
-# Check version (should show 2.0.0-alpha.9 or higher)
+# Check version (should show 2.0.0-alpha.11 or higher)
 marktoflow version
 
 # Check available commands
@@ -129,7 +125,7 @@ marktoflow doctor
 **Expected output for `marktoflow version`:**
 
 ```
-marktoflow v2.0.0-alpha.9
+marktoflow v2.0.0-alpha.11
 ```
 
 If you see `command not found: marktoflow`, proceed to [PATH Configuration](#path-configuration).
@@ -254,7 +250,7 @@ marktoflow version
 1. **Fix PATH** (see [PATH Configuration](#path-configuration) above)
 2. **Use npx instead:**
    ```bash
-   npx github:scottgl9/marktoflow version
+   npx github:marktoflow/marktoflow version
    ```
 3. **Use full path:**
    ```bash
@@ -270,7 +266,7 @@ marktoflow version
 **Option 1: Use npx (Recommended)**
 
 ```bash
-npx @scottgl/marktoflow@alpha version
+npx @marktoflow/cli version
 ```
 
 **Option 2: Configure npm to use user directory**
@@ -289,13 +285,13 @@ export PATH="$PATH:$HOME/.npm-global/bin"
 source ~/.bashrc  # or ~/.zshrc
 
 # Try installation again
-npm install -g @marktoflow/cli@alpha
+npm install -g @marktoflow/cli
 ```
 
 **Option 3: Use sudo (Not Recommended)**
 
 ```bash
-sudo npm install -g @marktoflow/cli@alpha
+sudo npm install -g @marktoflow/cli
 ```
 
 **Note:** Using sudo can cause permission issues later. Options 1 or 2 are better.
@@ -322,7 +318,7 @@ npm link
 
 ```bash
 # Reinstall from npm
-npm install -g --force @scottgl/marktoflow@alpha
+npm install -g --force @marktoflow/cli
 
 # Or if installing from source:
 cd marktoflow
@@ -341,7 +337,7 @@ npm link
 1. **Use npx with cache:**
 
    ```bash
-   npx @scottgl/marktoflow@alpha version
+   npx @marktoflow/cli version
    # First run downloads, subsequent runs use cache
    ```
 
@@ -354,7 +350,7 @@ npm link
 
 3. **Use verbose logging:**
    ```bash
-   npm install -g @marktoflow/cli@alpha --verbose
+   npm install -g @marktoflow/cli --verbose
    ```
 
 ### Issue: "Cannot find module '@marktoflow/core'"
@@ -365,7 +361,7 @@ npm link
 
 ```bash
 # Reinstall from source
-git clone https://github.com/scottgl9/marktoflow.git
+git clone https://github.com/marktoflow/marktoflow.git
 cd marktoflow
 pnpm install
 pnpm build
@@ -385,10 +381,10 @@ npm cache clean --force
 
 # Reinstall global package
 npm uninstall -g marktoflow
-npm install -g @marktoflow/cli@alpha
+npm install -g @marktoflow/cli
 
 # Or use npx with --no-cache
-npx --no-cache @scottgl/marktoflow@alpha version
+npx --no-cache @marktoflow/cli version
 ```
 
 ---
@@ -492,8 +488,8 @@ marktoflow run test-workflow.md --dry-run
 
 - [README.md](../README.md) - Project overview
 - [REST API Guide](REST-API-GUIDE.md) - Connect to any REST API
-- [GitHub Repository](https://github.com/scottgl9/marktoflow)
-- [Issue Tracker](https://github.com/scottgl9/marktoflow/issues)
+- [GitHub Repository](https://github.com/marktoflow/marktoflow)
+- [Issue Tracker](https://github.com/marktoflow/marktoflow/issues)
 
 ---
 
@@ -501,7 +497,7 @@ marktoflow run test-workflow.md --dry-run
 
 If you continue to experience installation issues:
 
-1. **Check existing issues:** https://github.com/scottgl9/marktoflow/issues
+1. **Check existing issues:** https://github.com/marktoflow/marktoflow/issues
 2. **Open a new issue:** Include:
    - Operating system and version
    - Node.js version (`node --version`)
@@ -512,5 +508,5 @@ If you continue to experience installation issues:
 
 ---
 
-**Last Updated:** 2026-01-27
-**Version:** 2.0.0-alpha.9
+**Last Updated:** 2026-01-28
+**Version:** 2.0.0-alpha.11

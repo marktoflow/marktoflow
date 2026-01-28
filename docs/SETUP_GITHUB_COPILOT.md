@@ -469,7 +469,7 @@ Workflow → GitHubCopilotClient → spawns CLI → uses saved token → GitHub 
 
 - **GitHub Copilot Support**: https://support.github.com/
 - **SDK Repository**: https://github.com/github/copilot-sdk
-- **marktoflow Issues**: https://github.com/scottgl9/marktoflow/issues
+- **marktoflow Issues**: https://github.com/marktoflow/marktoflow/issues
 
 ---
 

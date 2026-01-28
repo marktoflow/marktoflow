@@ -70,7 +70,7 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
 
   // Health check
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', version: '2.0.0-alpha.2' });
+    res.json({ status: 'ok', version: '2.0.0-alpha.5' });
   });
 
   // Serve static files if static dir is provided

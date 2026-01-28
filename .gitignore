@@ -141,3 +141,14 @@ credentials/
 *.log
 *.bak
 downloads/
+
+# ============================================================================
+# Publishing
+# ============================================================================
+
+# npm pack tarballs
+*.tgz
+
+# Publishing automation temporary directories
+.publish-backup/
+.publish-test/

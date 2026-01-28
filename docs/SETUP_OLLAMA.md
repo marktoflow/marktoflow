@@ -574,7 +574,7 @@ ollama rm llama2:7b  # Free up disk space
 - **Ollama Documentation**: https://github.com/ollama/ollama
 - **Model Library**: https://ollama.ai/library
 - **OpenCode Documentation**: https://opencode.ai/docs
-- **marktoflow Issues**: https://github.com/yourusername/marktoflow/issues
+- **marktoflow Issues**: https://github.com/marktoflow/marktoflow/issues
 
 ---
 

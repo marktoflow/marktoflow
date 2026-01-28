@@ -1,6 +1,6 @@
 #!/bin/bash
 # Verify installation after GitHub install
-# Run this after: npm install -g github:scottgl9/marktoflow-automation#main
+# Run this after: npm install -g github:marktoflow/marktoflow-automation#main
 
 set -e
 
@@ -38,7 +38,7 @@ else
     echo "     export PATH=\"\$PATH:$(npm prefix -g)/bin\""
     echo ""
     echo "  4. Or use npx instead:"
-    echo "     npx github:scottgl9/marktoflow-automation version"
+    echo "     npx github:marktoflow/marktoflow-automation version"
     echo ""
     ERRORS=$((ERRORS + 1))
 fi

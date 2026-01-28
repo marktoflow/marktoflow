@@ -7,12 +7,12 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/scottgl9/marktoflow.git",
+    "url": "git+https://github.com/marktoflow/marktoflow.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/scottgl9/marktoflow#readme",
+  "homepage": "https://github.com/marktoflow/marktoflow#readme",
   "bugs": {
-    "url": "https://github.com/scottgl9/marktoflow/issues"
+    "url": "https://github.com/marktoflow/marktoflow/issues"
   },
   "exports": {
     ".": {
