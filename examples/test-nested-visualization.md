@@ -27,45 +27,34 @@ triggers:
 
 This workflow tests all control flow nested step visualization features.
 
-## Step 1: If/Else with Nested Steps
+## Step 1: If/Else Routing Example
+
+This demonstrates if/else as a routing node with 2 outputs. Based on severity, it routes to either critical handling or standard processing.
 
 ```yaml
 type: if
 condition: "{{ inputs.severity === 'critical' }}"
-then:
-  - id: then-step-1
-    name: 'Critical Action 1'
-    action: console.log
-    inputs:
-      message: 'Executing critical action 1'
-
-  - id: then-step-2
-    name: 'Critical Action 2'
-    action: console.log
-    inputs:
-      message: 'Executing critical action 2'
-
-  - id: then-step-3
-    name: 'Critical Action 3'
-    action: console.log
-    inputs:
-      message: 'Executing critical action 3'
-
-else:
-  - id: else-step-1
-    name: 'Non-Critical Action'
-    action: console.log
-    inputs:
-      message: 'Executing non-critical action'
-
-  - id: else-step-2
-    name: 'Log Status'
-    action: console.log
-    inputs:
-      message: 'Status logged'
 ```
 
-## Step 2: For Each with Nested Steps
+## Step 2: Then Path - Critical Alert
+
+```yaml
+action: console.log
+inputs:
+  message: 'CRITICAL: Paging on-call engineer immediately!'
+output_variable: critical_response
+```
+
+## Step 3: Else Path - Standard Processing
+
+```yaml
+action: console.log
+inputs:
+  message: 'Standard severity - adding to queue for review'
+output_variable: standard_response
+```
+
+## Step 4: For Each with Nested Steps
 
 ```yaml
 type: for_each
@@ -91,45 +80,42 @@ steps:
       message: 'Saving item {{ item }}'
 ```
 
-## Step 3: Try/Catch with Nested Steps
+## Step 5: After Loop Completion
+
+```yaml
+action: console.log
+inputs:
+  message: 'All items processed! Total: {{ inputs.items.length }}'
+output_variable: loop_summary
+```
+
+## Step 7: Try/Catch Error Routing Example
+
+This demonstrates try/catch as a routing node with 2 outputs (success/error). It attempts a risky API call and routes to either success or error handling.
 
 ```yaml
 type: try
-try:
-  - id: try-step-1
-    name: 'Risky Operation 1'
-    action: console.log
-    inputs:
-      message: 'Attempting risky operation 1'
-
-  - id: try-step-2
-    name: 'Risky Operation 2'
-    action: console.log
-    inputs:
-      message: 'Attempting risky operation 2'
-
-catch:
-  - id: catch-step-1
-    name: 'Handle Error'
-    action: console.log
-    inputs:
-      message: 'Handling error'
-
-  - id: catch-step-2
-    name: 'Log Error'
-    action: console.log
-    inputs:
-      message: 'Error logged'
-
-finally:
-  - id: finally-step-1
-    name: 'Cleanup Resources'
-    action: console.log
-    inputs:
-      message: 'Cleaning up resources'
 ```
 
-## Step 4: Switch/Case with Multiple Branches
+## Step 8: Success Path - API Call Succeeded
+
+```yaml
+action: console.log
+inputs:
+  message: 'API call successful! Processing response data.'
+output_variable: api_success
+```
+
+## Step 9: Error Path - API Call Failed
+
+```yaml
+action: console.log
+inputs:
+  message: 'API call failed! Sending alert to monitoring system.'
+output_variable: api_error
+```
+
+## Step 10: Switch/Case with Multiple Branches
 
 ```yaml
 type: switch
@@ -201,7 +187,7 @@ default:
       message: 'Requesting severity clarification'
 ```
 
-## Step 5: Parallel Execution with Nested Steps
+## Step 11: Parallel Execution with Nested Steps
 
 ```yaml
 type: parallel
@@ -252,7 +238,7 @@ branches:
           message: 'Logging to database'
 ```
 
-## Step 6: Completion Log
+## Step 12: Completion Log
 
 ```yaml
 action: console.log
@@ -265,34 +251,36 @@ output_variable: completion_log
 
 When loaded in the GUI, you should see:
 
-1. **If/Else Node**:
-   - Green "Then" group with 3 steps
-   - Red "Else" group with 2 steps
-   - Both groups collapsible
+1. **If/Else Node** (Step 1):
+   - Simple routing node with 2 outputs
+   - Green "then" output → connects to Step 2 (Critical Alert)
+   - Red "else" output → connects to Step 3 (Standard Processing)
+   - No nested step groups
 
-2. **For Each Node**:
+2. **For Each Node** (Step 4):
    - Purple "For Each" group with 3 iteration steps
    - Step count indicator showing "3 steps"
+   - Collapsible group container
 
-3. **Try/Catch Node**:
-   - Blue "Try" group with 2 steps
-   - Orange "Catch" group with 2 steps
-   - Purple "Finally" group with 1 step
-   - All three branches visible side-by-side
+3. **Switch Node** (Step 5):
+   - Simple routing node with multiple outputs (one per case)
+   - Each case output connects to its corresponding group container
+   - Purple outputs for: critical, high, medium, low cases
+   - Gray output for default case
+   - Nested step groups for each case branch
 
-4. **Switch Node**:
-   - Cyan "Case: critical" group with 3 steps
-   - Cyan "Case: high" group with 2 steps
-   - Cyan "Case: medium" group with 2 steps
-   - Cyan "Case: low" group with 1 step
-   - Slate "Default" group with 2 steps
-   - All cases arranged horizontally
+4. **Try/Catch Node** (Step 6):
+   - Simple routing node with 2 outputs
+   - Green "success" output → connects to Step 7 (API Success)
+   - Red "error" output → connects to Step 8 (API Error)
+   - No nested step groups
 
-5. **Parallel Node**:
+5. **Parallel Node** (Step 9):
+   - Single output (waits for all branches to complete)
    - Cyan "Data Processing" branch with 2 steps
    - Cyan "Notification" branch with 2 steps
    - Cyan "Logging" branch with 2 steps
-   - All branches side-by-side
+   - All branches with nested step groups
 
 ## Testing Checklist
 

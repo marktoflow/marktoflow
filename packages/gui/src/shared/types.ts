@@ -58,6 +58,7 @@ export interface Workflow {
   tools?: Record<string, WorkflowTool>;
   inputs?: Record<string, WorkflowInput>;
   triggers?: WorkflowTrigger[];
+  markdown?: string; // Raw markdown content for control flow parsing
 }
 
 export interface WorkflowListItem {

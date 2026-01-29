@@ -134,32 +134,23 @@ function TryCatchNodeComponent({ data, selected }: NodeProps<TryCatchNodeType>) 
         </div>
       </div>
 
-      {/* Output handles */}
+      {/* Output handles - one for success path, one for error path */}
       <Handle
         type="source"
         position={Position.Bottom}
-        id="try"
-        style={{ left: '25%' }}
-        className="!w-2.5 !h-2.5 !bg-blue-500 !border-2 !border-node-bg"
+        id="success"
+        style={{ left: '33%' }}
+        className="!w-3 !h-3 !bg-green-500 !border-2 !border-node-bg"
+        title="Success path (try succeeded)"
       />
-      {data.hasCatch && (
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="catch"
-          style={{ left: '50%' }}
-          className="!w-2.5 !h-2.5 !bg-red-500 !border-2 !border-node-bg"
-        />
-      )}
-      {data.hasFinally && (
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="finally"
-          style={{ left: '75%' }}
-          className="!w-2.5 !h-2.5 !bg-purple-500 !border-2 !border-node-bg"
-        />
-      )}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="error"
+        style={{ left: '67%' }}
+        className="!w-3 !h-3 !bg-red-500 !border-2 !border-node-bg"
+        title="Error path (catch triggered)"
+      />
     </div>
   );
 }

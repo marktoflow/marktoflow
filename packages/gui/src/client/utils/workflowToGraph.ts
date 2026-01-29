@@ -79,7 +79,8 @@ function createNestedStepNodes(
   nodes: Node[],
   edges: Edge[],
   startY: number,
-  xOffset: number = 0
+  xOffset: number = 0,
+  sourceHandleId?: string
 ): number {
   if (!nestedSteps || nestedSteps.length === 0) return startY;
 
@@ -111,7 +112,7 @@ function createNestedStepNodes(
     id: `e-${parentStepId}-${groupId}`,
     source: parentStepId,
     target: groupId,
-    sourceHandle: branchType,
+    sourceHandle: sourceHandleId || branchType,
     type: 'smoothstep',
     animated: false,
     style: { stroke: color, strokeWidth: 2, strokeDasharray: '5,5' },
@@ -187,71 +188,11 @@ function processControlFlowNesting(
   let currentY = startY;
 
   if (step.type === 'if') {
-    // If/Else structure
-    if (step.then && step.then.length > 0) {
-      currentY = createNestedStepNodes(
-        step.id,
-        'then',
-        'Then',
-        step.then,
-        nodes,
-        edges,
-        currentY,
-        -150 // Offset to the left
-      );
-    }
-    if (step.else && step.else.length > 0) {
-      createNestedStepNodes(
-        step.id,
-        'else',
-        'Else',
-        step.else,
-        nodes,
-        edges,
-        startY,
-        150 // Offset to the right
-      );
-    }
+    // If/Else - simple routing node with 2 outputs (no nested visualization)
+    // The then/else paths connect directly to next workflow steps
   } else if (step.type === 'try') {
-    // Try/Catch/Finally structure
-    if (step.try && step.try.length > 0) {
-      currentY = createNestedStepNodes(
-        step.id,
-        'try',
-        'Try',
-        step.try,
-        nodes,
-        edges,
-        currentY,
-        -200
-      );
-    }
-    if (step.catch && step.catch.length > 0) {
-      const catchY = createNestedStepNodes(
-        step.id,
-        'catch',
-        'Catch',
-        step.catch,
-        nodes,
-        edges,
-        startY,
-        0
-      );
-      currentY = Math.max(currentY, catchY);
-    }
-    if (step.finally && step.finally.length > 0) {
-      const finallyY = createNestedStepNodes(
-        step.id,
-        'finally',
-        'Finally',
-        step.finally,
-        nodes,
-        edges,
-        startY,
-        200
-      );
-      currentY = Math.max(currentY, finallyY);
-    }
+    // Try/Catch - simple routing node with 2 outputs (no nested visualization)
+    // The success/error paths connect directly to next workflow steps
   } else if (step.type === 'switch') {
     // Switch/Case structure
     if (step.cases) {
@@ -271,7 +212,8 @@ function processControlFlowNesting(
             nodes,
             edges,
             startY,
-            startX + index * caseWidth
+            startX + index * caseWidth,
+            `case-${caseKey}` // Specific source handle ID for this case
           );
           currentY = Math.max(currentY, caseY);
         }
@@ -286,13 +228,16 @@ function processControlFlowNesting(
         nodes,
         edges,
         startY,
-        200
+        200,
+        'case-default' // Specific source handle ID for default
       );
       currentY = Math.max(currentY, defaultY);
     }
   } else if (step.type === 'for_each' || step.type === 'while') {
     // Loop structures
+    console.log(`Processing ${step.type} loop:`, step.id, 'nested steps:', step.steps?.length || 0, step.steps);
     if (step.steps && step.steps.length > 0) {
+      console.log('Creating nested step nodes for loop');
       currentY = createNestedStepNodes(
         step.id,
         'iteration',
@@ -303,6 +248,8 @@ function processControlFlowNesting(
         currentY,
         0
       );
+    } else {
+      console.warn(`Loop ${step.id} has no nested steps!`);
     }
   } else if (step.type === 'parallel') {
     // Parallel branches
@@ -337,19 +284,27 @@ function processControlFlowNesting(
  * This is a temporary solution until the core parser supports control flow
  */
 function extractControlFlowFromMarkdown(markdown?: string): WorkflowStep[] {
-  if (!markdown) return [];
+  if (!markdown) {
+    console.log('No markdown provided to extract');
+    return [];
+  }
 
+  console.log('Extracting from markdown, length:', markdown.length);
   const controlFlowSteps: WorkflowStep[] = [];
   // Match YAML code blocks that contain control flow types
   const codeBlockRegex = /```yaml\s*\n([\s\S]*?)\n```/g;
   let match;
   let stepIndex = 0;
+  let blockCount = 0;
 
   while ((match = codeBlockRegex.exec(markdown)) !== null) {
+    blockCount++;
     const yamlContent = match[1];
+    console.log(`YAML block ${blockCount}:`, yamlContent.substring(0, 100));
 
     // Check if this is a control flow block
     const typeMatch = yamlContent.match(/^type:\s*(while|for_each|for|switch|parallel|try|if|map|filter|reduce)/m);
+    console.log(`Block ${blockCount} type match:`, typeMatch?.[1] || 'none');
     if (typeMatch) {
       const type = typeMatch[1] as WorkflowStep['type'];
       const id = `control-flow-${type}-${stepIndex++}`;
@@ -423,17 +378,161 @@ function extractControlFlowFromMarkdown(markdown?: string): WorkflowStep[] {
         step.inputs = { ...step.inputs, expression: switchExprMatch[1] };
       }
 
+      // Extract nested steps using a simple YAML parser
+      try {
+        // For for_each and while: extract steps array
+        if (type === 'for_each' || type === 'while') {
+          console.log('Full yamlContent for', type, ':', yamlContent);
+          const stepsMatch = yamlContent.match(/steps:\s*\n((?:  - [\s\S]*?(?=\n\S|\n$))+)/);
+          console.log('For_each/while steps regex match:', !!stepsMatch);
+          if (stepsMatch) {
+            console.log('Matched steps content:', stepsMatch[1]);
+            const parsedSteps = parseNestedSteps(stepsMatch[1]);
+            console.log('Parsed nested steps:', parsedSteps.length, parsedSteps);
+            step.steps = parsedSteps;
+          } else {
+            console.error('Steps regex did not match! Trying alternative...');
+            // Try alternative regex
+            const altMatch = yamlContent.match(/steps:\s*\n([\s\S]+?)(?=\n[a-z_]+:|$)/);
+            if (altMatch) {
+              console.log('Alternative match found:', altMatch[1].substring(0, 200));
+              const parsedSteps = parseNestedSteps(altMatch[1]);
+              console.log('Parsed with alternative:', parsedSteps.length, parsedSteps);
+              step.steps = parsedSteps;
+            }
+          }
+        }
+
+        // For if: extract then and else branches
+        if (type === 'if') {
+          const thenMatch = yamlContent.match(/then:\s*\n((?:  - [\s\S]*?(?=\nelse:|\n\S|\n$))+)/);
+          const elseMatch = yamlContent.match(/else:\s*\n((?:  - [\s\S]*?(?=\n\S|\n$))+)/);
+          if (thenMatch) step.then = parseNestedSteps(thenMatch[1]);
+          if (elseMatch) step.else = parseNestedSteps(elseMatch[1]);
+        }
+
+        // For try: extract try, catch, and finally branches
+        if (type === 'try') {
+          const tryMatch = yamlContent.match(/try:\s*\n((?:  - [\s\S]*?(?=\ncatch:|\nfinally:|\n\S|\n$))+)/);
+          const catchMatch = yamlContent.match(/catch:\s*\n((?:  - [\s\S]*?(?=\nfinally:|\n\S|\n$))+)/);
+          const finallyMatch = yamlContent.match(/finally:\s*\n((?:  - [\s\S]*?(?=\n\S|\n$))+)/);
+          if (tryMatch) step.try = parseNestedSteps(tryMatch[1]);
+          if (catchMatch) step.catch = parseNestedSteps(catchMatch[1]);
+          if (finallyMatch) step.finally = parseNestedSteps(finallyMatch[1]);
+        }
+
+        // For switch: extract cases and default
+        if (type === 'switch') {
+          const casesMatch = yamlContent.match(/cases:\s*\n((?:  \w+:[\s\S]*?(?=\n  \w+:|\ndefault:|\n\S|\n$))+)/);
+          if (casesMatch) {
+            step.cases = {};
+            const caseContent = casesMatch[1];
+            const casePattern = /(\w+):\s*\n((?:    - [\s\S]*?(?=\n  \w+:|\ndefault:|\n\S|\n$))+)/g;
+            let caseMatch;
+            while ((caseMatch = casePattern.exec(caseContent)) !== null) {
+              const caseName = caseMatch[1];
+              const caseSteps = parseNestedSteps(caseMatch[2]);
+              step.cases[caseName] = caseSteps;
+            }
+          }
+          const defaultMatch = yamlContent.match(/default:\s*\n((?:  - [\s\S]*?(?=\n\S|\n$))+)/);
+          if (defaultMatch) step.default = parseNestedSteps(defaultMatch[1]);
+        }
+
+        // For parallel: extract branches
+        if (type === 'parallel') {
+          const branchesMatch = yamlContent.match(/branches:\s*\n((?:  - [\s\S]*?(?=\n  - id:|\n\S|\n$))+)/);
+          if (branchesMatch) {
+            step.branches = [];
+            const branchPattern = /- id:\s*(\S+)\s*\n(?:    name:\s*['"](.+?)['"])?\s*\n    steps:\s*\n((?:      - [\s\S]*?(?=\n  - id:|\n\S|\n$))+)/g;
+            let branchMatch;
+            while ((branchMatch = branchPattern.exec(branchesMatch[1])) !== null) {
+              step.branches.push({
+                id: branchMatch[1],
+                name: branchMatch[2],
+                steps: parseNestedSteps(branchMatch[3]),
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to extract nested steps for ${type}:`, e);
+      }
+
+      console.log(`Created control flow step:`, step.id, step.type, step);
       controlFlowSteps.push(step);
     }
   }
 
+  console.log(`Total control flow steps extracted: ${controlFlowSteps.length}`);
   return controlFlowSteps;
+}
+
+/**
+ * Parse nested steps from YAML content
+ */
+function parseNestedSteps(yamlContent: string): WorkflowStep[] {
+  console.log('parseNestedSteps called with:', yamlContent.substring(0, 300));
+  const steps: WorkflowStep[] = [];
+
+  // Split by step markers (  - id:)
+  const stepBlocks = yamlContent.split(/\n\s*- id:\s*/);
+  console.log('Split into', stepBlocks.length, 'blocks');
+
+  for (let i = 1; i < stepBlocks.length; i++) { // Skip first empty block
+    const block = stepBlocks[i];
+    console.log(`Parsing block ${i}:`, block.substring(0, 150));
+
+    // Extract id (first line)
+    const idMatch = block.match(/^(\S+)/);
+    if (!idMatch) continue;
+
+    const step: WorkflowStep = {
+      id: idMatch[1],
+      inputs: {},
+    };
+
+    // Extract name
+    const nameMatch = block.match(/name:\s*['"](.+?)['"]/);
+    if (nameMatch) step.name = nameMatch[1];
+
+    // Extract action
+    const actionMatch = block.match(/action:\s*(\S+)/);
+    if (actionMatch) step.action = actionMatch[1];
+
+    // Extract inputs
+    const inputsMatch = block.match(/inputs:\s*\n((?:\s{4,}[\s\S]*?(?=\n\s{0,2}\w+:|$))+)/);
+    if (inputsMatch) {
+      const inputLines = inputsMatch[1].split('\n');
+      for (const line of inputLines) {
+        const inputMatch = line.match(/^\s+(\w+):\s*(.+)$/);
+        if (inputMatch) {
+          let value = inputMatch[2].trim();
+          // Remove quotes if present
+          value = value.replace(/^['"]|['"]$/g, '');
+          step.inputs[inputMatch[1]] = value;
+        }
+      }
+    }
+
+    console.log('Parsed step:', step);
+    steps.push(step);
+  }
+
+  console.log('Total parsed steps:', steps.length);
+  return steps;
 }
 
 /**
  * Converts a marktoflow Workflow to React Flow nodes and edges
  */
 export function workflowToGraph(workflow: Workflow & { markdown?: string }): GraphResult {
+  console.log('=== workflowToGraph called ===');
+  console.log('Workflow object keys:', Object.keys(workflow));
+  console.log('Has markdown?', !!workflow.markdown);
+  console.log('Markdown length:', workflow.markdown?.length || 0);
+  console.log('Workflow steps count:', workflow.steps?.length || 0);
+
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
@@ -443,6 +542,7 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
 
   // Try to extract control flow from markdown if available
   const controlFlowSteps = extractControlFlowFromMarkdown(workflow.markdown);
+  console.log('Extracted control flow steps:', controlFlowSteps.length, controlFlowSteps);
   const allSteps = [...workflow.steps, ...controlFlowSteps];
 
   // Add trigger node if triggers are defined
@@ -602,23 +702,82 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
     // Create edge to next step
     if (index < allSteps.length - 1) {
       const nextStep = allSteps[index + 1];
-      const edge: Edge = {
-        id: `e-${step.id}-${nextStep.id}`,
-        source: step.id,
-        target: nextStep.id,
-        type: 'smoothstep',
-        animated: false,
-        style: { stroke: '#ff6d5a', strokeWidth: 2 },
-      };
 
-      // Add condition label if present
-      if (nextStep.conditions && nextStep.conditions.length > 0) {
-        edge.label = 'conditional';
-        edge.labelStyle = { fill: '#a0a0c0', fontSize: 10 };
-        edge.labelBgStyle = { fill: '#232340' };
+      // For if/else and try/catch, create edges from both outputs
+      if (step.type === 'if') {
+        // Then path
+        edges.push({
+          id: `e-${step.id}-then-${nextStep.id}`,
+          source: step.id,
+          sourceHandle: 'then',
+          target: nextStep.id,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#10b981', strokeWidth: 2 },
+          label: 'then',
+          labelStyle: { fill: '#10b981', fontSize: 9 },
+          labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.9 },
+        });
+        // Else path
+        edges.push({
+          id: `e-${step.id}-else-${nextStep.id}`,
+          source: step.id,
+          sourceHandle: 'else',
+          target: nextStep.id,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#ef4444', strokeWidth: 2 },
+          label: 'else',
+          labelStyle: { fill: '#ef4444', fontSize: 9 },
+          labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.9 },
+        });
+      } else if (step.type === 'try') {
+        // Success path
+        edges.push({
+          id: `e-${step.id}-success-${nextStep.id}`,
+          source: step.id,
+          sourceHandle: 'success',
+          target: nextStep.id,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#10b981', strokeWidth: 2 },
+          label: 'success',
+          labelStyle: { fill: '#10b981', fontSize: 9 },
+          labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.9 },
+        });
+        // Error path
+        edges.push({
+          id: `e-${step.id}-error-${nextStep.id}`,
+          source: step.id,
+          sourceHandle: 'error',
+          target: nextStep.id,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#ef4444', strokeWidth: 2 },
+          label: 'error',
+          labelStyle: { fill: '#ef4444', fontSize: 9 },
+          labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.9 },
+        });
+      } else {
+        // Regular edge for other node types
+        const edge: Edge = {
+          id: `e-${step.id}-${nextStep.id}`,
+          source: step.id,
+          target: nextStep.id,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#ff6d5a', strokeWidth: 2 },
+        };
+
+        // Add condition label if present
+        if (nextStep.conditions && nextStep.conditions.length > 0) {
+          edge.label = 'conditional';
+          edge.labelStyle = { fill: '#a0a0c0', fontSize: 10 };
+          edge.labelBgStyle = { fill: '#232340' };
+        }
+
+        edges.push(edge);
       }
-
-      edges.push(edge);
     }
 
     // Add loop-back edge for loops

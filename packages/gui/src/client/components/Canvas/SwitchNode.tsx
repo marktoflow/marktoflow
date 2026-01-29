@@ -46,14 +46,18 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
   const StatusIcon = config.icon;
 
   const caseKeys = Object.keys(data.cases || {});
-  const displayCases = caseKeys.slice(0, 4); // Show up to 4 cases
-  const hasMore = caseKeys.length > 4;
 
   // Calculate handle positions to avoid overlap
-  const totalHandles = Math.min(caseKeys.length, 4) + (data.hasDefault ? 1 : 0);
+  const totalHandles = caseKeys.length + (data.hasDefault ? 1 : 0);
   const getHandlePosition = (index: number) => {
     if (totalHandles === 1) return 50;
-    return ((index + 1) / (totalHandles + 1)) * 100;
+    // For many handles, distribute them more evenly with padding
+    const padding = 10; // percentage from edges
+    const usableWidth = 100 - (2 * padding);
+    if (totalHandles === 2) {
+      return padding + (index * usableWidth);
+    }
+    return padding + ((index / (totalHandles - 1)) * usableWidth);
   };
 
   return (
@@ -98,40 +102,40 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
         </div>
 
         {/* Case list */}
-        <div className="space-y-2">
-          <div className="text-xs text-white/70 font-medium mb-1">Cases:</div>
-          {displayCases.map((caseKey, index) => {
+        <div className={`space-y-1.5 ${caseKeys.length > 6 ? 'max-h-48 overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
+          <div className="text-xs text-white/70 font-medium mb-1 sticky top-0 bg-white/10 -mx-3 px-3 py-1">
+            Cases ({caseKeys.length}):
+          </div>
+          {caseKeys.map((caseKey, index) => {
             const isActive = data.activeCase === caseKey;
             const isSkipped = data.skippedBranches?.includes(caseKey);
-            const handlePosition = getHandlePosition(index);
 
             return (
               <div key={caseKey} className="relative">
                 <div
-                  className={`text-xs px-2 py-1.5 rounded font-medium transition-colors relative ${
+                  className={`text-xs px-2 py-1.5 rounded font-medium transition-colors relative flex items-center justify-between ${
                     isActive
                       ? 'bg-purple-500/30 text-purple-200 ring-1 ring-purple-400/50'
                       : isSkipped
                         ? 'bg-gray-500/20 text-gray-400 line-through'
-                        : 'bg-white/5 text-white/70'
+                        : 'bg-white/5 text-white/70 hover:bg-white/10'
                   }`}
                 >
-                  {caseKey}
+                  <span className="truncate">{caseKey}</span>
                   {isSkipped && (
-                    <span className="ml-2 text-[8px] px-1 py-0.5 rounded bg-gray-500/30">
+                    <span className="ml-2 text-[8px] px-1 py-0.5 rounded bg-gray-500/30 flex-shrink-0">
                       SKIPPED
+                    </span>
+                  )}
+                  {isActive && (
+                    <span className="ml-2 text-[8px] px-1 py-0.5 rounded bg-purple-500/50 flex-shrink-0">
+                      ACTIVE
                     </span>
                   )}
                 </div>
               </div>
             );
           })}
-
-          {hasMore && (
-            <div className="text-xs px-2 py-1 rounded bg-white/5 text-white/60 text-center">
-              +{caseKeys.length - 4} more cases
-            </div>
-          )}
 
           {/* Default case */}
           {data.hasDefault && (
@@ -159,15 +163,16 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
         </div>
       </div>
 
-      {/* Output handles - positioned independently to avoid overlap */}
-      {displayCases.map((caseKey, index) => (
+      {/* Output handles - dynamically positioned for all cases */}
+      {caseKeys.map((caseKey, index) => (
         <Handle
           key={`handle-${caseKey}`}
           type="source"
           position={Position.Bottom}
           id={`case-${caseKey}`}
           style={{ left: `${getHandlePosition(index)}%` }}
-          className="!w-2.5 !h-2.5 !bg-purple-400 !border-2 !border-node-bg"
+          className={totalHandles > 8 ? '!w-2 !h-2 !bg-purple-400 !border-2 !border-node-bg' : '!w-2.5 !h-2.5 !bg-purple-400 !border-2 !border-node-bg'}
+          title={`Output: ${caseKey}`}
         />
       ))}
       {data.hasDefault && (
@@ -175,8 +180,9 @@ function SwitchNodeComponent({ data, selected }: NodeProps<SwitchNodeType>) {
           type="source"
           position={Position.Bottom}
           id="case-default"
-          style={{ left: `${getHandlePosition(displayCases.length)}%` }}
-          className="!w-2.5 !h-2.5 !bg-gray-400 !border-2 !border-node-bg"
+          style={{ left: `${getHandlePosition(caseKeys.length)}%` }}
+          className={totalHandles > 8 ? '!w-2 !h-2 !bg-gray-400 !border-2 !border-node-bg' : '!w-2.5 !h-2.5 !bg-gray-400 !border-2 !border-node-bg'}
+          title="Output: default"
         />
       )}
     </div>

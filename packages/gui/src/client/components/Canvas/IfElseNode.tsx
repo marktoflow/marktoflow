@@ -134,13 +134,14 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
         </div>
       </div>
 
-      {/* Output handles */}
+      {/* Output handles - one for then path, one for else path */}
       <Handle
         type="source"
         position={Position.Bottom}
         id="then"
         style={{ left: '33%' }}
         className="!w-3 !h-3 !bg-green-500 !border-2 !border-node-bg"
+        title="Then path"
       />
       <Handle
         type="source"
@@ -148,6 +149,7 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
         id="else"
         style={{ left: '67%' }}
         className="!w-3 !h-3 !bg-red-500 !border-2 !border-node-bg"
+        title="Else path"
       />
     </div>
   );
