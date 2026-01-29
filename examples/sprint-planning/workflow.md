@@ -16,14 +16,14 @@ tools:
     auth:
       host: '${JIRA_HOST}'
       email: '${JIRA_EMAIL}'
-      apiToken: '${JIRA_API_TOKEN}'
+      api_token: '${JIRA_API_TOKEN}'
 
   confluence:
     sdk: 'confluence'
     auth:
       host: '${CONFLUENCE_HOST}'
-      username: '${CONFLUENCE_EMAIL}'
-      apiToken: '${CONFLUENCE_API_TOKEN}'
+      email: '${CONFLUENCE_EMAIL}'
+      api_token: '${CONFLUENCE_API_TOKEN}'
 
   slack:
     sdk: '@slack/web-api'

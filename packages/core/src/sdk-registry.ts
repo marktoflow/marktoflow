@@ -106,7 +106,11 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
 
   'jira.js': {
     async initialize(module: unknown, config: ToolConfig): Promise<unknown> {
-      const { Version3Client } = module as {
+      const { Version2Client, Version3Client } = module as {
+        Version2Client: new (options: {
+          host: string;
+          authentication: { basic: { email: string; apiToken: string } };
+        }) => unknown;
         Version3Client: new (options: {
           host: string;
           authentication: { basic: { email: string; apiToken: string } };
@@ -115,17 +119,29 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
       const host = config.auth?.['host'] as string;
       const email = config.auth?.['email'] as string;
       const apiToken = config.auth?.['api_token'] as string;
+      const apiVersion = (config.auth?.['api_version'] as string) || 'auto';
 
       if (!host || !email || !apiToken) {
         throw new Error('Jira SDK requires auth.host, auth.email, and auth.api_token');
       }
 
-      return new Version3Client({
+      // Auto-detect API version based on host
+      // Cloud (*.atlassian.net) uses v3, self-hosted uses v2
+      let useVersion3 = true;
+      if (apiVersion === 'auto') {
+        useVersion3 = host.includes('.atlassian.net');
+      } else {
+        useVersion3 = apiVersion === '3' || apiVersion === 'v3';
+      }
+
+      const authConfig = {
         host,
         authentication: {
           basic: { email, apiToken },
         },
-      });
+      };
+
+      return useVersion3 ? new Version3Client(authConfig) : new Version2Client(authConfig);
     },
   },
 };
@@ -345,10 +361,12 @@ export function createSDKStepExecutor() {
 
     // Navigate to method
     let current: unknown = sdk;
+    let parent: unknown = sdk;
     for (const part of methodPath) {
       if (current === null || current === undefined) {
         throw new Error(`Cannot find ${part} in ${step.action}`);
       }
+      parent = current;
       current = (current as Record<string, unknown>)[part];
     }
 
@@ -356,8 +374,8 @@ export function createSDKStepExecutor() {
       throw new Error(`${step.action} is not a function`);
     }
 
-    // Call the method
+    // Call the method with correct 'this' context (parent object, not root SDK)
     const method = current as (params: unknown) => Promise<unknown>;
-    return method.call(sdk, step.inputs);
+    return method.call(parent, step.inputs);
   };
 }
