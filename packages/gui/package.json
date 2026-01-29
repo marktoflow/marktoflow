@@ -20,7 +20,7 @@
   "scripts": {
     "dev": "concurrently \"pnpm:dev:*\"",
     "dev:client": "vite",
-    "dev:server": "tsx watch src/server/index.ts",
+    "dev:server": "WORKFLOW_DIR=../.. tsx watch src/server/index.ts",
     "build": "pnpm build:client && pnpm build:server && pnpm build:flatten",
     "build:client": "vite build",
     "build:server": "tsc -p tsconfig.server.json",

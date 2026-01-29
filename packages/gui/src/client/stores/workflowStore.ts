@@ -99,10 +99,22 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       const data = await response.json();
       console.log('Loaded workflows:', data.workflows.length);
       set({ workflows: data.workflows, isLoading: false });
+
+      // Auto-select first workflow if none is selected
+      const currentState = get();
+      if (!currentState.selectedWorkflow && data.workflows.length > 0) {
+        get().selectWorkflow(data.workflows[0].path);
+      }
     } catch (error) {
       console.error('Failed to load workflows, using demo data:', error);
       // Use demo data if API fails
       set({ workflows: demoWorkflows, isLoading: false });
+
+      // Auto-select first demo workflow if none is selected
+      const currentState = get();
+      if (!currentState.selectedWorkflow && demoWorkflows.length > 0) {
+        get().selectWorkflow(demoWorkflows[0].path);
+      }
     }
   },
 

@@ -80,10 +80,57 @@ export class AIService {
    * Get the current provider status
    */
   getStatus(): {
-    activeProvider: string;
-    providers: Array<{ id: string; name: string; ready: boolean; model?: string; error?: string }>;
+    activeProvider: string | null;
+    providers: Array<{
+      id: string;
+      name: string;
+      status: 'ready' | 'needs_config' | 'unavailable';
+      isActive: boolean;
+      description?: string;
+      configOptions?: {
+        apiKey?: boolean;
+        baseUrl?: boolean;
+        model?: boolean;
+      };
+    }>;
   } {
-    return this.registry.getStatus();
+    const registryStatus = this.registry.getStatus();
+
+    return {
+      activeProvider: registryStatus.activeProvider,
+      providers: registryStatus.providers.map(p => {
+        // Determine status based on ready flag and error
+        let status: 'ready' | 'needs_config' | 'unavailable';
+        if (p.ready) {
+          status = 'ready';
+        } else if (p.error) {
+          status = 'unavailable';
+        } else {
+          status = 'needs_config';
+        }
+
+        // Determine config options based on provider ID
+        const configOptions: any = {};
+        if (p.id === 'claude' || p.id === 'codex') {
+          configOptions.apiKey = true;
+        }
+        if (p.id === 'ollama' || p.id === 'copilot') {
+          configOptions.baseUrl = true;
+        }
+        if (p.id === 'ollama' || p.id === 'claude') {
+          configOptions.model = true;
+        }
+
+        return {
+          id: p.id,
+          name: p.name,
+          status,
+          isActive: p.id === registryStatus.activeProvider,
+          description: p.error || (p.ready ? `Model: ${p.model || 'default'}` : 'Configuration required'),
+          configOptions: Object.keys(configOptions).length > 0 ? configOptions : undefined,
+        };
+      }),
+    };
   }
 
   /**

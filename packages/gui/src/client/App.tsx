@@ -156,6 +156,8 @@ export default function App() {
 
   // Handle workflow execution
   const handleExecute = useCallback(() => {
+    console.log('Execute clicked', { isExecuting, currentWorkflow, selectedWorkflow });
+
     if (isExecuting) {
       // Stop execution
       if (runIdRef.current) {
@@ -166,7 +168,11 @@ export default function App() {
       return;
     }
 
-    if (!currentWorkflow) return;
+    if (!currentWorkflow) {
+      console.warn('No workflow loaded');
+      alert('Please load or create a workflow first');
+      return;
+    }
 
     // Start execution - store in history
     const workflowName = currentWorkflow.metadata?.name || 'Untitled Workflow';
@@ -401,34 +407,14 @@ export default function App() {
             </div>
           )}
 
-          {/* Desktop: Connection status, theme toggle & shortcuts */}
-          {breakpoint !== 'mobile' && (
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              <ThemeToggle showLabel />
-              <KeyboardShortcutsButton onClick={openShortcuts} />
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
-                  connected
-                    ? 'bg-success/10 text-success'
-                    : 'bg-error/10 text-error'
-                }`}
-              >
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    connected ? 'bg-success' : 'bg-error'
-                  }`}
-                />
-                {connected ? 'Connected' : 'Disconnected'}
-              </div>
-            </div>
-          )}
-
           {/* Toolbar */}
           <Toolbar
             onAddStep={handleAddStep}
             onExecute={handleExecute}
             onSave={handleSave}
             isExecuting={isExecuting}
+            connected={connected}
+            onOpenShortcuts={openShortcuts}
           />
 
           {/* Breadcrumb for sub-workflow navigation */}

@@ -25,7 +25,6 @@ import { ParallelNode } from './ParallelNode';
 import { TryCatchNode } from './TryCatchNode';
 import { TransformNode } from './TransformNode';
 import { GroupContainerNode } from './GroupContainerNode';
-import { CanvasToolbar } from './CanvasToolbar';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
@@ -362,8 +361,6 @@ export function Canvas() {
               size={1}
               color="#3d3d5c"
             />
-            <Controls />
-            <CanvasToolbar />
             <MiniMap
               nodeColor={(node) => {
                 // Control flow node colors

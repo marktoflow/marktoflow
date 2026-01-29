@@ -38,7 +38,7 @@ function CanvasToolbarComponent() {
   };
 
   return (
-    <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-node-bg/90 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg">
+    <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-node-bg/90 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg">
       {/* Zoom controls */}
       <div className="flex items-center gap-1 border-r border-border pr-2">
         <button

@@ -21,12 +21,16 @@ import { useReactFlow } from '@xyflow/react';
 import { getModKey } from '../../utils/platform';
 import { useAgentStore } from '../../stores/agentStore';
 import { ProviderSwitcher } from '../Settings/ProviderSwitcher';
+import { ThemeToggle } from '../common/ThemeToggle';
+import { KeyboardShortcutsButton } from '../common/KeyboardShortcuts';
 
 interface ToolbarProps {
   onAddStep: () => void;
   onExecute?: () => void;
   onSave?: () => void;
   isExecuting?: boolean;
+  connected?: boolean;
+  onOpenShortcuts?: () => void;
 }
 
 export function Toolbar({
@@ -34,6 +38,8 @@ export function Toolbar({
   onExecute,
   onSave,
   isExecuting = false,
+  connected = false,
+  onOpenShortcuts,
 }: ToolbarProps) {
   const { autoLayout, fitView, selectedNodes, deleteSelected, duplicateSelected } =
     useCanvas();
@@ -55,7 +61,7 @@ export function Toolbar({
   const activeProvider = providers.find((p) => p.id === activeProviderId);
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-1.5 bg-panel-bg/95 backdrop-blur border border-node-border rounded-lg shadow-lg">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 px-2 py-1.5 bg-panel-bg/95 backdrop-blur border border-node-border rounded-lg shadow-lg">
       {/* Add Step */}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
@@ -172,6 +178,32 @@ export function Toolbar({
           shortcut={`${modKey}S`}
         />
       )}
+
+      <ToolbarDivider />
+
+      {/* Theme & Settings */}
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        {onOpenShortcuts && <KeyboardShortcutsButton onClick={onOpenShortcuts} />}
+
+        {/* Connection Status */}
+        <div
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
+            connected
+              ? 'bg-success/10 text-success'
+              : 'bg-error/10 text-error'
+          }`}
+        >
+          <div
+            className={`w-2 h-2 rounded-full ${
+              connected ? 'bg-success' : 'bg-error'
+            }`}
+          />
+          <span className="hidden sm:inline">
+            {connected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
+      </div>
 
       {/* Provider Switcher Modal */}
       <ProviderSwitcher
