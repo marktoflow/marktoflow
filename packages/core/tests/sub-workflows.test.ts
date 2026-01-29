@@ -387,7 +387,10 @@ steps:
 
       expect(result.status).toBe(WorkflowStatus.FAILED);
       expect(result.stepResults[0].status).toBe(StepStatus.FAILED);
-      expect(result.stepResults[0].error).toContain('Sub-workflow failed');
+      // Error is now stored as an Error object, check the message property
+      const error = result.stepResults[0].error;
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toContain('Sub-workflow failed');
     });
   });
 

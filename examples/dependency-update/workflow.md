@@ -21,10 +21,8 @@ tools:
     auth:
       token: '${SLACK_BOT_TOKEN}'
 
-  claude:
-    sdk: 'claude-code'
-    auth:
-      api_key: '${ANTHROPIC_API_KEY}'
+  # Agent is selected via --agent flag or GUI
+  # Supported: claude-code, copilot, opencode, ollama
 
 triggers:
   - type: schedule
@@ -89,7 +87,7 @@ output_variable: package_json_content
 Use Claude to analyze which packages should be updated.
 
 ````yaml
-action: claude.chat.completions
+action: agent.chat.completions
 inputs:
   model: 'claude-3-5-sonnet-20241022'
   messages:
@@ -183,7 +181,7 @@ output_variable: commit_result
 Create a comprehensive changelog using Claude.
 
 ```yaml
-action: claude.chat.completions
+action: agent.chat.completions
 inputs:
   model: 'claude-3-5-sonnet-20241022'
   messages:

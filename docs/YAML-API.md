@@ -10,13 +10,15 @@ Complete API reference for marktoflow v2.0 workflow YAML syntax.
 2. [Workflow Metadata](#workflow-metadata)
 3. [Tool Configuration](#tool-configuration)
 4. [Inputs](#inputs)
-5. [Triggers](#triggers)
-6. [Steps](#steps)
-7. [Control Flow](#control-flow)
-8. [Variable Resolution](#variable-resolution)
-9. [Error Handling](#error-handling)
-10. [Service Integrations](./yaml-api/services.md)
-11. [AI Agent Integrations](./yaml-api/ai-agents.md)
+5. [Outputs](#outputs)
+6. [Triggers](#triggers)
+7. [Steps](#steps)
+8. [Built-in Actions](#built-in-actions)
+9. [Control Flow](#control-flow)
+10. [Variable Resolution](#variable-resolution)
+11. [Error Handling](#error-handling)
+12. [Service Integrations](./yaml-api/services.md)
+13. [AI Agent Integrations](./yaml-api/ai-agents.md)
 
 ---
 
@@ -314,6 +316,62 @@ inputs:
 
 ---
 
+## Outputs
+
+### `outputs` (optional)
+
+Defines workflow output values that are returned when the workflow completes.
+
+#### Structure
+
+```yaml
+outputs:
+  <output_name>:
+    type: string | number | boolean | array | object
+    description: string
+```
+
+#### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `type` | `string` | Yes | Data type: `string`, `number`, `boolean`, `array`, `object` |
+| `description` | `string` | No | Human-readable description of the output |
+
+#### Example
+
+```yaml
+outputs:
+  summary:
+    type: string
+    description: 'Generated summary of the workflow results'
+  processed_count:
+    type: number
+    description: 'Number of items processed'
+  results:
+    type: array
+    description: 'Array of processed results'
+  metadata:
+    type: object
+    description: 'Additional metadata about the execution'
+```
+
+#### Setting Outputs
+
+Use the `workflow.set_outputs` action to set output values during workflow execution:
+
+```yaml
+action: workflow.set_outputs
+inputs:
+  summary: '{{ generated_summary }}'
+  processed_count: '{{ items.length }}'
+  results: '{{ processed_items }}'
+```
+
+See [Built-in Actions](#built-in-actions) for more details on `workflow.set_outputs`.
+
+---
+
 ## Triggers
 
 ### `triggers` (optional)
@@ -490,6 +548,142 @@ output_variable: notification_result
 
 ---
 
+## Built-in Actions
+
+marktoflow provides several built-in actions that don't require external tool configuration.
+
+### `workflow.set_outputs`
+
+Sets workflow output values. Use this to define the final outputs of your workflow.
+
+```yaml
+action: workflow.set_outputs
+inputs:
+  output_name: '{{ value }}'
+  another_output: '{{ other_value }}'
+```
+
+#### Example
+
+```yaml
+action: workflow.set_outputs
+inputs:
+  summary: '{{ summary_content }}'
+  total_processed: '{{ results.length }}'
+  success: true
+```
+
+### `console.log`
+
+Logs a message to the console output. Useful for debugging and progress reporting.
+
+```yaml
+action: console.log
+inputs:
+  message: string    # Message to log (supports templates)
+  level: string      # Optional: 'info' | 'warn' | 'error' | 'debug' (default: 'info')
+```
+
+#### Example
+
+```yaml
+action: console.log
+inputs:
+  message: 'Processing item {{ index + 1 }} of {{ total }}: {{ item.name }}'
+  level: info
+```
+
+### `script` / `script.execute`
+
+Executes inline code or an external script file. Useful for data transformations and custom logic.
+
+```yaml
+action: script
+inputs:
+  code: string       # Inline JavaScript/Python code
+  # OR
+  script: string     # Path to script file
+  args: object       # Optional: Arguments to pass to the script
+output_variable: script_result
+```
+
+#### Inline Code Example
+
+```yaml
+action: script
+inputs:
+  code: |
+    const items = inputs.items;
+    const filtered = items.filter(i => i.status === 'active');
+    return { count: filtered.length, items: filtered };
+output_variable: filtered_data
+```
+
+#### External Script Example
+
+```yaml
+action: script.execute
+inputs:
+  script: ./scripts/process_data.py
+  args:
+    input_file: '{{ inputs.file_path }}'
+    output_format: json
+output_variable: processed_data
+```
+
+### `sleep`
+
+Pauses workflow execution for a specified duration. Useful for rate limiting or waiting for external processes.
+
+```yaml
+action: sleep
+inputs:
+  duration: number   # Duration in milliseconds
+  # OR
+  seconds: number    # Duration in seconds
+```
+
+#### Example
+
+```yaml
+action: sleep
+inputs:
+  seconds: 5
+```
+
+### `http.request`
+
+Makes HTTP requests to external APIs. Part of the HTTP tool but commonly used standalone.
+
+```yaml
+action: http.request
+inputs:
+  url: string        # Request URL
+  method: string     # HTTP method: GET, POST, PUT, DELETE, PATCH
+  headers: object    # Optional: Request headers
+  body: any          # Optional: Request body (for POST, PUT, PATCH)
+  timeout: number    # Optional: Timeout in milliseconds
+output_variable: response
+```
+
+#### Example
+
+```yaml
+action: http.request
+inputs:
+  url: 'https://api.example.com/data'
+  method: POST
+  headers:
+    Content-Type: application/json
+    Authorization: 'Bearer {{ api_token }}'
+  body:
+    name: '{{ inputs.name }}'
+    value: '{{ calculated_value }}'
+output_variable: api_response
+```
+
+---
+
 ## Control Flow
 
 See the [Control Flow Guide](./yaml-api/control-flow.md) for detailed documentation on:
@@ -510,7 +704,71 @@ See the [Control Flow Guide](./yaml-api/control-flow.md) for detailed documentat
 
 ### Template Syntax
 
-Use `{{variable}}` to reference variables in YAML values.
+marktoflow uses a Jinja2-inspired template syntax for variable interpolation.
+
+#### Simple Interpolation
+
+Use `{{ variable }}` for simple variable references:
+
+```yaml
+text: '{{ inputs.message }}'
+channel: '{{ slack_response.channel }}'
+count: '{{ results.length }}'
+```
+
+#### Expressions
+
+Template expressions support basic operations:
+
+```yaml
+# Arithmetic
+total: '{{ count + 1 }}'
+average: '{{ sum / count }}'
+
+# String concatenation
+full_name: '{{ first_name }} {{ last_name }}'
+
+# Ternary/conditional
+status: '{{ success ? "completed" : "failed" }}'
+
+# Array access
+first: '{{ items[0] }}'
+last: '{{ items[items.length - 1] }}'
+```
+
+#### Jinja2 Filters and Control Structures
+
+In multi-line strings (using `|`), you can use Jinja2-style filters and control structures:
+
+```yaml
+action: slack.chat.postMessage
+inputs:
+  text: |
+    **Daily Report**
+
+    {% for item in items %}
+    - {{ item.name }}: {{ item.status }}
+    {% endfor %}
+
+    {% if errors.length > 0 %}
+    **Errors:** {{ errors | length }}
+    {% endif %}
+
+    Total: {{ items | length }} items
+```
+
+**Available Filters:**
+- `length` - Get array/string length
+- `join(separator)` - Join array elements
+- `upper` / `lower` - Case conversion
+- `default(value)` - Default value if undefined
+- `first` / `last` - First/last array element
+- `sort` / `reverse` - Array ordering
+
+**Control Structures:**
+- `{% for item in array %}...{% endfor %}` - Iteration
+- `{% if condition %}...{% elif %}...{% else %}...{% endif %}` - Conditionals
+- `{% set var = value %}` - Variable assignment
 
 #### Input Variables
 

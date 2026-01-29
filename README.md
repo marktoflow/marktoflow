@@ -109,6 +109,21 @@ marktoflow run hello-world.md
 # Or with custom inputs
 marktoflow run hello-world.md --input message="Custom message"
 
+# Override AI agent provider at runtime
+marktoflow run hello-world.md --agent copilot
+
+# Override model name at runtime
+marktoflow run hello-world.md --model claude-sonnet-4
+
+# Combine agent and model overrides
+marktoflow run hello-world.md --agent claude --model claude-opus-4
+
+# Verbose output (show step execution)
+marktoflow run hello-world.md --verbose
+
+# Debug mode (detailed output with stack traces)
+marktoflow run hello-world.md --debug
+
 # Dry run (simulate without executing)
 marktoflow run hello-world.md --dry-run
 ```
@@ -201,6 +216,28 @@ Use your **existing AI coding agents without extra API keys** - authenticate onc
 - **Ollama (beta)** - Run local LLMs without any API keys or subscriptions
 
 **No extra costs**: If you already use these AI coding assistants in your IDE, you can use them in marktoflow workflows without paying for separate API access.
+
+**Runtime Agent Override**: Switch AI providers on the fly using the `--agent` flag:
+
+```bash
+# Test with different AI providers without editing workflow files
+marktoflow run workflow.md --agent claude        # Use Claude Code
+marktoflow run workflow.md --agent copilot       # Use GitHub Copilot
+marktoflow run workflow.md --agent ollama        # Use local Ollama
+```
+
+**Model Override**: Change the model at runtime using the `--model` flag:
+
+```bash
+# Override model for any AI agent
+marktoflow run workflow.md --model claude-sonnet-4
+marktoflow run workflow.md --model gpt-4o
+marktoflow run workflow.md --model claude-opus-4
+
+# Combine with agent override
+marktoflow run workflow.md --agent copilot --model gpt-4o
+marktoflow run workflow.md --agent claude --model claude-opus-4
+```
 
 ### MCP Protocol
 
