@@ -1,8 +1,10 @@
-# Example Workflows
+# Production Workflow Examples
 
 > **Author:** Scott Glover <scottgl@gmail.com>
 
-This directory contains example workflows demonstrating the marktoflow v2.0 TypeScript framework with native SDK integrations.
+This directory contains production-ready workflow examples demonstrating the marktoflow v2.0 TypeScript framework with native SDK integrations.
+
+**For test/demo workflows and feature examples**, see the [`/examples/tests`](./tests/) directory.
 
 ## What's New in v2.0
 
@@ -28,7 +30,11 @@ workflow-name/
 └── config.yaml      # Optional: Bundle configuration
 ```
 
-## Available Examples
+## Production Workflows
+
+These examples are designed to be used in real-world scenarios and can be deployed as-is or customized for your needs.
+
+### Available Examples
 
 ### 1. Code Review (`code-review/`)
 
@@ -162,7 +168,27 @@ marktoflow run examples/sprint-planning \
 
 **Scheduled:** Runs automatically every Friday at 2 PM
 
-### 7. Web Automation (`web-automation/`)
+### 7. Documentation Maintenance (`doc-maintenance/`)
+
+Intelligently updates component documentation across a codebase, only when documentation is outdated.
+
+**Integrations:** Ollama (local AI), Script execution
+
+**Features:**
+
+- Discovers all components in codebase
+- Analyzes code and existing documentation
+- Determines if documentation is outdated or inaccurate
+- Updates only documentation that needs updates
+- Preserves documentation that is still valid
+
+```bash
+marktoflow run examples/doc-maintenance \
+  --input codebase_path=/path/to/project \
+  --input component_pattern="packages/*/"
+```
+
+### 8. Web Automation (`web-automation/`)
 
 **NEW!** Browser automation using Playwright for web scraping, testing, and automation.
 
@@ -190,6 +216,16 @@ marktoflow run examples/web-automation/form-automation.md
 ```
 
 **Requirements:** Playwright browsers (`npx playwright install`)
+
+## Test & Demo Workflows
+
+For examples that demonstrate specific features or test functionality, see:
+
+- **[`/examples/tests`](./tests/)** - Control flow demos, SDK showcases, simple tests
+  - Claude Agent SDK demo
+  - Codex integration demo
+  - Control flow patterns (loops, conditionals, parallel, try/catch)
+  - Sub-workflow examples
 
 ## Running Workflows
 

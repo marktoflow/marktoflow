@@ -49,6 +49,24 @@ import { parseFile } from './parser.js';
 import { resolve, dirname } from 'node:path';
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Convert error to string for display/logging
+ */
+function errorToString(error: unknown): string {
+  if (!error) return 'Unknown error';
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -423,7 +441,7 @@ export class WorkflowEngine {
         context.stepMetadata[step.id] = {
           status: result.status.toLowerCase(),
           retryCount: result.retryCount,
-          ...(result.error ? { error: result.error } : {}),
+          ...(result.error ? { error: errorToString(result.error) } : {}),
         };
 
         // Store output variable
@@ -441,7 +459,7 @@ export class WorkflowEngine {
 
           if (errorAction === 'stop') {
             context.status = WorkflowStatus.FAILED;
-            const workflowError = result.error || `Step ${step.id} failed`;
+            const workflowError = result.error ? errorToString(result.error) : `Step ${step.id} failed`;
             const workflowResult = this.buildWorkflowResult(
               workflow,
               context,
@@ -462,7 +480,7 @@ export class WorkflowEngine {
               });
             }
             context.status = WorkflowStatus.FAILED;
-            const workflowError = result.error || `Step ${step.id} failed`;
+            const workflowError = result.error ? errorToString(result.error) : `Step ${step.id} failed`;
             const workflowResult = this.buildWorkflowResult(
               workflow,
               context,
@@ -625,7 +643,7 @@ export class WorkflowEngine {
           null,
           startedAt,
           0,
-          lastError.message
+          lastError // Pass full error object
         );
         this.events.onStepComplete?.(step, result);
         return result;
@@ -705,7 +723,7 @@ export class WorkflowEngine {
       null,
       startedAt,
       maxRetries,
-      lastError?.message
+      lastError // Pass full error object to preserve HTTP details, stack traces, etc.
     );
     this.events.onStepComplete?.(step, result);
     return result;
@@ -735,7 +753,7 @@ export class WorkflowEngine {
       return primaryResult;
     }
 
-    const errorMessage = primaryResult.error ?? '';
+    const errorMessage = primaryResult.error ? errorToString(primaryResult.error) : '';
     const isTimeout = errorMessage.includes('timed out');
     if (isTimeout && !this.failoverConfig.failoverOnTimeout) {
       this.healthTracker.markUnhealthy(primaryTool, errorMessage);
@@ -1368,7 +1386,7 @@ export class WorkflowEngine {
           }
 
           if (result.status === StepStatus.FAILED) {
-            throw new Error(`Branch ${branch.id} failed: ${result.error}`);
+            throw new Error(`Branch ${branch.id} failed: ${errorToString(result.error)}`);
           }
         }
 
@@ -1424,7 +1442,7 @@ export class WorkflowEngine {
         }
 
         if (result.status === StepStatus.FAILED) {
-          tryError = new Error(result.error || 'Step failed');
+          tryError = new Error(result.error ? errorToString(result.error) : 'Step failed');
           break;
         }
       }
@@ -1446,7 +1464,7 @@ export class WorkflowEngine {
           }
 
           if (result.status === StepStatus.FAILED) {
-            catchError = new Error(result.error || 'Catch block failed');
+            catchError = new Error(result.error ? errorToString(result.error) : 'Catch block failed');
             break;
           }
         }

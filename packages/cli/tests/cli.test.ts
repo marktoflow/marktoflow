@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
-import { mkdirSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const CLI_PATH = join(__dirname, '../dist/index.js');
@@ -75,6 +75,98 @@ describe('CLI', () => {
     it('should list bundles in empty dir', () => {
       const output = runCLI('bundle list', tempDir);
       expect(output).toContain('No bundles found');
+    });
+  });
+
+  describe('input validation', () => {
+    let tempDir: string;
+    let workflowPath: string;
+
+    beforeAll(() => {
+      tempDir = join(tmpdir(), `marktoflow-input-test-${Date.now()}`);
+      mkdirSync(tempDir, { recursive: true });
+
+      // Create a test workflow with required inputs
+      const workflow = `---
+workflow:
+  id: test-inputs
+  name: "Test Input Validation"
+  version: "1.0.0"
+
+inputs:
+  required_string:
+    type: string
+    required: true
+    description: "A required string input"
+  required_number:
+    type: number
+    required: true
+    description: "A required number input"
+  optional_with_default:
+    type: string
+    default: "default_value"
+    description: "An optional input with default"
+  optional_no_default:
+    type: string
+    required: false
+    description: "An optional input without default"
+
+steps:
+  - id: step1
+    action: console.log
+    inputs:
+      message: "Test"
+---
+
+# Test Workflow
+
+Just a test workflow.
+`;
+
+      workflowPath = join(tempDir, 'test-workflow.md');
+      writeFileSync(workflowPath, workflow);
+    });
+
+    afterAll(() => {
+      try {
+        rmSync(tempDir, { recursive: true, force: true });
+      } catch (e) {
+        console.error('Failed to cleanup temp dir:', e);
+      }
+    });
+
+    it('should show error when required inputs are missing', () => {
+      const output = runCLI(`run ${workflowPath}`);
+
+      expect(output).toContain('Missing required input(s)');
+      expect(output).toContain('required_string');
+      expect(output).toContain('required_number');
+      expect(output).toContain('A required string input');
+      expect(output).toContain('A required number input');
+      expect(output).toContain('Usage:');
+      expect(output).toContain('Example:');
+    });
+
+    it('should show error when only some required inputs are provided', () => {
+      const output = runCLI(`run ${workflowPath} --input required_string=test`);
+
+      expect(output).toContain('Missing required input(s)');
+      expect(output).toContain('required_number');
+      expect(output).not.toContain('required_string'); // Should not list this since it was provided
+    });
+
+    it('should succeed with required inputs provided in dry-run mode', () => {
+      const output = runCLI(`run ${workflowPath} --input required_string=test --input required_number=42 --dry-run`);
+
+      expect(output).not.toContain('Missing required input(s)');
+      expect(output).toContain('Dry Run Mode');
+      expect(output).toContain('Dry run completed successfully');
+    });
+
+    it('should apply default values for optional inputs', () => {
+      const output = runCLI(`run ${workflowPath} --input required_string=test --input required_number=42 --debug --dry-run`);
+
+      expect(output).toContain('Using default for optional_with_default: "default_value"');
     });
   });
 });

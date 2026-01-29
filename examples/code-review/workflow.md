@@ -16,10 +16,8 @@ tools:
     auth:
       token: '${GITHUB_TOKEN}'
 
-  claude:
-    sdk: 'claude-code'
-    auth:
-      api_key: '${ANTHROPIC_API_KEY}'
+  # Agent is selected via --agent flag or GUI
+  # Supported: claude-code, copilot, opencode, ollama
 
 triggers:
   - type: webhook
@@ -100,12 +98,11 @@ output_variable: file_content
 
 ## Step 4: Analyze Code Changes
 
-Review the code changes using Claude Code.
+Review the code changes using the selected AI agent.
 
 ```yaml
-action: claude.chat.completions
+action: agent.chat.completions
 inputs:
-  model: 'claude-3-5-sonnet-20241022'
   messages:
     - role: 'user'
       content: |

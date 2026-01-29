@@ -30,3 +30,7 @@ jobs:
         run: pnpm -C packages/cli build
       - name: Test CLI
         run: pnpm -C packages/cli test
+      - name: Build GUI
+        run: pnpm -C packages/gui build
+      - name: Test GUI
+        run: pnpm -C packages/gui test
