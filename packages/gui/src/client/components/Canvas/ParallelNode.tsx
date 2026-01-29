@@ -5,7 +5,7 @@ import { Layers, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react
 export interface ParallelNodeData extends Record<string, unknown> {
   id: string;
   name?: string;
-  branches: Array<{ id: string; name?: string }>;
+  branches: Array<{ id: string; name?: string; steps?: unknown[] }>;
   maxConcurrent?: number;
   onError?: 'stop' | 'continue';
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';

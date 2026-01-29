@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useReactFlow, type Node, type Edge } from '@xyflow/react';
 import { useCanvasStore } from '../stores/canvasStore';
 import dagre from 'dagre';
+import { hierarchicalLayout } from '../utils/hierarchicalLayout';
 
 export function useCanvas() {
   const {
@@ -121,36 +122,51 @@ export function useCanvas() {
     );
   }, [selectedNodes, selectedEdges, nodes, edges, setNodes, setEdges]);
 
-  // Auto-layout using dagre
+  // Auto-layout using dagre with hierarchical support
   const autoLayout = useCallback(() => {
-    const dagreGraph = new dagre.graphlib.Graph();
-    dagreGraph.setDefaultEdgeLabel(() => ({}));
-    dagreGraph.setGraph({ rankdir: 'TB', nodesep: 50, ranksep: 80 });
+    // Check if there are any parent-child relationships (hierarchical structure)
+    const hasHierarchy = nodes.some(node => node.parentNode || node.type === 'group');
 
-    // Add nodes
-    for (const node of nodes) {
-      dagreGraph.setNode(node.id, { width: 200, height: 100 });
+    let layoutedNodes: Node[];
+
+    if (hasHierarchy) {
+      // Use hierarchical layout for nested structures
+      layoutedNodes = hierarchicalLayout(nodes, edges, {
+        rankdir: 'TB',
+        nodesep: 80,
+        ranksep: 120,
+      });
+    } else {
+      // Use simple dagre layout for flat structures
+      const dagreGraph = new dagre.graphlib.Graph();
+      dagreGraph.setDefaultEdgeLabel(() => ({}));
+      dagreGraph.setGraph({ rankdir: 'TB', nodesep: 50, ranksep: 80 });
+
+      // Add nodes
+      for (const node of nodes) {
+        dagreGraph.setNode(node.id, { width: 200, height: 100 });
+      }
+
+      // Add edges
+      for (const edge of edges) {
+        dagreGraph.setEdge(edge.source, edge.target);
+      }
+
+      // Run layout
+      dagre.layout(dagreGraph);
+
+      // Update node positions
+      layoutedNodes = nodes.map((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        return {
+          ...node,
+          position: {
+            x: nodeWithPosition.x - 100,
+            y: nodeWithPosition.y - 50,
+          },
+        };
+      });
     }
-
-    // Add edges
-    for (const edge of edges) {
-      dagreGraph.setEdge(edge.source, edge.target);
-    }
-
-    // Run layout
-    dagre.layout(dagreGraph);
-
-    // Update node positions
-    const layoutedNodes = nodes.map((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id);
-      return {
-        ...node,
-        position: {
-          x: nodeWithPosition.x - 100,
-          y: nodeWithPosition.y - 50,
-        },
-      };
-    });
 
     setNodes(layoutedNodes);
 

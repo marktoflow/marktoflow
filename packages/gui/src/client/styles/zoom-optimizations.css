@@ -1,0 +1,176 @@
+/* Zoom-based visibility optimizations */
+
+/* Minimal zoom (< 50%) - Show only basic shapes */
+.zoom-minimal .step-node .node-details,
+.zoom-minimal .control-flow-node .node-body,
+.zoom-minimal .group-container .group-body {
+  display: none;
+}
+
+.zoom-minimal .step-node,
+.zoom-minimal .control-flow-node {
+  min-height: 40px;
+  padding: 4px !important;
+}
+
+.zoom-minimal .node-header {
+  padding: 2px 4px !important;
+  font-size: 10px !important;
+}
+
+/* Icons only zoom (50-75%) - Show icons and minimal text */
+.zoom-icons-only .node-body .text-xs,
+.zoom-icons-only .node-body .text-sm {
+  font-size: 10px !important;
+}
+
+.zoom-icons-only .step-count-badge {
+  display: none;
+}
+
+.zoom-icons-only .nested-steps-indicator {
+  font-size: 9px;
+  padding: 1px 3px;
+}
+
+/* Labels zoom (75-100%) - Show icons and labels */
+.zoom-labels .node-body {
+  padding: 8px !important;
+}
+
+.zoom-labels .iteration-progress .progress-label {
+  display: none;
+}
+
+/* Full zoom (>= 100%) - Show all details */
+.zoom-full .node-body {
+  /* All details visible by default */
+}
+
+/* Hide nested steps when zoomed out */
+.hide-nested-steps .group-container {
+  opacity: 0.5;
+}
+
+.hide-nested-steps .group-container.collapsed {
+  opacity: 1;
+}
+
+.hide-nested-steps [data-parent-node] {
+  display: none;
+}
+
+/* Smooth transitions for zoom changes */
+.step-node,
+.control-flow-node,
+.group-container {
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+/* Minimap enhancements */
+.react-flow__minimap {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(26, 26, 46, 0.8);
+}
+
+.react-flow__minimap-node {
+  transition: fill 0.2s ease-out;
+}
+
+/* Enhanced visibility for active execution in minimap */
+.react-flow__minimap-node[data-status="running"] {
+  stroke: #f0ad4e;
+  stroke-width: 3;
+  animation: minimap-pulse 2s ease-in-out infinite;
+}
+
+@keyframes minimap-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Control flow nodes in minimap get distinctive borders */
+.react-flow__minimap-node[data-type="if"],
+.react-flow__minimap-node[data-type="for_each"],
+.react-flow__minimap-node[data-type="while"],
+.react-flow__minimap-node[data-type="switch"],
+.react-flow__minimap-node[data-type="parallel"],
+.react-flow__minimap-node[data-type="try"] {
+  stroke-width: 2;
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+/* Group containers are semi-transparent in minimap */
+.react-flow__minimap-node[data-type="group"] {
+  opacity: 0.5;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-dasharray: 2, 2;
+}
+
+/* Performance optimization: disable animations at very low zoom */
+.zoom-minimal * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Node count badges at low zoom */
+.zoom-minimal .step-count-summary {
+  display: block;
+  font-size: 8px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.zoom-full .step-count-summary {
+  display: none;
+}
+
+/* Simplified edges at low zoom */
+.zoom-minimal .react-flow__edge-path {
+  stroke-width: 1 !important;
+}
+
+.zoom-minimal .react-flow__edge-text {
+  display: none;
+}
+
+/* Focus mode - highlight active area */
+.canvas-focused .react-flow__node:not(.selected):not([data-status="running"]) {
+  opacity: 0.4;
+}
+
+.canvas-focused .react-flow__edge:not(.selected) {
+  opacity: 0.3;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .react-flow__minimap {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .react-flow__minimap-node {
+    stroke-width: 2;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .step-node,
+  .control-flow-node,
+  .group-container,
+  .react-flow__minimap-node {
+    transition: none !important;
+    animation: none !important;
+  }
+}

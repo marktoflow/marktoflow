@@ -10,6 +10,9 @@ export interface TryCatchNodeData extends Record<string, unknown> {
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   activeBranch?: 'try' | 'catch' | 'finally' | null;
   errorOccurred?: boolean;
+  trySteps?: unknown[];
+  catchSteps?: unknown[];
+  finallySteps?: unknown[];
 }
 
 export type TryCatchNodeType = Node<TryCatchNodeData, 'try'>;

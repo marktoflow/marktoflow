@@ -1,0 +1,182 @@
+/* Execution flow animations */
+
+/* Pulse effect for actively executing steps */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.executing-step {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Highlight for active branches */
+@keyframes branch-highlight {
+  0%, 100% {
+    border-color: currentColor;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.active-branch {
+  animation: branch-highlight 1.5s ease-in-out infinite;
+}
+
+/* Shimmer effect for running control flow */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.running-control-flow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Loop iteration counter pulse */
+@keyframes counter-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.loop-counter-active {
+  animation: counter-pulse 1s ease-in-out infinite;
+}
+
+/* Nested step activation slide-in */
+@keyframes slide-in-highlight {
+  0% {
+    transform: translateX(-4px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.nested-step-active {
+  animation: slide-in-highlight 0.3s ease-out;
+  border-left: 3px solid #3b82f6;
+}
+
+/* Completed step success fade */
+@keyframes success-fade {
+  0% {
+    background-color: rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.step-completed {
+  animation: success-fade 1s ease-out;
+}
+
+/* Failed step error shake */
+@keyframes error-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.step-failed {
+  animation: error-shake 0.5s ease-out;
+}
+
+/* Group expand/collapse smooth transition */
+.group-container {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group-container.collapsed {
+  min-height: 60px;
+}
+
+.group-container.expanded {
+  min-height: 100px;
+}
+
+/* Edge animation for active flow */
+@keyframes edge-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 24;
+  }
+}
+
+.edge-active {
+  stroke-dasharray: 8 4;
+  animation: edge-flow 1s linear infinite;
+}
+
+/* Skipped branch fade */
+.branch-skipped {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+/* Progress bar for loops */
+@keyframes progress-fill {
+  0% {
+    width: 0%;
+  }
+}
+
+.loop-progress {
+  animation: progress-fill 0.5s ease-out;
+}
+
+/* Execution complete celebration */
+@keyframes celebration-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+  }
+}
+
+.execution-complete {
+  animation: celebration-pulse 0.6s ease-out;
+}

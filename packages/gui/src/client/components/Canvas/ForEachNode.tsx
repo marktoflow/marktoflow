@@ -12,6 +12,8 @@ export interface ForEachNodeData extends Record<string, unknown> {
   totalIterations?: number;
   earlyExit?: boolean;
   exitReason?: 'break' | 'error';
+  nestedSteps?: unknown[];
+  stepsCollapsed?: boolean;
 }
 
 export type ForEachNodeType = Node<ForEachNodeData, 'for_each'>;
@@ -85,10 +87,17 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
           <span className="text-white/60">Items:</span>{' '}
           <span className="font-mono">{data.items || 'Not set'}</span>
         </div>
-        <div className="text-xs text-white/90 mb-3">
+        <div className="text-xs text-white/90 mb-2">
           <span className="text-white/60">Variable:</span>{' '}
           <span className="font-mono">{data.itemVariable || 'item'}</span>
         </div>
+        {data.nestedSteps && data.nestedSteps.length > 0 && (
+          <div className="text-xs text-white/70 mb-3 p-1.5 bg-purple-500/10 border border-purple-500/20 rounded">
+            <span className="text-purple-300 font-medium">
+              {data.nestedSteps.length} nested step{data.nestedSteps.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
 
         {/* Early exit indicator */}
         {data.earlyExit && (
@@ -105,7 +114,7 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
           <div className="mt-2 p-2 bg-white/5 rounded">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-white/70">Progress</span>
-              <span className="text-xs text-white font-medium">
+              <span className={`text-xs text-white font-medium ${status === 'running' ? 'loop-counter-active' : ''}`}>
                 {data.currentIteration || 0} / {data.totalIterations}
                 {data.earlyExit && (
                   <span className="ml-1 text-orange-300 text-[10px]">(stopped)</span>
@@ -114,7 +123,7 @@ function ForEachNodeComponent({ data, selected }: NodeProps<ForEachNodeType>) {
             </div>
             <div className="w-full bg-white/10 rounded-full h-1.5">
               <div
-                className={`h-1.5 rounded-full transition-all ${data.earlyExit ? 'bg-orange-400' : 'bg-pink-400'}`}
+                className={`h-1.5 rounded-full transition-all loop-progress ${data.earlyExit ? 'bg-orange-400' : 'bg-pink-400'}`}
                 style={{
                   width: `${((data.currentIteration || 0) / data.totalIterations) * 100}%`,
                 }}

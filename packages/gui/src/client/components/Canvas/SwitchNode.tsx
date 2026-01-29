@@ -6,11 +6,12 @@ export interface SwitchNodeData extends Record<string, unknown> {
   id: string;
   name?: string;
   expression: string;
-  cases: Record<string, unknown>;
+  cases: Record<string, unknown[]>;
   hasDefault?: boolean;
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   activeCase?: string | null;
   skippedBranches?: string[];
+  defaultSteps?: unknown[];
 }
 
 export type SwitchNodeType = Node<SwitchNodeData, 'switch'>;

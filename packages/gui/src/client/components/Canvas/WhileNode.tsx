@@ -11,6 +11,8 @@ export interface WhileNodeData extends Record<string, unknown> {
   currentIteration?: number;
   earlyExit?: boolean;
   exitReason?: 'break' | 'max_iterations' | 'error';
+  nestedSteps?: unknown[];
+  stepsCollapsed?: boolean;
 }
 
 export type WhileNodeType = Node<WhileNodeData, 'while'>;

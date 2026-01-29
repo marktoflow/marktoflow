@@ -49,7 +49,7 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
 
   return (
     <div
-      className={`step-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''} ${status === 'completed' ? 'completed' : ''} ${status === 'failed' ? 'failed' : ''}`}
+      className={`step-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running executing-step' : ''} ${status === 'completed' ? 'completed step-completed' : ''} ${status === 'failed' ? 'failed step-failed' : ''}`}
     >
       {/* Input handle */}
       <Handle

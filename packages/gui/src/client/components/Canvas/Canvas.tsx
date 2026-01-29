@@ -24,6 +24,8 @@ import { SwitchNode } from './SwitchNode';
 import { ParallelNode } from './ParallelNode';
 import { TryCatchNode } from './TryCatchNode';
 import { TransformNode } from './TransformNode';
+import { GroupContainerNode } from './GroupContainerNode';
+import { CanvasToolbar } from './CanvasToolbar';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
@@ -36,6 +38,8 @@ import {
   ContextMenuTrigger,
 } from '../common/ContextMenu';
 import { useCanvas } from '../../hooks/useCanvas';
+import { useExecutionSync } from '../../hooks/useExecutionSync';
+import { useZoomClasses } from '../../hooks/useZoomLevel';
 import { type ToolDefinition } from '../Sidebar/Sidebar';
 import type { WorkflowStep } from '@shared/types';
 
@@ -54,6 +58,7 @@ const nodeTypes = {
   map: TransformNode,
   filter: TransformNode,
   reduce: TransformNode,
+  group: GroupContainerNode,
 };
 
 export function Canvas() {
@@ -63,6 +68,12 @@ export function Canvas() {
   const currentWorkflow = useWorkflowStore((s) => s.currentWorkflow);
   const { screenToFlowPosition } = useReactFlow();
   const modKey = getModKey();
+
+  // Sync execution state with canvas visualization
+  useExecutionSync();
+
+  // Get zoom-based CSS classes
+  const zoomClasses = useZoomClasses();
 
   // Editor state
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
@@ -334,6 +345,7 @@ export function Canvas() {
             onNodeDoubleClick={onNodeDoubleClick}
             onNodeContextMenu={onNodeContextMenu}
             nodeTypes={nodeTypes}
+            className={zoomClasses}
             fitView
             snapToGrid
             snapGrid={[16, 16]}
@@ -351,8 +363,32 @@ export function Canvas() {
               color="#3d3d5c"
             />
             <Controls />
+            <CanvasToolbar />
             <MiniMap
               nodeColor={(node) => {
+                // Control flow node colors
+                if (node.type === 'if') return '#667eea';
+                if (node.type === 'for_each') return '#f093fb';
+                if (node.type === 'while') return '#fb923c';
+                if (node.type === 'switch') return '#06b6d4';
+                if (node.type === 'parallel') return '#14b8a6';
+                if (node.type === 'try') return '#3b82f6';
+                if (node.type === 'map' || node.type === 'filter' || node.type === 'reduce') return '#14b8a6';
+
+                // Group containers - lighter versions of branch colors
+                if (node.type === 'group') {
+                  const branchType = node.data?.branchType;
+                  if (branchType === 'then') return '#10b98180';
+                  if (branchType === 'else') return '#ef444480';
+                  if (branchType === 'try') return '#3b82f680';
+                  if (branchType === 'catch') return '#f59e0b80';
+                  if (branchType === 'finally') return '#8b5cf680';
+                  if (branchType === 'case') return '#06b6d480';
+                  if (branchType === 'iteration') return '#a855f780';
+                  return '#2d2d4a80';
+                }
+
+                // Status-based colors for regular steps
                 switch (node.data?.status) {
                   case 'running':
                     return '#f0ad4e';
@@ -365,6 +401,10 @@ export function Canvas() {
                 }
               }}
               maskColor="rgba(26, 26, 46, 0.8)"
+              nodeBorderRadius={8}
+              nodeStrokeWidth={2}
+              zoomable
+              pannable
             />
           </ReactFlow>
         </div>

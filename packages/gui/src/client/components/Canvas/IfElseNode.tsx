@@ -9,6 +9,10 @@ export interface IfElseNodeData extends Record<string, unknown> {
   status?: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   activeBranch?: 'then' | 'else' | null;
   skippedBranch?: 'then' | 'else' | null;
+  thenSteps?: unknown[];
+  elseSteps?: unknown[];
+  thenCollapsed?: boolean;
+  elseCollapsed?: boolean;
 }
 
 export type IfElseNodeType = Node<IfElseNodeData, 'if'>;
@@ -44,9 +48,10 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
 
   return (
     <div
-      className={`control-flow-node if-else-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running' : ''} ${status === 'completed' ? 'completed' : ''} ${status === 'failed' ? 'failed' : ''}`}
+      className={`control-flow-node if-else-node p-0 ${selected ? 'selected' : ''} ${status === 'running' ? 'running running-control-flow' : ''} ${status === 'completed' ? 'completed step-completed' : ''} ${status === 'failed' ? 'failed step-failed' : ''}`}
       style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        position: 'relative',
       }}
     >
       {/* Input handle */}
@@ -87,13 +92,18 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
           <div
             className={`text-center p-2 rounded text-xs font-medium transition-colors relative ${
               data.activeBranch === 'then'
-                ? 'bg-green-500/30 text-green-200 ring-1 ring-green-400/50'
+                ? 'bg-green-500/30 text-green-200 ring-1 ring-green-400/50 active-branch'
                 : data.skippedBranch === 'then'
-                  ? 'bg-gray-500/20 text-gray-400'
+                  ? 'bg-gray-500/20 text-gray-400 branch-skipped'
                   : 'bg-white/5 text-white/60'
             }`}
           >
-            ✓ Then
+            <div>✓ Then</div>
+            {data.thenSteps && data.thenSteps.length > 0 && (
+              <div className="text-[9px] mt-0.5 opacity-70">
+                {data.thenSteps.length} step{data.thenSteps.length !== 1 ? 's' : ''}
+              </div>
+            )}
             {data.skippedBranch === 'then' && (
               <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded bg-gray-500/50 text-gray-300">
                 SKIP
@@ -103,13 +113,18 @@ function IfElseNodeComponent({ data, selected }: NodeProps<IfElseNodeType>) {
           <div
             className={`text-center p-2 rounded text-xs font-medium transition-colors relative ${
               data.activeBranch === 'else'
-                ? 'bg-red-500/30 text-red-200 ring-1 ring-red-400/50'
+                ? 'bg-red-500/30 text-red-200 ring-1 ring-red-400/50 active-branch'
                 : data.skippedBranch === 'else'
-                  ? 'bg-gray-500/20 text-gray-400'
+                  ? 'bg-gray-500/20 text-gray-400 branch-skipped'
                   : 'bg-white/5 text-white/60'
             }`}
           >
-            ✗ Else
+            <div>✗ Else</div>
+            {data.elseSteps && data.elseSteps.length > 0 && (
+              <div className="text-[9px] mt-0.5 opacity-70">
+                {data.elseSteps.length} step{data.elseSteps.length !== 1 ? 's' : ''}
+              </div>
+            )}
             {data.skippedBranch === 'else' && (
               <span className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded bg-gray-500/50 text-gray-300">
                 SKIP

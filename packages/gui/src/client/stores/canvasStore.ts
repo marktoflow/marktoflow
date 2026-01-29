@@ -29,6 +29,8 @@ interface CanvasState {
   maxHistorySize: number;
   // Clipboard for copy/paste
   clipboard: ClipboardState | null;
+  // Group collapse state
+  groupCollapsedState: Record<string, boolean>;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -47,6 +49,10 @@ interface CanvasState {
   copySelected: () => void;
   paste: (offset?: { x: number; y: number }) => void;
   canPaste: () => boolean;
+  // Group collapse methods
+  toggleGroupCollapsed: (groupId: string) => void;
+  collapseAllGroups: () => void;
+  expandAllGroups: () => void;
 }
 
 // Demo data for initial view
@@ -122,6 +128,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   future: [],
   maxHistorySize: 50,
   clipboard: null,
+  groupCollapsedState: {},
 
   onNodesChange: (changes) => {
     // Filter out position changes for smoother dragging (don't create history for every pixel)
@@ -344,5 +351,83 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   canPaste: () => {
     const { clipboard } = get();
     return clipboard !== null && clipboard.nodes.length > 0;
+  },
+
+  toggleGroupCollapsed: (groupId: string) => {
+    const { groupCollapsedState, nodes } = get();
+    const newState = { ...groupCollapsedState };
+    newState[groupId] = !newState[groupId];
+
+    // Update the group node's data
+    const updatedNodes = nodes.map((node) => {
+      if (node.id === groupId && node.type === 'group') {
+        return {
+          ...node,
+          data: { ...node.data, collapsed: newState[groupId] },
+        };
+      }
+      // Hide/show child nodes based on collapse state
+      if (node.parentNode === groupId) {
+        return {
+          ...node,
+          hidden: newState[groupId],
+        };
+      }
+      return node;
+    });
+
+    set({ groupCollapsedState: newState, nodes: updatedNodes });
+  },
+
+  collapseAllGroups: () => {
+    const { nodes } = get();
+    const groupNodes = nodes.filter((node) => node.type === 'group');
+    const newState: Record<string, boolean> = {};
+
+    groupNodes.forEach((groupNode) => {
+      newState[groupNode.id] = true;
+    });
+
+    const updatedNodes = nodes.map((node) => {
+      if (node.type === 'group') {
+        return {
+          ...node,
+          data: { ...node.data, collapsed: true },
+        };
+      }
+      // Hide all child nodes
+      if (node.parentNode && nodes.some((n) => n.id === node.parentNode && n.type === 'group')) {
+        return {
+          ...node,
+          hidden: true,
+        };
+      }
+      return node;
+    });
+
+    set({ groupCollapsedState: newState, nodes: updatedNodes });
+  },
+
+  expandAllGroups: () => {
+    const { nodes } = get();
+
+    const updatedNodes = nodes.map((node) => {
+      if (node.type === 'group') {
+        return {
+          ...node,
+          data: { ...node.data, collapsed: false },
+        };
+      }
+      // Show all child nodes
+      if (node.parentNode && nodes.some((n) => n.id === node.parentNode && n.type === 'group')) {
+        return {
+          ...node,
+          hidden: false,
+        };
+      }
+      return node;
+    });
+
+    set({ groupCollapsedState: {}, nodes: updatedNodes });
   },
 }));

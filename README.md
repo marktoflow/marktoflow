@@ -34,7 +34,7 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 - **Native MCP Support**: Direct import of MCP server packages
 - **Direct SDK Integration**: Built-in support for 20+ services with official SDKs
 - **AI Agent Integration**: GitHub Copilot, OpenAI Codex, Claude Code, OpenCode, Ollama (beta)
-- **Visual Workflow Designer**: Web-based drag-and-drop editor with AI assistance
+- **Visual Workflow Designer**: Web-based drag-and-drop editor with AI assistance and advanced nested step visualization
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
 - **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
 - **Universal Triggering**: Webhooks, File Watchers, Cron Schedules

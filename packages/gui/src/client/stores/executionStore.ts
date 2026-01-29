@@ -38,6 +38,20 @@ export interface DebugState {
   callStack: string[];
 }
 
+export interface ControlFlowState {
+  // Track which branch is active for each control flow node
+  activeBranches: Record<string, string>; // controlFlowId -> branchName ('then', 'else', 'try', etc.)
+
+  // Track loop iterations
+  loopIterations: Record<string, { current: number; total: number }>;
+
+  // Track currently executing nested steps
+  activeNestedSteps: Set<string>;
+
+  // Track skipped branches
+  skippedBranches: Record<string, string[]>; // controlFlowId -> [branchName, ...]
+}
+
 interface ExecutionState {
   runs: ExecutionRun[];
   currentRunId: string | null;
@@ -47,6 +61,9 @@ interface ExecutionState {
 
   // Debug mode state
   debug: DebugState;
+
+  // Control flow execution state
+  controlFlow: ControlFlowState;
 
   // Existing methods
   startExecution: (workflowId: string, workflowName: string, inputs?: Record<string, unknown>) => string;
@@ -76,6 +93,16 @@ interface ExecutionState {
   addWatchExpression: (expression: string) => void;
   removeWatchExpression: (expression: string) => void;
   updateCallStack: (stack: string[]) => void;
+
+  // Control flow tracking methods
+  setActiveBranch: (controlFlowId: string, branchName: string) => void;
+  clearActiveBranch: (controlFlowId: string) => void;
+  setSkippedBranches: (controlFlowId: string, branchNames: string[]) => void;
+  updateLoopIteration: (loopId: string, current: number, total: number) => void;
+  clearLoopIteration: (loopId: string) => void;
+  addActiveNestedStep: (stepId: string) => void;
+  removeActiveNestedStep: (stepId: string) => void;
+  clearControlFlowState: () => void;
 }
 
 const initialDebugState: DebugState = {
@@ -88,6 +115,13 @@ const initialDebugState: DebugState = {
   callStack: [],
 };
 
+const initialControlFlowState: ControlFlowState = {
+  activeBranches: {},
+  loopIterations: {},
+  activeNestedSteps: new Set(),
+  skippedBranches: {},
+};
+
 export const useExecutionStore = create<ExecutionState>((set, get) => ({
   runs: [],
   currentRunId: null,
@@ -95,6 +129,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   isPaused: false,
   isLoadingHistory: false,
   debug: initialDebugState,
+  controlFlow: initialControlFlowState,
 
   startExecution: (workflowId, workflowName, inputs) => {
     const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
@@ -472,6 +507,91 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
     // For now, the backend integration will happen via WebSocket events
     // This is a placeholder for future direct API sync
     console.log('Syncing run with backend:', runId);
+  },
+
+  // Control flow tracking methods
+  setActiveBranch: (controlFlowId, branchName) => {
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        activeBranches: {
+          ...get().controlFlow.activeBranches,
+          [controlFlowId]: branchName,
+        },
+      },
+    });
+  },
+
+  clearActiveBranch: (controlFlowId) => {
+    const { [controlFlowId]: _, ...rest } = get().controlFlow.activeBranches;
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        activeBranches: rest,
+      },
+    });
+  },
+
+  setSkippedBranches: (controlFlowId, branchNames) => {
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        skippedBranches: {
+          ...get().controlFlow.skippedBranches,
+          [controlFlowId]: branchNames,
+        },
+      },
+    });
+  },
+
+  updateLoopIteration: (loopId, current, total) => {
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        loopIterations: {
+          ...get().controlFlow.loopIterations,
+          [loopId]: { current, total },
+        },
+      },
+    });
+  },
+
+  clearLoopIteration: (loopId) => {
+    const { [loopId]: _, ...rest } = get().controlFlow.loopIterations;
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        loopIterations: rest,
+      },
+    });
+  },
+
+  addActiveNestedStep: (stepId) => {
+    const activeNestedSteps = new Set(get().controlFlow.activeNestedSteps);
+    activeNestedSteps.add(stepId);
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        activeNestedSteps,
+      },
+    });
+  },
+
+  removeActiveNestedStep: (stepId) => {
+    const activeNestedSteps = new Set(get().controlFlow.activeNestedSteps);
+    activeNestedSteps.delete(stepId);
+    set({
+      controlFlow: {
+        ...get().controlFlow,
+        activeNestedSteps,
+      },
+    });
+  },
+
+  clearControlFlowState: () => {
+    set({
+      controlFlow: initialControlFlowState,
+    });
   },
 }));
 
