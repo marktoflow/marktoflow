@@ -350,7 +350,7 @@ export interface StepResult {
   stepId: string;
   status: StepStatus;
   output: unknown;
-  error: string | undefined;
+  error: unknown; // Store full error object to preserve HTTP details, stack traces, etc.
   startedAt: Date;
   completedAt: Date;
   duration: number; // milliseconds
@@ -395,7 +395,7 @@ export function createStepResult(
   output: unknown,
   startedAt: Date,
   retryCount = 0,
-  error?: string
+  error?: unknown
 ): StepResult {
   const completedAt = new Date();
   return {

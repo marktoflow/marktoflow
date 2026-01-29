@@ -26,7 +26,7 @@ tools:
     auth:
       host: '${JIRA_HOST}'
       email: '${JIRA_EMAIL}'
-      apiToken: '${JIRA_API_TOKEN}'
+      api_token: '${JIRA_API_TOKEN}'
 
   http:
     sdk: 'http'

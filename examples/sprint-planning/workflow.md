@@ -16,24 +16,22 @@ tools:
     auth:
       host: '${JIRA_HOST}'
       email: '${JIRA_EMAIL}'
-      apiToken: '${JIRA_API_TOKEN}'
+      api_token: '${JIRA_API_TOKEN}'
 
   confluence:
     sdk: 'confluence'
     auth:
       host: '${CONFLUENCE_HOST}'
-      username: '${CONFLUENCE_EMAIL}'
-      apiToken: '${CONFLUENCE_API_TOKEN}'
+      email: '${CONFLUENCE_EMAIL}'
+      api_token: '${CONFLUENCE_API_TOKEN}'
 
   slack:
     sdk: '@slack/web-api'
     auth:
       token: '${SLACK_BOT_TOKEN}'
 
-  claude:
-    sdk: 'claude-code'
-    auth:
-      api_key: '${ANTHROPIC_API_KEY}'
+  # Agent is selected via --agent flag or GUI
+  # Supported: claude-code, copilot, opencode, ollama
 
 triggers:
   - type: schedule
@@ -95,7 +93,7 @@ output_variable: past_sprints
 Use Claude to analyze velocity trends.
 
 ```yaml
-action: claude.chat.completions
+action: agent.chat.completions
 inputs:
   model: 'claude-3-5-sonnet-20241022'
   messages:
@@ -137,7 +135,7 @@ output_variable: backlog_stories
 Use AI to select appropriate stories based on capacity.
 
 ```yaml
-action: claude.chat.completions
+action: agent.chat.completions
 inputs:
   model: 'claude-3-5-sonnet-20241022'
   messages:

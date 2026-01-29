@@ -21,12 +21,10 @@ tools:
     auth:
       host: '${JIRA_HOST}'
       email: '${JIRA_EMAIL}'
-      apiToken: '${JIRA_API_TOKEN}'
+      api_token: '${JIRA_API_TOKEN}'
 
-  claude:
-    sdk: 'claude-code'
-    auth:
-      api_key: '${ANTHROPIC_API_KEY}'
+  # Agent is selected via --agent flag or GUI
+  # Supported: claude-code, copilot, opencode, ollama
 
 triggers:
   - type: schedule
@@ -125,12 +123,11 @@ output_variable: slack_messages
 
 ## Step 5: Generate Summary
 
-Use Claude to generate a coherent standup summary from the collected data.
+Use the selected AI agent to generate a coherent standup summary from the collected data.
 
 ```yaml
-action: claude.chat.completions
+action: agent.chat.completions
 inputs:
-  model: 'claude-3-5-sonnet-20241022'
   messages:
     - role: 'user'
       content: |
