@@ -191,7 +191,13 @@ try {
   writeFileSync(testFile, testScript);
 
   try {
-    exec(`timeout 10 node ${testFile}`, testDir);
+    // Use execSync with timeout option (cross-platform, works on both Linux and macOS)
+    execSync(`node ${testFile}`, {
+      cwd: testDir,
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      timeout: 10000, // 10 seconds in milliseconds
+    });
     console.log('  ✓ GUI server test passed');
   } catch (error) {
     console.error('  ❌ GUI server test failed');

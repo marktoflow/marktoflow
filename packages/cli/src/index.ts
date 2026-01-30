@@ -35,7 +35,7 @@ import { parse as parseYaml } from 'yaml';
 import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
 import { WorkflowDebugger, parseBreakpoints } from './commands/debug.js';
 
-const VERSION = '2.0.0-alpha.11';
+const VERSION = '2.0.0-alpha.12';
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
