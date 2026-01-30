@@ -2,11 +2,25 @@
 
 > **Author:** Scott Glover <scottgl@gmail.com>
 
-Agent automation framework with native MCP support - Command Line Interface.
+**CLI-first agent automation framework** with native MCP support and direct SDK integration.
 
-## Overview
+**Version:** 2.0.0-alpha.12
 
-`@marktoflow/cli` is the main package for marktoflow, providing the command-line interface for creating, running, and managing automation workflows.
+---
+
+## What is marktoflow?
+
+marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 20+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
+
+**Key Differentiators:**
+
+- 🖥️ **CLI-First** - Design and run workflows from your terminal
+- 📝 **Workflows as Markdown** - Human-readable, version-controlled automation
+- 🔌 **Native SDK Integration** - Direct method calls with full type safety
+- 🤖 **AI Agent Support** - GitHub Copilot, Claude, Ollama - use existing subscriptions
+- 🌐 **Universal REST Client** - Connect to any API without custom integrations
+- 🎨 **Visual Designer (Optional)** - Web-based drag-and-drop editor
+- 🏢 **Enterprise Ready** - RBAC, approvals, audit logging, cost tracking
 
 ## Features
 

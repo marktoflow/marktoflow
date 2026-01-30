@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/core",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "description": "Core engine for marktoflow - parser, executor, state management",
   "type": "module",
   "main": "./dist/index.js",

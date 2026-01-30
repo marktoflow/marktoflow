@@ -4,7 +4,7 @@
 
 An agent automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.11 (TypeScript)
+**Version:** 2.0.0-alpha.12 (TypeScript)
 
 ---
 

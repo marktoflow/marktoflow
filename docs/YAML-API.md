@@ -917,6 +917,110 @@ inputs:
 output_variable: api_response
 ```
 
+### Core Tools
+
+Core tools are built-in actions available in all workflows without needing to be declared in the `tools` section. They provide essential functionality for logging, file operations, and more.
+
+#### `core.log`
+
+Logs a message during workflow execution with optional severity level and metadata.
+
+```yaml
+action: core.log
+inputs:
+  message: string    # Message to log (supports templates)
+  level: string      # Optional: 'info' | 'warning' | 'error' | 'critical' (default: 'info')
+  metadata: object   # Optional: Additional metadata to include in log
+```
+
+**Levels:**
+- `info` - Informational messages (default)
+- `warning` - Warning messages
+- `error` - Error messages
+- `critical` - Critical error messages
+
+**Example:**
+
+```yaml
+action: core.log
+inputs:
+  level: 'info'
+  message: |
+    ========================================
+    WORKFLOW COMPLETE
+    ========================================
+
+    Processed: {{ results.count }} items
+    Status: {{ results.status }}
+```
+
+**Example with Metadata:**
+
+```yaml
+action: core.log
+inputs:
+  message: 'Processing item {{ item.id }}'
+  level: 'info'
+  metadata:
+    item_id: '{{ item.id }}'
+    step: 'validation'
+    timestamp: '{{ now() }}'
+```
+
+#### `core.writeFile`
+
+Writes content to a file on the local filesystem. Creates parent directories if they don't exist.
+
+```yaml
+action: core.writeFile
+inputs:
+  path: string       # File path to write (relative or absolute)
+  content: string    # Content to write to the file
+  encoding: string   # Optional: File encoding (default: 'utf-8')
+output_variable: file_result
+```
+
+**Output:**
+```json
+{
+  "written": true,
+  "path": "/path/to/file.html",
+  "size": 1234
+}
+```
+
+**Example - Write HTML Report:**
+
+```yaml
+action: core.writeFile
+inputs:
+  path: './reports/summary.html'
+  content: '{{ html_report }}'
+output_variable: file_result
+```
+
+**Example - Write JSON Data:**
+
+```yaml
+action: core.writeFile
+inputs:
+  path: './output/results.json'
+  content: '{{ JSON.stringify(results, null, 2) }}'
+output_variable: json_file
+```
+
+**Example - Conditional File Output:**
+
+```yaml
+type: if
+condition: '{{ inputs.save_to_file == true }}'
+then:
+  - action: core.writeFile
+    inputs:
+      path: '{{ inputs.output_path }}'
+      content: '{{ generated_content }}'
+```
+
 ### Best Practices
 
 #### 1. Always Set Outputs Explicitly

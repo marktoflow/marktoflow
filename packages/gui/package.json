@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "description": "Visual workflow designer for marktoflow - web UI",
   "type": "module",
   "main": "./dist/server/index.js",

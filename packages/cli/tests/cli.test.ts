@@ -17,7 +17,7 @@ function runCLI(args: string, cwd?: string): string {
 describe('CLI', () => {
   it('should show version', () => {
     const output = runCLI('version');
-    expect(output).toContain('marktoflow v2.0.0-alpha.11');
+    expect(output).toContain('marktoflow v2.0.0-alpha.12');
   });
 
   it('should run doctor', () => {

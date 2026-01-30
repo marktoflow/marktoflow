@@ -222,8 +222,27 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
     try {
       const stepRaw = parseYaml(yamlContent) as Record<string, unknown>;
 
-      // Skip non-step code blocks (check for action or workflow field)
-      if (!stepRaw.action && !stepRaw.workflow) {
+      // Skip non-step code blocks
+      // Check for action, workflow, or control flow fields
+      const isActionStep = !!stepRaw.action;
+      const isWorkflowStep = !!stepRaw.workflow;
+      const isControlFlowStep =
+        stepRaw.type === 'for_each' ||
+        stepRaw.type === 'if' ||
+        stepRaw.type === 'while' ||
+        stepRaw.type === 'switch' ||
+        stepRaw.type === 'parallel' ||
+        stepRaw.type === 'try' ||
+        stepRaw.type === 'map' ||
+        stepRaw.type === 'filter' ||
+        stepRaw.type === 'reduce' ||
+        // Also detect by structure (for implicit type detection)
+        (stepRaw.items && stepRaw.steps) || // for_each/while
+        (stepRaw.condition && (stepRaw.then || stepRaw.else)) || // if
+        (stepRaw.expression && stepRaw.cases) || // switch
+        stepRaw.branches; // parallel
+
+      if (!isActionStep && !isWorkflowStep && !isControlFlowStep) {
         continue;
       }
 
