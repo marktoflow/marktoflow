@@ -1,0 +1,28 @@
+# Source files
+src/
+*.ts
+*.tsx
+!*.d.ts
+
+# Config files
+tsconfig*.json
+vite.config.ts
+playwright.config.ts
+postcss.config.js
+tailwind.config.js
+
+# Development files
+.turbo/
+.marktoflow/
+*.tgz
+
+# Test files
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+e2e/
+
+# Development dependencies
+node_modules/

@@ -252,5 +252,4 @@ See `packages/core/src/env.ts` for the complete list.
 
 ## Related Guides
 
-- [GMAIL-OAUTH-SETUP.md](./GMAIL-OAUTH-SETUP.md) - Complete Gmail setup guide
-- [.env.gmail](./.env.gmail) - Gmail environment variables template
+For service-specific setup guides, see the examples directory (e.g., examples/gmail-notification/).

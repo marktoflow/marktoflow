@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.12",
+  "version": "2.0.0-alpha.13",
   "description": "Visual workflow designer for marktoflow - web UI",
   "type": "module",
   "main": "./dist/server/index.js",
@@ -56,8 +56,6 @@
     "express": "^4.21.2",
     "lucide-react": "^0.468.0",
     "multer": "^2.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
     "rehype-highlight": "^7.0.1",
     "remark-gfm": "^4.0.0",

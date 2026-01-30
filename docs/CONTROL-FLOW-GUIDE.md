@@ -2,6 +2,8 @@
 
 Complete reference for using control flow in marktoflow v2.0 workflows.
 
+> **Note:** This is a comprehensive tutorial-style guide. For a concise API reference, see [yaml-api/control-flow.md](./yaml-api/control-flow.md).
+
 ---
 
 ## Table of Contents
@@ -911,19 +913,19 @@ inputs:
 
 **Use Case:** Route incidents based on severity
 
-See [examples/control-flow/incident-router.md](../examples/control-flow/incident-router.md)
+Example workflow demonstrating switch/case for incident triage is available in the production examples.
 
 ### Example 3: Parallel Dashboard
 
 **Use Case:** Fetch data from multiple sources concurrently
 
-See [examples/control-flow/parallel-fetch.md](../examples/control-flow/parallel-fetch.md)
+Parallel execution examples are demonstrated throughout the production workflows in the examples/ directory.
 
 ### Example 4: Resilient API Integration
 
 **Use Case:** Primary/fallback API with error handling
 
-See [examples/control-flow/error-handling.md](../examples/control-flow/error-handling.md)
+Try/catch patterns are demonstrated in the production workflows for resilient API integration.
 
 ---
 
@@ -1076,4 +1078,4 @@ Parallel branches run truly concurrently:
 
 ---
 
-For more examples, see the [examples/control-flow](../examples/control-flow/) directory.
+For complete production examples, see the [examples/](../examples/) directory.

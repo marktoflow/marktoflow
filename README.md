@@ -10,7 +10,7 @@ An agent automation framework that enables markdown-based workflows with native 
 
 ## What is marktoflow?
 
-marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 20+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
+marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 30+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
 
 **Key Differentiators:**
 
@@ -32,7 +32,7 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 - **Sub-Workflows**: Compose reusable workflow components with unlimited nesting
 - **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
 - **Native MCP Support**: Direct import of MCP server packages
-- **Direct SDK Integration**: Built-in support for 20+ services with official SDKs
+- **Direct SDK Integration**: Built-in support for 30+ services with official SDKs
 - **AI Agent Integration**: GitHub Copilot, OpenAI Codex, Claude Code, OpenCode, Ollama (beta)
 - **Visual Workflow Designer**: Web-based drag-and-drop editor with AI assistance
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
