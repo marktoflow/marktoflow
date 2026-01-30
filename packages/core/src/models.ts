@@ -402,6 +402,7 @@ export interface ExecutionContext {
   currentStepIndex: number;
   status: WorkflowStatus;
   stepMetadata: Record<string, { status: string; error?: string; retryCount: number }>;
+  workflowOutputs?: Record<string, unknown>; // Outputs set by workflow.set_outputs
   [key: string]: unknown; // Allow index access for template resolution
 }
 

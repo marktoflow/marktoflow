@@ -58,6 +58,22 @@ export const defaultSDKLoader: SDKLoader = {
 };
 
 // ============================================================================
+// SDK Package Name Mappings
+// ============================================================================
+
+/**
+ * Maps SDK names to actual npm package names.
+ * Used when the SDK name in workflows differs from the npm package name.
+ */
+export const packageNameMappings: Record<string, string> = {
+  'google-gmail': 'googleapis',
+  'google-sheets': 'googleapis',
+  'google-calendar': 'googleapis',
+  'google-drive': 'googleapis',
+  'google-docs': 'googleapis',
+};
+
+// ============================================================================
 // SDK Initializers for common services
 // ============================================================================
 
@@ -170,6 +186,19 @@ export class SDKRegistry {
    * Register tool configurations from a workflow.
    */
   registerTools(tools: Record<string, ToolConfig>): void {
+    // Always register built-in tools (core and workflow) if not already present
+    const builtInTools = ['core', 'workflow'];
+    for (const toolName of builtInTools) {
+      if (!this.sdks.has(toolName)) {
+        this.sdks.set(toolName, {
+          name: toolName,
+          sdk: null,
+          config: { sdk: toolName }, // Minimal config for built-in tools
+        });
+      }
+    }
+
+    // Register workflow-specific tools
     for (const [name, config] of Object.entries(tools)) {
       if (!this.sdks.has(name)) {
         // Store config for lazy loading
@@ -204,9 +233,12 @@ export class SDKRegistry {
     }
 
     // Load the SDK module
+    // Check if there's a package name mapping (e.g., 'google-gmail' -> 'googleapis')
+    const packageName = packageNameMappings[instance.config.sdk] || instance.config.sdk;
+
     let module: unknown;
     try {
-      module = await this.loader.load(instance.config.sdk);
+      module = await this.loader.load(packageName);
     } catch (error) {
       // If we have an initializer, ignore load error and pass null (e.g. for 'script' tool)
       if (this.initializers.has(instance.config.sdk)) {

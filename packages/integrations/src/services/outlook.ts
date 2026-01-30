@@ -653,9 +653,23 @@ export const OutlookInitializer: SDKInitializer = {
       },
     });
 
-    return {
+    const actions = new OutlookActions(client);
+
+    // Copy all methods from actions to root level for workflow access
+    // Can't use spread operator as methods are on the prototype
+    const sdk: Record<string, unknown> = {
       client,
-      actions: new OutlookActions(client),
+      actions,
     };
+
+    // Copy all methods from OutlookActions prototype and bind them to maintain 'this' context
+    for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(actions))) {
+      if (key !== 'constructor' && typeof (actions as unknown as Record<string, unknown>)[key] === 'function') {
+        const method = (actions as unknown as Record<string, unknown>)[key] as (...args: unknown[]) => unknown;
+        sdk[key] = method.bind(actions);
+      }
+    }
+
+    return sdk;
   },
 };

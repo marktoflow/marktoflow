@@ -561,6 +561,16 @@ export class WorkflowEngine {
           context.variables[step.outputVariable] = result.output;
         }
 
+        // Check if this step set workflow outputs (from workflow.set_outputs action)
+        if (result.status === StepStatus.COMPLETED &&
+            result.output &&
+            typeof result.output === 'object' &&
+            '__workflow_outputs__' in result.output) {
+          const outputObj = result.output as Record<string, unknown>;
+          const outputs = outputObj['__workflow_outputs__'] as Record<string, unknown>;
+          context.workflowOutputs = outputs;
+        }
+
         // Handle failure
         if (result.status === StepStatus.FAILED) {
           // Get error action from step if it has error handling
@@ -1409,12 +1419,15 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
   ): WorkflowResult {
     const completedAt = new Date();
 
+    // Use workflowOutputs if set by workflow.set_outputs, otherwise use all variables
+    const output = context.workflowOutputs || context.variables;
+
     return {
       workflowId: workflow.metadata.id,
       runId: context.runId,
       status: context.status,
       stepResults,
-      output: context.variables,
+      output,
       error,
       startedAt,
       completedAt,

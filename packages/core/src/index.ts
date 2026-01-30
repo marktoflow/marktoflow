@@ -154,6 +154,7 @@ export {
   SDKRegistry,
   defaultSDKLoader,
   defaultInitializers,
+  packageNameMappings,
   createSDKStepExecutor,
   type SDKInstance,
   type SDKLoader,
@@ -165,6 +166,12 @@ export {
   CoreToolsClient,
   CoreInitializer,
 } from './core-tools.js';
+
+// Workflow Built-in Tools
+export {
+  WorkflowToolsClient,
+  WorkflowInitializer,
+} from './workflow-tools.js';
 
 // State Persistence
 export {
