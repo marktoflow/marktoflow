@@ -162,6 +162,14 @@ function buildWorkflow(
     steps = parseStepsFromMarkdown(markdownBody, warnings);
   }
 
+  // Extract workflow-level permissions
+  const permissionsRaw = frontmatter.permissions as Record<string, unknown> | undefined;
+  const permissions = permissionsRaw ? normalizePermissions(permissionsRaw) : undefined;
+
+  // Extract default agent/model
+  const defaultAgent = (frontmatter.default_agent || frontmatter.defaultAgent) as string | undefined;
+  const defaultModel = (frontmatter.default_model || frontmatter.defaultModel) as string | undefined;
+
   return {
     metadata,
     tools,
@@ -169,6 +177,9 @@ function buildWorkflow(
     triggers,
     steps,
     rawContent: markdownBody,
+    permissions,
+    defaultAgent,
+    defaultModel,
   };
 }
 
@@ -234,6 +245,46 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
 }
 
 /**
+ * Normalize permissions object, converting snake_case to camelCase.
+ */
+function normalizePermissions(raw: unknown): Record<string, unknown> | undefined {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+
+  const obj = raw as Record<string, unknown>;
+  return {
+    read: obj.read,
+    write: obj.write,
+    execute: obj.execute,
+    allowedCommands: obj.allowed_commands ?? obj.allowedCommands,
+    blockedCommands: obj.blocked_commands ?? obj.blockedCommands,
+    allowedDirectories: obj.allowed_directories ?? obj.allowedDirectories,
+    blockedPaths: obj.blocked_paths ?? obj.blockedPaths,
+    network: obj.network,
+    allowedHosts: obj.allowed_hosts ?? obj.allowedHosts,
+    maxFileSize: obj.max_file_size ?? obj.maxFileSize,
+  };
+}
+
+/**
+ * Normalize subagent config, converting snake_case to camelCase.
+ */
+function normalizeSubagentConfig(raw: unknown): Record<string, unknown> | undefined {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+
+  const obj = raw as Record<string, unknown>;
+  return {
+    model: obj.model,
+    maxTurns: obj.max_turns ?? obj.maxTurns,
+    systemPrompt: obj.system_prompt ?? obj.systemPrompt,
+    tools: obj.tools,
+  };
+}
+
+/**
  * Normalize a step object, converting snake_case to camelCase and detecting step type.
  */
 function normalizeStep(raw: Record<string, unknown>, index: number): Record<string, unknown> {
@@ -243,6 +294,11 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
     conditions: raw.conditions,
     timeout: raw.timeout,
     outputVariable: raw.output_variable || raw.outputVariable,
+    // Per-step model/agent configuration
+    model: raw.model,
+    agent: raw.agent,
+    // Permission restrictions
+    permissions: normalizePermissions(raw.permissions),
   };
 
   // Detect or use explicit type
@@ -284,6 +340,9 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
         errorHandling: normalizeErrorHandling(
           raw.error_handling || raw.errorHandling || raw.on_error
         ),
+        // External prompt file support
+        prompt: raw.prompt,
+        promptInputs: raw.prompt_inputs || raw.promptInputs,
       };
 
     case 'workflow':
@@ -295,6 +354,9 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
         errorHandling: normalizeErrorHandling(
           raw.error_handling || raw.errorHandling || raw.on_error
         ),
+        // Sub-agent execution support
+        useSubagent: raw.use_subagent ?? raw.useSubagent ?? false,
+        subagentConfig: normalizeSubagentConfig(raw.subagent_config || raw.subagentConfig),
       };
 
     case 'if':

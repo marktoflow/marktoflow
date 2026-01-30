@@ -60,6 +60,41 @@ export type TriggerType = (typeof TriggerType)[keyof typeof TriggerType];
 // Zod Schemas
 // ============================================================================
 
+// Permission restrictions schema for steps and workflows
+export const PermissionsSchema = z.object({
+  // File operations
+  read: z.union([z.boolean(), z.array(z.string())]).optional(),
+  write: z.union([z.boolean(), z.array(z.string())]).optional(),
+
+  // Command execution
+  execute: z.union([z.boolean(), z.array(z.string())]).optional(),
+  allowedCommands: z.array(z.string()).optional(),
+  blockedCommands: z.array(z.string()).optional(),
+
+  // Directory restrictions
+  allowedDirectories: z.array(z.string()).optional(),
+  blockedPaths: z.array(z.string()).optional(),
+
+  // Network
+  network: z.boolean().optional(),
+  allowedHosts: z.array(z.string()).optional(),
+
+  // Limits
+  maxFileSize: z.number().optional(),
+}).optional();
+
+export type Permissions = z.infer<typeof PermissionsSchema>;
+
+// Sub-agent configuration for subworkflows
+export const SubagentConfigSchema = z.object({
+  model: z.string().optional(),
+  maxTurns: z.number().optional(),
+  systemPrompt: z.string().optional(),
+  tools: z.array(z.string()).optional(),
+});
+
+export type SubagentConfig = z.infer<typeof SubagentConfigSchema>;
+
 export const WorkflowMetadataSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -89,6 +124,11 @@ const BaseStepSchema = z.object({
   conditions: z.array(z.string()).optional(),
   timeout: z.number().optional(),
   outputVariable: z.string().optional(),
+  // Per-step model/agent configuration
+  model: z.string().optional(),   // e.g., 'haiku', 'gpt-4.1', 'llama3'
+  agent: z.string().optional(),   // e.g., 'claude-agent', 'copilot', 'ollama'
+  // Permission restrictions
+  permissions: PermissionsSchema,
 });
 
 // Recursive step array schema (defined later after WorkflowStepUnionSchema)
@@ -100,6 +140,9 @@ const ActionStepSchema = BaseStepSchema.extend({
   action: z.string(),
   inputs: z.record(z.unknown()).default({}),
   errorHandling: ErrorHandlingSchema.optional(),
+  // External prompt file support
+  prompt: z.string().optional(),              // Path to .md file
+  promptInputs: z.record(z.unknown()).optional(),
 });
 
 // Workflow step - executes a sub-workflow
@@ -108,6 +151,9 @@ const SubWorkflowStepSchema = BaseStepSchema.extend({
   workflow: z.string(),
   inputs: z.record(z.unknown()).default({}),
   errorHandling: ErrorHandlingSchema.optional(),
+  // Sub-agent execution support
+  useSubagent: z.boolean().optional().default(false),
+  subagentConfig: SubagentConfigSchema.optional(),
 });
 
 // If/else conditional step
@@ -220,6 +266,14 @@ const WorkflowStepUnionSchema: z.ZodTypeAny = z.union([
       conditions: z.array(z.string()).optional(),
       errorHandling: ErrorHandlingSchema.optional(),
       timeout: z.number().optional(),
+      // New fields for backward compatibility
+      model: z.string().optional(),
+      agent: z.string().optional(),
+      permissions: PermissionsSchema,
+      prompt: z.string().optional(),
+      promptInputs: z.record(z.unknown()).optional(),
+      useSubagent: z.boolean().optional(),
+      subagentConfig: SubagentConfigSchema.optional(),
     })
     .refine((data) => data.action || data.workflow, {
       message: 'Step must have either "action" or "workflow" field',
@@ -253,6 +307,11 @@ export const WorkflowSchema = z.object({
   triggers: z.array(TriggerSchema).optional(),
   steps: z.array(WorkflowStepUnionSchema),
   rawContent: z.string().optional(), // Original markdown content
+  // Workflow-level permissions (apply to all steps)
+  permissions: PermissionsSchema,
+  // Default agent/model configuration
+  defaultAgent: z.string().optional(),
+  defaultModel: z.string().optional(),
 });
 
 // ============================================================================

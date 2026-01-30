@@ -18,6 +18,8 @@ export {
   TriggerSchema,
   WorkflowInputSchema,
   WorkflowSchema,
+  PermissionsSchema,
+  SubagentConfigSchema,
   // Types
   type WorkflowMetadata,
   type ToolConfig,
@@ -29,6 +31,8 @@ export {
   type ExecutionContext,
   type StepResult,
   type WorkflowResult,
+  type Permissions,
+  type SubagentConfig,
   // Helpers
   createExecutionContext,
   createStepResult,
@@ -90,8 +94,33 @@ export {
   type EngineConfig,
   type EngineEvents,
   type StepExecutor,
+  type StepExecutorContext,
   type CircuitState,
 } from './engine.js';
+
+// Permissions
+export {
+  mergePermissions,
+  checkPermission,
+  toSecurityPolicy,
+  createDefaultPermissions,
+  type EffectivePermissions,
+  type PermissionCheckResult,
+  type SecurityPolicy,
+  type OperationType,
+} from './permissions.js';
+
+// Prompt Loader
+export {
+  loadPromptFile,
+  resolvePromptTemplate,
+  validatePromptInputs,
+  extractPromptVariables,
+  type LoadedPrompt,
+  type PromptVariable,
+  type ValidationResult,
+  type ResolvedPrompt,
+} from './prompt-loader.js';
 
 // Tool Registry
 export {

@@ -124,6 +124,7 @@ This workflow monitors Slack messages and creates Jira issues.
           }),
         }),
         expect.anything(),
+        expect.anything(),
         expect.anything()
       );
     });
@@ -490,6 +491,7 @@ steps:
             }),
           }),
         }),
+        expect.anything(),
         expect.anything(),
         expect.anything()
       );

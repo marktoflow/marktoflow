@@ -35,7 +35,22 @@ import {
   type ReduceStep,
   type ParallelStep,
   type TryStep,
+  type ActionStep,
+  type SubWorkflowStep,
+  type Permissions,
 } from './models.js';
+import {
+  mergePermissions,
+  toSecurityPolicy,
+  type EffectivePermissions,
+  type SecurityPolicy,
+} from './permissions.js';
+import {
+  loadPromptFile,
+  resolvePromptTemplate,
+  validatePromptInputs,
+  type LoadedPrompt,
+} from './prompt-loader.js';
 import { StateStore } from './state.js';
 import {
   DEFAULT_FAILOVER_CONFIG,
@@ -85,6 +100,10 @@ export interface EngineConfig {
   failoverConfig?: Partial<FailoverConfig>;
   /** Optional agent health tracker */
   healthTracker?: AgentHealthTracker;
+  /** Default agent for AI steps */
+  defaultAgent?: string;
+  /** Default model for AI steps */
+  defaultModel?: string;
 }
 
 export interface SDKRegistryLike {
@@ -94,10 +113,24 @@ export interface SDKRegistryLike {
   has(sdkName: string): boolean;
 }
 
+export interface StepExecutorContext {
+  /** Effective model for this step (from step override or workflow default) */
+  model: string | undefined;
+  /** Effective agent for this step (from step override or workflow default) */
+  agent: string | undefined;
+  /** Effective permissions for this step */
+  permissions: EffectivePermissions | undefined;
+  /** Security policy derived from permissions */
+  securityPolicy: SecurityPolicy | undefined;
+  /** Base path for resolving relative paths */
+  basePath: string | undefined;
+}
+
 export type StepExecutor = (
   step: WorkflowStep,
   context: ExecutionContext,
-  sdkRegistry: SDKRegistryLike
+  sdkRegistry: SDKRegistryLike,
+  executorContext?: StepExecutorContext
 ) => Promise<unknown>;
 
 export interface EngineEvents {
@@ -366,6 +399,8 @@ interface InternalEngineConfig {
   maxRetries: number;
   retryBaseDelay: number;
   retryMaxDelay: number;
+  defaultAgent: string | undefined;
+  defaultModel: string | undefined;
 }
 
 export class WorkflowEngine {
@@ -379,6 +414,8 @@ export class WorkflowEngine {
   private healthTracker: AgentHealthTracker;
   private failoverEvents: FailoverEvent[] = [];
   private workflowPath?: string; // Base path for resolving sub-workflows
+  private workflowPermissions?: Permissions; // Workflow-level permissions
+  private promptCache: Map<string, LoadedPrompt> = new Map(); // Cache for loaded prompts
 
   constructor(config: EngineConfig = {}, events: EngineEvents = {}, stateStore?: StateStore) {
     this.config = {
@@ -386,6 +423,8 @@ export class WorkflowEngine {
       maxRetries: config.maxRetries ?? 3,
       retryBaseDelay: config.retryBaseDelay ?? 1000,
       retryMaxDelay: config.retryMaxDelay ?? 30000,
+      defaultAgent: config.defaultAgent,
+      defaultModel: config.defaultModel,
     };
 
     this.retryPolicy = new RetryPolicy(
@@ -468,6 +507,17 @@ export class WorkflowEngine {
     const context = createExecutionContext(workflow, inputs);
     const stepResults: StepResult[] = [];
     const startedAt = new Date();
+
+    // Store workflow-level permissions and defaults
+    this.workflowPermissions = workflow.permissions;
+
+    // Use workflow defaults if not set in engine config
+    if (!this.config.defaultAgent && workflow.defaultAgent) {
+      this.config.defaultAgent = workflow.defaultAgent;
+    }
+    if (!this.config.defaultModel && workflow.defaultModel) {
+      this.config.defaultModel = workflow.defaultModel;
+    }
 
     context.status = WorkflowStatus.RUNNING;
     this.events.onWorkflowStart?.(workflow, context);
@@ -675,6 +725,338 @@ export class WorkflowEngine {
   }
 
   /**
+   * Execute a sub-workflow using an AI sub-agent.
+   * The agent interprets the workflow and executes it autonomously.
+   */
+  private async executeSubWorkflowWithAgent(
+    step: SubWorkflowStep,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<unknown> {
+    // Resolve the sub-workflow path
+    const subWorkflowPath = this.workflowPath
+      ? resolve(dirname(this.workflowPath), step.workflow)
+      : resolve(step.workflow);
+
+    // Read the workflow file content
+    const { readFile } = await import('node:fs/promises');
+    const workflowContent = await readFile(subWorkflowPath, 'utf-8');
+
+    // Resolve inputs for the sub-workflow
+    const resolvedInputs = resolveTemplates(step.inputs, context) as Record<string, unknown>;
+
+    // Get subagent configuration
+    const subagentConfig = step.subagentConfig || {};
+    const model = subagentConfig.model || step.model || this.config.defaultModel;
+    const maxTurns = subagentConfig.maxTurns || 10;
+    const systemPrompt = subagentConfig.systemPrompt || this.buildDefaultSubagentSystemPrompt();
+    const tools = subagentConfig.tools || ['Read', 'Write', 'Bash', 'Glob', 'Grep'];
+
+    // Build the prompt for the agent
+    const agentPrompt = this.buildSubagentPrompt(workflowContent, resolvedInputs, tools);
+
+    // Determine the agent action to use
+    const agentName = step.agent || this.config.defaultAgent || 'agent';
+    const agentAction = `${agentName}.chat.completions`;
+
+    // Build the messages array
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: agentPrompt },
+    ];
+
+    // Create a virtual action step to execute via the agent
+    const agentStep: WorkflowStep = {
+      id: `${step.id}-subagent`,
+      type: 'action',
+      action: agentAction,
+      inputs: {
+        model,
+        messages,
+        max_tokens: 8192,
+      },
+      model,
+      agent: agentName,
+    };
+
+    // Build executor context
+    const executorContext = this.buildStepExecutorContext(agentStep);
+
+    // Execute the agent call
+    let response: unknown;
+    let turns = 0;
+    let conversationMessages = [...messages];
+    let finalOutput: Record<string, unknown> = {};
+
+    while (turns < maxTurns) {
+      turns++;
+
+      try {
+        response = await stepExecutor(
+          { ...agentStep, inputs: { ...agentStep.inputs, messages: conversationMessages } },
+          context,
+          sdkRegistry,
+          executorContext
+        );
+
+        // Parse the response
+        const parsedResponse = this.parseSubagentResponse(response);
+
+        if (parsedResponse.completed) {
+          finalOutput = parsedResponse.output || {};
+          break;
+        }
+
+        // If agent needs to continue, add its response and continue
+        if (parsedResponse.message) {
+          conversationMessages.push({ role: 'assistant', content: parsedResponse.message });
+          // Agent might request a tool call - for now, we'll prompt it to continue
+          conversationMessages.push({ role: 'user', content: 'Continue with the workflow execution.' });
+        } else {
+          // No clear continuation, assume completed
+          finalOutput = parsedResponse.output || {};
+          break;
+        }
+      } catch (error) {
+        throw new Error(
+          `Sub-agent execution failed at turn ${turns}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
+    if (turns >= maxTurns) {
+      throw new Error(`Sub-agent exceeded maximum turns (${maxTurns})`);
+    }
+
+    return finalOutput;
+  }
+
+  /**
+   * Build the default system prompt for sub-agent execution.
+   */
+  private buildDefaultSubagentSystemPrompt(): string {
+    return `You are an AI agent executing a workflow. Your task is to interpret the workflow definition and execute each step in order.
+
+For each step:
+1. Understand what the step requires
+2. Execute the action described
+3. Store any outputs as specified
+
+When you complete all steps, respond with a JSON object containing the workflow outputs.
+
+Format your final response as:
+\`\`\`json
+{
+  "completed": true,
+  "output": { /* workflow outputs here */ }
+}
+\`\`\`
+
+If you encounter an error, respond with:
+\`\`\`json
+{
+  "completed": false,
+  "error": "description of the error"
+}
+\`\`\``;
+  }
+
+  /**
+   * Build the prompt for sub-agent workflow execution.
+   */
+  private buildSubagentPrompt(
+    workflowContent: string,
+    inputs: Record<string, unknown>,
+    tools: string[]
+  ): string {
+    return `Execute the following workflow:
+
+## Workflow Definition
+\`\`\`markdown
+${workflowContent}
+\`\`\`
+
+## Inputs
+\`\`\`json
+${JSON.stringify(inputs, null, 2)}
+\`\`\`
+
+## Available Tools
+${tools.join(', ')}
+
+Execute the workflow steps in order and return the final outputs as JSON.`;
+  }
+
+  /**
+   * Parse the sub-agent's response to extract completion status and output.
+   */
+  private parseSubagentResponse(response: unknown): {
+    completed: boolean;
+    output?: Record<string, unknown>;
+    message?: string;
+    error?: string;
+  } {
+    // Try to extract content from various response formats
+    let content: string | undefined;
+
+    if (typeof response === 'string') {
+      content = response;
+    } else if (response && typeof response === 'object') {
+      const resp = response as Record<string, unknown>;
+
+      // OpenAI-style response
+      if (resp.choices && Array.isArray(resp.choices)) {
+        const choice = resp.choices[0] as Record<string, unknown>;
+        if (choice.message && typeof choice.message === 'object') {
+          const message = choice.message as Record<string, unknown>;
+          content = message.content as string;
+        }
+      }
+      // Anthropic-style response
+      else if (resp.content && Array.isArray(resp.content)) {
+        const textBlock = resp.content.find(
+          (c: unknown) => typeof c === 'object' && c !== null && (c as Record<string, unknown>).type === 'text'
+        ) as Record<string, unknown> | undefined;
+        content = textBlock?.text as string;
+      }
+      // Direct content field
+      else if (typeof resp.content === 'string') {
+        content = resp.content;
+      }
+      // Direct message field
+      else if (typeof resp.message === 'string') {
+        content = resp.message;
+      }
+    }
+
+    if (!content) {
+      return { completed: false, message: 'No content in response' };
+    }
+
+    // Try to parse JSON from the response
+    const jsonMatch = content.match(/```json\n?([\s\S]*?)```/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1]) as Record<string, unknown>;
+        const output = parsed.output as Record<string, unknown> | undefined;
+        const error = parsed.error as string | undefined;
+        return {
+          completed: parsed.completed === true,
+          ...(output !== undefined ? { output } : {}),
+          ...(error !== undefined ? { error } : {}),
+        };
+      } catch {
+        // JSON parse failed, treat as message
+      }
+    }
+
+    // Try to parse raw JSON
+    try {
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+      if (typeof parsed.completed === 'boolean') {
+        const output = parsed.output as Record<string, unknown> | undefined;
+        const error = parsed.error as string | undefined;
+        return {
+          completed: parsed.completed,
+          ...(output !== undefined ? { output } : {}),
+          ...(error !== undefined ? { error } : {}),
+        };
+      }
+    } catch {
+      // Not JSON
+    }
+
+    // Return the content as a message
+    return { completed: false, message: content };
+  }
+
+  /**
+   * Build the step executor context with effective model/agent/permissions.
+   */
+  private buildStepExecutorContext(step: WorkflowStep): StepExecutorContext {
+    // Merge workflow and step permissions
+    const effectivePermissions = mergePermissions(
+      this.workflowPermissions,
+      step.permissions
+    );
+
+    // Resolve effective model/agent (step overrides workflow defaults)
+    const effectiveModel = step.model || this.config.defaultModel;
+    const effectiveAgent = step.agent || this.config.defaultAgent;
+
+    return {
+      model: effectiveModel,
+      agent: effectiveAgent,
+      permissions: effectivePermissions,
+      securityPolicy: toSecurityPolicy(effectivePermissions),
+      basePath: this.workflowPath,
+    };
+  }
+
+  /**
+   * Load and resolve an external prompt file for a step.
+   */
+  private async loadAndResolvePrompt(
+    step: ActionStep,
+    context: ExecutionContext
+  ): Promise<Record<string, unknown>> {
+    if (!step.prompt) {
+      return step.inputs;
+    }
+
+    // Check cache
+    let loadedPrompt = this.promptCache.get(step.prompt);
+    if (!loadedPrompt) {
+      loadedPrompt = await loadPromptFile(step.prompt, this.workflowPath);
+      this.promptCache.set(step.prompt, loadedPrompt);
+    }
+
+    // Resolve prompt inputs (from step.promptInputs, with template resolution)
+    const promptInputs = step.promptInputs
+      ? (resolveTemplates(step.promptInputs, context) as Record<string, unknown>)
+      : {};
+
+    // Validate prompt inputs
+    const validation = validatePromptInputs(loadedPrompt, promptInputs);
+    if (!validation.valid) {
+      throw new Error(`Invalid prompt inputs: ${validation.errors.join(', ')}`);
+    }
+
+    // Resolve the prompt template
+    const resolved = resolvePromptTemplate(loadedPrompt, promptInputs, context);
+
+    // Merge resolved prompt content into inputs
+    // The resolved content typically goes into a 'messages' or 'prompt' field
+    const resolvedInputs = { ...step.inputs };
+
+    // If inputs has a 'messages' array with a user message, inject prompt content
+    if (Array.isArray(resolvedInputs.messages)) {
+      resolvedInputs.messages = resolvedInputs.messages.map((msg: unknown) => {
+        if (typeof msg === 'object' && msg !== null) {
+          const message = msg as Record<string, unknown>;
+          if (message.role === 'user' && typeof message.content === 'string') {
+            // Replace {{ prompt }} placeholder with resolved content
+            return {
+              ...message,
+              content: (message.content as string).replace(
+                /\{\{\s*prompt\s*\}\}/g,
+                resolved.content
+              ),
+            };
+          }
+        }
+        return msg;
+      });
+    } else {
+      // Add resolved prompt as 'promptContent' for the executor to use
+      resolvedInputs.promptContent = resolved.content;
+    }
+
+    return resolvedInputs;
+  }
+
+  /**
    * Execute a step with retry logic.
    */
   private async executeStepWithRetry(
@@ -686,8 +1068,38 @@ export class WorkflowEngine {
     const startedAt = new Date();
     let lastError: Error | undefined;
 
+    // Build executor context with model/agent/permissions
+    const executorContext = this.buildStepExecutorContext(step);
+
     // Handle sub-workflow execution
     if (isSubWorkflowStep(step)) {
+      // Check if we should use subagent execution
+      if (step.useSubagent) {
+        try {
+          this.events.onStepStart?.(step, context);
+          const output = await this.executeWithTimeout(
+            () => this.executeSubWorkflowWithAgent(step, context, sdkRegistry, stepExecutor),
+            step.timeout ?? this.config.defaultTimeout
+          );
+          const result = createStepResult(step.id, StepStatus.COMPLETED, output, startedAt, 0);
+          this.events.onStepComplete?.(step, result);
+          return result;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          const result = createStepResult(
+            step.id,
+            StepStatus.FAILED,
+            null,
+            startedAt,
+            0,
+            lastError
+          );
+          this.events.onStepComplete?.(step, result);
+          return result;
+        }
+      }
+
+      // Standard sub-workflow execution
       try{
         this.events.onStepStart?.(step, context);
         const output = await this.executeWithTimeout(
@@ -750,13 +1162,21 @@ export class WorkflowEngine {
       this.events.onStepStart?.(step, context);
 
       try {
-        // Resolve templates in inputs
-        const resolvedInputs = resolveTemplates(step.inputs, context) as Record<string, unknown>;
+        // Load and resolve external prompt if specified
+        let resolvedInputs: Record<string, unknown>;
+        if (step.prompt) {
+          resolvedInputs = await this.loadAndResolvePrompt(step, context);
+          resolvedInputs = resolveTemplates(resolvedInputs, context) as Record<string, unknown>;
+        } else {
+          // Resolve templates in inputs
+          resolvedInputs = resolveTemplates(step.inputs, context) as Record<string, unknown>;
+        }
+
         const stepWithResolvedInputs = { ...step, inputs: resolvedInputs };
 
-        // Execute step
+        // Execute step with executor context
         const output = await this.executeWithTimeout(
-          () => stepExecutor(stepWithResolvedInputs, context, sdkRegistry),
+          () => stepExecutor(stepWithResolvedInputs, context, sdkRegistry, executorContext),
           step.timeout ?? this.config.defaultTimeout
         );
 
