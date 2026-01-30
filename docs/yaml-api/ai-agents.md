@@ -6,13 +6,16 @@ Complete API reference for AI agent integrations in marktoflow workflows.
 
 ## Table of Contents
 
-1. [GitHub Copilot](#github-copilot)
-2. [Claude Agent](#claude-agent)
-3. [OpenAI Codex](#openai-codex)
-4. [OpenCode](#opencode)
-5. [Claude Code](#claude-code)
-6. [Ollama](#ollama)
-7. [AI-Powered Browser Automation](#ai-powered-browser-automation)
+1. [Overview](#overview)
+2. [Per-Step Model Configuration](#per-step-model-configuration)
+3. [External Prompts](#external-prompts)
+4. [GitHub Copilot](#github-copilot)
+5. [Claude Agent](#claude-agent)
+6. [OpenAI Codex](#openai-codex)
+7. [OpenCode](#opencode)
+8. [Claude Code](#claude-code)
+9. [Ollama](#ollama)
+10. [AI-Powered Browser Automation](#ai-powered-browser-automation)
 
 ---
 
@@ -26,6 +29,183 @@ AI agent integrations enable intelligent task automation, code generation, analy
 - Perform web research
 - Analyze and review code
 - Automate browser interactions
+
+---
+
+## Per-Step Model Configuration
+
+marktoflow allows you to override the AI model and agent backend on a per-step basis. This enables cost optimization by using cheaper models for simple tasks and more capable models for complex tasks.
+
+### Basic Model Override
+
+Override the model for a specific step:
+
+```yaml
+steps:
+  # Use fast, cheap model for quick summary
+  - id: quick-summary
+    action: agent.chat.completions
+    model: haiku                    # Fast, cheap
+    inputs:
+      messages:
+        - role: user
+          content: "Summarize: {{ inputs.text }}"
+
+  # Use powerful model for deep analysis
+  - id: deep-analysis
+    action: agent.chat.completions
+    model: opus                     # Most capable
+    inputs:
+      messages:
+        - role: user
+          content: "Detailed analysis: {{ inputs.code }}"
+```
+
+### Agent Backend Override
+
+Override the agent backend for a specific step:
+
+```yaml
+steps:
+  - id: copilot-task
+    action: agent.chat.completions
+    agent: copilot                  # Use GitHub Copilot
+    model: gpt-4.1
+    inputs:
+      messages:
+        - role: user
+          content: "Generate code: {{ inputs.spec }}"
+
+  - id: claude-task
+    action: agent.chat.completions
+    agent: claude-agent             # Use Claude Agent
+    model: claude-sonnet-4-5
+    inputs:
+      messages:
+        - role: user
+          content: "Review code: {{ inputs.code }}"
+```
+
+### Workflow-Level Defaults
+
+Set default model and agent at the workflow level:
+
+```yaml
+workflow:
+  id: my-workflow
+  name: "My Workflow"
+  default_agent: claude-agent
+  default_model: claude-sonnet-4-5
+
+steps:
+  - id: uses-defaults
+    action: agent.chat.completions
+    # Uses default_agent and default_model
+    inputs:
+      messages:
+        - role: user
+          content: "Process this"
+
+  - id: overrides-model
+    action: agent.chat.completions
+    model: haiku                    # Override for this step only
+    inputs:
+      messages:
+        - role: user
+          content: "Quick task"
+```
+
+### Available Models
+
+| Agent | Available Models |
+|-------|-----------------|
+| Claude Agent | `claude-opus-4`, `claude-sonnet-4-5`, `haiku` |
+| GitHub Copilot | `gpt-4.1`, `gpt-4-turbo`, `gpt-3.5-turbo` |
+| OpenAI Codex | `gpt-4-turbo`, `gpt-3.5-turbo` |
+| Ollama | Any locally installed model (`llama2`, `codellama`, etc.) |
+
+---
+
+## External Prompts
+
+External prompts allow you to store prompt templates in separate markdown files. This improves maintainability, enables prompt reuse, and keeps workflows clean.
+
+### Basic Usage
+
+Reference an external prompt file in a step:
+
+```yaml
+- id: review
+  action: agent.chat.completions
+  prompt: ./prompts/code-review.md
+  prompt_inputs:
+    code: '{{ inputs.code }}'
+    language: typescript
+  output_variable: review
+```
+
+### Prompt File Format
+
+Prompt files use markdown with optional YAML frontmatter:
+
+**prompts/code-review.md:**
+```markdown
+---
+name: Code Review
+description: Review code for quality and security
+variables:
+  code:
+    type: string
+    required: true
+  language:
+    type: string
+    default: auto
+---
+
+# Code Review
+
+Review this {{ prompt.language }} code:
+
+```
+{{ prompt.code }}
+```
+
+Focus on:
+- Security vulnerabilities
+- Performance issues
+- Code style and best practices
+```
+
+### Template Syntax
+
+Prompts support two template syntaxes:
+
+- **`{{ prompt.variable }}`** - Access variables defined in the prompt or `prompt_inputs`
+- **`{{ variable }}`** - Access workflow context (inputs, step outputs)
+
+### Combining with Model Overrides
+
+Use external prompts with per-step model configuration:
+
+```yaml
+- id: security-scan
+  action: agent.chat.completions
+  model: opus                       # Use most capable model
+  prompt: ./prompts/security-analysis.md
+  prompt_inputs:
+    code: '{{ inputs.source_code }}'
+    severity_threshold: high
+  output_variable: security_results
+```
+
+### Best Practices
+
+1. **Organize prompts by domain**: `prompts/code/`, `prompts/docs/`, `prompts/analysis/`
+2. **Use frontmatter for documentation**: Declare variables with types and descriptions
+3. **Keep prompts focused**: One task per prompt file
+4. **Version control prompts**: Track changes like code
+
+For more details on prompt file format and validation, see [External Prompts](../YAML-API.md#external-prompts) in the main API reference.
 
 ---
 

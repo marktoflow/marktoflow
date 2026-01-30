@@ -640,6 +640,9 @@ program
       const skipped = result.stepResults.filter((s) => s.status === StepStatus.SKIPPED).length;
 
       console.log(`  Completed: ${completed}, Failed: ${failed}, Skipped: ${skipped}`);
+
+      // Exit successfully to avoid hanging due to open SDK connections
+      process.exit(0);
     } catch (error) {
       spinner.fail(`Execution failed: ${error}`);
 

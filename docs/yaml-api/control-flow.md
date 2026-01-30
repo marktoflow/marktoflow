@@ -15,6 +15,7 @@ Complete guide to control flow structures in marktoflow workflows.
 7. [Reduce - Array Aggregation](#reduce---array-aggregation)
 8. [Parallel - Concurrent Execution](#parallel---concurrent-execution)
 9. [Try/Catch/Finally - Exception Handling](#trycatchfinally---exception-handling)
+10. [Sub-Workflows](#sub-workflows)
 
 ---
 
@@ -723,6 +724,174 @@ finally:
   - action: storage.deleteFile
     inputs:
       path: "{{temp_file.path}}"
+```
+
+---
+
+## Sub-Workflows
+
+Call another workflow as a sub-workflow. Sub-workflows enable code reuse, modularity, and can optionally be executed by an AI sub-agent.
+
+### Basic Syntax
+
+```yaml
+type: workflow
+workflow: string                     # Required: Path to workflow file
+inputs:                              # Optional: Inputs to pass
+  <key>: any
+output_variable: string              # Optional: Store result
+```
+
+### Examples
+
+#### Basic Sub-Workflow
+
+```yaml
+- id: validate
+  workflow: ./workflows/validate-input.md
+  inputs:
+    data: "{{inputs.user_data}}"
+  output_variable: validation_result
+```
+
+#### Chain Sub-Workflows
+
+```yaml
+steps:
+  - id: fetch
+    workflow: ./workflows/fetch-data.md
+    inputs:
+      source: api
+    output_variable: raw_data
+
+  - id: transform
+    workflow: ./workflows/transform.md
+    inputs:
+      data: "{{raw_data}}"
+    output_variable: transformed
+
+  - id: save
+    workflow: ./workflows/save-results.md
+    inputs:
+      data: "{{transformed}}"
+```
+
+### Sub-Agent Execution
+
+Execute a sub-workflow using an AI sub-agent. The agent interprets the workflow definition and executes it autonomously, making decisions about how to accomplish the workflow's goals.
+
+#### Syntax
+
+```yaml
+type: workflow
+workflow: string                     # Required: Path to workflow file
+use_subagent: boolean                # Execute via AI sub-agent (default: false)
+subagent_config:                     # Optional: Sub-agent configuration
+  model: string                      # AI model to use
+  max_turns: number                  # Maximum agentic turns (default: 10)
+  system_prompt: string              # Custom system prompt
+  tools: string[]                    # Available tools for the agent
+inputs:                              # Optional: Inputs to pass
+  <key>: any
+output_variable: string              # Optional: Store result
+```
+
+#### Example: AI-Driven Security Audit
+
+```yaml
+- id: security-audit
+  workflow: ./workflows/security-audit.md
+  use_subagent: true
+  subagent_config:
+    model: opus                      # Use most capable model
+    max_turns: 20
+    tools: [Read, Grep, Glob]
+  inputs:
+    target: '{{ inputs.code_path }}'
+  output_variable: audit_results
+```
+
+#### Example: Autonomous Code Review
+
+```yaml
+- id: code-review
+  workflow: ./workflows/review-pr.md
+  use_subagent: true
+  subagent_config:
+    model: claude-sonnet-4-5
+    max_turns: 15
+    system_prompt: |
+      You are a senior code reviewer. Focus on:
+      - Security vulnerabilities
+      - Performance issues
+      - Code maintainability
+    tools: [Read, Grep, Glob, WebSearch]
+  inputs:
+    pr_url: '{{ inputs.pr_url }}'
+    focus_areas: ['security', 'performance']
+  output_variable: review
+```
+
+### When to Use Sub-Agent Execution
+
+| Scenario | Normal Execution | Sub-Agent Execution |
+|----------|-----------------|---------------------|
+| Deterministic tasks | ✓ | |
+| Fixed step sequence | ✓ | |
+| Complex analysis | | ✓ |
+| Tasks requiring judgment | | ✓ |
+| Exploratory tasks | | ✓ |
+| Research tasks | | ✓ |
+
+### Sub-Agent Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | `string` | Inherited | AI model to use (`opus`, `claude-sonnet-4-5`, `haiku`, etc.) |
+| `max_turns` | `number` | `10` | Maximum conversation turns before stopping |
+| `system_prompt` | `string` | Auto-generated | Custom system prompt for the agent |
+| `tools` | `string[]` | `['Read', 'Glob', 'Grep']` | Tools the agent can use |
+
+### Passing Data to Sub-Workflows
+
+Sub-workflow inputs support full template resolution:
+
+```yaml
+- id: process
+  workflow: ./workflows/process.md
+  inputs:
+    # Simple value
+    name: "John"
+
+    # Template reference
+    user_id: "{{inputs.user_id}}"
+
+    # Computed value
+    total: "{{items.length}}"
+
+    # Previous step output
+    data: "{{fetch_result.data}}"
+
+    # Object
+    config:
+      timeout: 5000
+      retries: 3
+```
+
+### Accessing Sub-Workflow Outputs
+
+Sub-workflow outputs are stored in the `output_variable`:
+
+```yaml
+# Sub-workflow returns { status: 'success', count: 42 }
+- id: process
+  workflow: ./process.md
+  output_variable: result
+
+# Access in next step
+- action: slack.chat.postMessage
+  inputs:
+    text: "Processed {{result.count}} items with status: {{result.status}}"
 ```
 
 ---
