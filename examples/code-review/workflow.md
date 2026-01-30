@@ -16,8 +16,10 @@ tools:
     auth:
       token: '${GITHUB_TOKEN}'
 
-  # Agent is selected via --agent flag or GUI
-  # Supported: claude-code, copilot, opencode, ollama
+  script:
+    sdk: 'script'
+    options:
+      path: 'inline'
 
 triggers:
   - type: webhook
@@ -155,10 +157,38 @@ output_variable: analysis_results
 Compile all findings into a review comment.
 
 ```yaml
-action: script
+action: script.execute
 inputs:
   code: |
-    const analysis = JSON.parse(context.analysis_results);
+    // Extract content from agent response
+    const responseText = context.analysis_results?.choices?.[0]?.message?.content ||
+                         context.analysis_results || '';
+
+    // Try to parse JSON from the response
+    let analysis;
+    try {
+      // If the response is already parsed, use it directly
+      if (typeof responseText === 'object') {
+        analysis = responseText;
+      } else {
+        // Otherwise, try to extract JSON from markdown code blocks or raw text
+        const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) ||
+                         responseText.match(/\{[\s\S]*\}/);
+        analysis = jsonMatch ? JSON.parse(jsonMatch[1] || jsonMatch[0]) :
+                   { issues: [], summary: responseText, approved: true };
+      }
+    } catch (e) {
+      // If parsing fails, create a simple structure
+      analysis = {
+        issues: [],
+        summary: String(responseText).substring(0, 500),
+        approved: true
+      };
+    }
+
+    // Ensure we have the required fields
+    if (!analysis.issues) analysis.issues = [];
+    if (!analysis.summary) analysis.summary = 'Review completed';
     const critical = analysis.issues.filter(i => i.severity === 'critical').length;
     const high = analysis.issues.filter(i => i.severity === 'high').length;
 

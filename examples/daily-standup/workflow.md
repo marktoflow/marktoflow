@@ -1,21 +1,11 @@
 ---
 workflow:
   id: daily-standup-summary
-  name: 'Daily Standup Summary'
-  version: '2.0.0'
-  description: 'Aggregates team updates and generates a daily standup summary using native Slack and Jira integrations'
-  author: 'marktoflow'
-  tags:
-    - team
-    - communication
-    - scheduling
+  name: 'Daily Standup Summary Generator'
+  description: 'Automatically generates team standup summaries from Jira and Slack activity'
+  version: '1.0.0'
 
 tools:
-  slack:
-    sdk: '@slack/web-api'
-    auth:
-      token: '${SLACK_BOT_TOKEN}'
-
   jira:
     sdk: 'jira.js'
     auth:
@@ -23,177 +13,196 @@ tools:
       email: '${JIRA_EMAIL}'
       api_token: '${JIRA_API_TOKEN}'
 
-  # Agent is selected via --agent flag or GUI
-  # Supported: claude-code, copilot, opencode, ollama
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+  core:
+    sdk: 'core'
 
 triggers:
   - type: schedule
-    cron: '0 9 * * 1-5' # 9 AM on weekdays
-    timezone: 'America/New_York'
+    cron: '0 9 * * 1-5'  # 9 AM weekdays
+    timezone: 'America/Los_Angeles'
 
 inputs:
-  team_channel:
-    type: string
-    default: '#engineering'
-    description: 'Slack channel for the team'
   jira_project:
     type: string
+    description: 'Jira project key (e.g., PROJ)'
     required: true
-    description: 'JIRA project key'
+    default: 'PROJ'
+
+  slack_channel:
+    type: string
+    description: 'Slack channel ID to post summary'
+    required: true
+
   lookback_hours:
     type: number
+    description: 'Hours to look back for activity'
+    required: false
     default: 24
-    description: 'Hours to look back for updates'
 
 outputs:
   summary:
     type: string
     description: 'Generated standup summary'
-  active_issues:
-    type: number
-    description: 'Number of active issues'
+
+  slack_message_ts:
+    type: string
+    description: 'Timestamp of posted Slack message'
 ---
 
-# Daily Standup Summary
+# Daily Standup Summary Generator
 
-This workflow runs every weekday morning to collect team updates from Jira and Slack, then generates an AI-powered standup summary that's posted to Slack.
+This workflow automatically generates a comprehensive daily standup summary by:
+1. Fetching recent Jira updates (completed, in-progress, blocked)
+2. Retrieving recent Slack activity from the team channel
+3. Using AI to generate a formatted standup summary
+4. Posting the summary to Slack
 
-## Step 1: Get Recent JIRA Updates
-
-Fetch issues updated in the last 24 hours.
+## Step 1: Fetch Recently Completed Issues
 
 ```yaml
 action: jira.issueSearch.searchForIssuesUsingJql
 inputs:
-  jql: 'project = {{ inputs.jira_project }} AND updated >= -{{ inputs.lookback_hours }}h ORDER BY updated DESC'
+  jql: "project = {{ inputs.jira_project }} AND status changed to Done after -{{ inputs.lookback_hours }}h"
   fields:
     - summary
     - status
     - assignee
     - updated
   maxResults: 50
-output_variable: recent_issues
+output_variable: completed_issues
 ```
 
-## Step 2: Get In-Progress Work
-
-Get all issues currently in progress.
+## Step 2: Fetch In-Progress Issues
 
 ```yaml
 action: jira.issueSearch.searchForIssuesUsingJql
 inputs:
-  jql: "project = {{ inputs.jira_project }} AND status = 'In Progress' ORDER BY assignee"
+  jql: "project = {{ inputs.jira_project }} AND status in ('In Progress', 'In Review', 'Testing') ORDER BY updated DESC"
   fields:
     - summary
     - status
     - assignee
     - priority
   maxResults: 50
-output_variable: in_progress
+output_variable: in_progress_issues
 ```
 
-## Step 3: Get Blocked Issues
-
-Find any blocked or impediment issues.
+## Step 3: Fetch Blocked Issues
 
 ```yaml
 action: jira.issueSearch.searchForIssuesUsingJql
 inputs:
-  jql: "project = {{ inputs.jira_project }} AND (status = 'Blocked' OR labels = 'blocked')"
+  jql: "project = {{ inputs.jira_project }} AND status = Blocked ORDER BY priority DESC"
   fields:
     - summary
+    - status
     - assignee
-    - comment
+    - priority
+    - description
   maxResults: 20
 output_variable: blocked_issues
 ```
 
-## Step 4: Get Recent Slack Activity
-
-Fetch recent messages from the team channel.
+## Step 4: Fetch Recent Slack Activity
 
 ```yaml
 action: slack.conversations.history
 inputs:
-  channel: '{{ inputs.team_channel }}'
-  oldest: '{{ (Date.now() / 1000) - (inputs.lookback_hours * 3600) }}'
-  limit: 50
+  channel: "{{ inputs.slack_channel }}"
+  oldest: "{{ timestamp_subtract(now(), inputs.lookback_hours, 'hours') }}"
+  limit: 100
 output_variable: slack_messages
 ```
 
-## Step 5: Generate Summary
-
-Use the selected AI agent to generate a coherent standup summary from the collected data.
+## Step 5: Generate Standup Summary with AI
 
 ```yaml
 action: agent.chat.completions
 inputs:
   messages:
-    - role: 'user'
+    - role: system
       content: |
-        Generate a daily standup summary based on the following team data:
+        You are a helpful assistant that generates concise daily standup summaries for engineering teams.
 
-        **Recent Jira Updates (last {{ inputs.lookback_hours }}h):**
-        {% for issue in recent_issues.issues %}
-        - [{{ issue.key }}] {{ issue.fields.summary }} - {{ issue.fields.status.name }} ({{ issue.fields.assignee.displayName }})
-        {% endfor %}
+        Format the summary using Slack markdown with these sections:
 
-        **In Progress:**
-        {% for issue in in_progress.issues %}
-        - [{{ issue.key }}] {{ issue.fields.summary }} - {{ issue.fields.assignee.displayName }}
-        {% endfor %}
+        1. **✅ Completed Yesterday** - Issues moved to Done status
+        2. **🚀 In Progress Today** - Active work items with assignees
+        3. **🚧 Blockers & Impediments** - Issues that need immediate attention
+        4. **💬 Team Highlights** - Notable updates or discussions from Slack
+
+        Guidelines:
+        - Use bullet points for clarity
+        - Mention team members as @username (extract from assignee data)
+        - Keep it concise and actionable
+        - Highlight blockers prominently
+        - Include issue keys as links when possible
+        - Summarize Slack activity thematically (don't list every message)
+        - Maximum 15 lines total
+
+    - role: user
+      content: |
+        Generate a daily standup summary based on this team data:
+
+        **Completed Issues (last {{ inputs.lookback_hours }}h):**
+        {{ completed_issues }}
+
+        **In Progress Issues:**
+        {{ in_progress_issues }}
 
         **Blocked Issues:**
-        {% for issue in blocked_issues.issues %}
-        - [{{ issue.key }}] {{ issue.fields.summary }} - {{ issue.fields.assignee.displayName }}
-        {% endfor %}
+        {{ blocked_issues }}
 
         **Recent Slack Activity:**
-        {{ slack_messages.messages.length }} messages in {{ inputs.team_channel }}
+        {{ slack_messages.messages.length }} messages in channel {{ inputs.slack_channel }}
 
-        Create a standup summary with these sections:
-
-        1. **✅ Completed Yesterday** - Issues moved to Done
-        2. **🚀 In Progress Today** - Active work items with assignees
-        3. **🚧 Blockers & Impediments** - Issues that need attention
-        4. **💬 Team Highlights** - Notable updates or discussions
-
-        Format in Slack markdown. Keep it concise and actionable. Use bullet points.
-        Mention team members with @username where appropriate.
-output_variable: summary_content
+output_variable: ai_response
 ```
 
-## Step 6: Post to Slack
-
-Post the generated summary to the team channel with formatted blocks.
+## Step 6: Post Summary to Slack
 
 ```yaml
 action: slack.chat.postMessage
 inputs:
-  channel: '{{ inputs.team_channel }}'
-  text: 'Daily Standup Summary'
+  channel: "{{ inputs.slack_channel }}"
+  text: "Daily Standup Summary - {{ format_date(now(), 'MMMM DD, YYYY') }}"
   blocks:
     - type: header
       text:
         type: plain_text
-        text: '🌅 Daily Standup Summary'
+        text: "📊 Daily Standup Summary - {{ format_date(now(), 'MMMM DD, YYYY') }}"
+
     - type: section
       text:
         type: mrkdwn
-        text: '{{ summary_content }}'
+        text: "{{ ai_response.choices[0].message.content }}"
+
     - type: divider
+
     - type: context
       elements:
         - type: mrkdwn
-          text: '_Generated by marktoflow v2.0 • {{ new Date().toISOString() }}_'
-output_variable: post_result
+          text: "Generated automatically by marktoflow • {{ format_date(now(), 'h:mm A') }}"
+output_variable: slack_result
 ```
 
-## Step 7: Set Outputs
+## Step 7: Store Summary for Records
 
 ```yaml
-action: workflow.set_outputs
+action: core.log
 inputs:
-  summary: '{{ summary_content }}'
-  active_issues: '{{ in_progress.issues.length }}'
+  level: info
+  message: "Daily standup summary posted successfully"
+  metadata:
+    slack_ts: "{{ slack_result.ts }}"
+    completed_count: "{{ completed_issues.total }}"
+    in_progress_count: "{{ in_progress_issues.total }}"
+    blocked_count: "{{ blocked_issues.total }}"
+    slack_messages_count: "{{ slack_messages.messages.length }}"
 ```
+

@@ -131,6 +131,12 @@ export {
   type SDKInitializer,
 } from './sdk-registry.js';
 
+// Core Built-in Tools
+export {
+  CoreToolsClient,
+  CoreInitializer,
+} from './core-tools.js';
+
 // State Persistence
 export {
   StateStore,

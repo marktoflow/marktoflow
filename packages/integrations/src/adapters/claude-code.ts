@@ -53,6 +53,45 @@ export class ClaudeCodeClient {
       });
     });
   }
+
+  /**
+   * OpenAI-compatible chat interface for workflow compatibility
+   */
+  chat = {
+    completions: async (inputs: {
+      model?: string;
+      messages: Array<{ role: string; content: string }>;
+    }): Promise<{ choices: Array<{ message: { content: string } }> }> => {
+      // Combine all messages into a single prompt
+      // System messages provide context, user messages are the actual requests
+      let combinedPrompt = '';
+
+      for (const msg of inputs.messages) {
+        if (msg.role === 'system') {
+          combinedPrompt += msg.content + '\n\n';
+        } else if (msg.role === 'user') {
+          combinedPrompt += msg.content;
+        }
+      }
+
+      // Use the generate method with combined prompt
+      const response = await this.generate({
+        prompt: combinedPrompt,
+        model: inputs.model,
+      });
+
+      // Return OpenAI-compatible format
+      return {
+        choices: [
+          {
+            message: {
+              content: response,
+            },
+          },
+        ],
+      };
+    },
+  };
 }
 
 export const ClaudeCodeInitializer: SDKInitializer = {

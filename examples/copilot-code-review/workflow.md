@@ -133,7 +133,7 @@ inputs:
   prompt: |
     Review the following pull request for {{ inputs.repository }}:
 
-    **Focus Areas**: {{ inputs.focus_areas | join(', ') }}
+    **Focus Areas**: {{ inputs.focus_areas }}
 
     **Files Changed** ({{ pr_files.data.length }} files):
     {% for file in file_contents.files %}

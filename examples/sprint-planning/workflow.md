@@ -30,9 +30,6 @@ tools:
     auth:
       token: '${SLACK_BOT_TOKEN}'
 
-  # Agent is selected via --agent flag or GUI
-  # Supported: claude-code, copilot, opencode, ollama
-
 triggers:
   - type: schedule
     cron: '0 14 * * 5' # 2 PM every Friday
@@ -101,7 +98,7 @@ inputs:
       content: |
         Analyze the following sprint data and calculate the team's average velocity:
 
-        {{ past_sprints.issues | json }}
+        {{ past_sprints.issues }}
 
         Provide a JSON response with:
         {

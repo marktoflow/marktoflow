@@ -372,15 +372,14 @@ program
 
         // If no AI tools were found, add one with a common name
         if (replacedCount === 0) {
-          // Try to use the provider name as the tool name
-          const toolName = options.agent.toLowerCase();
-          workflow.tools[toolName] = {
+          // Register as 'agent' so workflows can use agent.chat.completions
+          workflow.tools['agent'] = {
             sdk: sdkName,
             auth: authConfig,
           };
 
           if (options.verbose || options.debug) {
-            console.log(chalk.cyan(`  Added AI agent '${toolName}' (${sdkName})`));
+            console.log(chalk.cyan(`  Added AI agent 'agent' (${sdkName})`));
           }
         }
 
@@ -781,8 +780,8 @@ program
         }
 
         if (replacedCount === 0) {
-          const toolName = options.agent.toLowerCase();
-          workflow.tools[toolName] = {
+          // Register as 'agent' so workflows can use agent.chat.completions
+          workflow.tools['agent'] = {
             sdk: sdkName,
             auth: authConfig,
           };
