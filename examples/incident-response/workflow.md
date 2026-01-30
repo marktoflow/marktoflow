@@ -34,6 +34,11 @@ tools:
       type: 'bearer'
       token: '${PAGERDUTY_API_KEY}'
 
+  script:
+    sdk: 'script'
+    options:
+      path: 'inline'
+
 triggers:
   - type: webhook
     path: /webhooks/pagerduty/incident
@@ -221,6 +226,18 @@ inputs:
 output_variable: jira_incident
 ```
 
+## Step 7.5: Format On-Call Names
+
+```yaml
+action: script.execute
+inputs:
+  code: |
+    const oncalls = context.oncall_response?.data?.oncalls || [];
+    const names = oncalls.map(o => '@' + (o.user?.name || 'unknown')).join(', ');
+    return { oncall_names: names || 'No on-call responders found' };
+output_variable: formatted_oncall
+```
+
 ## Step 8: Post Summary with Actions
 
 Post a summary message with action items and links.
@@ -238,7 +255,7 @@ inputs:
           *📋 Incident Response Initiated*
 
           *Jira Ticket:* <{{ jira_incident.self }}|{{ jira_incident.key }}>
-          *On-Call:* {{ oncall_response.data.oncalls.map(o => '@' + o.user.name).join(', ') }}
+          *On-Call:* {{ formatted_oncall.oncall_names }}
 
           *Related Issues:*
           {% for issue in related_issues.data.items %}

@@ -518,6 +518,39 @@ export class CodexClient {
       // as the underlying Codex SDK doesn't support it yet
     };
   }
+
+  // ============================================================================
+  // OpenAI-Compatible Interface
+  // ============================================================================
+
+  /**
+   * OpenAI-compatible chat interface for workflow compatibility
+   */
+  chat = {
+    completions: async (inputs: {
+      model?: string;
+      messages: Array<{ role: string; content: string }>;
+    }): Promise<{ choices: Array<{ message: { content: string } }> }> => {
+      // Extract the user message from messages array
+      const userMessage = inputs.messages.find(m => m.role === 'user')?.content || '';
+
+      // Use the send method
+      const response = await this.send({
+        prompt: userMessage,
+      });
+
+      // Return OpenAI-compatible format
+      return {
+        choices: [
+          {
+            message: {
+              content: response,
+            },
+          },
+        ],
+      };
+    },
+  };
 }
 
 // ============================================================================

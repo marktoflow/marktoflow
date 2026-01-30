@@ -1,4 +1,4 @@
-import { SDKRegistry } from '@marktoflow/core';
+import { SDKRegistry, CoreInitializer } from '@marktoflow/core';
 
 // Services
 import { SlackInitializer } from './services/slack.js';
@@ -46,6 +46,9 @@ import { CodexInitializer } from './adapters/codex.js';
 import { ScriptInitializer } from './tools/script.js';
 
 export function registerIntegrations(registry: SDKRegistry) {
+  // Core built-in tools (always available)
+  registry.registerInitializer('core', CoreInitializer);
+
   // Communication & Collaboration
   registry.registerInitializer('@slack/web-api', SlackInitializer);
   registry.registerInitializer('discord', DiscordInitializer);

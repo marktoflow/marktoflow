@@ -203,6 +203,30 @@ export class CircuitBreaker {
 // ============================================================================
 
 /**
+ * Smart serialization for template interpolation.
+ * Converts values to strings in a meaningful way for different types.
+ */
+function serializeValue(value: unknown): string {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  // For primitives, use standard string conversion
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  // For objects and arrays, use JSON serialization for readability
+  // This makes them useful in prompts and messages instead of "[object Object]"
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (error) {
+    // Fallback to string conversion if JSON serialization fails
+    return String(value);
+  }
+}
+
+/**
  * Resolve template variables in a value.
  * Supports {{variable}} and {{inputs.name}} syntax.
  */
@@ -219,11 +243,11 @@ export function resolveTemplates(value: unknown, context: ExecutionContext): unk
       return resolved !== undefined ? resolved : '';
     }
 
-    // Otherwise, do string interpolation
+    // Otherwise, do string interpolation with smart serialization
     return value.replace(/\{\{([^}]+)\}\}/g, (_, varPath) => {
       const path = varPath.trim();
       const resolved = resolveVariablePath(path, context);
-      return resolved !== undefined ? String(resolved) : '';
+      return serializeValue(resolved);
     });
   }
 
@@ -271,28 +295,66 @@ export function resolveVariablePath(path: string, context: ExecutionContext): un
 }
 
 /**
- * Get a nested value from an object using dot notation.
+ * Get a nested value from an object using dot notation and array indexing.
+ * Supports paths like: "user.name", "items[0].name", "data.users[1].email"
  */
 function getNestedValue(obj: unknown, path: string): unknown {
   if (obj === null || obj === undefined) {
     return undefined;
   }
 
-  const parts = path.split('.');
-  let current: unknown = obj;
+  // Parse path into parts, handling both dot notation and array indexing
+  // Convert "a.b[0].c[1]" into ["a", "b", "0", "c", "1"]
+  const parts: string[] = [];
+  let current = '';
+
+  for (let i = 0; i < path.length; i++) {
+    const char = path[i];
+
+    if (char === '.') {
+      if (current) {
+        parts.push(current);
+        current = '';
+      }
+    } else if (char === '[') {
+      if (current) {
+        parts.push(current);
+        current = '';
+      }
+    } else if (char === ']') {
+      if (current) {
+        parts.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) {
+    parts.push(current);
+  }
+
+  // Traverse the object using the parsed parts
+  let result: unknown = obj;
 
   for (const part of parts) {
-    if (current === null || current === undefined) {
+    if (result === null || result === undefined) {
       return undefined;
     }
-    if (typeof current === 'object') {
-      current = (current as Record<string, unknown>)[part];
+
+    // Check if part is a number (array index)
+    const index = Number(part);
+    if (!isNaN(index) && Array.isArray(result)) {
+      result = result[index];
+    } else if (typeof result === 'object') {
+      result = (result as Record<string, unknown>)[part];
     } else {
       return undefined;
     }
   }
 
-  return current;
+  return result;
 }
 
 // ============================================================================
