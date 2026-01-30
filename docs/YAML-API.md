@@ -619,11 +619,15 @@ Execute a subworkflow via an AI agent that interprets and runs the workflow auto
 
 ## Built-in Actions
 
-marktoflow provides several built-in actions that don't require external tool configuration.
+marktoflow provides several built-in actions that don't require external tool configuration. These are available in all workflows without needing to declare them in the `tools` section.
 
-### `workflow.set_outputs`
+### Workflow Control Actions
 
-Sets workflow output values. Use this to define the final outputs of your workflow.
+These actions control workflow execution and outputs.
+
+#### `workflow.set_outputs`
+
+Sets workflow output values explicitly. Use this to define the final outputs of your workflow instead of returning all intermediate variables.
 
 ```yaml
 action: workflow.set_outputs
@@ -632,17 +636,179 @@ inputs:
   another_output: '{{ other_value }}'
 ```
 
-#### Example
+**Example:**
 
 ```yaml
+## Step 1: Process data
+action: core.process
+inputs:
+  data: '{{ inputs.data }}'
+output_variable: processed
+
+## Step 2: Set workflow outputs
 action: workflow.set_outputs
 inputs:
-  summary: '{{ summary_content }}'
-  total_processed: '{{ results.length }}'
-  success: true
+  result: '{{ processed }}'
+  count: '{{ processed.items.length }}'
+  timestamp: '{{ now() }}'
+  status: 'success'
 ```
 
-### `console.log`
+**Result:**
+```json
+{
+  "workflowId": "process-data",
+  "status": "completed",
+  "output": {
+    "result": { /* processed data */ },
+    "count": 42,
+    "timestamp": "2024-01-01T12:00:00Z",
+    "status": "success"
+  }
+}
+```
+
+**Implementation Details:**
+- If `workflow.set_outputs` is never called, all workflow variables are returned as outputs (default behavior)
+- If called multiple times, the **last call wins**
+- Recommended for production workflows to provide clean, controlled outputs
+
+#### `workflow.log`
+
+Logs a message during workflow execution with optional severity levels and metadata.
+
+```yaml
+action: workflow.log
+inputs:
+  message: string    # Message to log (supports templates)
+  level: string      # Optional: 'info' | 'warning' | 'error' | 'critical' (default: 'info')
+  metadata: object   # Optional: Additional metadata to include
+```
+
+**Levels:**
+- `info` - Informational messages (default)
+- `warning` - Warning messages
+- `error` - Error messages
+- `critical` - Critical error messages
+
+**Example:**
+
+```yaml
+action: workflow.log
+inputs:
+  message: 'Processing item {{ item.id }}'
+  level: 'info'
+  metadata:
+    item_id: '{{ item.id }}'
+    step: 'validation'
+```
+
+#### `workflow.sleep`
+
+Pauses workflow execution for a specified duration. Useful for rate limiting or waiting between API calls.
+
+```yaml
+action: workflow.sleep
+inputs:
+  duration: number   # Duration in milliseconds
+```
+
+**Example - Rate Limiting:**
+
+```yaml
+## Step 1: Call API
+action: http.get
+inputs:
+  url: 'https://api.example.com/data'
+output_variable: api_result
+
+## Step 2: Wait before next call
+action: workflow.sleep
+inputs:
+  duration: 1000  # 1 second delay
+
+## Step 3: Call API again
+action: http.get
+inputs:
+  url: 'https://api.example.com/more-data'
+output_variable: more_data
+```
+
+#### `workflow.fail`
+
+Fails the workflow execution with a custom error message and optional error code.
+
+```yaml
+action: workflow.fail
+inputs:
+  message: string    # Error message
+  code: string       # Optional: Error code
+```
+
+**Example - Conditional Failure:**
+
+```yaml
+## Step 1: Validate
+action: script.execute
+inputs:
+  code: |
+    return { valid: input.email.includes('@') }
+output_variable: validation
+
+## Step 2: Fail if invalid
+action: workflow.fail
+inputs:
+  message: 'Invalid email: {{ inputs.email }}'
+  code: 'INVALID_EMAIL'
+conditions:
+  - '{{ not validation.valid }}'
+```
+
+#### `workflow.timestamp`
+
+Generates a timestamp in various formats.
+
+```yaml
+action: workflow.timestamp
+inputs:
+  format: string     # Optional: 'iso' | 'unix' | 'ms' (default: 'iso')
+output_variable: timestamp
+```
+
+**Formats:**
+- `iso` - ISO 8601 format (default): `2024-01-01T12:00:00.000Z`
+- `unix` - Unix timestamp in seconds: `1704110400`
+- `ms` - Milliseconds since epoch: `1704110400000`
+
+**Example:**
+
+```yaml
+## Generate timestamp
+action: workflow.timestamp
+inputs:
+  format: 'iso'
+output_variable: created_at
+
+## Use in output
+action: workflow.set_outputs
+inputs:
+  created_at: '{{ created_at.timestamp }}'
+  data: '{{ processed_data }}'
+```
+
+#### `workflow.noop`
+
+No-operation action that does nothing. Useful for testing or as a placeholder during workflow development.
+
+```yaml
+action: workflow.noop
+```
+
+### Utility Actions
+
+Common utility actions for logging, scripting, delays, and HTTP requests.
+
+#### `console.log`
 
 Logs a message to the console output. Useful for debugging and progress reporting.
 
@@ -653,7 +819,7 @@ inputs:
   level: string      # Optional: 'info' | 'warn' | 'error' | 'debug' (default: 'info')
 ```
 
-#### Example
+**Example:**
 
 ```yaml
 action: console.log
@@ -662,7 +828,7 @@ inputs:
   level: info
 ```
 
-### `script` / `script.execute`
+#### `script` / `script.execute`
 
 Executes inline code or an external script file. Useful for data transformations and custom logic.
 
@@ -676,7 +842,7 @@ inputs:
 output_variable: script_result
 ```
 
-#### Inline Code Example
+**Inline Code Example:**
 
 ```yaml
 action: script
@@ -688,7 +854,7 @@ inputs:
 output_variable: filtered_data
 ```
 
-#### External Script Example
+**External Script Example:**
 
 ```yaml
 action: script.execute
@@ -700,9 +866,9 @@ inputs:
 output_variable: processed_data
 ```
 
-### `sleep`
+#### `sleep`
 
-Pauses workflow execution for a specified duration. Useful for rate limiting or waiting for external processes.
+Pauses workflow execution for a specified duration. Alias for `workflow.sleep`.
 
 ```yaml
 action: sleep
@@ -712,7 +878,7 @@ inputs:
   seconds: number    # Duration in seconds
 ```
 
-#### Example
+**Example:**
 
 ```yaml
 action: sleep
@@ -720,7 +886,7 @@ inputs:
   seconds: 5
 ```
 
-### `http.request`
+#### `http.request`
 
 Makes HTTP requests to external APIs. Part of the HTTP tool but commonly used standalone.
 
@@ -735,7 +901,7 @@ inputs:
 output_variable: response
 ```
 
-#### Example
+**Example:**
 
 ```yaml
 action: http.request
@@ -749,6 +915,70 @@ inputs:
     name: '{{ inputs.name }}'
     value: '{{ calculated_value }}'
 output_variable: api_response
+```
+
+### Best Practices
+
+#### 1. Always Set Outputs Explicitly
+
+```yaml
+# Good - clear outputs
+action: workflow.set_outputs
+inputs:
+  user_id: '{{ created_user.id }}'
+  email: '{{ created_user.email }}'
+  status: 'created'
+
+# Avoid - returns all variables including intermediate values
+# (no workflow.set_outputs call)
+```
+
+#### 2. Use Meaningful Output Names
+
+```yaml
+# Good
+action: workflow.set_outputs
+inputs:
+  order_id: '{{ order.id }}'
+  total_amount: '{{ order.total }}'
+  confirmation_sent: true
+
+# Avoid
+action: workflow.set_outputs
+inputs:
+  x: '{{ order.id }}'
+  y: '{{ order.total }}'
+  z: true
+```
+
+#### 3. Include Status Information
+
+```yaml
+action: workflow.set_outputs
+inputs:
+  status: 'success'
+  data: '{{ processed_data }}'
+  timestamp: '{{ now() }}'
+  error: null  # Makes it clear there was no error
+```
+
+#### 4. Log Important Steps
+
+```yaml
+## Before critical operation
+action: workflow.log
+inputs:
+  message: 'Starting payment processing for {{ order.id }}'
+  level: 'info'
+
+## After critical operation
+action: workflow.log
+inputs:
+  message: 'Payment processed successfully'
+  level: 'info'
+  metadata:
+    order_id: '{{ order.id }}'
+    amount: '{{ payment.amount }}'
 ```
 
 ---

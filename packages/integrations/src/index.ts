@@ -1,4 +1,4 @@
-import { SDKRegistry, CoreInitializer } from '@marktoflow/core';
+import { SDKRegistry, CoreInitializer, WorkflowInitializer } from '@marktoflow/core';
 
 // Services
 import { SlackInitializer } from './services/slack.js';
@@ -48,6 +48,7 @@ import { ScriptInitializer } from './tools/script.js';
 export function registerIntegrations(registry: SDKRegistry) {
   // Core built-in tools (always available)
   registry.registerInitializer('core', CoreInitializer);
+  registry.registerInitializer('workflow', WorkflowInitializer);
 
   // Communication & Collaboration
   registry.registerInitializer('@slack/web-api', SlackInitializer);
@@ -56,7 +57,7 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('whatsapp', WhatsAppInitializer);
 
   // Email
-  registry.registerInitializer('googleapis', GmailInitializer);
+  registry.registerInitializer('google-gmail', GmailInitializer);
   registry.registerInitializer('@microsoft/microsoft-graph-client', OutlookInitializer);
 
   // Collaboration

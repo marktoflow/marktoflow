@@ -8,6 +8,8 @@
 import { google, drive_v3 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { Readable } from 'stream';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export interface DriveFile {
   id: string;
@@ -385,13 +387,40 @@ export class GoogleDriveActions {
   }
 }
 
+/**
+ * Load saved OAuth tokens from credentials file
+ */
+function loadSavedTokens(): { refresh_token?: string; access_token?: string } | null {
+  const credentialsPath = join('.marktoflow', 'credentials', 'google-drive.json');
+  if (!existsSync(credentialsPath)) return null;
+
+  try {
+    const data = JSON.parse(readFileSync(credentialsPath, 'utf-8'));
+    return {
+      refresh_token: data.refresh_token,
+      access_token: data.access_token,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const GoogleDriveInitializer: SDKInitializer = {
   async initialize(_module: unknown, config: ToolConfig): Promise<unknown> {
     const clientId = config.auth?.['client_id'] as string | undefined;
     const clientSecret = config.auth?.['client_secret'] as string | undefined;
     const redirectUri = config.auth?.['redirect_uri'] as string | undefined;
-    const refreshToken = config.auth?.['refresh_token'] as string | undefined;
-    const accessToken = config.auth?.['access_token'] as string | undefined;
+    let refreshToken = config.auth?.['refresh_token'] as string | undefined;
+    let accessToken = config.auth?.['access_token'] as string | undefined;
+
+    // If no refresh token provided in config, try loading from saved credentials
+    if (!refreshToken || !accessToken) {
+      const savedTokens = loadSavedTokens();
+      if (savedTokens) {
+        refreshToken = refreshToken || savedTokens.refresh_token;
+        accessToken = accessToken || savedTokens.access_token;
+      }
+    }
 
     if (!clientId || !clientSecret || !redirectUri) {
       throw new Error(
@@ -406,9 +435,23 @@ export const GoogleDriveInitializer: SDKInitializer = {
     });
 
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
-    return {
+    const actions = new GoogleDriveActions(drive);
+
+    // Copy all methods from actions to root level for workflow access
+    // Can't use spread operator as methods are on the prototype
+    const sdk: Record<string, unknown> = {
       client: drive,
-      actions: new GoogleDriveActions(drive),
+      actions,
     };
+
+    // Copy all methods from GoogleDriveActions prototype and bind them to maintain 'this' context
+    for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(actions))) {
+      if (key !== 'constructor' && typeof (actions as unknown as Record<string, unknown>)[key] === 'function') {
+        const method = (actions as unknown as Record<string, unknown>)[key] as (...args: unknown[]) => unknown;
+        sdk[key] = method.bind(actions);
+      }
+    }
+
+    return sdk;
   },
 };

@@ -162,17 +162,21 @@ marktoflow v2.0 includes native SDK integrations for 30+ services:
 
 ### Email & Marketing
 
-- **Gmail** (`googleapis`) - Send/receive emails, Pub/Sub triggers, labels
+- **Gmail** (`google-gmail`) - Send/receive emails, Pub/Sub triggers, labels
 - **Outlook** (`@microsoft/microsoft-graph-client`) - Emails, calendar, Graph subscriptions
 - **SendGrid** (`@sendgrid/mail`) - Transactional email delivery
 - **Mailchimp** (`@mailchimp/mailchimp_marketing`) - Email marketing campaigns and automation
 
 ### Google Workspace
 
-- **Google Sheets** (`googleapis`) - Spreadsheet CRUD, read/write values, formatting, batch updates
-- **Google Calendar** (`googleapis`) - Event management, free/busy queries, conference data, webhooks
-- **Google Drive** (`googleapis`) - File/folder operations, sharing, permissions, search
-- **Google Docs** (`googleapis`) - Document creation/editing, text formatting, tables, images
+All Google services share the same OAuth credentials but use service-specific SDK names:
+
+- **Google Sheets** (`google-sheets`) - Spreadsheet CRUD, read/write values, formatting, batch updates
+- **Google Calendar** (`google-calendar`) - Event management, free/busy queries, conference data, webhooks
+- **Google Drive** (`google-drive`) - File/folder operations, sharing, permissions, search
+- **Google Docs** (`google-docs`) - Document creation/editing, text formatting, tables, images
+
+**Note:** All Google services use the same `googleapis` npm package but are accessed via service-specific SDK names (`google-gmail`, `google-sheets`, etc.). They share the same OAuth credentials.
 
 ### Project Management
 
