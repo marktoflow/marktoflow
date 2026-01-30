@@ -10,7 +10,7 @@
 
 ## What is marktoflow?
 
-marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 20+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
+marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 30+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
 
 **Key Differentiators:**
 

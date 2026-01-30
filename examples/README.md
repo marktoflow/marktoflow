@@ -217,6 +217,27 @@ marktoflow run examples/web-automation/form-automation.md
 
 **Requirements:** Playwright browsers (`npx playwright install`)
 
+## Service-Specific Examples
+
+Quick-start examples demonstrating individual service integrations:
+
+### AI Agent Workflows
+
+- **[`agent-task-executor/`](./agent-task-executor/)** - Execute agent tasks from messages with pass/fail reporting
+- **[`codebase-qa/`](./codebase-qa/)** - Answer questions about codebases via Slack/Telegram webhooks
+
+### Google Workspace
+
+- **[`gmail-notification/`](./gmail-notification/)** - Send emails via Gmail API
+- **[`google-docs-create/`](./google-docs-create/)** - Create and format Google Docs documents
+- **[`google-drive-create-file/`](./google-drive-create-file/)** - Upload files to Google Drive
+- **[`sheets-report/`](./sheets-report/)** - Generate reports in Google Sheets
+
+### Database & Project Management
+
+- **[`postgres-query/`](./postgres-query/)** - Query PostgreSQL databases
+- **[`linear-sync/`](./linear-sync/)** - Sync issues with Linear
+
 ## Test & Demo Workflows
 
 For examples that demonstrate specific features or test functionality, see:

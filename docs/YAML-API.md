@@ -1760,7 +1760,7 @@ project/
 
 ## Next Steps
 
-- **[Service Integrations](./yaml-api/services.md)** - Complete reference for all 20+ service integrations
+- **[Service Integrations](./yaml-api/services.md)** - Complete reference for all 30+ service integrations
 - **[AI Agent Integrations](./yaml-api/ai-agents.md)** - Complete reference for AI agents (Copilot, Claude, etc.)
 - **[Control Flow Guide](./yaml-api/control-flow.md)** - Detailed control flow documentation with examples
 - **[Examples](../examples/)** - Production-ready workflow examples

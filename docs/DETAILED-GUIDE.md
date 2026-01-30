@@ -24,7 +24,7 @@ marktoflow v2.0 brings powerful new capabilities and integrations:
 - ✅ **Native MCP support** - Import MCP servers as npm packages
 - ✅ **Sub-workflow composition** - Build reusable workflow components
 - ✅ **Command line tool execution** - Run bash, Python, Node.js scripts directly
-- ✅ **20+ built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Google Suite, Telegram, WhatsApp, databases, and more
+- ✅ **30+ built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Google Suite, Telegram, WhatsApp, databases, and more
 - ✅ **Full TypeScript** - Type-safe workflows and integrations
 - ✅ **Enterprise features** - RBAC, approvals, audit logging, cost tracking
 
@@ -562,10 +562,8 @@ steps:
 ```
 
 **Example Workflows:**
-- [Data Pipeline](../examples/control-flow/data-pipeline.md) - Map/filter/reduce operations
-- [Parallel Fetch](../examples/control-flow/parallel-fetch.md) - Concurrent API calls
-- [Incident Router](../examples/control-flow/incident-router.md) - Switch/case routing
-- [Error Handling](../examples/control-flow/error-handling.md) - Try/catch patterns
+
+See the [Control Flow Guide](CONTROL-FLOW-GUIDE.md) for detailed examples including map/filter/reduce operations, concurrent execution, switch/case routing, and try/catch patterns.
 
 ### Native MCP Support
 
