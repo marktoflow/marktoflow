@@ -21,9 +21,6 @@ tools:
     auth:
       token: '${SLACK_BOT_TOKEN}'
 
-  # Agent is selected via --agent flag or GUI
-  # Supported: claude-code, copilot, opencode, ollama
-
 triggers:
   - type: schedule
     cron: '0 10 * * 1' # 10 AM every Monday
@@ -89,7 +86,6 @@ Use Claude to analyze which packages should be updated.
 ````yaml
 action: agent.chat.completions
 inputs:
-  model: 'claude-3-5-sonnet-20241022'
   messages:
     - role: 'user'
       content: |
@@ -183,13 +179,12 @@ Create a comprehensive changelog using Claude.
 ```yaml
 action: agent.chat.completions
 inputs:
-  model: 'claude-3-5-sonnet-20241022'
   messages:
     - role: 'user'
       content: |
         Generate a changelog for these dependency updates:
 
-        {{ update_analysis | json }}
+        {{ update_analysis }}
 
         Format as a markdown document with:
         - Summary of changes

@@ -625,6 +625,42 @@ export class GitHubCopilotClient {
 
     return sessionConfig;
   }
+
+  // ============================================================================
+  // OpenAI-Compatible Interface
+  // ============================================================================
+
+  /**
+   * OpenAI-compatible chat interface for workflow compatibility
+   */
+  chat = {
+    completions: async (inputs: {
+      model?: string;
+      messages: Array<{ role: string; content: string }>;
+    }): Promise<{ choices: Array<{ message: { content: string } }> }> => {
+      // Extract the user message from messages array
+      const userMessage = inputs.messages.find(m => m.role === 'user')?.content || '';
+      const systemMessage = inputs.messages.find(m => m.role === 'system')?.content;
+
+      // Use the send method
+      const response = await this.send({
+        prompt: userMessage,
+        model: inputs.model,
+        systemMessage,
+      });
+
+      // Return OpenAI-compatible format
+      return {
+        choices: [
+          {
+            message: {
+              content: response,
+            },
+          },
+        ],
+      };
+    },
+  };
 }
 
 // ============================================================================

@@ -71,7 +71,7 @@ inputs:
   args:
     codebase_path: '{{ inputs.codebase_path }}'
     pattern: '{{ inputs.component_pattern }}'
-    exclude: '{{ inputs.exclude_patterns | join(",") }}'
+    exclude: '{{ inputs.exclude_patterns }}'
 output_variable: components_list
 ```
 
@@ -216,7 +216,7 @@ inputs:
   args:
     component: '{{ component.name }}'
     updated: '{{ analysis.needs_update }}'
-    issues: '{{ analysis.issues | length }}'
+    issues: '{{ analysis.issues.length }}'
     confidence: '{{ analysis.confidence }}'
     dry_run: '{{ inputs.dry_run }}'
 output_variable: record
@@ -231,7 +231,7 @@ inputs:
     [{{ loop.index + 1 }}/{{ components_list.total }}] {{ component.name }}
     - Status: {{ analysis.needs_update ? 'UPDATED' : 'VALID' }}
     - Confidence: {{ analysis.confidence }}
-    - Issues: {{ analysis.issues | length }}
+    - Issues: {{ analysis.issues.length }}
 ```
 
 ## Step 4: Generate Summary Report
