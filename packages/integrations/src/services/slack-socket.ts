@@ -30,11 +30,13 @@ export class SlackSocketTrigger {
       for (const trigger of this.config.triggers) {
         if (trigger.event === 'message') {
           this.app.message(async ({ message }) => {
+            console.log('[SlackSocket] Received message event:', JSON.stringify(message, null, 2));
             await trigger.handler({ type: TriggerType.EVENT, event: 'message', message });
           });
         }
         if (trigger.event === 'app_mention') {
           this.app.event('app_mention', async ({ event }) => {
+            console.log('[SlackSocket] Received app_mention event:', JSON.stringify(event, null, 2));
             await trigger.handler({
               type: TriggerType.EVENT,
               event: 'app_mention',

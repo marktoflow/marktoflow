@@ -38,6 +38,7 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
 - **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
 - **Universal Triggering**: Webhooks, File Watchers, Cron Schedules
+- **Webhook Server**: Built-in HTTP server with Slack Socket Mode support
 
 ---
 
@@ -129,6 +130,20 @@ marktoflow run hello-world.md --dry-run
 ```
 
 **That's it!** marktoflow is CLI-first - create workflows as markdown files and run them from your terminal.
+
+### Start a Webhook Server
+
+Receive events from Slack, Telegram, or GitHub and trigger workflows automatically:
+
+```bash
+# Start webhook server (auto-discovers workflows with webhook triggers)
+marktoflow serve --port 3000
+
+# Use Slack Socket Mode (no public URL needed)
+marktoflow serve --socket
+```
+
+See [Webhook Server Documentation](docs/DETAILED-GUIDE.md#webhook-server) for complete setup.
 
 ---
 
@@ -289,11 +304,18 @@ See [GUI User Guide](docs/GUI_USER_GUIDE.md) for detailed documentation.
 
 See `examples/` directory for production-ready workflow templates:
 
-- **[sub-workflows](examples/sub-workflows/)** - Reusable workflow composition
+### AI Agent Workflows
+
+- **[codebase-qa](examples/codebase-qa/)** - Answer questions about codebases via Slack/Telegram webhooks
+- **[agent-task-executor](examples/agent-task-executor/)** - Execute agent tasks from messages with pass/fail reporting
 - **[copilot-code-review](examples/copilot-code-review/)** - AI code review with GitHub Copilot
+- **[sprint-planning](examples/sprint-planning/)** - AI-powered sprint planning
+
+### Automation Workflows
+
+- **[sub-workflows](examples/sub-workflows/)** - Reusable workflow composition
 - **[daily-standup](examples/daily-standup/)** - Team update aggregation (scheduled)
 - **[incident-response](examples/incident-response/)** - Incident coordination (webhook-triggered)
-- **[sprint-planning](examples/sprint-planning/)** - AI-powered sprint planning
 
 ---
 

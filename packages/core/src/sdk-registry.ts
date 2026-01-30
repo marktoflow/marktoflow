@@ -329,12 +329,20 @@ export interface SDKRegistryLike {
 }
 
 /**
+ * Execution context interface for step executor
+ */
+export interface ExecutionContextLike {
+  variables: Record<string, unknown>;
+  inputs: Record<string, unknown>;
+}
+
+/**
  * Create a step executor that invokes SDK methods.
  */
 export function createSDKStepExecutor() {
   return async (
     step: { action?: string; workflow?: string; inputs: Record<string, unknown> },
-    _context: unknown,
+    executionContext: unknown,
     sdkRegistry: SDKRegistryLike
   ): Promise<unknown> => {
     // Sub-workflows are handled by the engine, not by this executor
@@ -374,8 +382,24 @@ export function createSDKStepExecutor() {
       throw new Error(`${step.action} is not a function`);
     }
 
+    // For script.execute, automatically inject workflow context variables
+    let inputs = step.inputs;
+    if (sdkName === 'script' && methodPath[0] === 'execute') {
+      const ctx = executionContext as ExecutionContextLike | undefined;
+      if (ctx && !inputs.context) {
+        // Inject workflow variables and inputs as context for the script
+        inputs = {
+          ...inputs,
+          context: {
+            ...ctx.variables,
+            inputs: ctx.inputs,
+          },
+        };
+      }
+    }
+
     // Call the method with correct 'this' context (parent object, not root SDK)
     const method = current as (params: unknown) => Promise<unknown>;
-    return method.call(parent, step.inputs);
+    return method.call(parent, inputs);
   };
 }
