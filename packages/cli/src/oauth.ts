@@ -30,6 +30,7 @@ export interface GmailOAuthConfig {
   clientId: string;
   clientSecret: string;
   scopes?: string[];
+  port?: number;
 }
 
 export interface OutlookOAuthConfig {
@@ -37,6 +38,7 @@ export interface OutlookOAuthConfig {
   clientSecret?: string; // Optional for public clients
   tenantId?: string; // 'common' for multi-tenant, or specific tenant ID
   scopes?: string[];
+  port?: number;
 }
 
 /**
@@ -44,6 +46,12 @@ export interface OutlookOAuthConfig {
  */
 async function waitForCallback(port: number): Promise<{ code: string; state?: string }> {
   return new Promise((resolve, reject) => {
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+
     const server = createServer((req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://localhost:${port}`);
 
@@ -53,6 +61,7 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
         const state = url.searchParams.get('state');
 
         if (error) {
+          cleanup();
           res.writeHead(400, { 'Content-Type': 'text/html' });
           res.end(`
             <html><body>
@@ -67,6 +76,7 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
         }
 
         if (!code) {
+          cleanup();
           res.writeHead(400, { 'Content-Type': 'text/html' });
           res.end(`
             <html><body>
@@ -80,6 +90,7 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
           return;
         }
 
+        cleanup();
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(`
           <html><body>
@@ -89,8 +100,12 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
           </body></html>
         `);
 
-        server.close();
-        resolve({ code, state: state ?? undefined });
+        // Close server and resolve after response is sent
+        res.on('finish', () => {
+          server.close(() => {
+            resolve({ code, state: state ?? undefined });
+          });
+        });
       } else {
         res.writeHead(404);
         res.end('Not found');
@@ -98,6 +113,7 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
     });
 
     server.on('error', (err) => {
+      cleanup();
       reject(err);
     });
 
@@ -106,7 +122,7 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
     });
 
     // Timeout after 5 minutes
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       server.close();
       reject(new Error('OAuth timeout: no callback received within 5 minutes'));
     }, 5 * 60 * 1000);
@@ -140,19 +156,51 @@ export function loadTokens(service: string): OAuthTokens | null {
 // Gmail OAuth
 // ============================================================================
 
-const GMAIL_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GMAIL_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
+// Legacy Gmail constants (for backward compatibility)
+const GMAIL_AUTH_URL = GOOGLE_AUTH_URL;
+const GMAIL_TOKEN_URL = GOOGLE_TOKEN_URL;
+
 const DEFAULT_GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.send',
   'https://www.googleapis.com/auth/gmail.modify',
 ];
 
+const DEFAULT_DRIVE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive',
+];
+
+const DEFAULT_SHEETS_SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+];
+
+const DEFAULT_CALENDAR_SCOPES = [
+  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/calendar.events',
+];
+
+const DEFAULT_DOCS_SCOPES = [
+  'https://www.googleapis.com/auth/documents',
+];
+
+// Combined Google Workspace scopes (for all-in-one auth)
+const DEFAULT_GOOGLE_WORKSPACE_SCOPES = [
+  ...DEFAULT_GMAIL_SCOPES,
+  ...DEFAULT_DRIVE_SCOPES,
+  ...DEFAULT_SHEETS_SCOPES,
+  ...DEFAULT_CALENDAR_SCOPES,
+  ...DEFAULT_DOCS_SCOPES,
+];
+
 /**
  * Run Gmail OAuth flow
  */
 export async function runGmailOAuth(config: GmailOAuthConfig): Promise<OAuthTokens> {
-  const port = DEFAULT_PORT;
+  const port = config.port ?? DEFAULT_PORT;
   const redirectUri = `http://localhost:${port}/callback`;
   const scopes = config.scopes ?? DEFAULT_GMAIL_SCOPES;
 
@@ -218,6 +266,125 @@ export async function runGmailOAuth(config: GmailOAuthConfig): Promise<OAuthToke
   return tokens;
 }
 
+/**
+ * Run Google OAuth flow for any Google service (Drive, Sheets, Calendar, Docs, etc.)
+ */
+export async function runGoogleOAuth(
+  service: string,
+  config: GmailOAuthConfig
+): Promise<OAuthTokens> {
+  const port = config.port ?? DEFAULT_PORT;
+  const redirectUri = `http://localhost:${port}/callback`;
+
+  // Select scopes based on service
+  let defaultScopes: string[];
+  let serviceName: string;
+
+  switch (service) {
+    case 'google-drive':
+    case 'drive':
+      defaultScopes = DEFAULT_DRIVE_SCOPES;
+      serviceName = 'Google Drive';
+      break;
+    case 'google-sheets':
+    case 'sheets':
+      defaultScopes = DEFAULT_SHEETS_SCOPES;
+      serviceName = 'Google Sheets';
+      break;
+    case 'google-calendar':
+    case 'calendar':
+      defaultScopes = DEFAULT_CALENDAR_SCOPES;
+      serviceName = 'Google Calendar';
+      break;
+    case 'google-docs':
+    case 'docs':
+      defaultScopes = DEFAULT_DOCS_SCOPES;
+      serviceName = 'Google Docs';
+      break;
+    case 'google-workspace':
+    case 'workspace':
+      defaultScopes = DEFAULT_GOOGLE_WORKSPACE_SCOPES;
+      serviceName = 'Google Workspace (All Services)';
+      break;
+    case 'google-gmail':
+    case 'gmail':
+    default:
+      defaultScopes = DEFAULT_GMAIL_SCOPES;
+      serviceName = 'Gmail';
+      break;
+  }
+
+  const scopes = config.scopes ?? defaultScopes;
+
+  // Build authorization URL
+  const authUrl = new URL(GOOGLE_AUTH_URL);
+  authUrl.searchParams.set('client_id', config.clientId);
+  authUrl.searchParams.set('redirect_uri', redirectUri);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', scopes.join(' '));
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'consent'); // Force refresh token
+
+  console.log(chalk.bold(`\n${serviceName} OAuth Flow`));
+  console.log(chalk.dim('Opening browser for authorization...'));
+  console.log(chalk.dim(`Scopes requested: ${scopes.length} permissions`));
+
+  // Open browser
+  await open(authUrl.toString());
+
+  // Wait for callback
+  const { code } = await waitForCallback(port);
+
+  console.log(chalk.dim('Exchanging code for tokens...'));
+
+  // Exchange code for tokens
+  const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    throw new Error(`Token exchange failed: ${error}`);
+  }
+
+  const tokenData = (await tokenResponse.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+    token_type: string;
+    scope?: string;
+  };
+
+  const tokens: OAuthTokens = {
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token,
+    expires_at: tokenData.expires_in
+      ? Date.now() + tokenData.expires_in * 1000
+      : undefined,
+    token_type: tokenData.token_type,
+    scope: tokenData.scope,
+  };
+
+  // Normalize service name for saving
+  const normalizedService = service.startsWith('google-') ? service : `google-${service}`;
+  saveTokens(normalizedService, tokens);
+
+  console.log(chalk.green(`\n✓ ${serviceName} connected successfully!`));
+  console.log(chalk.dim(`Tokens saved to ${CREDENTIALS_DIR}/${normalizedService}.json`));
+
+  return tokens;
+}
+
 // ============================================================================
 // Outlook OAuth
 // ============================================================================
@@ -236,7 +403,7 @@ const DEFAULT_OUTLOOK_SCOPES = [
  * Run Outlook/Microsoft Graph OAuth flow
  */
 export async function runOutlookOAuth(config: OutlookOAuthConfig): Promise<OAuthTokens> {
-  const port = DEFAULT_PORT;
+  const port = config.port ?? DEFAULT_PORT;
   const redirectUri = `http://localhost:${port}/callback`;
   const tenant = config.tenantId ?? 'common';
   const scopes = config.scopes ?? DEFAULT_OUTLOOK_SCOPES;

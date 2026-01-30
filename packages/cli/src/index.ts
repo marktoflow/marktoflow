@@ -1126,6 +1126,7 @@ program
   .option('--client-id <id>', 'OAuth client ID')
   .option('--client-secret <secret>', 'OAuth client secret')
   .option('--tenant-id <tenant>', 'Microsoft tenant ID (for Outlook)')
+  .option('--port <port>', 'Port for OAuth callback server (default: 8484)', '8484')
   .action(async (service, options) => {
     const serviceLower = service.toLowerCase();
     console.log(chalk.bold(`Connecting ${service}...`));
@@ -1134,6 +1135,7 @@ program
     if (serviceLower === 'gmail') {
       const clientId = options.clientId ?? process.env.GOOGLE_CLIENT_ID;
       const clientSecret = options.clientSecret ?? process.env.GOOGLE_CLIENT_SECRET;
+      const port = parseInt(options.port, 10);
 
       if (!clientId || !clientSecret) {
         console.log(chalk.yellow('\nGmail OAuth requires client credentials.'));
@@ -1151,7 +1153,7 @@ program
 
       try {
         const { runGmailOAuth } = await import('./oauth.js');
-        const tokens = await runGmailOAuth({ clientId, clientSecret });
+        const tokens = await runGmailOAuth({ clientId, clientSecret, port });
         console.log(chalk.green('\nGmail connected successfully!'));
         console.log(
           chalk.dim(
@@ -1166,27 +1168,93 @@ program
       auth:
         client_id: "\${GOOGLE_CLIENT_ID}"
         client_secret: "\${GOOGLE_CLIENT_SECRET}"
-        redirect_uri: "http://localhost:8484/callback"
+        redirect_uri: "http://localhost:${port}/callback"
         refresh_token: "\${GMAIL_REFRESH_TOKEN}"`)
         );
+        process.exit(0);
       } catch (error) {
         console.log(chalk.red(`\nOAuth failed: ${error}`));
         process.exit(1);
       }
-      return;
+    }
+
+    // Handle other Google services (Drive, Sheets, Calendar, Docs, Workspace)
+    if (
+      serviceLower === 'google-drive' ||
+      serviceLower === 'drive' ||
+      serviceLower === 'google-sheets' ||
+      serviceLower === 'sheets' ||
+      serviceLower === 'google-calendar' ||
+      serviceLower === 'calendar' ||
+      serviceLower === 'google-docs' ||
+      serviceLower === 'docs' ||
+      serviceLower === 'google-workspace' ||
+      serviceLower === 'workspace'
+    ) {
+      const clientId = options.clientId ?? process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = options.clientSecret ?? process.env.GOOGLE_CLIENT_SECRET;
+      const port = parseInt(options.port, 10);
+
+      if (!clientId || !clientSecret) {
+        console.log(chalk.yellow('\nGoogle OAuth requires client credentials.'));
+        console.log('\nTo connect Google services:');
+        console.log('  1. Go to https://console.cloud.google.com/');
+        console.log('  2. Enable the API for your service (Drive, Sheets, etc.)');
+        console.log('  3. Create OAuth 2.0 credentials (Desktop app type)');
+        console.log(
+          `  4. Run: marktoflow connect ${service} --client-id YOUR_ID --client-secret YOUR_SECRET`
+        );
+        console.log('\nOr set environment variables:');
+        console.log('  export GOOGLE_CLIENT_ID="your-client-id"');
+        console.log('  export GOOGLE_CLIENT_SECRET="your-client-secret"');
+        return;
+      }
+
+      try {
+        const { runGoogleOAuth } = await import('./oauth.js');
+        const tokens = await runGoogleOAuth(serviceLower, { clientId, clientSecret, port });
+        console.log(
+          chalk.dim(
+            `Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`
+          )
+        );
+
+        // Normalize service name for display
+        const normalizedService = serviceLower.startsWith('google-')
+          ? serviceLower
+          : `google-${serviceLower}`;
+
+        console.log('\nYou can now use this service in your workflows:');
+        console.log(
+          chalk.cyan(`  tools:
+    ${serviceLower.replace('google-', '')}:
+      sdk: "${normalizedService}"
+      auth:
+        client_id: "\${GOOGLE_CLIENT_ID}"
+        client_secret: "\${GOOGLE_CLIENT_SECRET}"
+        redirect_uri: "http://localhost:${port}/callback"
+        refresh_token: "\${GOOGLE_REFRESH_TOKEN}"
+        access_token: "\${GOOGLE_ACCESS_TOKEN}"`)
+        );
+        process.exit(0);
+      } catch (error) {
+        console.log(chalk.red(`\nOAuth failed: ${error}`));
+        process.exit(1);
+      }
     }
 
     if (serviceLower === 'outlook' || serviceLower === 'microsoft') {
       const clientId = options.clientId ?? process.env.MICROSOFT_CLIENT_ID;
       const clientSecret = options.clientSecret ?? process.env.MICROSOFT_CLIENT_SECRET;
       const tenantId = options.tenantId ?? process.env.MICROSOFT_TENANT_ID;
+      const port = parseInt(options.port, 10);
 
       if (!clientId) {
         console.log(chalk.yellow('\nOutlook OAuth requires a client ID.'));
         console.log('\nTo connect Outlook/Microsoft Graph:');
         console.log('  1. Go to https://portal.azure.com/');
         console.log('  2. Register an application in Azure AD');
-        console.log('  3. Add redirect URI: http://localhost:8484/callback');
+        console.log(`  3. Add redirect URI: http://localhost:${port}/callback`);
         console.log('  4. Grant Mail.Read, Mail.Send, Calendars.ReadWrite permissions');
         console.log('  5. Run: marktoflow connect outlook --client-id YOUR_ID');
         console.log('\nOr set environment variables:');
@@ -1198,7 +1266,7 @@ program
 
       try {
         const { runOutlookOAuth } = await import('./oauth.js');
-        const tokens = await runOutlookOAuth({ clientId, clientSecret, tenantId });
+        const tokens = await runOutlookOAuth({ clientId, clientSecret, tenantId, port });
         console.log(chalk.green('\nOutlook connected successfully!'));
         console.log(
           chalk.dim(
@@ -1213,11 +1281,11 @@ program
       auth:
         token: "\${OUTLOOK_ACCESS_TOKEN}"`)
         );
+        process.exit(0);
       } catch (error) {
         console.log(chalk.red(`\nOAuth failed: ${error}`));
         process.exit(1);
       }
-      return;
     }
 
     // Other services - show manual setup instructions
@@ -1283,6 +1351,7 @@ program
         console.log('\n' + chalk.bold('Available services:'));
         console.log('  Communication: slack, discord');
         console.log('  Email: gmail, outlook');
+        console.log('  Google Workspace: google-drive, google-sheets, google-calendar, google-docs, google-workspace');
         console.log('  Project management: jira, linear');
         console.log('  Documentation: notion, confluence');
         console.log('  Developer: github');

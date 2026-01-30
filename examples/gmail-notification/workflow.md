@@ -12,11 +12,13 @@ workflow:
 
 tools:
   gmail:
-    sdk: 'googleapis'
+    sdk: 'google-gmail'
     auth:
       client_id: '${GOOGLE_CLIENT_ID}'
       client_secret: '${GOOGLE_CLIENT_SECRET}'
+      redirect_uri: '${GOOGLE_REDIRECT_URI}'
       refresh_token: '${GOOGLE_REFRESH_TOKEN}'
+      access_token: '${GOOGLE_ACCESS_TOKEN}'
 
 triggers:
   - type: manual
@@ -52,23 +54,25 @@ outputs:
 
 Send email notifications using the Gmail API with OAuth2 authentication.
 
-## Step 1: Compose and Send Email
+## Step 1: Send Email
 
 ```yaml
-action: gmail.users.messages.send
+action: gmail.sendEmail
 inputs:
-  userId: 'me'
-  requestBody:
-    raw: '{{ encodeEmail({ to: inputs.to, subject: inputs.subject, body: inputs.body, html: inputs.html }) }}'
+  to: '{{ inputs.to }}'
+  subject: '{{ inputs.subject }}'
+  body: '{{ inputs.body }}'
+  isHtml: '{{ inputs.html }}'
 output_variable: send_result
 ```
 
 ## Step 2: Log Result
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: 'Email sent successfully to {{ inputs.to }}. Message ID: {{ send_result.id }}'
+  level: info
 ```
 
 ## Step 3: Set Outputs
