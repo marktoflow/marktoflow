@@ -28,6 +28,7 @@ import {
 import { registerIntegrations } from '@marktoflow/integrations';
 import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
+import { serveCommand } from './serve.js';
 import { runWorkflowWizard, listTemplates } from './commands/new.js';
 import { runUpdateWizard, listAgents } from './commands/update.js';
 import { parse as parseYaml } from 'yaml';
@@ -118,6 +119,7 @@ program
 
 program.addCommand(workerCommand);
 program.addCommand(triggerCommand);
+program.addCommand(serveCommand);
 
 // ============================================================================
 // Commands

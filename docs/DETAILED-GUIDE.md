@@ -148,6 +148,56 @@ steps:
 - ✅ Capture stdout/stderr/exit code
 - ✅ Environment variable support
 
+### Inline JavaScript Execution
+
+Execute JavaScript code directly in workflows with access to workflow context:
+
+```yaml
+---
+workflow:
+  id: inline-script
+  name: 'Inline JavaScript Execution'
+
+tools:
+  script:
+    sdk: 'script'
+    options:
+      path: 'inline'
+
+steps:
+  - id: process_data
+    action: script.execute
+    inputs:
+      code: |
+        // Access workflow context variables
+        const tasks = context.api_result.tasks || [];
+        const summary = context.api_result.summary;
+
+        // Transform data
+        const passed = tasks.filter(t => t.status === 'passed').length;
+        const failed = tasks.filter(t => t.status === 'failed').length;
+
+        // Return result (becomes output_variable)
+        return {
+          total: tasks.length,
+          passed,
+          failed,
+          summary: `${passed}/${tasks.length} tasks passed`
+        };
+    output_variable: stats
+---
+```
+
+**Features:**
+
+- ✅ Access workflow variables via `context` object
+- ✅ Access workflow inputs via `context.inputs`
+- ✅ Sandboxed execution (Node.js VM)
+- ✅ Async/await support
+- ✅ Built-in objects: JSON, Math, Date, Array, Object, String, etc.
+- ✅ Configurable timeout (default: 30s)
+- ✅ Return values become output_variable
+
 ### Connect to Any REST API
 
 ```yaml
@@ -222,6 +272,15 @@ marktoflow workflow list           # List available workflows
 
 ```bash
 marktoflow connect <service>       # Set up OAuth for services (gmail, outlook)
+```
+
+### Webhook Server
+
+```bash
+marktoflow serve                   # Start webhook server
+marktoflow serve --port 3000       # Custom port
+marktoflow serve -w workflow.md    # Serve specific workflow
+marktoflow serve --socket          # Use Slack Socket Mode (no public URL needed)
 ```
 
 ### Distributed Execution
@@ -551,6 +610,102 @@ watcher.onEvent(async (event) => {
 watcher.start();
 ```
 
+### Webhook Server
+
+Start a webhook server to receive events and trigger workflows automatically:
+
+```bash
+# Start webhook server (scans for workflows with webhook triggers)
+marktoflow serve
+
+# With options
+marktoflow serve --port 3000           # Custom port
+marktoflow serve --host 0.0.0.0        # Custom host
+marktoflow serve -d /path/to/workflows # Workflow directory
+marktoflow serve -w workflow.md        # Serve specific workflow
+marktoflow serve --agent claude-code   # Default agent for workflows
+```
+
+**Workflow with Webhook Trigger:**
+
+```yaml
+---
+workflow:
+  id: slack-handler
+  name: 'Slack Webhook Handler'
+
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${SLACK_BOT_TOKEN}'
+
+triggers:
+  - type: webhook
+    path: /slack/my-handler
+    config:
+      provider: slack
+      events:
+        - message
+        - app_mention
+
+inputs:
+  channel:
+    type: string
+    required: true
+  question:
+    type: string
+    required: true
+
+steps:
+  - id: respond
+    action: slack.chat.postMessage
+    inputs:
+      channel: '{{ inputs.channel }}'
+      text: 'Received: {{ inputs.question }}'
+---
+```
+
+**Supported Providers:**
+
+| Provider | Auto-extracted Inputs | Verification |
+|----------|----------------------|--------------|
+| Slack | channel, text, user, thread_ts | URL verification, signature validation |
+| Telegram | chat_id, text, message_id, from | Webhook setup |
+| GitHub | action, repository, sender | Signature validation |
+| Generic | Full payload as `payload` input | - |
+
+### Slack Socket Mode
+
+Use Slack Socket Mode to receive events without a public URL:
+
+```bash
+# Set environment variables
+export SLACK_APP_TOKEN="xapp-..."  # App-level token with connections:write
+export SLACK_BOT_TOKEN="xoxb-..."  # Bot token
+
+# Start Socket Mode server
+marktoflow serve --socket
+
+# Or with explicit tokens
+marktoflow serve --socket --app-token xapp-... --bot-token xoxb-...
+```
+
+**Setup Steps:**
+
+1. Go to your Slack app settings at [api.slack.com/apps](https://api.slack.com/apps)
+2. Enable Socket Mode under "Socket Mode" settings
+3. Create an App-Level Token with `connections:write` scope under "Basic Information" > "App-Level Tokens"
+4. Add event subscriptions (message, app_mention) under "Event Subscriptions"
+5. Run `marktoflow serve --socket`
+
+**Benefits:**
+
+- ✅ No public URL or ngrok required
+- ✅ Works behind firewalls
+- ✅ Simpler development setup
+- ✅ Real-time bidirectional communication
+
 ---
 
 ## Development
@@ -588,10 +743,17 @@ marktoflow/
 
 See `examples/` directory for production-ready workflow templates:
 
-- **[sub-workflows](../examples/sub-workflows/)** - Reusable workflow composition with sub-workflows
+### AI Agent Workflows
+
+- **[codebase-qa](../examples/codebase-qa/)** - Answer questions about codebases via Slack/Telegram
+- **[agent-task-executor](../examples/agent-task-executor/)** - Execute agent tasks from messages with pass/fail reporting
 - **[copilot-code-review](../examples/copilot-code-review/)** - AI code review with GitHub Copilot
 - **[code-review](../examples/code-review/)** - Automated PR reviews with AI
+- **[sprint-planning](../examples/sprint-planning/)** - AI-powered sprint planning
+
+### Automation Workflows
+
+- **[sub-workflows](../examples/sub-workflows/)** - Reusable workflow composition with sub-workflows
 - **[daily-standup](../examples/daily-standup/)** - Team update aggregation (scheduled)
 - **[incident-response](../examples/incident-response/)** - Incident coordination (webhook-triggered)
-- **[sprint-planning](../examples/sprint-planning/)** - AI-powered sprint planning
 - **[dependency-update](../examples/dependency-update/)** - Automated dependency PRs
