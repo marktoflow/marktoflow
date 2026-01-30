@@ -1,6 +1,6 @@
 # Service Integrations API Reference
 
-Complete API reference for all 20+ service integrations in marktoflow.
+Complete API reference for all 30+ service integrations in marktoflow.
 
 ---
 

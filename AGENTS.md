@@ -50,7 +50,7 @@ marktoflow/
 │   ├── cli/                  # CLI commands, OAuth flows
 │   ├── gui/                  # Visual workflow designer
 │   └── integrations/         # Service integrations + AI adapters
-│       ├── services/         # 20+ native integrations
+│       ├── services/         # 30+ native integrations
 │       └── adapters/         # AI agents (Copilot, Claude, OpenCode, Ollama)
 ├── examples/                 # Production-ready workflow templates
 └── docs/                     # Documentation
@@ -58,7 +58,7 @@ marktoflow/
 
 ### Available Integrations
 
-**Services (20+):** Slack, GitHub, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP, Google Sheets, Google Calendar, Google Drive, Google Docs, Telegram, WhatsApp, Supabase, PostgreSQL, MySQL
+**Services (30+):** Slack, GitHub, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP, Google Sheets, Google Calendar, Google Drive, Google Docs, Telegram, WhatsApp, Supabase, PostgreSQL, MySQL
 
 **AI Agents:** GitHub Copilot, Claude Code, OpenCode, Ollama
 
@@ -140,28 +140,6 @@ inputs:
 output_variable: result
 ```
 ```
-
----
-
-## Current Status
-
-### Completed
-
-- Core engine with retry/circuit breaker/failover
-- State persistence (SQLite)
-- Scheduling (cron), webhooks, file watching
-- Queue system (Redis/RabbitMQ/InMemory)
-- RBAC, approval workflows, audit logging
-- Cost tracking and budget management
-- Plugin system with 17 hook types
-- 20+ native service integrations
-- Visual workflow designer (GUI)
-- GitHub Copilot SDK integration
-
-### In Progress
-
-- Expand test coverage (145 → 615+ tests)
-- Prometheus metrics integration
 
 ---
 
