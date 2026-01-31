@@ -30,6 +30,15 @@ importers:
 
   packages/cli:
     dependencies:
+      '@anthropic-ai/claude-agent-sdk':
+        specifier: '>=0.1.0'
+        version: 0.2.19(zod@4.3.6)
+      '@anthropic-ai/sdk':
+        specifier: ^0.52.0
+        version: 0.52.0
+      '@github/copilot-sdk':
+        specifier: ^0.1.18
+        version: 0.1.18
       '@inquirer/prompts':
         specifier: ^8.2.0
         version: 8.2.0(@types/node@22.19.7)

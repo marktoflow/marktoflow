@@ -31,6 +31,7 @@ export class OllamaProvider implements AgentProvider {
     toolUse: false,
     codeExecution: false,
     systemPrompts: true,
+    dynamicModelListing: true,
     models: [
       'llama3.2',
       'llama3.1',
@@ -85,6 +86,27 @@ export class OllamaProvider implements AgentProvider {
       model: this.model,
       error: this.error,
     };
+  }
+
+  async listModels(): Promise<string[] | undefined> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!response.ok) {
+        return undefined;
+      }
+
+      const data = (await response.json()) as { models?: Array<{ name: string }> };
+      if (data.models && Array.isArray(data.models)) {
+        return data.models.map((m) => m.name);
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async processPrompt(prompt: string, workflow: Workflow): Promise<PromptResult> {

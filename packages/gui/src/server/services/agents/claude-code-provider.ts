@@ -5,6 +5,7 @@
  */
 
 import { createRequire } from 'node:module';
+import Anthropic from '@anthropic-ai/sdk';
 import { parse as yamlParse } from 'yaml';
 import type {
   AgentProvider,
@@ -52,11 +53,21 @@ export class ClaudeCodeProvider implements AgentProvider {
     toolUse: true,
     codeExecution: true,
     systemPrompts: true,
-    models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'claude-3-5-haiku-20241022'],
+    dynamicModelListing: true,
+    models: [
+      'claude-opus-4-5',
+      'claude-sonnet-4-5',
+      'claude-haiku-4-5',
+      'claude-opus-4-1',
+      'claude-opus-4',
+      'claude-sonnet-4',
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022',
+    ],
   };
 
   private queryFn: QueryFunction | null = null;
-  private model: string = 'claude-sonnet-4-20250514';
+  private model: string = 'claude-sonnet-4-5';
   private ready: boolean = false;
   private error: string | undefined;
   private currentQuery: AgentQuery | null = null;
@@ -107,6 +118,25 @@ export class ClaudeCodeProvider implements AgentProvider {
       model: this.model,
       error: this.error,
     };
+  }
+
+  async listModels(): Promise<string[] | undefined> {
+    // Try to fetch models from Anthropic SDK if API key is available
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+      try {
+        const client = new Anthropic({ apiKey });
+        const response = await client.models.list();
+        if (response.data && Array.isArray(response.data)) {
+          return response.data.map((m) => m.id);
+        }
+      } catch {
+        // Fall back to static list
+      }
+    }
+
+    // Return static list from capabilities
+    return this.capabilities.models;
   }
 
   async processPrompt(

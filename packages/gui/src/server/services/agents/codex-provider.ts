@@ -91,17 +91,24 @@ export class CodexProvider implements AgentProvider {
     toolUse: true,
     codeExecution: true,
     systemPrompts: true,
+    dynamicModelListing: true,
     models: [
-      'codex-1',
+      'gpt-5.2-codex',
+      'gpt-5.1-codex-max',
+      'gpt-5.1-codex-mini',
+      'codex-mini-latest',
+      'gpt-5.2',
+      'gpt-5.1',
+      'gpt-5',
+      'gpt-5-mini',
+      'o3-pro',
       'o3',
-      'o3-mini',
       'o4-mini',
-      'gpt-4.1',
     ],
   };
 
   private codex: CodexInstance | null = null;
-  private model: string = 'codex-1';
+  private model: string = 'gpt-5.2-codex';
   private ready: boolean = false;
   private error: string | undefined;
   private workingDirectory: string = process.cwd();
@@ -191,6 +198,48 @@ export class CodexProvider implements AgentProvider {
       model: this.model,
       error: this.error,
     };
+  }
+
+  async listModels(): Promise<string[] | undefined> {
+    // Note: Codex SDK doesn't provide a models.list() method
+    // Try to fetch models from OpenAI API if API key is available
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          signal: AbortSignal.timeout(5000),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { data?: Array<{ id: string }> };
+          if (data.data && Array.isArray(data.data)) {
+            // Filter to only include relevant models (codex, gpt, o-series)
+            const relevantModels = data.data
+              .map((m) => m.id)
+              .filter((id) =>
+                id.includes('codex') ||
+                id.includes('gpt-5') ||
+                id.includes('gpt-6') ||
+                id.startsWith('o3') ||
+                id.startsWith('o4')
+              )
+              .sort();
+            if (relevantModels.length > 0) {
+              return relevantModels;
+            }
+          }
+        }
+      } catch {
+        // Fall back to static list
+      }
+    }
+
+    // Return static list from capabilities
+    return this.capabilities.models;
   }
 
   async processPrompt(

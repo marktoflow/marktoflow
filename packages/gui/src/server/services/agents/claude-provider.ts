@@ -23,16 +23,21 @@ export class ClaudeProvider implements AgentProvider {
     codeExecution: false,
     systemPrompts: true,
     maxContextLength: 200000,
+    dynamicModelListing: true,
     models: [
-      'claude-sonnet-4-20250514',
-      'claude-opus-4-20250514',
+      'claude-opus-4-5',
+      'claude-sonnet-4-5',
+      'claude-haiku-4-5',
+      'claude-opus-4-1',
+      'claude-opus-4',
+      'claude-sonnet-4',
       'claude-3-5-sonnet-20241022',
       'claude-3-5-haiku-20241022',
     ],
   };
 
   private client: Anthropic | null = null;
-  private model: string = 'claude-sonnet-4-20250514';
+  private model: string = 'claude-sonnet-4-5';
   private ready: boolean = false;
   private error: string | undefined;
 
@@ -73,6 +78,25 @@ export class ClaudeProvider implements AgentProvider {
       model: this.model,
       error: this.error,
     };
+  }
+
+  async listModels(): Promise<string[] | undefined> {
+    if (!this.client) {
+      // No client available, return static list
+      return this.capabilities.models;
+    }
+
+    try {
+      // Use the Anthropic SDK's models.list() endpoint
+      const response = await this.client.models.list();
+      if (response.data && Array.isArray(response.data)) {
+        return response.data.map((m) => m.id);
+      }
+      return this.capabilities.models;
+    } catch {
+      // Fall back to static list if API call fails
+      return this.capabilities.models;
+    }
   }
 
   async processPrompt(

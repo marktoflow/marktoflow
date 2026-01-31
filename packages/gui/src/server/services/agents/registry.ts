@@ -159,7 +159,7 @@ export class AgentRegistry {
       }
     }
 
-    // Try OpenAI Codex SDK (uses OPENAI_API_KEY)
+    // Try OpenAI Codex SDK (uses OPENAI_API_KEY if available)
     const codexProvider = this.providers.get('codex');
     if (codexProvider) {
       await codexProvider.initialize({
@@ -292,6 +292,35 @@ export class AgentRegistry {
         ...provider.getStatus(),
       })),
     };
+  }
+
+  /**
+   * List available models for a specific provider
+   * @param providerId - The provider ID to list models for
+   * @returns Object containing models array and whether it was dynamically fetched
+   */
+  async listModels(providerId: string): Promise<{ models: string[]; dynamic: boolean }> {
+    const provider = this.providers.get(providerId);
+    if (!provider) {
+      return { models: [], dynamic: false };
+    }
+
+    const supportsDynamic = provider.capabilities.dynamicModelListing;
+
+    // Try to get dynamic models if supported
+    if (supportsDynamic && provider.listModels) {
+      try {
+        const dynamicModels = await provider.listModels();
+        if (dynamicModels && dynamicModels.length > 0) {
+          return { models: dynamicModels, dynamic: true };
+        }
+      } catch {
+        // Fall back to static list on error
+      }
+    }
+
+    // Return static list from capabilities
+    return { models: provider.capabilities.models, dynamic: false };
   }
 }
 

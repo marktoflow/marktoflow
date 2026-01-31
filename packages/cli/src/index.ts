@@ -9,6 +9,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
+import Anthropic from '@anthropic-ai/sdk';
 import { existsSync, mkdirSync, writeFileSync, readdirSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -927,6 +928,370 @@ agentCmd
       } else {
         console.log(`  ${key}: ${String(value)}`);
       }
+    }
+  });
+
+agentCmd
+  .command('models [provider]')
+  .description('List available models for AI agents')
+  .action(async (provider?: string) => {
+    const spinner = ora('Fetching available models...').start();
+
+    // Define known agents and their static model lists
+    const agentModels: Record<string, { models: string[]; dynamic: boolean; description: string }> = {
+      'claude-code': {
+        models: [
+          'claude-opus-4-5',
+          'claude-sonnet-4-5',
+          'claude-haiku-4-5',
+          'claude-opus-4-1',
+          'claude-opus-4',
+          'claude-sonnet-4',
+          'claude-3-5-sonnet-20241022',
+          'claude-3-5-haiku-20241022',
+        ],
+        dynamic: true,
+        description: 'Claude Code (SDK)',
+      },
+      'claude': {
+        models: [
+          'claude-opus-4-5',
+          'claude-sonnet-4-5',
+          'claude-haiku-4-5',
+          'claude-opus-4-1',
+          'claude-opus-4',
+          'claude-sonnet-4',
+          'claude-3-5-sonnet-20241022',
+          'claude-3-5-haiku-20241022',
+        ],
+        dynamic: true,
+        description: 'Claude (Anthropic API)',
+      },
+      'ollama': {
+        models: [],
+        dynamic: true,
+        description: 'Ollama (Local)',
+      },
+      'copilot': {
+        models: [
+          'Claude Sonnet 4.5',
+          'Claude Haiku 4.5',
+          'Claude Opus 4.5',
+          'Claude Sonnet 4',
+          'Gemini 3 Pro (Preview)',
+          'GPT-5.2-Codex',
+          'GPT-5.2',
+          'GPT-5.1-Codex-Max',
+          'GPT-5.1-Codex',
+          'GPT-5.1',
+          'GPT-5',
+          'GPT-5.1-Codex-Mini',
+          'GPT-5 mini',
+          'GPT-4.1',
+        ],
+        dynamic: true,
+        description: 'GitHub Copilot',
+      },
+      'codex': {
+        models: [
+          'gpt-5.2-codex',
+          'gpt-5.1-codex-max',
+          'gpt-5.1-codex-mini',
+          'codex-mini-latest',
+          'gpt-5.2',
+          'gpt-5.1',
+          'gpt-5',
+          'gpt-5-mini',
+          'o3-pro',
+          'o3',
+          'o4-mini',
+        ],
+        dynamic: true,
+        description: 'OpenAI Codex',
+      },
+    };
+
+    // If a specific provider is requested
+    if (provider) {
+      const normalizedProvider = provider.toLowerCase();
+      const agentInfo = agentModels[normalizedProvider];
+
+      if (!agentInfo) {
+        spinner.fail(`Unknown provider: ${provider}`);
+        console.log(chalk.yellow('\nAvailable providers:'));
+        for (const [id, info] of Object.entries(agentModels)) {
+          console.log(`  ${chalk.cyan(id)}: ${info.description}`);
+        }
+        process.exit(1);
+      }
+
+      // Try to fetch dynamic models based on provider
+      if (normalizedProvider === 'ollama') {
+        try {
+          const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+          const response = await fetch(`${baseUrl}/api/tags`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000),
+          });
+
+          if (response.ok) {
+            const data = (await response.json()) as { models?: Array<{ name: string }> };
+            if (data.models && Array.isArray(data.models)) {
+              agentInfo.models = data.models.map((m) => m.name);
+              spinner.succeed(`${agentInfo.description} - ${agentInfo.models.length} model(s) found (dynamic)`);
+            } else {
+              spinner.warn(`${agentInfo.description} - No models found. Is Ollama running?`);
+            }
+          } else {
+            spinner.warn(`${agentInfo.description} - Could not connect to Ollama`);
+          }
+        } catch {
+          spinner.warn(`${agentInfo.description} - Ollama not available at ${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}`);
+        }
+      } else if (normalizedProvider === 'claude') {
+        try {
+          // Claude provider requires ANTHROPIC_API_KEY
+          const apiKey = process.env.ANTHROPIC_API_KEY;
+          if (!apiKey) {
+            spinner.succeed(`${agentInfo.description} (set ANTHROPIC_API_KEY for dynamic listing)`);
+          } else {
+            const client = new Anthropic({ apiKey });
+            const response = await client.models.list();
+            if (response.data && Array.isArray(response.data)) {
+              agentInfo.models = response.data.map((m) => m.id);
+              spinner.succeed(`${agentInfo.description} - ${agentInfo.models.length} model(s) found (dynamic)`);
+            } else {
+              spinner.succeed(`${agentInfo.description} (using static list)`);
+            }
+          }
+        } catch (err) {
+          spinner.succeed(`${agentInfo.description} (using static list)`);
+        }
+      } else if (normalizedProvider === 'claude-code') {
+        try {
+          // Claude Code uses Claude Agent SDK with CLI authentication
+          // Try to get API key from multiple sources
+          let apiKey = process.env.ANTHROPIC_API_KEY;
+
+          // If no env var, try reading from Claude CLI config
+          if (!apiKey) {
+            try {
+              const { homedir } = await import('node:os');
+              const { readFileSync } = await import('node:fs');
+              const { join } = await import('node:path');
+
+              const configPath = join(homedir(), '.claude', 'settings.json');
+              const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+
+              // Check if API key is in the config
+              if (config?.env?.ANTHROPIC_API_KEY) {
+                apiKey = config.env.ANTHROPIC_API_KEY;
+              }
+            } catch {
+              // Config file doesn't exist or can't be read
+            }
+          }
+
+          if (!apiKey) {
+            // Show static list since we can't access Claude CLI OAuth tokens
+            spinner.succeed(`${agentInfo.description} (using static list)`);
+          } else {
+            const client = new Anthropic({ apiKey });
+            const response = await client.models.list();
+            if (response.data && Array.isArray(response.data)) {
+              agentInfo.models = response.data.map((m) => m.id);
+              spinner.succeed(`${agentInfo.description} - ${agentInfo.models.length} model(s) found (dynamic)`);
+            } else {
+              spinner.succeed(`${agentInfo.description} (using static list)`);
+            }
+          }
+        } catch (err) {
+          spinner.succeed(`${agentInfo.description} (using static list)`);
+        }
+      } else if (normalizedProvider === 'codex') {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (apiKey) {
+          try {
+            const response = await fetch('https://api.openai.com/v1/models', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+              },
+              signal: AbortSignal.timeout(5000),
+            });
+
+            if (response.ok) {
+              const data = (await response.json()) as { data?: Array<{ id: string }> };
+              if (data.data && Array.isArray(data.data)) {
+                const relevantModels = data.data
+                  .map((m) => m.id)
+                  .filter((id) =>
+                    id.includes('codex') ||
+                    id.includes('gpt-4') ||
+                    id.includes('gpt-5') ||
+                    id.startsWith('o3') ||
+                    id.startsWith('o4')
+                  )
+                  .sort();
+                if (relevantModels.length > 0) {
+                  agentInfo.models = relevantModels;
+                  spinner.succeed(`${agentInfo.description} - ${agentInfo.models.length} model(s) found (dynamic)`);
+                } else {
+                  spinner.succeed(`${agentInfo.description} (using static list)`);
+                }
+              } else {
+                spinner.succeed(`${agentInfo.description} (using static list)`);
+              }
+            } else {
+              spinner.succeed(`${agentInfo.description} (using static list)`);
+            }
+          } catch {
+            spinner.succeed(`${agentInfo.description} (using static list)`);
+          }
+        } else {
+          spinner.succeed(`${agentInfo.description} (set OPENAI_API_KEY for dynamic listing)`);
+        }
+      } else if (normalizedProvider === 'copilot') {
+        try {
+          // Use Copilot SDK to list models dynamically
+          const { CopilotClient } = await import('@github/copilot-sdk');
+          const client = new CopilotClient({
+            autoStart: true,
+            logLevel: 'error',
+            cliPath: process.env.COPILOT_CLI_PATH || 'copilot',
+          });
+
+          // Try to start and get models
+          if (typeof client.start === 'function') {
+            await client.start();
+          }
+
+          if (typeof client.listModels === 'function') {
+            const models = await client.listModels();
+            if (models && Array.isArray(models)) {
+              agentInfo.models = models.map((m: { name?: string; id?: string }) => m.name || m.id || '').filter(Boolean);
+              spinner.succeed(`${agentInfo.description} - ${agentInfo.models.length} model(s) found (dynamic)`);
+            } else {
+              spinner.succeed(`${agentInfo.description} (using static list)`);
+            }
+          } else {
+            spinner.succeed(`${agentInfo.description} (using static list)`);
+          }
+
+          // Clean up
+          if (typeof client.stop === 'function') {
+            await client.stop();
+          }
+        } catch (err) {
+          spinner.succeed(`${agentInfo.description} (using static list - SDK not available)`);
+        }
+      } else {
+        const dynamicLabel = agentInfo.dynamic ? ' (supports dynamic listing)' : ' (static list)';
+        spinner.succeed(`${agentInfo.description}${dynamicLabel}`);
+      }
+
+      if (agentInfo.models.length > 0) {
+        console.log(chalk.bold('\nAvailable models:'));
+        for (const model of agentInfo.models) {
+          console.log(`  ${chalk.cyan(model)}`);
+        }
+      }
+      return;
+    }
+
+    // List all providers and their models
+    spinner.succeed('Available AI agent models');
+
+    console.log('');
+    for (const [id, info] of Object.entries(agentModels)) {
+      const dynamicLabel = info.dynamic ? chalk.green(' [dynamic]') : chalk.gray(' [static]');
+      console.log(chalk.bold(`${info.description}`) + ` (${chalk.cyan(id)})${dynamicLabel}`);
+
+      // Try to fetch models dynamically based on provider
+      if (id === 'ollama') {
+        try {
+          const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+          const response = await fetch(`${baseUrl}/api/tags`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000),
+          });
+
+          if (response.ok) {
+            const data = (await response.json()) as { models?: Array<{ name: string }> };
+            if (data.models && Array.isArray(data.models)) {
+              info.models = data.models.map((m) => m.name);
+            }
+          }
+        } catch {
+          console.log(chalk.yellow('  (Ollama not available - run `ollama serve` to see models)'));
+        }
+      } else if (id === 'claude' || id === 'claude-code') {
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (apiKey) {
+          try {
+            const response = await fetch('https://api.anthropic.com/v1/models', {
+              method: 'GET',
+              headers: {
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+              },
+              signal: AbortSignal.timeout(5000),
+            });
+
+            if (response.ok) {
+              const data = (await response.json()) as { data?: Array<{ id: string }> };
+              if (data.data && Array.isArray(data.data)) {
+                info.models = data.data.map((m) => m.id);
+              }
+            }
+          } catch {
+            // Use static list on error
+          }
+        }
+      } else if (id === 'codex') {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (apiKey) {
+          try {
+            const response = await fetch('https://api.openai.com/v1/models', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+              },
+              signal: AbortSignal.timeout(5000),
+            });
+
+            if (response.ok) {
+              const data = (await response.json()) as { data?: Array<{ id: string }> };
+              if (data.data && Array.isArray(data.data)) {
+                const relevantModels = data.data
+                  .map((m) => m.id)
+                  .filter((mdl) =>
+                    mdl.includes('codex') ||
+                    mdl.includes('gpt-4') ||
+                    mdl.includes('gpt-5') ||
+                    mdl.startsWith('o3') ||
+                    mdl.startsWith('o4')
+                  )
+                  .sort();
+                if (relevantModels.length > 0) {
+                  info.models = relevantModels;
+                }
+              }
+            }
+          } catch {
+            // Use static list on error
+          }
+        }
+      }
+
+      if (info.models.length > 0) {
+        for (const model of info.models) {
+          console.log(`  - ${model}`);
+        }
+      } else if (id !== 'ollama') {
+        console.log(chalk.gray('  No models configured'));
+      }
+      console.log('');
     }
   });
 

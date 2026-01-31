@@ -20,6 +20,7 @@ export class DemoProvider implements AgentProvider {
     toolUse: false,
     codeExecution: false,
     systemPrompts: false,
+    dynamicModelListing: false,
     models: ['demo'],
   };
 
@@ -35,6 +36,10 @@ export class DemoProvider implements AgentProvider {
 
   getStatus(): { ready: boolean; model?: string; error?: string } {
     return { ready: true, model: 'demo' };
+  }
+
+  async listModels(): Promise<string[] | undefined> {
+    return this.capabilities.models;
   }
 
   async processPrompt(prompt: string, workflow: Workflow): Promise<PromptResult> {

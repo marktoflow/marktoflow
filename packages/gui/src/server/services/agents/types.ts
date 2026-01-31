@@ -49,8 +49,10 @@ export interface AgentCapabilities {
   systemPrompts: boolean;
   /** Maximum context length in tokens */
   maxContextLength?: number;
-  /** List of available models */
+  /** List of available models (static fallback list) */
   models: string[];
+  /** Whether the provider supports dynamic model listing */
+  dynamicModelListing: boolean;
 }
 
 export interface AgentConfig {
@@ -128,6 +130,12 @@ export interface AgentProvider {
     model?: string;
     error?: string;
   };
+
+  /**
+   * List available models for this provider
+   * Returns undefined if dynamic model listing is not supported
+   */
+  listModels?(): Promise<string[] | undefined>;
 }
 
 /**

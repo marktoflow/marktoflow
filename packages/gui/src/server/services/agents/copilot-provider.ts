@@ -58,17 +58,28 @@ export class CopilotProvider implements AgentProvider {
     toolUse: true,
     codeExecution: true,
     systemPrompts: true,
+    dynamicModelListing: true,
     models: [
-      'gpt-4.1',
-      'gpt-4o',
-      'gpt-4-turbo',
-      'claude-3.5-sonnet',
+      'Claude Sonnet 4.5',
+      'Claude Haiku 4.5',
+      'Claude Opus 4.5',
+      'Claude Sonnet 4',
+      'Gemini 3 Pro (Preview)',
+      'GPT-5.2-Codex',
+      'GPT-5.2',
+      'GPT-5.1-Codex-Max',
+      'GPT-5.1-Codex',
+      'GPT-5.1',
+      'GPT-5',
+      'GPT-5.1-Codex-Mini',
+      'GPT-5 mini',
+      'GPT-4.1',
     ],
   };
 
   // Using 'unknown' to handle SDK version differences
   private client: unknown = null;
-  private model: string = 'gpt-4.1';
+  private model: string = 'GPT-5.2-Codex';
   private ready: boolean = false;
   private error: string | undefined;
   private cliPath?: string;
@@ -141,6 +152,26 @@ export class CopilotProvider implements AgentProvider {
       model: this.model,
       error: this.error,
     };
+  }
+
+  async listModels(): Promise<string[] | undefined> {
+    if (!this.client || !this.ready) {
+      return undefined;
+    }
+
+    try {
+      const client = this.client as {
+        listModels?: () => Promise<Array<{ name: string; id?: string }>>;
+      };
+
+      if (typeof client.listModels === 'function') {
+        const models = await client.listModels();
+        return models.map((m) => m.name || m.id || '').filter(Boolean);
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async processPrompt(
