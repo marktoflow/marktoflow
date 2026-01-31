@@ -63,6 +63,8 @@ This package depends on `@marktoflow/core` which will be installed automatically
 
 ## Quick Start
 
+All integrations work with the workflow examples in [examples/](https://github.com/marktoflow/marktoflow/tree/main/examples). See these for production-ready templates.
+
 ### Using in Workflows
 
 Integrations are designed to work seamlessly in workflow YAML definitions:
@@ -143,6 +145,11 @@ inputs:
         text: '*Status:* ✅ Success'
 ```
 
+**Production Examples:**
+- [daily-standup](https://github.com/marktoflow/marktoflow/tree/main/examples/daily-standup) - Daily standup reports
+- [incident-response](https://github.com/marktoflow/marktoflow/tree/main/examples/incident-response) - Incident coordination
+- [codebase-qa](https://github.com/marktoflow/marktoflow/tree/main/examples/codebase-qa) - AI Q&A via Slack
+
 ### GitHub
 
 Manage repositories, PRs, issues, and more.
@@ -172,6 +179,11 @@ inputs:
   base: main
   body: 'This PR adds...'
 ```
+
+**Production Examples:**
+- [code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/code-review) - Automated PR reviews
+- [copilot-code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/copilot-code-review) - Advanced Copilot reviews
+- [dependency-update](https://github.com/marktoflow/marktoflow/tree/main/examples/dependency-update) - Dependency PR automation
 
 ### Jira
 
@@ -206,6 +218,11 @@ inputs:
       name: Bug
 ```
 
+**Production Examples:**
+- [daily-standup](https://github.com/marktoflow/marktoflow/tree/main/examples/daily-standup) - Daily standup automation
+- [sprint-planning](https://github.com/marktoflow/marktoflow/tree/main/examples/sprint-planning) - AI-assisted sprint planning
+- [incident-response](https://github.com/marktoflow/marktoflow/tree/main/examples/incident-response) - Incident ticket creation
+
 ### Gmail
 
 Email operations with webhook support.
@@ -234,6 +251,9 @@ inputs:
   subject: 'Daily Report'
   body: 'Here is your daily report...'
 ```
+
+**Production Examples:**
+- [gmail-notification](https://github.com/marktoflow/marktoflow/tree/main/examples/gmail-notification) - Email automation workflow
 
 ### Outlook
 
@@ -999,6 +1019,9 @@ steps:
       prompt: 'Explain quantum computing'
 ```
 
+**Production Examples:**
+- [doc-maintenance](https://github.com/marktoflow/marktoflow/tree/main/examples/doc-maintenance) - Smart documentation updates with Ollama
+
 ### Claude Agent
 
 Anthropic Claude Agent SDK integration with agentic workflows.
@@ -1271,6 +1294,9 @@ copilot auth login
 - Session persistence
 - Infinite sessions (automatic context compaction)
 - Multi-turn conversations
+
+**Production Examples:**
+- [copilot-code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/copilot-code-review) - Advanced PR review with GitHub Copilot
 
 ## Advanced Usage
 

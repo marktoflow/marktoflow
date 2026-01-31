@@ -84,7 +84,7 @@ Capture a full-page screenshot of the current state.
 ## Step 5: Display Results
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: |
     ===== Web Automation Results =====

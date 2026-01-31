@@ -41,7 +41,7 @@ This workflow demonstrates intelligent routing based on incident severity using 
 ## Step 1: Parse and Validate Incident
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: "Processing incident: {{ inputs.incident.title }} ({{ inputs.incident.severity }})"
 output_variable: log_result
@@ -197,7 +197,7 @@ default:
 ## Step 3: Log Completion
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: "Incident routing complete for {{ inputs.incident.title }}"
 ```

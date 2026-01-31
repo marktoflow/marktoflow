@@ -294,6 +294,18 @@ marktoflow new code-review --output workflows/code-review.md
 marktoflow new
 ```
 
+**Available Templates:**
+
+Built-in templates match the examples/ directory:
+- `code-review` - Automated GitHub PR review
+- `daily-standup` - Jira/Slack standup automation
+- `incident-response` - Multi-service incident coordination
+- `dependency-update` - Package update automation
+- `sprint-planning` - AI-assisted sprint planning
+- `web-automation` - Playwright browser automation
+- `gmail-notification` - Email automation
+- And more...
+
 ### Agent & Tool Management
 
 #### `marktoflow agents list`
@@ -386,7 +398,29 @@ logging:
   file: .marktoflow/logs/marktoflow.log
 ```
 
-## Examples
+## Production Examples
+
+The [examples/](https://github.com/marktoflow/marktoflow/tree/main/examples) directory contains 14+ production-ready workflow templates you can use as starting points:
+
+- **[code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/code-review)** - Automated GitHub PR review with security, performance, and quality checks
+- **[copilot-code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/copilot-code-review)** - Advanced review using GitHub Copilot SDK
+- **[daily-standup](https://github.com/marktoflow/marktoflow/tree/main/examples/daily-standup)** - Jira + Slack activity aggregation with AI summaries
+- **[dependency-update](https://github.com/marktoflow/marktoflow/tree/main/examples/dependency-update)** - Automated package updates with AI changelogs
+- **[incident-response](https://github.com/marktoflow/marktoflow/tree/main/examples/incident-response)** - PagerDuty + Slack + Jira coordination
+- **[sprint-planning](https://github.com/marktoflow/marktoflow/tree/main/examples/sprint-planning)** - Velocity analysis + AI story selection
+- **[doc-maintenance](https://github.com/marktoflow/marktoflow/tree/main/examples/doc-maintenance)** - Smart documentation updates using Ollama
+- **[web-automation](https://github.com/marktoflow/marktoflow/tree/main/examples/web-automation)** - Playwright-based browser automation
+- **[gmail-notification](https://github.com/marktoflow/marktoflow/tree/main/examples/gmail-notification)** - Email automation with Gmail API
+- **[linear-sync](https://github.com/marktoflow/marktoflow/tree/main/examples/linear-sync)** - Linear issue tracking sync
+- **[codebase-qa](https://github.com/marktoflow/marktoflow/tree/main/examples/codebase-qa)** - AI-powered codebase Q&A
+
+Run any example:
+
+```bash
+marktoflow run examples/daily-standup/workflow.md
+```
+
+## CLI Examples
 
 ### Daily Standup Report
 

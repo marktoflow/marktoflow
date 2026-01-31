@@ -70,7 +70,7 @@ steps:
     output_variable: page_quotes
 
   - id: log_progress
-    action: console.log
+    action: core.log
     inputs:
       message: 'Page {{ page_num }}: Found {{ page_quotes | length }} quotes'
 
@@ -102,7 +102,7 @@ output_variable: scraped_data
 ## Step 3: Display Summary
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: |
     ===== Web Scraping Complete =====

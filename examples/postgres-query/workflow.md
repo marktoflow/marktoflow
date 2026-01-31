@@ -64,7 +64,7 @@ output_variable: query_result
 ## Step 2: Log Result Summary
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: 'Query executed successfully. Returned {{ query_result.rows.length }} rows.'
 ```
