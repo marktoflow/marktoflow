@@ -4,7 +4,8 @@ import express from 'express';
 import cors from 'cors';
 import { createServer, type Server } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
 import { StateStore } from '@marktoflow/core';
 import { workflowRoutes } from './routes/workflows.js';
@@ -14,6 +15,10 @@ import { toolsRoutes } from './routes/tools.js';
 import { executionRoutes } from './routes/executions.js';
 import { setupWebSocket } from './websocket/index.js';
 import { FileWatcher } from './services/FileWatcher.js';
+
+// Get the directory where this file is located
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface ServerOptions {
   port?: number;
@@ -41,7 +46,12 @@ export function getStateStore(): StateStore {
 export async function startServer(options: ServerOptions = {}): Promise<Server> {
   const PORT = options.port || parseInt(process.env.PORT || '3001', 10);
   const WORKFLOW_DIR = options.workflowDir || process.env.WORKFLOW_DIR || process.cwd();
-  const STATIC_DIR = options.staticDir || process.env.STATIC_DIR;
+
+  // Auto-discover static directory if not provided
+  // When running from dist/server/index.js, the client is at dist/client
+  const defaultStaticDir = join(__dirname, '..', 'client');
+  const STATIC_DIR = options.staticDir || process.env.STATIC_DIR ||
+    (existsSync(defaultStaticDir) ? defaultStaticDir : undefined);
 
   // Initialize StateStore
   const stateDir = join(WORKFLOW_DIR, '.marktoflow', 'state');

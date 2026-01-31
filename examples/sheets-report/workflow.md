@@ -82,7 +82,7 @@ output_variable: summary
 ## Step 3: Log Summary
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: 'Processed {{ summary.total_rows }} rows from spreadsheet'
 ```

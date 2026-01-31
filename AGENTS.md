@@ -171,7 +171,7 @@ pnpm publish
 ### What It Does
 
 The automated system:
-- ✅ Replaces `workspace:*` with actual versions
+- ✅ Replaces `workspace:*` with actual versions (dependencies, devDependencies, optionalDependencies)
 - ✅ Builds all packages
 - ✅ Tests imports, CLI, and GUI integration
 - ✅ Publishes in correct dependency order

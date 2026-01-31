@@ -67,7 +67,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
       case 'unavailable':
         return <div className="w-2 h-2 rounded-full bg-red-500" />;
       default:
-        return null;
+        return <div className="w-2 h-2 rounded-full bg-gray-500" />;
     }
   };
 
@@ -177,18 +177,21 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
           </div>
         ) : (
           <div className="space-y-2">
-            {providers.map((provider) => (
+            {providers.map((provider) => {
+              const isDisabled = provider.status === 'unavailable' ||
+                (provider.status !== 'ready' && provider.status !== 'needs_config');
+              return (
               <button
                 key={provider.id}
                 onClick={() => handleProviderClick(provider.id)}
-                disabled={provider.status === 'unavailable'}
+                disabled={isDisabled}
                 className={`
                   w-full flex items-center justify-between p-3 rounded border transition-all
                   ${provider.isActive
                     ? 'bg-primary/10 border-primary text-white'
                     : 'bg-node-bg border-node-border text-gray-300 hover:bg-white/5'
                   }
-                  ${provider.status === 'unavailable' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                 `}
               >
                 <div className="flex items-center gap-3">
@@ -213,7 +216,8 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                   </span>
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

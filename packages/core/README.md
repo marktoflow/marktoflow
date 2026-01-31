@@ -128,7 +128,9 @@ await registry.register({
 
 ## Workflow Format
 
-Workflows are written in markdown with YAML frontmatter:
+Workflows are written in markdown with YAML frontmatter. See the [examples/](https://github.com/marktoflow/marktoflow/tree/main/examples) directory for production-ready workflow templates.
+
+### Basic Example
 
 ```markdown
 ---
@@ -165,11 +167,87 @@ This workflow posts a message to Slack.
 \`\`\`yaml
 action: slack.chat.postMessage
 inputs:
-channel: '#general'
-text: '{{ inputs.message }}'
+  channel: '#general'
+  text: '{{ inputs.message }}'
 output_variable: result
 \`\`\`
 ```
+
+### Real-World Examples
+
+See these production workflows in the `examples/` directory:
+
+- **[daily-standup](https://github.com/marktoflow/marktoflow/tree/main/examples/daily-standup)** - Jira + Slack integration with AI-generated summaries
+- **[code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/code-review)** - Automated GitHub PR reviews with security analysis
+- **[incident-response](https://github.com/marktoflow/marktoflow/tree/main/examples/incident-response)** - PagerDuty + Slack + Jira coordination
+- **[gmail-notification](https://github.com/marktoflow/marktoflow/tree/main/examples/gmail-notification)** - Email automation with Gmail API
+- **[web-automation](https://github.com/marktoflow/marktoflow/tree/main/examples/web-automation)** - Browser automation with Playwright
+
+### Advanced Features
+
+The core engine supports sophisticated workflow patterns:
+
+#### Control Flow
+
+```yaml
+# Conditional execution
+- action: jira.issues.getIssue
+  inputs:
+    issueKey: 'PROJ-123'
+  output_variable: issue
+
+- action: slack.chat.postMessage
+  condition: '{{ issue.fields.priority.name == "Critical" }}'
+  inputs:
+    channel: '#urgent'
+    text: 'Critical issue found!'
+```
+
+#### Loops and Iteration
+
+```yaml
+# Process multiple items
+- action: github.pulls.list
+  inputs:
+    owner: marktoflow
+    repo: marktoflow
+  output_variable: prs
+
+- action: code_review
+  for_each: '{{ prs.data }}'
+  inputs:
+    pr: '{{ item }}'
+```
+
+#### Error Handling and Retry
+
+```yaml
+- action: external_api.call
+  retry:
+    max_attempts: 3
+    backoff: exponential
+    initial_delay: 1000
+  on_error: continue
+  fallback:
+    - action: slack.chat.postMessage
+      inputs:
+        channel: '#alerts'
+        text: 'API call failed after retries'
+```
+
+#### Circuit Breaker Pattern
+
+```yaml
+tools:
+  external_api:
+    sdk: 'custom-api-client'
+    circuit_breaker:
+      failure_threshold: 5
+      timeout: 30000
+      reset_timeout: 60000
+```
+
+See [examples/tests/control-flow/](https://github.com/marktoflow/marktoflow/tree/main/examples/tests/control-flow) for more advanced patterns.
 
 ## Architecture
 

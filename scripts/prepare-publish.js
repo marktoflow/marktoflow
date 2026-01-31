@@ -115,6 +115,16 @@ function replaceWorkspaceDeps() {
       }
     }
 
+    if (content.optionalDependencies) {
+      for (const [dep, version] of Object.entries(content.optionalDependencies)) {
+        if (version === 'workspace:*' && versions[dep]) {
+          content.optionalDependencies[dep] = versions[dep];
+          changed = true;
+          console.log(`  ✓ ${pkg}: ${dep} → ${versions[dep]} (optional)`);
+        }
+      }
+    }
+
     if (changed) {
       writeFileSync(path, JSON.stringify(content, null, 2) + '\n', 'utf-8');
     }

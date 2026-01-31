@@ -492,7 +492,10 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
 /**
  * Normalize an array of steps recursively.
  */
-function normalizeSteps(steps: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+function normalizeSteps(steps: Array<Record<string, unknown>> | undefined): Array<Record<string, unknown>> {
+  if (!steps || !Array.isArray(steps)) {
+    return [];
+  }
   return steps.map((step, index) => normalizeStep(step, index));
 }
 
@@ -512,7 +515,10 @@ function normalizeCases(cases: Record<string, unknown>): Record<string, Array<Re
 /**
  * Normalize parallel branches.
  */
-function normalizeBranches(branches: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+function normalizeBranches(branches: Array<Record<string, unknown>> | undefined): Array<Record<string, unknown>> {
+  if (!branches || !Array.isArray(branches)) {
+    return [];
+  }
   return branches.map((branch, index) => ({
     id: branch.id || `branch-${index + 1}`,
     name: branch.name,

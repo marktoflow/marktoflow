@@ -271,7 +271,7 @@ export const HELLO_TEMPLATE = new WorkflowTemplate(
       },
     ],
   },
-  `---\nworkflow:\n  id: hello-world\n  name: \"Hello World\"\n  version: \"1.0.0\"\n  description: \"A simple example workflow\"\n\nsteps:\n  - id: greet\n    action: console.log\n    inputs:\n      message: \"{{ template.message }}\"\n---\n\n# Hello World\n\nThis is a simple example workflow.\n`
+  `---\nworkflow:\n  id: hello-world\n  name: \"Hello World\"\n  version: \"1.0.0\"\n  description: \"A simple example workflow\"\n\nsteps:\n  - id: greet\n    action: core.log\n    inputs:\n      message: \"{{ template.message }}\"\n---\n\n# Hello World\n\nThis is a simple example workflow.\n`
 );
 
 export const BUILTIN_TEMPLATES: WorkflowTemplate[] = [HELLO_TEMPLATE];

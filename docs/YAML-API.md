@@ -808,12 +808,12 @@ action: workflow.noop
 
 Common utility actions for logging, scripting, delays, and HTTP requests.
 
-#### `console.log`
+#### `core.log`
 
 Logs a message to the console output. Useful for debugging and progress reporting.
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: string    # Message to log (supports templates)
   level: string      # Optional: 'info' | 'warn' | 'error' | 'debug' (default: 'info')
@@ -822,11 +822,13 @@ inputs:
 **Example:**
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: 'Processing item {{ index + 1 }} of {{ total }}: {{ item.name }}'
   level: info
 ```
+
+**Note:** `workflow.log` can also be used as an alias for `core.log`.
 
 #### `script` / `script.execute`
 

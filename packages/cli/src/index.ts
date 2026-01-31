@@ -164,7 +164,7 @@ workflow:
 
 steps:
   - id: greet
-    action: console.log
+    action: core.log
     inputs:
       message: "Hello from marktoflow!"
 ---

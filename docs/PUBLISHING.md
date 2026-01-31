@@ -115,7 +115,7 @@ For production-ready versions:
 
 The automated system provides:
 
-✅ **Automatic workspace:* replacement** with backup
+✅ **Automatic workspace:* replacement** (dependencies, devDependencies, optionalDependencies) with backup
 ✅ **Pre-publish testing** (imports, CLI, GUI integration)
 ✅ **Correct dependency order** (core → integrations → cli/gui)
 ✅ **Automatic rollback** on errors
@@ -512,7 +512,7 @@ For complete details on the publishing system:
 - @marktoflow/core@2.0.0-alpha.12
 - @marktoflow/integrations@2.0.0-alpha.12
 - @marktoflow/cli@2.0.0-alpha.12
-- @marktoflow/gui@2.0.0-alpha.12
+- @marktoflow/gui@2.0.0-alpha.13
 
 **Installation**:
 

@@ -39,7 +39,7 @@ This workflow demonstrates robust error handling with primary/fallback APIs and 
 ## Step 1: Initialize Request
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: "Starting API request for user {{ inputs.user_id }}"
 output_variable: init_log
@@ -69,11 +69,11 @@ try:
     type: if
     condition: "api_response.status == 200"
     then:
-      - action: console.log
+      - action: core.log
         inputs:
           message: "✅ Primary API succeeded"
     else:
-      - action: console.log
+      - action: core.log
         inputs:
           message: "❌ Primary API returned non-200 status"
 
@@ -81,7 +81,7 @@ catch:
   # Fallback to secondary API
   - id: log_primary_failure
     name: 'Log Primary API Failure'
-    action: console.log
+    action: core.log
     inputs:
       message: "Primary API failed: {{ error.message }}, trying fallback..."
 
@@ -110,7 +110,7 @@ finally:
   # Always execute cleanup and logging
   - id: log_request_metadata
     name: 'Log Request Metadata'
-    action: console.log
+    action: core.log
     inputs:
       message: |
         Request completed for user {{ inputs.user_id }}
@@ -138,7 +138,7 @@ condition: "api_response != null"
 then:
   - id: process_data
     name: 'Process Successful Response'
-    action: console.log
+    action: core.log
     inputs:
       message: "Processing data: {{ api_response.data }}"
 
@@ -188,7 +188,7 @@ try:
           url: "{{ inputs.primary_api_url }}/process"
         output_variable: process_result
     catch:
-      - action: console.log
+      - action: core.log
         inputs:
           message: "Processing failed, attempting recovery"
 
@@ -202,7 +202,7 @@ catch:
       channel: "#incidents"
       text: "🚨 Critical: Both process and recovery failed"
 finally:
-  - action: console.log
+  - action: core.log
     inputs:
       message: "Cleanup complete"
 ```
@@ -224,7 +224,7 @@ type: try
 try:
   - action: unreliable.service
 catch:
-  - action: console.log
+  - action: core.log
     inputs:
       message: "Retrying after delay..."
   - action: unreliable.service  # Second attempt

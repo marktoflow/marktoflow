@@ -113,7 +113,7 @@ inputs:
 
 steps:
   - id: step1
-    action: console.log
+    action: core.log
     inputs:
       message: "Test"
 ---

@@ -35,6 +35,9 @@
     "ora": "^8.1.0",
     "yaml": "^2.6.0"
   },
+  "optionalDependencies": {
+    "@marktoflow/gui": "workspace:*"
+  },
   "devDependencies": {
     "tsx": "^4.19.0"
   },
