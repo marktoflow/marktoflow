@@ -11,6 +11,20 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# TypeScript build artifacts (should only be in dist/)
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts.map
+packages/*/tests/**/*.js
+packages/*/tests/**/*.d.ts
+packages/*/tests/**/*.js.map
+packages/*/tests/**/*.d.ts.map
+packages/*/*.config.js
+packages/*/*.config.d.ts
+packages/*/*.config.js.map
+packages/*/*.config.d.ts.map
+
 # Turbo
 .turbo/
 
