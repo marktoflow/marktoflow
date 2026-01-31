@@ -90,7 +90,7 @@ output_variable: screenshot
 ## Step 6: Display Results
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: |
     ===== Form Automation Results =====
@@ -108,7 +108,7 @@ inputs:
 
 ```yaml
 type: try
-steps:
+try:
   - id: click_logout
     action: browser.click
     inputs:
@@ -121,7 +121,7 @@ steps:
       loadState: 'networkidle'
 catch:
   - id: log_logout_error
-    action: console.log
+    action: core.log
     inputs:
       message: 'Logout skipped or failed'
 ```
@@ -155,27 +155,33 @@ marktoflow run examples/web-automation/form-automation.md \
 
 ### Individual Field Actions
 
+**Type with delay (simulates human typing):**
 ```yaml
-# Type with delay (simulates human typing)
 action: browser.type
 inputs:
   selector: '#email'
   text: 'user@example.com'
   delay: 50  # ms between keystrokes
+```
 
-# Fill instantly (faster, no simulation)
+**Fill instantly (faster, no simulation):**
+```yaml
 action: browser.fill
 inputs:
   selector: '#email'
   value: 'user@example.com'
+```
 
-# Select dropdown
+**Select dropdown:**
+```yaml
 action: browser.select
 inputs:
   selector: '#country'
   values: 'US'
+```
 
-# Multi-select
+**Multi-select:**
+```yaml
 action: browser.select
 inputs:
   selector: '#interests'
@@ -183,12 +189,17 @@ inputs:
     - 'technology'
     - 'science'
     - 'art'
+```
 
-# Check/uncheck checkbox
+**Check checkbox:**
+```yaml
 action: browser.check
 inputs:
   selector: '#remember-me'
+```
 
+**Uncheck checkbox:**
+```yaml
 action: browser.uncheck
 inputs:
   selector: '#newsletter'
@@ -233,13 +244,16 @@ inputs:
 
 ## File Uploads
 
+**Single file:**
 ```yaml
 action: browser.uploadFile
 inputs:
   selector: '#file-input'
   files: '/path/to/document.pdf'
+```
 
-# Multiple files
+**Multiple files:**
+```yaml
 action: browser.uploadFile
 inputs:
   selector: '#file-input'

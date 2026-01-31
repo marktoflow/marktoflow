@@ -66,7 +66,7 @@ steps:
 
   - id: display_results
     name: 'Display Results'
-    action: console.log
+    action: core.log
     inputs:
       message: |
         ===== REST API Demo Results =====

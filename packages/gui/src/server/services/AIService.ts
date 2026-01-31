@@ -79,11 +79,59 @@ export class AIService {
   /**
    * Get the current provider status
    */
-  getStatus(): {
-    activeProvider: string;
-    providers: Array<{ id: string; name: string; ready: boolean; model?: string; error?: string }>;
-  } {
-    return this.registry.getStatus();
+  async getStatus(): Promise<{
+    activeProvider: string | null;
+    providers: Array<{
+      id: string;
+      name: string;
+      status: 'ready' | 'needs_config' | 'unavailable';
+      isActive: boolean;
+      description?: string;
+      configOptions?: {
+        apiKey?: boolean;
+        baseUrl?: boolean;
+        model?: boolean;
+      };
+    }>;
+  }> {
+    // Initialize providers if not already done
+    await this.initialize();
+
+    const registryStatus = this.registry.getStatus();
+
+    return {
+      activeProvider: registryStatus.activeProvider,
+      providers: registryStatus.providers.map((provider) => {
+        // Determine status based on ready state and error
+        let status: 'ready' | 'needs_config' | 'unavailable';
+        if (provider.ready) {
+          status = 'ready';
+        } else if (provider.error) {
+          status = 'unavailable';
+        } else {
+          status = 'needs_config';
+        }
+
+        // Determine which config options are needed based on provider ID
+        let configOptions: { apiKey?: boolean; baseUrl?: boolean; model?: boolean } | undefined;
+        if (provider.id === 'claude') {
+          configOptions = { apiKey: true, model: true };
+        } else if (provider.id === 'ollama') {
+          configOptions = { baseUrl: true, model: true };
+        } else if (provider.id === 'codex') {
+          configOptions = { apiKey: true, model: true };
+        }
+
+        return {
+          id: provider.id,
+          name: provider.name,
+          status,
+          isActive: provider.id === registryStatus.activeProvider,
+          description: provider.model ? `Model: ${provider.model}` : undefined,
+          configOptions,
+        };
+      }),
+    };
   }
 
   /**

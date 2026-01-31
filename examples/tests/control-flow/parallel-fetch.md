@@ -109,7 +109,7 @@ Access results from each branch using branch ID prefix.
 
 ```yaml
 type: action
-action: console.log
+action: core.log
 inputs:
   message: |
     📊 Dashboard Data Fetched Successfully
@@ -127,7 +127,7 @@ type: for_each
 items: "{{ fetch_jira.jira_summaries }}"
 item_variable: jira_issue
 steps:
-  - action: console.log
+  - action: core.log
     inputs:
       message: "[{{ loop.index + 1 }}] {{ jira_issue }}"
 ```
