@@ -150,4 +150,14 @@ export class AIService {
   getRegistry(): AgentRegistry {
     return this.registry;
   }
+
+  /**
+   * List available models for a specific provider
+   * @param providerId - The provider ID to list models for
+   * @returns Object containing models array and whether it was dynamically fetched
+   */
+  async listModels(providerId: string): Promise<{ models: string[]; dynamic: boolean }> {
+    await this.initialize();
+    return this.registry.listModels(providerId);
+  }
 }

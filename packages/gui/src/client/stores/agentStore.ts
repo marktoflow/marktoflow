@@ -28,11 +28,14 @@ interface AgentState {
   activeProviderId: string | null;
   isLoading: boolean;
   error: string | null;
+  availableModels: Record<string, string[]>;
+  modelsLoading: boolean;
 
   // Actions
   loadProviders: () => Promise<void>;
   setProvider: (id: string, config?: { apiKey?: string; baseUrl?: string; model?: string }) => Promise<boolean>;
   refreshStatus: () => Promise<void>;
+  loadModels: (providerId: string) => Promise<void>;
 }
 
 export const useAgentStore = create<AgentState>((set, get) => ({
@@ -40,6 +43,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   activeProviderId: null,
   isLoading: false,
   error: null,
+  availableModels: {},
+  modelsLoading: false,
 
   loadProviders: async () => {
     set({ isLoading: true, error: null });
@@ -105,5 +110,33 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   refreshStatus: async () => {
     await get().loadProviders();
+  },
+
+  loadModels: async (providerId: string) => {
+    // Check if we already have models cached
+    if (get().availableModels[providerId]) {
+      return;
+    }
+
+    set({ modelsLoading: true });
+    try {
+      const response = await fetch(`/api/ai/providers/${providerId}/models`);
+      if (!response.ok) {
+        throw new Error('Failed to load models');
+      }
+
+      const data: { models: string[]; dynamic: boolean } = await response.json();
+
+      set((state) => ({
+        availableModels: {
+          ...state.availableModels,
+          [providerId]: data.models,
+        },
+        modelsLoading: false,
+      }));
+    } catch (error) {
+      console.error('Error loading models:', error);
+      set({ modelsLoading: false });
+    }
   },
 }));

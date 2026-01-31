@@ -32,6 +32,12 @@ pnpm test --filter=@marktoflow/integrations # Integrations only
 ./marktoflow run examples/daily-standup/workflow.md
 ./marktoflow run workflow.md --input key=value
 ./marktoflow workflow validate workflow.md
+
+# AI Agent Management
+./marktoflow agent list                     # List available agents
+./marktoflow agent models                   # List all providers and models
+./marktoflow agent models ollama            # List models for specific provider
+./marktoflow run workflow.md --agent claude --model claude-opus-4
 ```
 
 ### Project Structure

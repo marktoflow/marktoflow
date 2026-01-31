@@ -258,6 +258,18 @@ marktoflow run workflow.md --agent copilot --model gpt-4o
 marktoflow run workflow.md --agent claude --model claude-opus-4
 ```
 
+**List Available Models**: See available models for each AI provider:
+
+```bash
+# List all providers and their models
+marktoflow agent models
+
+# List models for a specific provider
+marktoflow agent models ollama    # Dynamic - fetches from local Ollama
+marktoflow agent models claude    # Dynamic - fetches from Anthropic API
+marktoflow agent models copilot   # Dynamic - fetches from Copilot SDK
+```
+
 ### MCP Protocol
 
 - **Native MCP Support** - Import any MCP server as npm package

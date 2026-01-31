@@ -452,6 +452,50 @@ Set and configure the active AI provider.
 
 ---
 
+### Get Provider Models
+
+```http
+GET /api/ai/providers/:providerId/models
+```
+
+Get the available models for a specific AI provider. Some providers support dynamic model listing (fetched from their API), while others return a static list.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `providerId` | string | Provider ID: `claude`, `copilot`, `ollama`, `codex`, `claude-code`, `demo` |
+
+**Response:**
+```json
+{
+  "models": [
+    "claude-sonnet-4-20250514",
+    "claude-opus-4-20250514",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022"
+  ],
+  "dynamic": true
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `models` | Array of available model names |
+| `dynamic` | `true` if fetched from provider API, `false` if static list |
+
+**Dynamic Model Support:**
+
+| Provider | Dynamic | Notes |
+|----------|---------|-------|
+| `claude` | Yes | Fetches from Anthropic API (requires `ANTHROPIC_API_KEY`) |
+| `copilot` | Yes | Fetches from Copilot SDK |
+| `ollama` | Yes | Fetches from local Ollama instance |
+| `claude-code` | Yes | Fetches from Anthropic API (requires `ANTHROPIC_API_KEY`) |
+| `codex` | Yes | Fetches from OpenAI API (requires `OPENAI_API_KEY`) |
+| `demo` | No | Static list (demo mode) |
+
+---
+
 ## Execution API
 
 ### Execute Workflow

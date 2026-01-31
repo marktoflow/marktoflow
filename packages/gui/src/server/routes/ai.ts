@@ -88,4 +88,18 @@ router.post('/providers/:providerId', async (req, res) => {
   }
 });
 
+// Get available models for a provider
+router.get('/providers/:providerId/models', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const result = await aiService.listModels(providerId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get models',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 export { router as aiRoutes };

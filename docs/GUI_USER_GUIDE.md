@@ -348,14 +348,26 @@ Convert steps 2-4 into a sub-workflow called validation
 
 The GUI supports multiple AI backends:
 
-| Provider | Configuration |
-|----------|--------------|
-| **Claude** | Set `ANTHROPIC_API_KEY` environment variable |
-| **GitHub Copilot** | Authenticate with `copilot auth` |
-| **Ollama** | Run Ollama locally on port 11434 |
-| **Demo Mode** | No configuration needed (limited functionality) |
+| Provider | Configuration | Dynamic Models |
+|----------|--------------|----------------|
+| **Claude** | Set `ANTHROPIC_API_KEY` environment variable | Yes |
+| **GitHub Copilot** | Authenticate with `copilot auth` | Yes |
+| **Ollama** | Run Ollama locally on port 11434 | Yes |
+| **Claude Code** | Set `ANTHROPIC_API_KEY` environment variable | Yes |
+| **OpenAI Codex** | Set `OPENAI_API_KEY` environment variable | Yes |
+| **Demo Mode** | No configuration needed (limited functionality) | No |
 
 The system auto-detects available providers on startup.
+
+### Dynamic Model Selection
+
+When configuring a provider, the GUI automatically fetches available models:
+
+- **All major providers** (Claude, Claude Code, Copilot, Ollama, Codex) support dynamic model listing
+- Models are fetched from the provider's API when available
+- Models are displayed in a dropdown menu for easy selection
+- If model fetching fails, the system falls back to a static list
+- You can also manually enter a model name if needed
 
 ---
 

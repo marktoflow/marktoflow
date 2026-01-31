@@ -3,11 +3,11 @@
  * Allows users to switch between AI providers and configure them
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAgentStore } from '../../stores/agentStore';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
-import { Check, Settings, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Settings, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 
 interface ProviderSwitcherProps {
   open: boolean;
@@ -15,7 +15,7 @@ interface ProviderSwitcherProps {
 }
 
 export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) {
-  const { providers, activeProviderId, isLoading, error, loadProviders, setProvider } = useAgentStore();
+  const { providers, activeProviderId, isLoading, error, loadProviders, setProvider, availableModels, modelsLoading, loadModels } = useAgentStore();
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
   const [configData, setConfigData] = useState({
@@ -23,6 +23,11 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     baseUrl: '',
     model: '',
   });
+
+  // Load models when a provider is selected for configuration
+  const handleLoadModels = useCallback(async (providerId: string) => {
+    await loadModels(providerId);
+  }, [loadModels]);
 
   useEffect(() => {
     if (open) {
@@ -38,6 +43,8 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
       // Show config modal
       setSelectedProviderId(providerId);
       setShowConfig(true);
+      // Load models for this provider
+      handleLoadModels(providerId);
     } else if (provider.status === 'ready') {
       // Switch provider directly
       const success = await setProvider(providerId);
@@ -132,13 +139,36 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Model
               </label>
-              <input
-                type="text"
-                value={configData.model}
-                onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
-                className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Enter model name"
-              />
+              {modelsLoading ? (
+                <div className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-500 flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading models...
+                </div>
+              ) : availableModels[provider.id] && availableModels[provider.id].length > 0 ? (
+                <div className="relative">
+                  <select
+                    value={configData.model}
+                    onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
+                    className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                  >
+                    <option value="">Select a model...</option>
+                    {availableModels[provider.id].map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={configData.model}
+                  onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
+                  className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Enter model name"
+                />
+              )}
             </div>
           )}
         </div>
