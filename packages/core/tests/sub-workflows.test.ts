@@ -58,7 +58,7 @@ outputs:
 
 steps:
   - id: validate
-    action: console.log
+    action: core.log
     inputs:
       message: "Validating: {{ inputs.data }}"
     output_variable: validation_result
@@ -92,7 +92,7 @@ steps:
     output_variable: validation
   
   - id: log_result
-    action: console.log
+    action: core.log
     inputs:
       message: "Validation complete"
 ---
@@ -143,7 +143,7 @@ inputs:
 
 steps:
   - id: echo
-    action: console.log
+    action: core.log
     inputs:
       text: "{{ inputs.prefix }} {{ inputs.message }}"
     output_variable: result
@@ -238,7 +238,7 @@ steps:
     output_variable: calc_result
   
   - id: log_sum
-    action: console.log
+    action: core.log
     inputs:
       message: "Sum is: {{ calc_result.sum }}"
 ---
@@ -273,7 +273,7 @@ workflow:
 
 steps:
   - id: step3
-    action: console.log
+    action: core.log
     inputs:
       message: "Level 3 executed"
     output_variable: result3
@@ -293,7 +293,7 @@ steps:
     output_variable: level3_result
   
   - id: step2
-    action: console.log
+    action: core.log
     inputs:
       message: "Level 2 executed"
     output_variable: result2
@@ -313,7 +313,7 @@ steps:
     output_variable: level2_result
   
   - id: step1
-    action: console.log
+    action: core.log
     inputs:
       message: "Level 1 executed"
     output_variable: result1
@@ -408,7 +408,7 @@ workflow:
 
 steps:
   - id: nested_step
-    action: console.log
+    action: core.log
     inputs:
       message: "Nested workflow"
 ---

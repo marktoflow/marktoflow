@@ -107,7 +107,7 @@ steps:
 
   - id: log_progress
     name: 'Log Progress'
-    action: console.log
+    action: core.log
     inputs:
       message: "Poll #{{ loop_vars.poll_count }}: Job {{ loop_vars.job_status.state }} ({{ loop_vars.job_status.progress || 0 }}%)"
     conditions:
@@ -180,7 +180,7 @@ default:
 ## Step 4: Cleanup
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: "Workflow completed. Final status: {{ job_status.state }}"
 ```

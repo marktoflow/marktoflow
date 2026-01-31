@@ -327,7 +327,7 @@ steps:
 
   - id: format_message
     name: "Format Slack Message"
-    action: console.log
+    action: core.log
     inputs:
       message: |
         📍 Weather in {{ inputs.city }}: {{ weather.data.current.temp_f }}°F, {{ weather.data.current.condition.text }}
@@ -382,7 +382,7 @@ steps:
     output_variable: response
 
   - id: use_data
-    action: console.log
+    action: core.log
     inputs:
       message: |
         Status: {{ response.status }}
@@ -481,7 +481,7 @@ steps:
 ```yaml
 steps:
   - id: debug_request
-    action: console.log
+    action: core.log
     inputs:
       message: 'Calling API: {{ api.baseUrl }}/{{ path }}'
 
@@ -492,7 +492,7 @@ steps:
     output_variable: response
 
   - id: debug_response
-    action: console.log
+    action: core.log
     inputs:
       message: 'Response status: {{ response.status }}'
 ```

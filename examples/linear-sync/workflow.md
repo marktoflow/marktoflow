@@ -124,7 +124,7 @@ output_variable: processed
 ## Step 3: Log Summary
 
 ```yaml
-action: console.log
+action: core.log
 inputs:
   message: |
     Linear Sync Complete for {{ processed.team_name }}

@@ -53,7 +53,7 @@ router.post('/suggestions', async (req, res) => {
 // Get available AI providers and status
 router.get('/providers', async (_req, res) => {
   try {
-    const status = aiService.getStatus();
+    const status = await aiService.getStatus();
     res.json(status);
   } catch (error) {
     res.status(500).json({
@@ -72,7 +72,7 @@ router.post('/providers/:providerId', async (req, res) => {
     const success = await aiService.setProvider(providerId, { apiKey, baseUrl, model });
 
     if (success) {
-      const status = aiService.getStatus();
+      const status = await aiService.getStatus();
       res.json({ success: true, status });
     } else {
       res.status(400).json({

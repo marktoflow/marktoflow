@@ -14,21 +14,21 @@ inputs:
 steps:
   - id: step-1
     name: 'First Step'
-    action: console.log
+    action: core.log
     inputs:
       message: 'Step 1: {{ inputs.message }}'
     output_variable: result1
 
   - id: step-2
     name: 'Second Step'
-    action: console.log
+    action: core.log
     inputs:
       message: 'Step 2: Processing...'
     output_variable: result2
 
   - id: step-3
     name: 'Third Step'
-    action: console.log
+    action: core.log
     inputs:
       message: 'Step 3: Done! Previous result: {{ result1 }}'
     output_variable: result3
