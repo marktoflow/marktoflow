@@ -612,6 +612,38 @@ export function max(value: unknown, ...values: unknown[]): number {
   return Math.max(...nums);
 }
 
+/**
+ * Add two values numerically
+ * Usage: {{ value | add(5) }} → value + 5 (as numbers)
+ */
+export function add(value: unknown, amount: unknown): number {
+  return Number(value) + Number(amount);
+}
+
+/**
+ * Subtract two values numerically
+ * Usage: {{ value | subtract(5) }} → value - 5 (as numbers)
+ */
+export function subtract(value: unknown, amount: unknown): number {
+  return Number(value) - Number(amount);
+}
+
+/**
+ * Multiply two values numerically
+ * Usage: {{ value | multiply(5) }} → value * 5 (as numbers)
+ */
+export function multiply(value: unknown, amount: unknown): number {
+  return Number(value) * Number(amount);
+}
+
+/**
+ * Divide two values numerically
+ * Usage: {{ value | divide(5) }} → value / 5 (as numbers)
+ */
+export function divide(value: unknown, amount: unknown): number {
+  return Number(value) / Number(amount);
+}
+
 // ============================================================================
 // Filter Registration
 // ============================================================================
@@ -680,6 +712,10 @@ export function registerFilters(env: nunjucks.Environment): void {
   env.addFilter('ceil', ceil);
   env.addFilter('min', min);
   env.addFilter('max', max);
+  env.addFilter('add', add);
+  env.addFilter('subtract', subtract);
+  env.addFilter('multiply', multiply);
+  env.addFilter('divide', divide);
 
   // Global functions
   env.addGlobal('now', now);

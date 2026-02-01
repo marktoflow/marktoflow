@@ -1,0 +1,51 @@
+---
+workflow:
+  id: script-globals-test
+  name: Script Globals Test
+
+steps:
+  - id: json-operations
+    type: script
+    inputs:
+      code: |
+        const obj = { name: 'test', value: 42 };
+        const jsonStr = JSON.stringify(obj);
+        const parsed = JSON.parse(jsonStr);
+        return { jsonStr, parsed };
+    output_variable: json_result
+
+  - id: math-operations
+    type: script
+    inputs:
+      code: |
+        return {
+          pi: Math.PI,
+          sqrt: Math.sqrt(16),
+          round: Math.round(3.7),
+          max: Math.max(1, 5, 3),
+          random: typeof Math.random() === 'number'
+        };
+    output_variable: math_result
+
+  - id: date-operations
+    type: script
+    inputs:
+      code: |
+        const now = new Date();
+        const year = now.getFullYear();
+        return { hasDate: true, yearType: typeof year };
+    output_variable: date_result
+
+  - id: array-operations
+    type: script
+    inputs:
+      code: |
+        const arr = [1, 2, 3, 4, 5];
+        return {
+          mapped: arr.map(x => x * 2),
+          filtered: arr.filter(x => x > 2),
+          reduced: arr.reduce((a, b) => a + b, 0),
+          isArray: Array.isArray(arr)
+        };
+    output_variable: array_result
+---

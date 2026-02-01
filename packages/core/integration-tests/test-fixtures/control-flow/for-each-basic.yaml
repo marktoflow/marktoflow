@@ -1,0 +1,22 @@
+---
+workflow:
+  id: for-each-basic
+  name: Basic For-Each Test
+
+steps:
+  - id: process-items
+    type: for_each
+    items: "{{ items }}"
+    item_variable: item
+    index_variable: idx
+    steps:
+      - id: process-item
+        type: action
+        action: mock.process
+        inputs:
+          value: "{{ item }}"
+          index: "{{ idx }}"
+          isFirst: "{{ loop.first }}"
+          isLast: "{{ loop.last }}"
+        output_variable: processed_item
+---

@@ -1,0 +1,51 @@
+---
+workflow:
+  id: core-format-test
+  name: core.format Test
+
+steps:
+  - id: format-date
+    type: action
+    action: core.format
+    inputs:
+      value: "{{ timestamp }}"
+      type: date
+      format: "YYYY-MM-DD"
+    output_variable: formatted_date
+
+  - id: format-number
+    type: action
+    action: core.format
+    inputs:
+      value: 1234.5678
+      type: number
+      precision: 2
+    output_variable: formatted_number
+
+  - id: format-currency
+    type: action
+    action: core.format
+    inputs:
+      value: 1234.50
+      type: currency
+      currency: USD
+      locale: en-US
+    output_variable: formatted_currency
+
+  - id: format-string-upper
+    type: action
+    action: core.format
+    inputs:
+      value: "hello world"
+      type: string
+      format: upper
+    output_variable: formatted_upper
+
+  - id: format-json
+    type: action
+    action: core.format
+    inputs:
+      value: "{{ data }}"
+      type: json
+    output_variable: formatted_json
+---

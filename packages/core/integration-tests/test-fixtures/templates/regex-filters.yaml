@@ -1,0 +1,34 @@
+---
+workflow:
+  id: regex-filters
+  name: Regex Filter Tests
+
+steps:
+  - id: test-match
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ email | match('/([^@]+)@/') }}"
+    output_variable: match_result
+
+  - id: test-match-group
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ path | match('/([^/]+)/([^/]+)/', 2) }}"
+    output_variable: match_group_result
+
+  - id: test-not-match
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ text | notMatch('/error/i') }}"
+    output_variable: not_match_result
+
+  - id: test-regex-replace
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ text | regexReplace('/[^a-z0-9]+/', '-', 'gi') }}"
+    output_variable: regex_replace_result
+---

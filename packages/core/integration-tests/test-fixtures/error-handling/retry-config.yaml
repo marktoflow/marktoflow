@@ -1,0 +1,17 @@
+---
+workflow:
+  id: retry-config-test
+  name: Retry Configuration Test
+
+steps:
+  - id: step-with-retry
+    type: action
+    action: mock.flaky
+    inputs:
+      message: "test"
+    error_handling:
+      action: continue
+      max_retries: 3
+      retry_delay_seconds: 0
+    output_variable: retry_result
+---

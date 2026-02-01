@@ -1,0 +1,34 @@
+---
+workflow:
+  id: parallel-basic
+  name: Basic Parallel Execution Test
+
+steps:
+  - id: parallel-tasks
+    type: parallel
+    branches:
+      - id: branch-a
+        steps:
+          - id: task-a
+            type: action
+            action: mock.process
+            inputs:
+              name: "Task A"
+            output_variable: result_a
+      - id: branch-b
+        steps:
+          - id: task-b
+            type: action
+            action: mock.process
+            inputs:
+              name: "Task B"
+            output_variable: result_b
+      - id: branch-c
+        steps:
+          - id: task-c
+            type: action
+            action: mock.process
+            inputs:
+              name: "Task C"
+            output_variable: result_c
+---

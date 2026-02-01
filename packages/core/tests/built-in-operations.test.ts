@@ -98,12 +98,14 @@ describe('Built-in Operations', () => {
   describe('core.transform - map', () => {
     it('should map array items', () => {
       const context = createTestContext({ numbers: [1, 2, 3, 4, 5] });
+      const inputArray = [1, 2, 3, 4, 5];
       const result = executeTransform(
         {
-          input: [1, 2, 3, 4, 5],
+          input: inputArray,
           operation: 'map',
           expression: '{{ item }}',
         },
+        { input: inputArray },
         context
       );
 
@@ -123,6 +125,7 @@ describe('Built-in Operations', () => {
           operation: 'map',
           expression: '{{ item.name }}',
         },
+        { input: users },
         context
       );
 
@@ -142,6 +145,7 @@ describe('Built-in Operations', () => {
           operation: 'map',
           expression: '@{{ item.name }}',
         },
+        { input: users },
         context
       );
 
@@ -160,6 +164,7 @@ describe('Built-in Operations', () => {
           operation: 'filter',
           condition: 'item',
         },
+        { input: numbers },
         context
       );
 
@@ -183,6 +188,7 @@ describe('Built-in Operations', () => {
           operation: 'filter',
           condition: 'item.active',
         },
+        { input: items },
         context
       );
 
@@ -203,6 +209,7 @@ describe('Built-in Operations', () => {
           expression: '{{ accumulator }} {{ item }}',
           initialValue: '',
         },
+        { input: words, initialValue: '' },
         context
       );
 
@@ -220,6 +227,7 @@ describe('Built-in Operations', () => {
           expression: '{{ item }}',
           initialValue: '',
         },
+        { input: items, initialValue: '' },
         context
       );
 
@@ -242,6 +250,7 @@ describe('Built-in Operations', () => {
           operation: 'find',
           condition: 'item.role',
         },
+        { input: users },
         context
       );
 
@@ -259,6 +268,7 @@ describe('Built-in Operations', () => {
           operation: 'find',
           condition: 'item',
         },
+        { input: numbers },
         context
       );
 
@@ -284,6 +294,7 @@ describe('Built-in Operations', () => {
           operation: 'group_by',
           key: 'item.category',
         },
+        { input: items },
         context
       ) as Record<string, unknown[]>;
 
@@ -294,14 +305,16 @@ describe('Built-in Operations', () => {
 
     it('should require key parameter', () => {
       const context = createTestContext();
+      const inputArray = [1, 2, 3];
 
       expect(() => {
         executeTransform(
           {
-            input: [1, 2, 3],
+            input: inputArray,
             operation: 'group_by',
             // key missing
           },
+          { input: inputArray },
           context
         );
       }).toThrow('group_by operation requires "key" parameter');
@@ -318,6 +331,7 @@ describe('Built-in Operations', () => {
           input: numbers,
           operation: 'unique',
         },
+        { input: numbers },
         context
       );
 
@@ -340,6 +354,7 @@ describe('Built-in Operations', () => {
           operation: 'unique',
           key: 'item.id',
         },
+        { input: users },
         context
       ) as Array<{ id: number; name: string }>;
 
@@ -359,6 +374,7 @@ describe('Built-in Operations', () => {
           input: numbers,
           operation: 'sort',
         },
+        { input: numbers },
         context
       );
 
@@ -374,6 +390,7 @@ describe('Built-in Operations', () => {
           input: words,
           operation: 'sort',
         },
+        { input: words },
         context
       );
 
@@ -396,6 +413,7 @@ describe('Built-in Operations', () => {
           operation: 'sort',
           key: 'item.name',
         },
+        { input: users },
         context
       ) as Array<{ name: string; age: number }>;
 
@@ -414,6 +432,7 @@ describe('Built-in Operations', () => {
           operation: 'sort',
           reverse: true,
         },
+        { input: numbers, reverse: true },
         context
       );
 
@@ -432,6 +451,7 @@ describe('Built-in Operations', () => {
             operation: 'map',
             expression: '{{ item }}',
           },
+          { input: 'not an array' },
           context
         );
       }).toThrow('Transform input must be an array');
@@ -439,13 +459,15 @@ describe('Built-in Operations', () => {
 
     it('should throw on unknown operation', () => {
       const context = createTestContext();
+      const inputArray = [1, 2, 3];
 
       expect(() => {
         executeTransform(
           {
-            input: [1, 2, 3],
+            input: inputArray,
             operation: 'unknown' as any,
           },
+          { input: inputArray },
           context
         );
       }).toThrow('Unknown transform operation: unknown');
@@ -764,10 +786,12 @@ describe('Built-in Operations', () => {
   describe('executeBuiltInOperation', () => {
     it('should execute core.set', () => {
       const context = createTestContext();
+      const inputs = { name: 'Alice', age: 30 };
 
       const result = executeBuiltInOperation(
         'core.set',
-        { name: 'Alice', age: 30 },
+        inputs,
+        inputs,
         context
       );
 
@@ -776,14 +800,21 @@ describe('Built-in Operations', () => {
 
     it('should execute core.transform', () => {
       const context = createTestContext();
+      const rawInputs = {
+        input: ['a', 'b', 'c'],
+        operation: 'map',
+        expression: 'item-{{ item }}',
+      };
+      const resolvedInputs = {
+        input: ['a', 'b', 'c'],
+        operation: 'map',
+        expression: 'item-{{ item }}',
+      };
 
       const result = executeBuiltInOperation(
         'core.transform',
-        {
-          input: ['a', 'b', 'c'],
-          operation: 'map',
-          expression: 'item-{{ item }}',
-        },
+        rawInputs,
+        resolvedInputs,
         context
       );
 
@@ -792,13 +823,15 @@ describe('Built-in Operations', () => {
 
     it('should execute core.extract', () => {
       const context = createTestContext();
+      const inputs = {
+        input: { user: { name: 'Alice' } },
+        path: 'user.name',
+      };
 
       const result = executeBuiltInOperation(
         'core.extract',
-        {
-          input: { user: { name: 'Alice' } },
-          path: 'user.name',
-        },
+        inputs,
+        inputs,
         context
       );
 
@@ -807,14 +840,16 @@ describe('Built-in Operations', () => {
 
     it('should execute core.format', () => {
       const context = createTestContext();
+      const inputs = {
+        value: 'hello',
+        type: 'string',
+        format: 'upper',
+      };
 
       const result = executeBuiltInOperation(
         'core.format',
-        {
-          value: 'hello',
-          type: 'string',
-          format: 'upper',
-        },
+        inputs,
+        inputs,
         context
       );
 
@@ -826,6 +861,7 @@ describe('Built-in Operations', () => {
 
       const result = executeBuiltInOperation(
         'unknown.action',
+        {},
         {},
         context
       );

@@ -1,0 +1,22 @@
+---
+workflow:
+  id: fail-fast-test
+  name: Fail Fast Test
+
+steps:
+  - id: failing-step
+    type: action
+    action: mock.fail
+    inputs:
+      message: "Critical failure"
+    error_handling:
+      action: stop
+    output_variable: failed_result
+
+  - id: unreachable-step
+    type: action
+    action: mock.success
+    inputs:
+      message: "This should NOT run"
+    output_variable: success_result
+---

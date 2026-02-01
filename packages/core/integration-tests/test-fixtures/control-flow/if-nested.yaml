@@ -1,0 +1,46 @@
+---
+workflow:
+  id: if-nested
+  name: Nested If Test
+
+steps:
+  - id: outer-if
+    type: if
+    condition: "level >= 1"
+    then:
+      - id: inner-if
+        type: if
+        condition: "level >= 2"
+        then:
+          - id: deepest-if
+            type: if
+            condition: "level >= 3"
+            then:
+              - id: level-3
+                type: action
+                action: mock.set
+                inputs:
+                  result: "level-3"
+                output_variable: depth
+            else:
+              - id: level-2
+                type: action
+                action: mock.set
+                inputs:
+                  result: "level-2"
+                output_variable: depth
+        else:
+          - id: level-1
+            type: action
+            action: mock.set
+            inputs:
+              result: "level-1"
+            output_variable: depth
+    else:
+      - id: level-0
+        type: action
+        action: mock.set
+        inputs:
+          result: "level-0"
+        output_variable: depth
+---

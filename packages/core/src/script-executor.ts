@@ -107,6 +107,12 @@ const SAFE_GLOBALS: Record<string, unknown> = {
   // Promise is allowed for async operations
   Promise,
 
+  // Timer functions for async operations
+  setTimeout,
+  clearTimeout,
+  setInterval,
+  clearInterval,
+
   // Map and Set
   Map,
   Set,

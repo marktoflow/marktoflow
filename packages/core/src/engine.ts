@@ -252,9 +252,12 @@ export class CircuitBreaker {
 export function resolveTemplates(value: unknown, context: ExecutionContext): unknown {
   if (typeof value === 'string') {
     // Build the template context with all available variables
+    // Spread inputs first, then variables (variables override inputs if same key)
+    // Also keep inputs accessible via inputs.* for explicit access
     const templateContext: Record<string, unknown> = {
-      inputs: context.inputs,
-      ...context.variables,
+      ...context.inputs, // Spread inputs at root level for direct access ({{ path }})
+      ...context.variables, // Variables override inputs if same key
+      inputs: context.inputs, // Also keep inputs accessible as inputs.*
     };
 
     // Use the new Nunjucks-based template engine with legacy syntax support
@@ -292,6 +295,12 @@ export function resolveVariablePath(path: string, context: ExecutionContext): un
   const fromVars = getNestedValue(context.variables, path);
   if (fromVars !== undefined) {
     return fromVars;
+  }
+
+  // Check inputs (for bare variable names like "value" instead of "inputs.value")
+  const fromInputs = getNestedValue(context.inputs, path);
+  if (fromInputs !== undefined) {
+    return fromInputs;
   }
 
   // Check step metadata (for status checks like: step_id.status)
@@ -1169,7 +1178,9 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
         let output: unknown;
         if (isBuiltInOperation(step.action)) {
           // Execute built-in operation directly (no timeout, no SDK executor needed)
-          output = executeBuiltInOperation(step.action, resolvedInputs, context);
+          // For built-in operations, pass both resolved and unresolved inputs
+          // to allow selective resolution of template expressions
+          output = executeBuiltInOperation(step.action, step.inputs, resolvedInputs, context);
         } else {
           // Execute step with executor context
           output = await this.executeWithTimeout(

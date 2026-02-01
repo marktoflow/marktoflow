@@ -251,22 +251,21 @@ describe('executeScript', () => {
   });
 
   describe('timeout', () => {
-    it('should handle scripts that fail due to unavailable APIs', async () => {
-      // setTimeout is not available in the sandboxed VM
+    it('should allow setTimeout for async operations', async () => {
+      // setTimeout IS available in the sandboxed VM for async operations
       const result = await executeScriptAsync(
         `
-        setTimeout(() => {}, 1000);
-        return 'done';
+        return new Promise(resolve => setTimeout(() => resolve('done'), 10));
       `,
         {
           variables: {},
           inputs: {},
         },
-        { timeout: 100 }
+        { timeout: 1000 }
       );
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('setTimeout is not defined');
+      expect(result.success).toBe(true);
+      expect(result.value).toBe('done');
     });
   });
 });

@@ -1,0 +1,41 @@
+---
+workflow:
+  id: array-filters
+  name: Array Filter Tests
+
+steps:
+  - id: test-nth
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ items | nth(2) }}"
+    output_variable: nth_result
+
+  - id: test-count
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ items | count }}"
+    output_variable: count_result
+
+  - id: test-sum
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ numbers | sum }}"
+    output_variable: sum_result
+
+  - id: test-unique
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ duplicates | unique }}"
+    output_variable: unique_result
+
+  - id: test-flatten
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ nested | flatten }}"
+    output_variable: flatten_result
+---

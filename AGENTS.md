@@ -24,9 +24,16 @@ This file provides guidance for AI coding agents working on this project.
 ```bash
 # Build & Test
 pnpm build                    # Build all packages
-pnpm test                     # Run all tests
+pnpm test                     # Run all tests (unit + integration)
+pnpm test:unit                # Run unit tests only
+pnpm test:integration         # Run integration tests only
 pnpm test --filter=@marktoflow/core         # Core only
 pnpm test --filter=@marktoflow/integrations # Integrations only
+
+# Run specific integration tests
+cd packages/core
+pnpm test:integration -t "transform"        # Tests matching "transform"
+pnpm test:integration -t "should reduce"    # Tests matching "should reduce"
 
 # Run Workflows
 ./marktoflow run examples/daily-standup/workflow.md

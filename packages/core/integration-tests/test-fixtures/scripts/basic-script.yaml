@@ -1,0 +1,33 @@
+---
+workflow:
+  id: basic-script-test
+  name: Basic Script Test
+
+steps:
+  - id: simple-script
+    type: script
+    inputs:
+      code: |
+        const x = 10;
+        const y = 20;
+        return x + y;
+    output_variable: sum_result
+
+  - id: access-variables
+    type: script
+    inputs:
+      code: |
+        const name = variables.user_name;
+        const greeting = `Hello, ${name}!`;
+        return { greeting, nameLength: name.length };
+    output_variable: greeting_result
+
+  - id: access-inputs
+    type: script
+    inputs:
+      code: |
+        const multiplier = inputs.multiplier || 1;
+        const value = variables.base_value || 10;
+        return value * multiplier;
+    output_variable: multiplied_result
+---

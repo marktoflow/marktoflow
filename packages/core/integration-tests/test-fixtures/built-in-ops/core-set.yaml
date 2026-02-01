@@ -1,0 +1,24 @@
+---
+workflow:
+  id: core-set-test
+  name: core.set Test
+
+steps:
+  - id: set-multiple
+    type: action
+    action: core.set
+    inputs:
+      name: "Alice"
+      age: 30
+      active: true
+      tags: ["admin", "user"]
+    output_variable: user_data
+
+  - id: set-with-template
+    type: action
+    action: core.set
+    inputs:
+      greeting: "Hello, {{ user_data.name }}!"
+      doubled_age: "{{ user_data.age * 2 }}"
+    output_variable: computed
+---

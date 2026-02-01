@@ -1,0 +1,25 @@
+---
+workflow:
+  id: while-basic
+  name: Basic While Loop Test
+
+steps:
+  - id: init-counter
+    type: action
+    action: mock.set
+    inputs:
+      value: 0
+    output_variable: counter
+
+  - id: count-loop
+    type: while
+    condition: "counter < 5"
+    max_iterations: 10
+    steps:
+      - id: increment
+        type: action
+        action: mock.increment
+        inputs:
+          current: "{{ counter }}"
+        output_variable: counter
+---

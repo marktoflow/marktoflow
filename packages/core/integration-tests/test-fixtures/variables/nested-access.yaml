@@ -1,0 +1,34 @@
+---
+workflow:
+  id: nested-access-test
+  name: Nested Variable Access Test
+
+steps:
+  - id: access-nested-object
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ user.profile.address.city }}"
+    output_variable: city
+
+  - id: access-array-index
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ items[0].name }}"
+    output_variable: first_item_name
+
+  - id: access-mixed
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ data.users[1].roles[0] }}"
+    output_variable: second_user_first_role
+
+  - id: access-deeply-nested
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ a.b.c.d.e }}"
+    output_variable: deep_value
+---

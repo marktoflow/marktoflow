@@ -112,47 +112,52 @@ export function executeSet(
  * ```
  */
 export function executeTransform(
-  inputs: TransformOperationInputs,
+  rawInputs: TransformOperationInputs,
+  resolvedInputs: Record<string, unknown>,
   context: ExecutionContext
 ): unknown {
-  const input = resolveTemplates(inputs.input, context);
+  // Use resolved input array
+  const input = resolvedInputs.input;
 
   if (!Array.isArray(input)) {
     throw new Error('Transform input must be an array');
   }
 
-  switch (inputs.operation) {
+  // Use raw (unresolved) expression and condition to preserve templates
+  const operation = rawInputs.operation;
+
+  switch (operation) {
     case 'map':
-      return transformMap(input, inputs.expression || '{{ item }}', context);
+      return transformMap(input, rawInputs.expression || '{{ item }}', context);
 
     case 'filter':
-      return transformFilter(input, inputs.condition || 'item', context);
+      return transformFilter(input, rawInputs.condition || 'item', context);
 
     case 'reduce':
       return transformReduce(
         input,
-        inputs.expression || '{{ accumulator }}',
-        inputs.initialValue,
+        rawInputs.expression || '{{ accumulator }}',
+        resolvedInputs.initialValue, // Resolve initialValue upfront
         context
       );
 
     case 'find':
-      return transformFind(input, inputs.condition || 'item', context);
+      return transformFind(input, rawInputs.condition || 'item', context);
 
     case 'group_by':
-      if (!inputs.key) {
+      if (!rawInputs.key) {
         throw new Error('group_by operation requires "key" parameter');
       }
-      return transformGroupBy(input, inputs.key, context);
+      return transformGroupBy(input, rawInputs.key, context);
 
     case 'unique':
-      return transformUnique(input, inputs.key, context);
+      return transformUnique(input, rawInputs.key, context);
 
     case 'sort':
-      return transformSort(input, inputs.key, inputs.reverse || false, context);
+      return transformSort(input, rawInputs.key, resolvedInputs.reverse as boolean || false, context);
 
     default:
-      throw new Error(`Unknown transform operation: ${inputs.operation}`);
+      throw new Error(`Unknown transform operation: ${operation}`);
   }
 }
 
@@ -535,21 +540,23 @@ function formatString(value: unknown, format?: string): string {
  */
 export function executeBuiltInOperation(
   action: string,
-  inputs: Record<string, unknown>,
+  rawInputs: Record<string, unknown>,
+  resolvedInputs: Record<string, unknown>,
   context: ExecutionContext
 ): unknown {
   switch (action) {
     case 'core.set':
-      return executeSet(inputs, context);
+      return executeSet(resolvedInputs, context);
 
     case 'core.transform':
-      return executeTransform(inputs as unknown as TransformOperationInputs, context);
+      // For transform operations, use raw inputs to preserve template expressions
+      return executeTransform(rawInputs as unknown as TransformOperationInputs, resolvedInputs, context);
 
     case 'core.extract':
-      return executeExtract(inputs as unknown as ExtractOperationInputs, context);
+      return executeExtract(resolvedInputs as unknown as ExtractOperationInputs, context);
 
     case 'core.format':
-      return executeFormat(inputs as unknown as FormatOperationInputs, context);
+      return executeFormat(resolvedInputs as unknown as FormatOperationInputs, context);
 
     default:
       return null; // Not a built-in operation

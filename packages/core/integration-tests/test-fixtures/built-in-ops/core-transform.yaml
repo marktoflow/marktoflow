@@ -1,0 +1,69 @@
+---
+workflow:
+  id: core-transform-test
+  name: core.transform Test
+
+steps:
+  - id: transform-map
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ numbers }}"
+      operation: map
+      expression: "{{ item * 2 }}"
+    output_variable: doubled
+
+  - id: transform-filter
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ doubled }}"
+      operation: filter
+      condition: "{{ item > 10 }}"
+    output_variable: filtered
+
+  - id: transform-reduce
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ filtered }}"
+      operation: reduce
+      expression: "{{ accumulator + item }}"
+      initialValue: 0
+    output_variable: total
+
+  - id: transform-find
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ users }}"
+      operation: find
+      condition: "{{ item.active }}"
+    output_variable: first_active
+
+  - id: transform-group-by
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ users }}"
+      operation: group_by
+      key: "item.department"
+    output_variable: by_department
+
+  - id: transform-unique
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ duplicates }}"
+      operation: unique
+    output_variable: unique_items
+
+  - id: transform-sort
+    type: action
+    action: core.transform
+    inputs:
+      input: "{{ unsorted }}"
+      operation: sort
+      key: "item.name"
+    output_variable: sorted_items
+---

@@ -1,0 +1,29 @@
+---
+workflow:
+  id: map-filter-reduce
+  name: Map/Filter/Reduce Test
+
+steps:
+  - id: map-items
+    type: map
+    items: "{{ numbers }}"
+    item_variable: n
+    expression: "{{ n * 2 }}"
+    output_variable: doubled
+
+  - id: filter-items
+    type: filter
+    items: "{{ doubled }}"
+    item_variable: n
+    condition: "n > 5"
+    output_variable: filtered
+
+  - id: reduce-items
+    type: reduce
+    items: "{{ filtered }}"
+    item_variable: n
+    accumulator_variable: sum
+    initial_value: 0
+    expression: "{{ sum + n }}"
+    output_variable: total
+---

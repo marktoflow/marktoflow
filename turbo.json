@@ -9,6 +9,14 @@
       "dependsOn": ["build"],
       "outputs": []
     },
+    "test:integration": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "test:all": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
     "lint": {
       "outputs": []
     },
