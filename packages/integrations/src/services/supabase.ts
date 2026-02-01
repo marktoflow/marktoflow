@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { BaseApiClient } from './base-client.js';
 
 export interface SupabaseQueryOptions {
   select?: string;
@@ -61,37 +62,39 @@ export interface SupabaseAuthSignInOptions {
 /**
  * Supabase client for workflow integration
  */
-export class SupabaseClient {
-  private apiUrl: string;
-  private headers: Record<string, string>;
+export class SupabaseClient extends BaseApiClient {
+  private readonly supabaseHeaders: Record<string, string>;
 
   constructor(supabaseUrl: string, supabaseKey: string) {
-    this.apiUrl = supabaseUrl;
-    this.headers = {
+    super({
+      baseUrl: supabaseUrl,
+      authType: 'bearer',
+      authValue: supabaseKey,
+      serviceName: 'Supabase',
+      headers: {
+        apikey: supabaseKey,
+      },
+    });
+    // Store headers for SupabaseTableQuery
+    this.supabaseHeaders = {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
     };
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.apiUrl}${path}`, {
-      method,
-      headers: this.headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+  /**
+   * Get the API URL for table queries
+   */
+  get apiUrl(): string {
+    return (this as unknown as { baseUrl: string }).baseUrl;
+  }
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Supabase API error: ${response.status} ${error}`);
-    }
-
-    // Handle 204 No Content
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return (await response.json()) as T;
+  /**
+   * Get headers for table queries
+   */
+  get headers(): Record<string, string> {
+    return this.supabaseHeaders;
   }
 
   /**

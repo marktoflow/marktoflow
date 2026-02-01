@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { BaseApiClient } from './base-client.js';
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
@@ -150,26 +151,17 @@ function extractTitle(properties: Record<string, unknown>): string {
 /**
  * Notion API client for workflow integration
  */
-export class NotionClient {
-  constructor(private token: string) {}
-
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${NOTION_API_URL}${path}`, {
-      method,
+export class NotionClient extends BaseApiClient {
+  constructor(token: string) {
+    super({
+      baseUrl: NOTION_API_URL,
+      authType: 'bearer',
+      authValue: token,
+      serviceName: 'Notion',
       headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
         'Notion-Version': NOTION_VERSION,
       },
-      body: body ? JSON.stringify(body) : undefined,
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Notion API error: ${response.status} ${error}`);
-    }
-
-    return (await response.json()) as T;
   }
 
   /**

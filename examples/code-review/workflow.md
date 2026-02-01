@@ -59,7 +59,7 @@ for clean, maintainable transformations.
 
 - **Filters**: `| split`, `| first`, `| match`, `| parse_json`, `| join`, `| upper`
 - **Control Flow**: `{% for %}`, `{% if %}`, `{% endif %}`
-- **Variables**: `{{ variable }}`, `{{ obj.property }}`, `{{ arr[0] }}`
+- **Variables**: `{{ variable }}`, `{{ obj.property }}`, `{{ arr | first }}`
 
 ---
 
@@ -98,7 +98,7 @@ action: github.repos.getContent
 inputs:
   owner: "{{ inputs.repo | split('/') | first }}"
   repo: "{{ inputs.repo | split('/') | last }}"
-  path: '{{ changed_files[0].filename }}'
+  path: '{{ changed_files | first | path("filename") }}'
   ref: '{{ pr_details.head.ref }}'
 output_variable: file_content
 ```
@@ -168,7 +168,7 @@ The filter takes a regex pattern and optional capture group index.
 ```yaml
 action: core.set
 inputs:
-  analysis_json: "{{ analysis_results.choices[0].message.content | match('/```json\\s*([\\s\\S]*?)\\s*```/', 1) }}"
+  analysis_json: "{{ analysis_results.choices | first | path('message.content') | match('/```json\\s*([\\s\\S]*?)\\s*```/', 1) }}"
 output_variable: extracted
 ```
 

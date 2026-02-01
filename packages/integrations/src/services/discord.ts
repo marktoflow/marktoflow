@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { BaseApiClient } from './base-client.js';
 
 const DISCORD_API_URL = 'https://discord.com/api/v10';
 
@@ -87,30 +88,14 @@ export interface GetMessagesOptions {
 /**
  * Discord API client for workflow integration
  */
-export class DiscordClient {
-  constructor(private token: string, private isBot: boolean = true) {}
-
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${DISCORD_API_URL}${path}`, {
-      method,
-      headers: {
-        Authorization: this.isBot ? `Bot ${this.token}` : this.token,
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
+export class DiscordClient extends BaseApiClient {
+  constructor(token: string, isBot: boolean = true) {
+    super({
+      baseUrl: DISCORD_API_URL,
+      authType: 'custom',
+      authValue: isBot ? `Bot ${token}` : token,
+      serviceName: 'Discord',
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Discord API error: ${response.status} ${error}`);
-    }
-
-    // Some endpoints return 204 No Content
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return (await response.json()) as T;
   }
 
   private parseMessage(msg: Record<string, unknown>): DiscordMessage {

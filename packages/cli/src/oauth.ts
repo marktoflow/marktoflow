@@ -5,18 +5,33 @@
  * 1. Start a local HTTP server to receive callbacks
  * 2. Open the browser for user authorization
  * 3. Exchange authorization code for tokens
- * 4. Store tokens securely
+ * 4. Store tokens securely using CredentialManager (Fernet encryption)
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { URL } from 'node:url';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import open from 'open';
 import chalk from 'chalk';
+import { createCredentialManager, CredentialType } from '@marktoflow/core';
 
 const DEFAULT_PORT = 8484;
 const CREDENTIALS_DIR = '.marktoflow/credentials';
+const STATE_DIR = join(homedir(), '.marktoflow', 'state');
+
+// Lazy-initialized credential manager for secure token storage
+let _credentialManager: ReturnType<typeof createCredentialManager> | null = null;
+
+function getCredentialManager(): ReturnType<typeof createCredentialManager> {
+  if (!_credentialManager) {
+    _credentialManager = createCredentialManager({
+      stateDir: STATE_DIR,
+    });
+  }
+  return _credentialManager;
+}
 
 export interface OAuthTokens {
   access_token: string;
@@ -130,23 +145,59 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
 }
 
 /**
- * Save tokens to credentials directory
+ * Save tokens securely using CredentialManager (Fernet encryption)
  */
 function saveTokens(service: string, tokens: OAuthTokens): void {
-  mkdirSync(CREDENTIALS_DIR, { recursive: true });
-  const path = join(CREDENTIALS_DIR, `${service}.json`);
-  writeFileSync(path, JSON.stringify(tokens, null, 2));
-  console.log(chalk.green(`Tokens saved to ${path}`));
+  const credentialName = `oauth:${service}`;
+  const credentialManager = getCredentialManager();
+
+  // Store tokens as encrypted JSON
+  credentialManager.set({
+    name: credentialName,
+    value: JSON.stringify(tokens),
+    credentialType: CredentialType.OAUTH_TOKEN,
+    description: `OAuth tokens for ${service}`,
+    expiresAt: tokens.expires_at ? new Date(tokens.expires_at) : undefined,
+    tags: ['oauth', service],
+  });
+
+  console.log(chalk.green(`Tokens saved securely for ${service}`));
 }
 
 /**
- * Load tokens from credentials directory
+ * Load tokens from secure credential storage
  */
 export function loadTokens(service: string): OAuthTokens | null {
+  const credentialName = `oauth:${service}`;
+  const credentialManager = getCredentialManager();
+
+  try {
+    if (!credentialManager.exists(credentialName)) {
+      // Fall back to legacy file-based storage for migration
+      return loadLegacyTokens(service);
+    }
+
+    const decrypted = credentialManager.get(credentialName);
+    return JSON.parse(decrypted) as OAuthTokens;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Load tokens from legacy file-based storage (for migration)
+ */
+function loadLegacyTokens(service: string): OAuthTokens | null {
   const path = join(CREDENTIALS_DIR, `${service}.json`);
   if (!existsSync(path)) return null;
   try {
-    return JSON.parse(readFileSync(path, 'utf-8'));
+    const tokens = JSON.parse(readFileSync(path, 'utf-8')) as OAuthTokens;
+
+    // Migrate to secure storage
+    console.log(chalk.dim(`Migrating ${service} tokens to secure storage...`));
+    saveTokens(service, tokens);
+
+    return tokens;
   } catch {
     return null;
   }

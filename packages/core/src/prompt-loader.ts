@@ -2,13 +2,14 @@
  * Prompt Loader for marktoflow v2.0
  *
  * Loads external prompt files with optional YAML frontmatter for variable definitions.
- * Supports template variable resolution using {{ prompt.variable }} syntax.
+ * Supports template variable resolution using Nunjucks ({{ prompt.variable }} syntax).
  */
 
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { ExecutionContext } from './models.js';
+import { renderTemplate } from './template-engine.js';
 
 // ============================================================================
 // Types
@@ -119,7 +120,13 @@ export async function loadPromptFile(
 // ============================================================================
 
 /**
- * Resolve {{ prompt.variable }} templates in a prompt.
+ * Resolve {{ prompt.variable }} templates in a prompt using Nunjucks.
+ *
+ * Features enabled by using Nunjucks:
+ * - Filters: {{ prompt.name | upper }}, {{ value | split('/') | first }}
+ * - Conditionals: {% if prompt.enabled %}...{% endif %}
+ * - Loops: {% for item in items %}...{% endfor %}
+ * - All custom filters from nunjucks-filters.ts
  */
 export function resolvePromptTemplate(
   prompt: LoadedPrompt,
@@ -141,64 +148,30 @@ export function resolvePromptTemplate(
     resolvedVars[name] = value;
   }
 
-  // Resolve templates in prompt content
-  let content = prompt.content;
+  // Build the template context
+  // 'prompt' namespace contains the resolved prompt variables
+  // Also include context variables if available
+  const templateContext: Record<string, unknown> = {
+    prompt: resolvedVars,
+    ...resolvedVars, // Also expose at top level for backward compatibility
+  };
 
-  // Replace {{ prompt.variable }} patterns
-  content = content.replace(/\{\{\s*prompt\.([^}]+)\s*\}\}/g, (_, varPath) => {
-    const trimmedPath = varPath.trim();
-    const value = getNestedValue(resolvedVars, trimmedPath);
-    return serializeValue(value);
-  });
+  // Add context variables if available
+  if (context) {
+    templateContext.inputs = context.inputs;
+    templateContext.variables = context.variables;
+    // Merge context variables at top level for convenience
+    Object.assign(templateContext, context.variables);
+  }
 
-  // Also resolve {{ variable }} patterns (for backward compatibility)
-  content = content.replace(/\{\{\s*([^}]+)\s*\}\}/g, (match, varPath) => {
-    const trimmedPath = varPath.trim();
-
-    // Skip if it doesn't look like a variable reference
-    if (trimmedPath.includes('.') && !trimmedPath.startsWith('prompt.')) {
-      // Try to resolve from context if available
-      if (context) {
-        const value = resolveFromContext(trimmedPath, context);
-        if (value !== undefined) {
-          return serializeValue(value);
-        }
-      }
-    }
-
-    // Try to resolve from prompt inputs
-    const value = getNestedValue(resolvedVars, trimmedPath);
-    if (value !== undefined) {
-      return serializeValue(value);
-    }
-
-    // Leave unresolved templates as-is (they may be resolved later)
-    return match;
-  });
+  // Render template using Nunjucks
+  const rendered = renderTemplate(prompt.content, templateContext);
+  const content = typeof rendered === 'string' ? rendered : String(rendered);
 
   return {
     content,
     variables: resolvedVars,
   };
-}
-
-/**
- * Resolve a variable path from execution context.
- */
-function resolveFromContext(path: string, context: ExecutionContext): unknown {
-  // Handle inputs.* prefix
-  if (path.startsWith('inputs.')) {
-    const inputPath = path.slice(7);
-    return getNestedValue(context.inputs, inputPath);
-  }
-
-  // Check variables
-  const fromVars = getNestedValue(context.variables, path);
-  if (fromVars !== undefined) {
-    return fromVars;
-  }
-
-  return undefined;
 }
 
 // ============================================================================
@@ -285,55 +258,6 @@ function validateType(value: unknown, type: PromptVariable['type'], name: string
   }
 
   return null;
-}
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-/**
- * Get a nested value from an object using dot notation.
- */
-function getNestedValue(obj: unknown, path: string): unknown {
-  if (obj === null || obj === undefined) {
-    return undefined;
-  }
-
-  const parts = path.split('.');
-  let current: unknown = obj;
-
-  for (const part of parts) {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-
-    if (typeof current === 'object') {
-      current = (current as Record<string, unknown>)[part];
-    } else {
-      return undefined;
-    }
-  }
-
-  return current;
-}
-
-/**
- * Serialize a value for template interpolation.
- */
-function serializeValue(value: unknown): string {
-  if (value === undefined || value === null) {
-    return '';
-  }
-
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
 }
 
 /**

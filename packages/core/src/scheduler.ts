@@ -2,7 +2,11 @@
  * Scheduler for marktoflow v2.0
  *
  * Handles cron-based scheduling of workflow execution.
+ * Uses cron-parser for robust cron expression handling with proper
+ * DST handling, leap year support, and timezone awareness.
  */
+
+import { CronExpressionParser, type CronExpression } from 'cron-parser';
 
 // ============================================================================
 // Types
@@ -31,7 +35,7 @@ export interface CronFields {
 export type JobCallback = (job: ScheduledJob) => Promise<void>;
 
 // ============================================================================
-// Cron Parser
+// Cron Parser (wrapper around cron-parser)
 // ============================================================================
 
 export class CronParser {
@@ -47,62 +51,21 @@ export class CronParser {
       throw new Error(`Invalid cron expression: ${expression}. Expected 5 fields.`);
     }
 
-    const ranges: Record<keyof CronFields, [number, number]> = {
-      minute: [0, 59],
-      hour: [0, 23],
-      day: [1, 31],
-      month: [1, 12],
-      weekday: [0, 6],
+    // Use cron-parser to validate and parse
+    const cronExpr = CronExpressionParser.parse(expression);
+    const fields = cronExpr.fields;
+
+    // Extract numeric values from cron fields
+    const extractNumbers = (values: readonly (number | string)[]): number[] =>
+      values.filter((v) => typeof v === 'number') as number[];
+
+    return {
+      minute: extractNumbers(fields.minute.values),
+      hour: extractNumbers(fields.hour.values),
+      day: extractNumbers(fields.dayOfMonth.values),
+      month: extractNumbers(fields.month.values),
+      weekday: extractNumbers(fields.dayOfWeek.values),
     };
-
-    const fieldNames: (keyof CronFields)[] = ['minute', 'hour', 'day', 'month', 'weekday'];
-    const result: CronFields = {
-      minute: [],
-      hour: [],
-      day: [],
-      month: [],
-      weekday: [],
-    };
-
-    for (let i = 0; i < fieldNames.length; i++) {
-      const name = fieldNames[i];
-      const [min, max] = ranges[name];
-      result[name] = this.parseField(parts[i], min, max);
-    }
-
-    return result;
-  }
-
-  private static parseField(field: string, minVal: number, maxVal: number): number[] {
-    const values = new Set<number>();
-
-    for (const part of field.split(',')) {
-      if (part === '*') {
-        for (let i = minVal; i <= maxVal; i++) {
-          values.add(i);
-        }
-      } else if (part.includes('/')) {
-        const [base, stepStr] = part.split('/');
-        const step = parseInt(stepStr, 10);
-        const start = base === '*' ? minVal : parseInt(base, 10);
-
-        for (let i = start; i <= maxVal; i += step) {
-          values.add(i);
-        }
-      } else if (part.includes('-')) {
-        const [startStr, endStr] = part.split('-');
-        const start = parseInt(startStr, 10);
-        const end = parseInt(endStr, 10);
-
-        for (let i = start; i <= end; i++) {
-          values.add(i);
-        }
-      } else {
-        values.add(parseInt(part, 10));
-      }
-    }
-
-    return Array.from(values).sort((a, b) => a - b);
   }
 
   /**
@@ -126,32 +89,65 @@ export class CronParser {
 
   /**
    * Calculate the next run time for a cron expression.
+   * Supports timezone-aware scheduling.
    */
-  static nextRun(expression: string, after?: Date): Date | null {
-    const start = after || new Date();
-
+  static nextRun(expression: string, after?: Date, timezone?: string): Date | null {
     try {
-      this.parse(expression);
+      const cronExpr = CronExpressionParser.parse(expression, {
+        currentDate: after ?? new Date(),
+        tz: timezone ?? 'UTC',
+      });
+      return cronExpr.next().toDate();
     } catch {
       return null;
     }
+  }
 
-    // Start from next minute
-    const current = new Date(start);
-    current.setSeconds(0, 0);
-    current.setMinutes(current.getMinutes() + 1);
+  /**
+   * Calculate the previous run time for a cron expression.
+   */
+  static prevRun(expression: string, before?: Date, timezone?: string): Date | null {
+    try {
+      const cronExpr = CronExpressionParser.parse(expression, {
+        currentDate: before ?? new Date(),
+        tz: timezone ?? 'UTC',
+      });
+      return cronExpr.prev().toDate();
+    } catch {
+      return null;
+    }
+  }
 
-    // Search up to 1 year ahead
-    const maxIterations = 366 * 24 * 60;
-
-    for (let i = 0; i < maxIterations; i++) {
-      if (this.matches(expression, current)) {
-        return current;
-      }
-      current.setMinutes(current.getMinutes() + 1);
+  /**
+   * Validate a cron expression without throwing.
+   * Only accepts standard 5-field cron expressions.
+   */
+  static isValid(expression: string): boolean {
+    if (!expression || typeof expression !== 'string') {
+      return false;
     }
 
-    return null;
+    const parts = expression.trim().split(/\s+/);
+    if (parts.length !== 5) {
+      return false;
+    }
+
+    try {
+      CronExpressionParser.parse(expression);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get the underlying cron-parser CronExpression for advanced usage.
+   */
+  static getInterval(expression: string, options?: { currentDate?: Date; tz?: string }): CronExpression {
+    return CronExpressionParser.parse(expression, {
+      currentDate: options?.currentDate ?? new Date(),
+      tz: options?.tz ?? 'UTC',
+    });
   }
 }
 
@@ -171,8 +167,8 @@ export class Scheduler {
    * Add a scheduled job.
    */
   addJob(job: ScheduledJob): void {
-    // Calculate next run time
-    job.nextRun = CronParser.nextRun(job.schedule);
+    // Calculate next run time with timezone support
+    job.nextRun = CronParser.nextRun(job.schedule, undefined, job.timezone);
     this.jobs.set(job.id, job);
   }
 
@@ -256,7 +252,7 @@ export class Scheduler {
       // Update job state
       job.lastRun = now;
       job.runCount++;
-      job.nextRun = CronParser.nextRun(job.schedule, now);
+      job.nextRun = CronParser.nextRun(job.schedule, now, job.timezone);
     }
   }
 
@@ -282,7 +278,7 @@ export class Scheduler {
 
       job.lastRun = now;
       job.runCount++;
-      job.nextRun = CronParser.nextRun(job.schedule, now);
+      job.nextRun = CronParser.nextRun(job.schedule, now, job.timezone);
       results.set(job.id, now);
     }
 
@@ -305,16 +301,17 @@ export function createJob(
   id: string,
   workflowPath: string,
   schedule: string,
-  inputs: Record<string, unknown> = {}
+  inputs: Record<string, unknown> = {},
+  timezone: string = 'UTC'
 ): ScheduledJob {
   return {
     id,
     workflowPath,
     schedule,
-    timezone: 'UTC',
+    timezone,
     enabled: true,
     lastRun: null,
-    nextRun: CronParser.nextRun(schedule),
+    nextRun: CronParser.nextRun(schedule, undefined, timezone),
     runCount: 0,
     inputs,
   };

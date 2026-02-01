@@ -91,7 +91,7 @@ Create a dedicated Slack channel for incident communication.
 ```yaml
 action: slack.conversations.create
 inputs:
-  name: "inc-{{ Date.now().toString().slice(-6) }}-{{ inputs.service.toLowerCase().replace(/[^a-z0-9]/g, '-') }}"
+  name: "inc-{{ now() | string | slice(-6) }}-{{ inputs.service | slugify }}"
   is_private: false
 output_variable: incident_channel
 ```
@@ -104,7 +104,7 @@ Set the channel topic with incident details.
 action: slack.conversations.setTopic
 inputs:
   channel: '{{ incident_channel.channel.id }}'
-  topic: '🚨 [{{ inputs.severity.toUpperCase() }}] {{ inputs.service }} - {{ inputs.description }}'
+  topic: '🚨 [{{ inputs.severity | upper }}] {{ inputs.service }} - {{ inputs.description }}'
 output_variable: topic_result
 ```
 
@@ -125,13 +125,13 @@ inputs:
     - type: section
       fields:
         - type: mrkdwn
-          text: "*Severity:*\n{{ inputs.severity.toUpperCase() }}"
+          text: "*Severity:*\n{{ inputs.severity | upper }}"
         - type: mrkdwn
           text: "*Service:*\n{{ inputs.service }}"
         - type: mrkdwn
           text: "*Status:*\n🔴 Active"
         - type: mrkdwn
-          text: "*Started:*\n{{ new Date().toISOString() }}"
+          text: "*Started:*\n{{ now() | format_date('YYYY-MM-DD HH:mm:ss') }}"
     - type: section
       text:
         type: mrkdwn
@@ -162,7 +162,20 @@ inputs:
 output_variable: oncall_response
 ```
 
-## Step 5: Invite Responders to Channel
+## Step 5: Extract Responder IDs
+
+Extract the Slack user IDs from the on-call response.
+
+```yaml
+action: core.transform
+inputs:
+  input: '{{ oncall_response.data.oncalls }}'
+  operation: map
+  expression: '{{ item.user.slack_user_id }}'
+output_variable: responder_ids
+```
+
+## Step 5.1: Invite Responders to Channel
 
 Invite the on-call responders to the incident channel.
 
@@ -170,7 +183,7 @@ Invite the on-call responders to the incident channel.
 action: slack.conversations.invite
 inputs:
   channel: '{{ incident_channel.channel.id }}'
-  users: "{{ oncall_response.data.oncalls.map(o => o.user.slack_user_id).join(',') }}"
+  users: "{{ responder_ids | join(',') }}"
 output_variable: invite_result
 ```
 
@@ -199,14 +212,14 @@ inputs:
       key: 'OPS'
     issuetype:
       name: 'Incident'
-    summary: '[{{ inputs.severity.toUpperCase() }}] {{ inputs.service }} - {{ inputs.description }}'
+    summary: '[{{ inputs.severity | upper }}] {{ inputs.service }} - {{ inputs.description }}'
     description: |
       h2. Incident Details
 
       *Incident ID:* {{ inputs.incident_id }}
-      *Severity:* {{ inputs.severity.toUpperCase() }}
+      *Severity:* {{ inputs.severity | upper }}
       *Service:* {{ inputs.service }}
-      *Started:* {{ new Date().toISOString() }}
+      *Started:* {{ now() | format_date('YYYY-MM-DD HH:mm:ss') }}
 
       h3. Description
       {{ inputs.description }}
@@ -219,7 +232,7 @@ inputs:
       - [{{ issue.title }}|{{ issue.html_url }}]
       {% endfor %}
     priority:
-      name: "{{ inputs.severity === 'critical' ? 'Highest' : inputs.severity === 'high' ? 'High' : 'Medium' }}"
+      name: "{{ 'Highest' if inputs.severity === 'critical' else 'High' if inputs.severity === 'high' else 'Medium' }}"
     labels:
       - 'incident'
       - '{{ inputs.service }}'
@@ -283,6 +296,19 @@ inputs:
 output_variable: summary_message
 ```
 
+## Step 8.5: Extract Responder Names
+
+Extract responder names for the output.
+
+```yaml
+action: core.transform
+inputs:
+  input: '{{ oncall_response.data.oncalls }}'
+  operation: map
+  expression: '{{ item.user.name }}'
+output_variable: responder_names
+```
+
 ## Step 9: Set Outputs
 
 ```yaml
@@ -290,5 +316,5 @@ action: workflow.set_outputs
 inputs:
   incident_channel: '#{{ incident_channel.channel.name }}'
   incident_issue: '{{ jira_incident.key }}'
-  assigned_responders: '{{ oncall_response.data.oncalls.map(o => o.user.name) }}'
+  assigned_responders: '{{ responder_names }}'
 ```

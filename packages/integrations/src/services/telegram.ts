@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { BaseApiClient } from './base-client.js';
 
 const TELEGRAM_API_URL = 'https://api.telegram.org';
 
@@ -155,23 +156,19 @@ export interface TelegramCallbackQuery {
 /**
  * Telegram Bot API client for workflow integration
  */
-export class TelegramClient {
-  private apiUrl: string;
-
+export class TelegramClient extends BaseApiClient {
   constructor(token: string) {
-    this.apiUrl = `${TELEGRAM_API_URL}/bot${token}`;
+    super({
+      baseUrl: `${TELEGRAM_API_URL}/bot${token}`,
+      serviceName: 'Telegram',
+    });
   }
 
-  private async request<T>(method: string, params?: Record<string, unknown>): Promise<T> {
-    const response = await fetch(`${this.apiUrl}/${method}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: params ? JSON.stringify(params) : undefined,
-    });
-
-    const data = (await response.json()) as { ok: boolean; result: T; description?: string };
+  /**
+   * Telegram-specific request that wraps responses in ok/result format
+   */
+  private async telegramRequest<T>(method: string, params?: Record<string, unknown>): Promise<T> {
+    const data = await this.post<{ ok: boolean; result: T; description?: string }>(`/${method}`, params);
 
     if (!data.ok) {
       throw new Error(`Telegram API error: ${data.description ?? 'Unknown error'}`);
@@ -184,14 +181,14 @@ export class TelegramClient {
    * Get bot information
    */
   async getMe(): Promise<TelegramUser> {
-    return this.request<TelegramUser>('getMe');
+    return this.telegramRequest<TelegramUser>('getMe');
   }
 
   /**
    * Send a text message
    */
   async sendMessage(options: SendMessageOptions): Promise<TelegramMessage> {
-    return this.request<TelegramMessage>('sendMessage', {
+    return this.telegramRequest<TelegramMessage>('sendMessage', {
       chat_id: options.chatId,
       text: options.text,
       parse_mode: options.parseMode,
@@ -220,7 +217,7 @@ export class TelegramClient {
    * Send a photo
    */
   async sendPhoto(options: SendPhotoOptions): Promise<TelegramMessage> {
-    return this.request<TelegramMessage>('sendPhoto', {
+    return this.telegramRequest<TelegramMessage>('sendPhoto', {
       chat_id: options.chatId,
       photo: options.photo,
       caption: options.caption,
@@ -234,7 +231,7 @@ export class TelegramClient {
    * Send a document
    */
   async sendDocument(options: SendDocumentOptions): Promise<TelegramMessage> {
-    return this.request<TelegramMessage>('sendDocument', {
+    return this.telegramRequest<TelegramMessage>('sendDocument', {
       chat_id: options.chatId,
       document: options.document,
       caption: options.caption,
@@ -253,7 +250,7 @@ export class TelegramClient {
     text: string,
     options?: { parseMode?: 'Markdown' | 'MarkdownV2' | 'HTML'; replyMarkup?: TelegramReplyMarkup }
   ): Promise<TelegramMessage> {
-    return this.request<TelegramMessage>('editMessageText', {
+    return this.telegramRequest<TelegramMessage>('editMessageText', {
       chat_id: chatId,
       message_id: messageId,
       text,
@@ -266,7 +263,7 @@ export class TelegramClient {
    * Delete a message
    */
   async deleteMessage(chatId: number | string, messageId: number): Promise<boolean> {
-    return this.request<boolean>('deleteMessage', {
+    return this.telegramRequest<boolean>('deleteMessage', {
       chat_id: chatId,
       message_id: messageId,
     });
@@ -281,7 +278,7 @@ export class TelegramClient {
     messageId: number,
     disableNotification?: boolean
   ): Promise<TelegramMessage> {
-    return this.request<TelegramMessage>('forwardMessage', {
+    return this.telegramRequest<TelegramMessage>('forwardMessage', {
       chat_id: chatId,
       from_chat_id: fromChatId,
       message_id: messageId,
@@ -293,7 +290,7 @@ export class TelegramClient {
    * Get updates (for polling)
    */
   async getUpdates(options: GetUpdatesOptions = {}): Promise<TelegramUpdate[]> {
-    return this.request<TelegramUpdate[]>('getUpdates', {
+    return this.telegramRequest<TelegramUpdate[]>('getUpdates', {
       offset: options.offset,
       limit: options.limit ?? 100,
       timeout: options.timeout ?? 0,
@@ -308,7 +305,7 @@ export class TelegramClient {
     url: string,
     options?: { maxConnections?: number; allowedUpdates?: string[] }
   ): Promise<boolean> {
-    return this.request<boolean>('setWebhook', {
+    return this.telegramRequest<boolean>('setWebhook', {
       url,
       max_connections: options?.maxConnections,
       allowed_updates: options?.allowedUpdates,
@@ -319,7 +316,7 @@ export class TelegramClient {
    * Delete webhook
    */
   async deleteWebhook(): Promise<boolean> {
-    return this.request<boolean>('deleteWebhook');
+    return this.telegramRequest<boolean>('deleteWebhook');
   }
 
   /**
@@ -334,7 +331,7 @@ export class TelegramClient {
     maxConnections?: number;
     allowedUpdates?: string[];
   }> {
-    return this.request('getWebhookInfo');
+    return this.telegramRequest('getWebhookInfo');
   }
 
   /**
@@ -351,7 +348,7 @@ export class TelegramClient {
       | 'record_video'
       | 'record_voice'
   ): Promise<boolean> {
-    return this.request<boolean>('sendChatAction', {
+    return this.telegramRequest<boolean>('sendChatAction', {
       chat_id: chatId,
       action,
     });
@@ -361,7 +358,7 @@ export class TelegramClient {
    * Get chat information
    */
   async getChat(chatId: number | string): Promise<TelegramChat> {
-    return this.request<TelegramChat>('getChat', {
+    return this.telegramRequest<TelegramChat>('getChat', {
       chat_id: chatId,
     });
   }
@@ -373,7 +370,7 @@ export class TelegramClient {
     chatId: number | string,
     userId: number
   ): Promise<{ user: TelegramUser; status: string }> {
-    return this.request('getChatMember', {
+    return this.telegramRequest('getChatMember', {
       chat_id: chatId,
       user_id: userId,
     });
@@ -385,7 +382,7 @@ export class TelegramClient {
   async getChatAdministrators(
     chatId: number | string
   ): Promise<{ user: TelegramUser; status: string }[]> {
-    return this.request('getChatAdministrators', {
+    return this.telegramRequest('getChatAdministrators', {
       chat_id: chatId,
     });
   }
@@ -394,7 +391,7 @@ export class TelegramClient {
    * Get chat members count
    */
   async getChatMembersCount(chatId: number | string): Promise<number> {
-    return this.request<number>('getChatMembersCount', {
+    return this.telegramRequest<number>('getChatMembersCount', {
       chat_id: chatId,
     });
   }
@@ -406,7 +403,7 @@ export class TelegramClient {
     callbackQueryId: string,
     options?: { text?: string; showAlert?: boolean; url?: string }
   ): Promise<boolean> {
-    return this.request<boolean>('answerCallbackQuery', {
+    return this.telegramRequest<boolean>('answerCallbackQuery', {
       callback_query_id: callbackQueryId,
       text: options?.text,
       show_alert: options?.showAlert,
@@ -422,7 +419,7 @@ export class TelegramClient {
     messageId: number,
     disableNotification?: boolean
   ): Promise<boolean> {
-    return this.request<boolean>('pinChatMessage', {
+    return this.telegramRequest<boolean>('pinChatMessage', {
       chat_id: chatId,
       message_id: messageId,
       disable_notification: disableNotification,
@@ -433,7 +430,7 @@ export class TelegramClient {
    * Unpin a message
    */
   async unpinChatMessage(chatId: number | string, messageId?: number): Promise<boolean> {
-    return this.request<boolean>('unpinChatMessage', {
+    return this.telegramRequest<boolean>('unpinChatMessage', {
       chat_id: chatId,
       message_id: messageId,
     });
@@ -443,7 +440,7 @@ export class TelegramClient {
    * Leave a chat
    */
   async leaveChat(chatId: number | string): Promise<boolean> {
-    return this.request<boolean>('leaveChat', {
+    return this.telegramRequest<boolean>('leaveChat', {
       chat_id: chatId,
     });
   }

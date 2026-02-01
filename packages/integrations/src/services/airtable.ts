@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { BaseApiClient } from './base-client.js';
 
 const AIRTABLE_API_URL = 'https://api.airtable.com/v0';
 
@@ -68,33 +69,17 @@ export interface ListRecordsResult<T = Record<string, unknown>> {
 /**
  * Airtable API client for workflow integration
  */
-export class AirtableClient {
-  constructor(
-    private token: string,
-    private baseId?: string
-  ) {}
+export class AirtableClient extends BaseApiClient {
+  private baseId?: string;
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${AIRTABLE_API_URL}${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
+  constructor(token: string, baseId?: string) {
+    super({
+      baseUrl: AIRTABLE_API_URL,
+      authType: 'bearer',
+      authValue: token,
+      serviceName: 'Airtable',
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Airtable API error: ${response.status} ${error}`);
-    }
-
-    // Handle 204 No Content
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return (await response.json()) as T;
+    this.baseId = baseId;
   }
 
   /**

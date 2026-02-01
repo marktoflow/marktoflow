@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { BaseApiClient } from './base-client.js';
 
 export interface ConfluencePage {
   id: string;
@@ -79,42 +80,23 @@ export interface ListPagesOptions {
 /**
  * Confluence API client for workflow integration (v2 API)
  */
-export class ConfluenceClient {
-  private baseUrl: string;
+export class ConfluenceClient extends BaseApiClient {
+  private readonly host: string;
+  private readonly authHeader: string;
 
-  constructor(
-    private host: string,
-    private email: string,
-    private apiToken: string
-  ) {
-    this.baseUrl = `${host.replace(/\/$/, '')}/wiki/api/v2`;
-  }
-
-  private get authHeader(): string {
-    return `Basic ${Buffer.from(`${this.email}:${this.apiToken}`).toString('base64')}`;
-  }
-
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method,
+  constructor(host: string, email: string, apiToken: string) {
+    const normalizedHost = host.replace(/\/$/, '');
+    super({
+      baseUrl: `${normalizedHost}/wiki/api/v2`,
+      authType: 'basic',
+      basicAuth: { username: email, password: apiToken },
+      serviceName: 'Confluence',
       headers: {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: body ? JSON.stringify(body) : undefined,
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Confluence API error: ${response.status} ${error}`);
-    }
-
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return (await response.json()) as T;
+    this.host = normalizedHost;
+    this.authHeader = `Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`;
   }
 
   /**

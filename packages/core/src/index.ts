@@ -192,8 +192,12 @@ export {
   addLogEntry,
   completeLog,
   logToMarkdown,
+  createLogger,
+  createFileDestination,
   type LogEntry,
   type ExecutionLog,
+  type ExecutionLoggerOptions,
+  type CreateLoggerOptions,
 } from './logging.js';
 
 // Scheduler

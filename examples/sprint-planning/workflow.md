@@ -163,9 +163,9 @@ Create the sprint in Jira.
 ```yaml
 action: jira.sprints.createSprint
 inputs:
-  name: 'Sprint {{ Date.now() }}'
-  startDate: '{{ new Date().toISOString() }}'
-  endDate: '{{ new Date(Date.now() + inputs.sprint_duration * 24 * 60 * 60 * 1000).toISOString() }}'
+  name: 'Sprint {{ now() }}'
+  startDate: '{{ now() | format_date("YYYY-MM-DD") }}'
+  endDate: '{{ now() | add_days(inputs.sprint_duration) | format_date("YYYY-MM-DD") }}'
   originBoardId: '${JIRA_BOARD_ID}'
 output_variable: new_sprint
 ```

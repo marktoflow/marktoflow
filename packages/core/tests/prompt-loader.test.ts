@@ -180,7 +180,9 @@ Items: {{ prompt.items }}
         items: ['a', 'b', 'c'],
       });
 
-      expect(resolved.content).toContain('[\n  "a",\n  "b",\n  "c"\n]');
+      // Nunjucks renders arrays as comma-separated values by default
+      // Use {{ prompt.items | to_json }} for JSON format
+      expect(resolved.content).toContain('Items: a,b,c');
     });
 
     it('should resolve from execution context', async () => {

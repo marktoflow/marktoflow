@@ -1,12 +1,13 @@
 /**
  * Execution logging for marktoflow v2.0
  *
- * Provides structured markdown logging for workflow executions.
+ * Provides structured logging using Pino with markdown export for human-readable logs.
  */
 
 import { writeFile, mkdir, readdir, readFile, unlink } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, createWriteStream } from 'node:fs';
 import { join } from 'node:path';
+import pino, { type Logger, type DestinationStream } from 'pino';
 
 // ============================================================================
 // Types
@@ -197,18 +198,61 @@ export function logToMarkdown(log: ExecutionLog): string {
 // ExecutionLogger (File-based)
 // ============================================================================
 
+// Map our log levels to Pino levels
+const PINO_LEVELS: Record<LogLevel, string> = {
+  [LogLevel.DEBUG]: 'debug',
+  [LogLevel.INFO]: 'info',
+  [LogLevel.WARNING]: 'warn',
+  [LogLevel.ERROR]: 'error',
+  [LogLevel.CRITICAL]: 'fatal',
+};
+
+export interface ExecutionLoggerOptions {
+  /** Directory for markdown log files */
+  logsDir?: string;
+  /** Enable JSON log file output alongside markdown */
+  jsonLogs?: boolean;
+  /** Custom Pino destination stream */
+  destination?: DestinationStream;
+  /** Minimum log level (default: 'debug') */
+  level?: LogLevel;
+}
+
 export class ExecutionLogger {
   private logsDir: string;
   private activeLogs: Map<string, ExecutionLog> = new Map();
+  private activeLoggers: Map<string, Logger> = new Map();
+  private jsonLogs: boolean;
+  private baseLogger: Logger;
 
-  constructor(logsDir: string = '.marktoflow/state/execution-logs') {
-    this.logsDir = logsDir;
+  constructor(options: ExecutionLoggerOptions | string = '.marktoflow/state/execution-logs') {
+    // Support legacy string argument
+    if (typeof options === 'string') {
+      this.logsDir = options;
+      this.jsonLogs = false;
+      this.baseLogger = pino({ level: 'debug' });
+    } else {
+      this.logsDir = options.logsDir ?? '.marktoflow/state/execution-logs';
+      this.jsonLogs = options.jsonLogs ?? false;
+      this.baseLogger = pino(
+        { level: PINO_LEVELS[options.level ?? LogLevel.DEBUG] },
+        options.destination
+      );
+    }
   }
 
   private async ensureDir(): Promise<void> {
     if (!existsSync(this.logsDir)) {
       await mkdir(this.logsDir, { recursive: true });
     }
+  }
+
+  private createRunLogger(runId: string, workflowId: string, workflowName: string): Logger {
+    return this.baseLogger.child({
+      runId,
+      workflowId,
+      workflowName,
+    });
   }
 
   startLog(
@@ -220,6 +264,12 @@ export class ExecutionLogger {
     const log = createExecutionLog(runId, workflowId, workflowName, inputs);
     this.activeLogs.set(runId, log);
 
+    // Create a child logger for this run
+    const logger = this.createRunLogger(runId, workflowId, workflowName);
+    this.activeLoggers.set(runId, logger);
+
+    // Log to both Pino and internal log
+    logger.info({ inputs }, 'Workflow execution started');
     addLogEntry(log, LogLevel.INFO, 'Workflow execution started');
 
     return log;
@@ -227,6 +277,13 @@ export class ExecutionLogger {
 
   getLog(runId: string): ExecutionLog | undefined {
     return this.activeLogs.get(runId);
+  }
+
+  /**
+   * Get the Pino logger for a specific run
+   */
+  getLogger(runId: string): Logger | undefined {
+    return this.activeLoggers.get(runId);
   }
 
   log(
@@ -240,8 +297,38 @@ export class ExecutionLogger {
     }
   ): void {
     const log = this.activeLogs.get(runId);
+    const logger = this.activeLoggers.get(runId);
+
     if (log) {
       addLogEntry(log, level, message, options);
+    }
+
+    if (logger) {
+      const pinoLevel = PINO_LEVELS[level];
+      const logData = {
+        stepName: options?.stepName,
+        stepIndex: options?.stepIndex,
+        ...options?.details,
+      };
+
+      // Call the appropriate Pino method
+      switch (pinoLevel) {
+        case 'debug':
+          logger.debug(logData, message);
+          break;
+        case 'info':
+          logger.info(logData, message);
+          break;
+        case 'warn':
+          logger.warn(logData, message);
+          break;
+        case 'error':
+          logger.error(logData, message);
+          break;
+        case 'fatal':
+          logger.fatal(logData, message);
+          break;
+      }
     }
   }
 
@@ -252,39 +339,63 @@ export class ExecutionLogger {
     error?: string
   ): Promise<string | null> {
     const log = this.activeLogs.get(runId);
+    const logger = this.activeLoggers.get(runId);
+
     if (!log) {
       return null;
     }
 
-    addLogEntry(
-      log,
-      success ? LogLevel.INFO : LogLevel.ERROR,
-      success ? 'Workflow execution completed successfully' : `Workflow execution failed: ${error}`
-    );
+    const message = success
+      ? 'Workflow execution completed successfully'
+      : `Workflow execution failed: ${error}`;
+    const level = success ? LogLevel.INFO : LogLevel.ERROR;
+
+    // Log completion
+    addLogEntry(log, level, message);
+    if (logger) {
+      if (success) {
+        logger.info({ outputs, durationMs: Date.now() - log.startedAt.getTime() }, message);
+      } else {
+        logger.error({ error, durationMs: Date.now() - log.startedAt.getTime() }, message);
+      }
+    }
 
     completeLog(log, success, outputs, error);
 
-    // Save to file
+    // Save markdown file
     await this.ensureDir();
-    const filename = `${log.workflowId}_${runId}_${log.startedAt.toISOString().replace(/[:.]/g, '-')}.md`;
-    const filepath = join(this.logsDir, filename);
+    const timestamp = log.startedAt.toISOString().replace(/[:.]/g, '-');
+    const baseFilename = `${log.workflowId}_${runId}_${timestamp}`;
+    const markdownPath = join(this.logsDir, `${baseFilename}.md`);
 
     const markdown = logToMarkdown(log);
-    await writeFile(filepath, markdown, 'utf-8');
+    await writeFile(markdownPath, markdown, 'utf-8');
 
+    // Optionally save JSON log
+    if (this.jsonLogs) {
+      const jsonPath = join(this.logsDir, `${baseFilename}.json`);
+      await writeFile(jsonPath, JSON.stringify(log, null, 2), 'utf-8');
+    }
+
+    // Cleanup
     this.activeLogs.delete(runId);
+    this.activeLoggers.delete(runId);
 
-    return filepath;
+    return markdownPath;
   }
 
   async listLogs(options?: {
     workflowId?: string;
     limit?: number;
+    format?: 'markdown' | 'json' | 'both';
   }): Promise<string[]> {
     await this.ensureDir();
 
+    const format = options?.format ?? 'markdown';
+    const extensions = format === 'both' ? ['.md', '.json'] : format === 'json' ? ['.json'] : ['.md'];
+
     let files = await readdir(this.logsDir);
-    files = files.filter((f) => f.endsWith('.md'));
+    files = files.filter((f) => extensions.some((ext) => f.endsWith(ext)));
 
     if (options?.workflowId) {
       files = files.filter((f) => f.startsWith(options.workflowId + '_'));
@@ -304,6 +415,24 @@ export class ExecutionLogger {
     return readFile(filepath, 'utf-8');
   }
 
+  /**
+   * Read and parse a JSON log file
+   */
+  async readJsonLog(filepath: string): Promise<ExecutionLog> {
+    const content = await readFile(filepath, 'utf-8');
+    const data = JSON.parse(content);
+    // Convert date strings back to Date objects
+    return {
+      ...data,
+      startedAt: new Date(data.startedAt),
+      completedAt: data.completedAt ? new Date(data.completedAt) : null,
+      entries: data.entries.map((e: Record<string, unknown>) => ({
+        ...e,
+        timestamp: new Date(e.timestamp as string),
+      })),
+    };
+  }
+
   async cleanupLogs(retentionDays: number = 30): Promise<number> {
     await this.ensureDir();
 
@@ -314,12 +443,27 @@ export class ExecutionLogger {
     let deleted = 0;
 
     for (const file of files) {
-      if (!file.endsWith('.md')) continue;
+      // Support both .md and .json cleanup
+      if (!file.endsWith('.md') && !file.endsWith('.json')) continue;
 
       const filepath = join(this.logsDir, file);
-      const content = await readFile(filepath, 'utf-8');
 
-      // Extract started date from content
+      // For JSON files, parse the startedAt directly
+      if (file.endsWith('.json')) {
+        try {
+          const log = await this.readJsonLog(filepath);
+          if (log.startedAt < cutoffDate) {
+            await unlink(filepath);
+            deleted++;
+          }
+        } catch {
+          // Skip invalid JSON files
+        }
+        continue;
+      }
+
+      // For markdown files, extract date from content
+      const content = await readFile(filepath, 'utf-8');
       const match = content.match(/\*\*Started:\*\* (.+)/);
       if (match) {
         const startedAt = new Date(match[1]);
@@ -332,4 +476,50 @@ export class ExecutionLogger {
 
     return deleted;
   }
+}
+
+// ============================================================================
+// Standalone Pino Logger Factory
+// ============================================================================
+
+export interface CreateLoggerOptions {
+  name?: string;
+  level?: LogLevel;
+  destination?: DestinationStream;
+  pretty?: boolean;
+}
+
+/**
+ * Create a standalone Pino logger for non-workflow logging needs
+ */
+export function createLogger(options: CreateLoggerOptions = {}): Logger {
+  const pinoOptions: pino.LoggerOptions = {
+    level: PINO_LEVELS[options.level ?? LogLevel.INFO],
+  };
+
+  // Only set name if provided
+  if (options.name) {
+    pinoOptions.name = options.name;
+  }
+
+  if (options.pretty && process.env.NODE_ENV !== 'production') {
+    // Use pino-pretty in development
+    pinoOptions.transport = {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:standard',
+        ignore: 'pid,hostname',
+      },
+    };
+  }
+
+  return options.destination ? pino(pinoOptions, options.destination) : pino(pinoOptions);
+}
+
+/**
+ * Create a file destination for Pino
+ */
+export function createFileDestination(filepath: string): DestinationStream {
+  return createWriteStream(filepath, { flags: 'a' });
 }

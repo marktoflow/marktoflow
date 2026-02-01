@@ -34,6 +34,15 @@ import { runUpdateWizard, listAgents } from './commands/update.js';
 import { parse as parseYaml } from 'yaml';
 import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
 import { WorkflowDebugger, parseBreakpoints } from './commands/debug.js';
+import {
+  parseInputPairs,
+  debugLogInputs,
+  validateAndApplyDefaults,
+  printMissingInputsError,
+  overrideAgentInWorkflow,
+  debugLogAgentOverride,
+  overrideModelInWorkflow,
+} from './utils/index.js';
 
 const VERSION = '2.0.0-alpha.12';
 
@@ -284,148 +293,53 @@ program
       }
 
       // Parse inputs
-      const inputs: Record<string, unknown> = {};
-      if (options.input) {
-        for (const pair of options.input) {
-          const [key, value] = pair.split('=');
-          inputs[key] = value;
-        }
-      }
+      const parsedInputs = parseInputPairs(options.input);
 
       // Debug: Show parsed inputs
       if (options.debug) {
-        console.log(chalk.gray('\n🐛 Debug: Parsed Inputs'));
-        if (Object.keys(inputs).length > 0) {
-          for (const [key, value] of Object.entries(inputs)) {
-            console.log(chalk.gray(`  ${key}: ${JSON.stringify(value)}`));
-          }
-        } else {
-          console.log(chalk.gray('  No inputs provided'));
-        }
+        debugLogInputs(parsedInputs);
       }
 
-      // Validate required inputs
-      if (workflow.inputs) {
-        const missingInputs: string[] = [];
-
-        for (const [inputName, inputDef] of Object.entries(workflow.inputs)) {
-          // Check if input is required and not provided
-          if (inputDef.required && inputs[inputName] === undefined && inputDef.default === undefined) {
-            missingInputs.push(inputName);
-          }
-        }
-
-        if (missingInputs.length > 0) {
-          spinner.fail('Missing required inputs');
-          console.log(chalk.red('\n❌ Error: Missing required input(s)\n'));
-
-          for (const inputName of missingInputs) {
-            const inputDef = workflow.inputs[inputName];
-            const description = inputDef.description ? ` - ${inputDef.description}` : '';
-            console.log(chalk.red(`  • ${inputName} (${inputDef.type})${description}`));
-          }
-
-          console.log(chalk.yellow('\nUsage:'));
-          console.log(`  marktoflow run ${workflowPath} --input key=value\n`);
-          console.log(chalk.yellow('Example:'));
-          console.log(`  marktoflow run ${workflowPath} ${missingInputs.map(i => `--input ${i}=value`).join(' ')}\n`);
-
-          process.exit(1);
-        }
-
-        // Apply defaults for inputs that weren't provided
-        if (workflow.inputs) {
-          for (const [inputName, inputDef] of Object.entries(workflow.inputs)) {
-            if (inputs[inputName] === undefined && inputDef.default !== undefined) {
-              inputs[inputName] = inputDef.default;
-              if (options.debug) {
-                console.log(chalk.gray(`  Using default for ${inputName}: ${JSON.stringify(inputDef.default)}`));
-              }
-            }
-          }
-        }
+      // Validate required inputs and apply defaults
+      const validation = validateAndApplyDefaults(workflow, parsedInputs, { debug: options.debug });
+      if (!validation.valid) {
+        spinner.fail('Missing required inputs');
+        printMissingInputsError(workflow, validation.missingInputs, 'run', workflowPath);
+        process.exit(1);
       }
+      const inputs = validation.inputs;
 
       // Override AI agent if specified
       if (options.agent) {
         const sdkName = getAgentSDKName(options.agent);
         const authConfig = getAgentAuthConfig(sdkName);
+        const result = overrideAgentInWorkflow(workflow, sdkName, authConfig, {
+          verbose: options.verbose,
+          debug: options.debug,
+        });
 
-        // Find existing AI agent tools and replace them, preserving tool names
-        const aiAgentSDKs = ['claude', 'claude-code', 'claude-agent', 'github-copilot', 'copilot', 'opencode', 'ollama', 'codex'];
-
-        let replacedCount = 0;
-        const toolKeys = Object.keys(workflow.tools);
-        for (const toolKey of toolKeys) {
-          const toolConfig = workflow.tools[toolKey];
-          if (toolConfig?.sdk && aiAgentSDKs.includes(toolConfig.sdk)) {
-            // Replace SDK but keep the tool name (e.g., 'claude', 'ai', etc.)
-            workflow.tools[toolKey] = {
-              sdk: sdkName,
-              auth: authConfig,
-            };
-            replacedCount++;
-
-            if (options.verbose || options.debug) {
-              console.log(chalk.cyan(`  Replaced tool '${toolKey}' with ${sdkName}`));
-            }
-          }
-        }
-
-        // If no AI tools were found, add one with a common name
-        if (replacedCount === 0) {
-          // Register as 'agent' so workflows can use agent.chat.completions
-          workflow.tools['agent'] = {
-            sdk: sdkName,
-            auth: authConfig,
-          };
-
-          if (options.verbose || options.debug) {
-            console.log(chalk.cyan(`  Added AI agent 'agent' (${sdkName})`));
-          }
-        }
-
-        // Debug: Show agent configuration
         if (options.debug) {
-          console.log(chalk.gray('\n🐛 Debug: AI Agent Override'));
-          console.log(chalk.gray(`  Provider: ${options.agent} -> ${sdkName}`));
-          console.log(chalk.gray(`  Replaced ${replacedCount} existing AI tool(s)`));
-          console.log(chalk.gray(`  Auth Config: ${JSON.stringify(authConfig, null, 2).split('\n').join('\n  ')}`));
+          debugLogAgentOverride(options.agent, sdkName, result.replacedCount, authConfig);
         }
       }
 
       // Override model if specified
       if (options.model) {
-        const aiAgentSDKs = ['claude', 'claude-code', 'claude-agent', 'github-copilot', 'copilot', 'opencode', 'ollama', 'codex'];
+        const result = overrideModelInWorkflow(workflow, options.model);
 
-        let modelOverrideCount = 0;
-        const toolKeys = Object.keys(workflow.tools);
-        for (const toolKey of toolKeys) {
-          const toolConfig = workflow.tools[toolKey];
-          if (toolConfig?.sdk && aiAgentSDKs.includes(toolConfig.sdk)) {
-            // Initialize options if not present
-            if (!toolConfig.options) {
-              toolConfig.options = {};
-            }
-
-            // Set the model in options
-            toolConfig.options.model = options.model;
-            modelOverrideCount++;
-
-            if (options.verbose || options.debug) {
-              console.log(chalk.cyan(`  Set model '${options.model}' for tool '${toolKey}'`));
-            }
+        if (options.verbose || options.debug) {
+          if (result.overrideCount > 0) {
+            console.log(chalk.cyan(`  Set model '${options.model}' for ${result.overrideCount} AI tool(s)`));
           }
         }
 
-        // Debug: Show model configuration
         if (options.debug) {
           console.log(chalk.gray('\n🐛 Debug: Model Override'));
           console.log(chalk.gray(`  Model: ${options.model}`));
-          console.log(chalk.gray(`  Applied to ${modelOverrideCount} AI tool(s)`));
+          console.log(chalk.gray(`  Applied to ${result.overrideCount} AI tool(s)`));
         }
 
-        if (modelOverrideCount === 0 && (options.verbose || options.debug)) {
+        if (result.overrideCount === 0 && (options.verbose || options.debug)) {
           console.log(chalk.yellow(`  Warning: --model specified but no AI tools found in workflow`));
         }
       }
@@ -718,97 +632,26 @@ program
         spinner.succeed(`Loaded: ${workflow.metadata.name}`);
       }
 
-      // Parse inputs
-      const inputs: Record<string, unknown> = {};
-      if (options.input) {
-        for (const pair of options.input) {
-          const [key, value] = pair.split('=');
-          inputs[key] = value;
-        }
+      // Parse and validate inputs
+      const parsedInputs = parseInputPairs(options.input);
+      const validation = validateAndApplyDefaults(workflow, parsedInputs);
+      if (!validation.valid) {
+        spinner.fail('Missing required inputs');
+        printMissingInputsError(workflow, validation.missingInputs, 'debug', workflowPath);
+        process.exit(1);
       }
-
-      // Validate required inputs
-      if (workflow.inputs) {
-        const missingInputs: string[] = [];
-
-        for (const [inputName, inputDef] of Object.entries(workflow.inputs)) {
-          // Check if input is required and not provided
-          if (inputDef.required && inputs[inputName] === undefined && inputDef.default === undefined) {
-            missingInputs.push(inputName);
-          }
-        }
-
-        if (missingInputs.length > 0) {
-          spinner.fail('Missing required inputs');
-          console.log(chalk.red('\n❌ Error: Missing required input(s)\n'));
-
-          for (const inputName of missingInputs) {
-            const inputDef = workflow.inputs[inputName];
-            const description = inputDef.description ? ` - ${inputDef.description}` : '';
-            console.log(chalk.red(`  • ${inputName} (${inputDef.type})${description}`));
-          }
-
-          console.log(chalk.yellow('\nUsage:'));
-          console.log(`  marktoflow debug ${workflowPath} --input key=value\n`);
-          console.log(chalk.yellow('Example:'));
-          console.log(`  marktoflow debug ${workflowPath} ${missingInputs.map(i => `--input ${i}=value`).join(' ')}\n`);
-
-          process.exit(1);
-        }
-
-        // Apply defaults for inputs that weren't provided
-        for (const [inputName, inputDef] of Object.entries(workflow.inputs)) {
-          if (inputs[inputName] === undefined && inputDef.default !== undefined) {
-            inputs[inputName] = inputDef.default;
-          }
-        }
-      }
+      const inputs = validation.inputs;
 
       // Override AI agent if specified
       if (options.agent) {
         const sdkName = getAgentSDKName(options.agent);
         const authConfig = getAgentAuthConfig(sdkName);
-
-        const aiAgentSDKs = ['claude', 'claude-code', 'claude-agent', 'github-copilot', 'copilot', 'opencode', 'ollama', 'codex'];
-
-        let replacedCount = 0;
-        const toolKeys = Object.keys(workflow.tools);
-        for (const toolKey of toolKeys) {
-          const toolConfig = workflow.tools[toolKey];
-          if (toolConfig?.sdk && aiAgentSDKs.includes(toolConfig.sdk)) {
-            workflow.tools[toolKey] = {
-              sdk: sdkName,
-              auth: authConfig,
-            };
-            replacedCount++;
-          }
-        }
-
-        if (replacedCount === 0) {
-          // Register as 'agent' so workflows can use agent.chat.completions
-          workflow.tools['agent'] = {
-            sdk: sdkName,
-            auth: authConfig,
-          };
-        }
+        overrideAgentInWorkflow(workflow, sdkName, authConfig);
       }
 
       // Override model if specified
       if (options.model) {
-        const aiAgentSDKs = ['claude', 'claude-code', 'claude-agent', 'github-copilot', 'copilot', 'opencode', 'ollama', 'codex'];
-
-        let modelOverrideCount = 0;
-        const toolKeys = Object.keys(workflow.tools);
-        for (const toolKey of toolKeys) {
-          const toolConfig = workflow.tools[toolKey];
-          if (toolConfig?.sdk && aiAgentSDKs.includes(toolConfig.sdk)) {
-            if (!toolConfig.options) {
-              toolConfig.options = {};
-            }
-            toolConfig.options.model = options.model;
-            modelOverrideCount++;
-          }
-        }
+        overrideModelInWorkflow(workflow, options.model);
       }
 
       // Parse breakpoints
@@ -1048,49 +891,15 @@ bundleCmd
     }
     const bundle = new WorkflowBundle(path);
     const workflow = await bundle.loadWorkflowWithBundleTools();
-    const inputs: Record<string, unknown> = {};
-    if (options.input) {
-      for (const pair of options.input) {
-        const [key, value] = pair.split('=');
-        inputs[key] = value;
-      }
+
+    // Parse and validate inputs
+    const parsedInputs = parseInputPairs(options.input);
+    const validation = validateAndApplyDefaults(workflow, parsedInputs);
+    if (!validation.valid) {
+      printMissingInputsError(workflow, validation.missingInputs, 'bundle run', path);
+      process.exit(1);
     }
-
-    // Validate required inputs
-    if (workflow.inputs) {
-      const missingInputs: string[] = [];
-
-      for (const [inputName, inputDef] of Object.entries(workflow.inputs)) {
-        // Check if input is required and not provided
-        if (inputDef.required && inputs[inputName] === undefined && inputDef.default === undefined) {
-          missingInputs.push(inputName);
-        }
-      }
-
-      if (missingInputs.length > 0) {
-        console.log(chalk.red('\n❌ Error: Missing required input(s)\n'));
-
-        for (const inputName of missingInputs) {
-          const inputDef = workflow.inputs[inputName];
-          const description = inputDef.description ? ` - ${inputDef.description}` : '';
-          console.log(chalk.red(`  • ${inputName} (${inputDef.type})${description}`));
-        }
-
-        console.log(chalk.yellow('\nUsage:'));
-        console.log(`  marktoflow bundle run ${path} --input key=value\n`);
-        console.log(chalk.yellow('Example:'));
-        console.log(`  marktoflow bundle run ${path} ${missingInputs.map(i => `--input ${i}=value`).join(' ')}\n`);
-
-        process.exit(1);
-      }
-
-      // Apply defaults for inputs that weren't provided
-      for (const [inputName, inputDef] of Object.entries(workflow.inputs)) {
-        if (inputs[inputName] === undefined && inputDef.default !== undefined) {
-          inputs[inputName] = inputDef.default;
-        }
-      }
-    }
+    const inputs = validation.inputs;
 
     const engine = new WorkflowEngine();
     const registry = new SDKRegistry();

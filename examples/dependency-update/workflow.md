@@ -61,8 +61,8 @@ Fetch repository details.
 ```yaml
 action: github.repos.get
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
 output_variable: repo_details
 ```
 
@@ -73,8 +73,8 @@ Fetch the current package.json file.
 ```yaml
 action: github.repos.getContent
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   path: 'package.json'
 output_variable: package_json_content
 ```
@@ -120,9 +120,9 @@ Create a new branch for the updates.
 ```yaml
 action: github.git.createRef
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
-  ref: 'refs/heads/deps/update-{{ Date.now() }}'
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
+  ref: 'refs/heads/deps/update-{{ now() }}'
   sha: '{{ repo_details.data.default_branch.sha }}'
 output_variable: update_branch
 ```
@@ -163,12 +163,12 @@ Commit the changes to the new branch.
 ```yaml
 action: github.repos.createOrUpdateFileContents
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   path: 'package.json'
   message: 'chore(deps): update dependencies'
   content: '{{ updated_package.updated_content }}'
-  branch: "{{ update_branch.data.ref.split('/').pop() }}"
+  branch: "{{ update_branch.data.ref | split('/') | last }}"
 output_variable: commit_result
 ```
 
@@ -203,10 +203,10 @@ Open a PR with the updates.
 ```yaml
 action: github.pulls.create
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   title: 'chore(deps): update dependencies - {{ updated_package.update_count }} packages'
-  head: "{{ update_branch.data.ref.split('/').pop() }}"
+  head: "{{ update_branch.data.ref | split('/') | last }}"
   base: '{{ repo_details.data.default_branch }}'
   body: |
     ## 📦 Dependency Updates
