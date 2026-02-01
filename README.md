@@ -28,6 +28,7 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 
 - **CLI-First Design**: Create, edit, and run workflows from your terminal
 - **Workflow as Code**: Define workflows in Markdown + YAML
+- **Nunjucks Templates**: Jinja2-compatible pipeline syntax (`{{ value | split('/') | first }}`), regex filters, 50+ custom helpers
 - **Workflow Control Flow**: If/else, switch/case, for-each/while loops, parallel execution, map/filter/reduce, try/catch
 - **Sub-Workflows**: Compose reusable workflow components with unlimited nesting
 - **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
@@ -331,6 +332,11 @@ See `examples/` directory for production-ready workflow templates:
 - [Detailed Guide](docs/DETAILED-GUIDE.md) - Comprehensive feature documentation
 - [REST API Guide](docs/REST-API-GUIDE.md) - Connect to any REST API
 
+### Core Concepts
+
+- [Template Expressions Guide](docs/TEMPLATE-EXPRESSIONS.md) - Nunjucks templates, pipeline syntax, regex filters, 50+ custom helpers
+- [Control Flow Guide](docs/CONTROL-FLOW-GUIDE.md) - If/else, loops, parallel execution
+
 ### Visual Designer
 
 - [GUI User Guide](docs/GUI_USER_GUIDE.md) - Using the visual workflow editor
@@ -338,7 +344,6 @@ See `examples/` directory for production-ready workflow templates:
 
 ### Advanced Topics
 
-- [Control Flow Guide](docs/CONTROL-FLOW-GUIDE.md) - If/else, loops, parallel execution
 - [Playwright Guide](docs/PLAYWRIGHT-GUIDE.md) - Browser automation
 - [Setup Guides](docs/) - GitHub Copilot, Claude Code, Ollama setup
 

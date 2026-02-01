@@ -33,6 +33,9 @@ export {
   type WorkflowResult,
   type Permissions,
   type SubagentConfig,
+  type ScriptStep,
+  // Type guards
+  isScriptStep,
   // Helpers
   createExecutionContext,
   createStepResult,
@@ -377,3 +380,77 @@ export {
   type RollbackResult,
   type CompensationHandler,
 } from './rollback.js';
+
+// Template Engine (Nunjucks-based)
+export {
+  renderTemplate,
+  nunjucksEnv,
+} from './template-engine.js';
+
+// Nunjucks Custom Filters
+export {
+  registerFilters,
+  // String filters
+  split,
+  slugify,
+  prefix,
+  suffix,
+  truncate,
+  substring,
+  contains,
+  // Regex filters
+  match,
+  notMatch,
+  regexReplace,
+  // Object filters
+  path,
+  keys,
+  values,
+  entries,
+  pick,
+  omit,
+  merge,
+  // Array filters
+  nth,
+  count,
+  sum,
+  unique,
+  flatten,
+  // Date filters
+  now,
+  format_date,
+  add_days,
+  subtract_days,
+  diff_days,
+  // JSON filters
+  parse_json,
+  to_json,
+  // Type check filters
+  is_array,
+  is_object,
+  is_string,
+  is_number,
+  is_empty,
+  is_null,
+  // Logic filters
+  ternary,
+  and,
+  or,
+  not,
+  // Math filters
+  round,
+  floor,
+  ceil,
+  min,
+  max,
+} from './nunjucks-filters.js';
+
+// Script Executor (inline JavaScript)
+export {
+  executeScript,
+  executeScriptAsync,
+  validateScript,
+  type ScriptExecutorOptions,
+  type ScriptContext,
+  type ScriptResult,
+} from './script-executor.js';

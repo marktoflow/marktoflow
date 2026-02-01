@@ -2,24 +2,20 @@
 workflow:
   id: code-review
   name: 'Automated Code Review'
-  version: '2.0.0'
-  description: 'Reviews code changes and provides feedback using native GitHub API'
+  version: '2.1.0'
+  description: 'AI-powered code review using Nunjucks templates and GitHub API'
   author: 'marktoflow'
   tags:
     - code-review
     - quality
     - automation
+    - nunjucks
 
 tools:
   github:
     sdk: '@octokit/rest'
     auth:
       token: '${GITHUB_TOKEN}'
-
-  script:
-    sdk: 'script'
-    options:
-      path: 'inline'
 
 triggers:
   - type: webhook
@@ -56,17 +52,26 @@ outputs:
 
 # Automated Code Review
 
-This workflow performs an automated code review on pull requests using the native GitHub API integration, checking for security issues, performance problems, and code quality concerns.
+This workflow performs AI-powered code review on pull requests using Nunjucks templates
+for clean, maintainable transformations.
+
+## Nunjucks Features Used
+
+- **Filters**: `| split`, `| first`, `| match`, `| parse_json`, `| join`, `| upper`
+- **Control Flow**: `{% for %}`, `{% if %}`, `{% endif %}`
+- **Variables**: `{{ variable }}`, `{{ obj.property }}`, `{{ arr[0] }}`
+
+---
 
 ## Step 1: Fetch PR Details
 
-Get the pull request information.
+Get the pull request information using pipeline filters to extract owner/repo.
 
 ```yaml
 action: github.pulls.get
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   pull_number: '{{ inputs.pr_number }}'
 output_variable: pr_details
 ```
@@ -78,8 +83,8 @@ Retrieve the list of files changed in this PR.
 ```yaml
 action: github.pulls.listFiles
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   pull_number: '{{ inputs.pr_number }}'
 output_variable: changed_files
 ```
@@ -91,8 +96,8 @@ Fetch the actual content of changed files for analysis.
 ```yaml
 action: github.repos.getContent
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   path: '{{ changed_files[0].filename }}'
   ref: '{{ pr_details.head.ref }}'
 output_variable: file_content
@@ -100,7 +105,8 @@ output_variable: file_content
 
 ## Step 4: Analyze Code Changes
 
-Review the code changes using the selected AI agent.
+Review the code changes using the AI agent. Note the use of Nunjucks
+`{% for %}` loops and `| join` filter in the prompt.
 
 ```yaml
 action: agent.chat.completions
@@ -135,6 +141,7 @@ inputs:
         - Suggested fix
 
         Format your response as a JSON object with this structure:
+        ```json
         {
           "issues": [
             {
@@ -149,97 +156,134 @@ inputs:
           "recommendation": "APPROVE or REQUEST_CHANGES",
           "summary": "Overall assessment"
         }
+        ```
 output_variable: analysis_results
 ```
 
-## Step 5: Generate Review Summary
+## Step 5: Extract JSON from AI Response
 
-Compile all findings into a review comment.
+Use the `match` filter to extract JSON from markdown code blocks.
+The filter takes a regex pattern and optional capture group index.
 
 ```yaml
-action: script.execute
+action: core.set
 inputs:
-  code: |
-    // Extract content from agent response
-    const responseText = context.analysis_results?.choices?.[0]?.message?.content ||
-                         context.analysis_results || '';
-
-    // Try to parse JSON from the response
-    let analysis;
-    try {
-      // If the response is already parsed, use it directly
-      if (typeof responseText === 'object') {
-        analysis = responseText;
-      } else {
-        // Otherwise, try to extract JSON from markdown code blocks or raw text
-        const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) ||
-                         responseText.match(/\{[\s\S]*\}/);
-        analysis = jsonMatch ? JSON.parse(jsonMatch[1] || jsonMatch[0]) :
-                   { issues: [], summary: responseText, approved: true };
-      }
-    } catch (e) {
-      // If parsing fails, create a simple structure
-      analysis = {
-        issues: [],
-        summary: String(responseText).substring(0, 500),
-        approved: true
-      };
-    }
-
-    // Ensure we have the required fields
-    if (!analysis.issues) analysis.issues = [];
-    if (!analysis.summary) analysis.summary = 'Review completed';
-    const critical = analysis.issues.filter(i => i.severity === 'critical').length;
-    const high = analysis.issues.filter(i => i.severity === 'high').length;
-
-    let comment = `## 🤖 Automated Code Review\n\n`;
-    comment += `**Summary:** ${analysis.summary}\n\n`;
-    comment += `**Issues Found:** ${analysis.issues.length} (${critical} critical, ${high} high)\n\n`;
-
-    if (analysis.issues.length > 0) {
-      comment += `### Issues\n\n`;
-      for (const issue of analysis.issues) {
-        const emoji = issue.severity === 'critical' ? '🚨' : 
-                     issue.severity === 'high' ? '⚠️' : 
-                     issue.severity === 'medium' ? '⚡' : 'ℹ️';
-        comment += `${emoji} **[${issue.severity.toUpperCase()}]** \`${issue.file}:${issue.line}\`\n`;
-        comment += `   **${issue.category}:** ${issue.description}\n`;
-        comment += `   **Suggestion:** ${issue.suggestion}\n\n`;
-      }
-    }
-
-    comment += `\n---\n*Powered by marktoflow v2.0*`;
-
-    return {
-      comment,
-      approved: critical === 0 && high === 0
-    };
-output_variable: review_data
+  analysis_json: "{{ analysis_results.choices[0].message.content | match('/```json\\s*([\\s\\S]*?)\\s*```/', 1) }}"
+output_variable: extracted
 ```
 
-## Step 6: Post Review Comment
+## Step 6: Parse JSON Analysis
+
+Convert the extracted JSON string to an object using `parse_json` filter.
+
+```yaml
+action: core.set
+inputs:
+  analysis: "{{ extracted.analysis_json | parse_json }}"
+output_variable: analysis
+```
+
+## Step 7: Generate Review Summary
+
+Build the review comment using Nunjucks control structures.
+The `{% if %}`, `{% for %}`, and filters make this readable and maintainable.
+
+```yaml
+action: core.template
+inputs:
+  template: |
+    ## Automated Code Review
+
+    **Summary:** {{ analysis.summary }}
+
+    **Issues Found:** {{ analysis.issues | count }}
+
+    {% if analysis.issues | count > 0 %}
+    ### Issues
+
+    {% for issue in analysis.issues %}
+    **{{ issue.severity | upper }}** `{{ issue.file }}:{{ issue.line }}`
+    - **{{ issue.category }}:** {{ issue.description }}
+    - **Suggestion:** {{ issue.suggestion }}
+
+    {% endfor %}
+    {% endif %}
+
+    ---
+    *Powered by marktoflow with Nunjucks templates*
+  context: "{{ { analysis: analysis } }}"
+output_variable: review_comment
+```
+
+## Step 8: Post Review Comment
 
 Post the review as a comment on the PR.
 
 ```yaml
 action: github.pulls.createReview
 inputs:
-  owner: "{{ inputs.repo.split('/')[0] }}"
-  repo: "{{ inputs.repo.split('/')[1] }}"
+  owner: "{{ inputs.repo | split('/') | first }}"
+  repo: "{{ inputs.repo | split('/') | last }}"
   pull_number: '{{ inputs.pr_number }}'
-  body: '{{ review_data.comment }}'
-  event: "{{ review_data.approved ? 'APPROVE' : 'REQUEST_CHANGES' }}"
+  body: '{{ review_comment }}'
+  event: "{{ analysis.recommendation | default('COMMENT') }}"
 output_variable: review_posted
 ```
 
-## Step 7: Set Outputs
+## Step 9: Set Outputs
 
 Set the workflow outputs for downstream processing.
 
 ```yaml
 action: workflow.set_outputs
 inputs:
-  review_summary: '{{ review_data.comment }}'
-  issues_found: '{{ JSON.parse(analysis_results).issues }}'
-  approved: '{{ review_data.approved }}'
+  review_summary: '{{ review_comment }}'
+  issues_found: '{{ analysis.issues }}'
+  approved: "{{ analysis.recommendation == 'APPROVE' }}"
 ```
+
+---
+
+## Nunjucks Quick Reference
+
+### Built-in Nunjucks Filters
+- `upper`, `lower`, `capitalize`, `title` - String case
+- `trim`, `replace` - String manipulation
+- `first`, `last`, `length` - Array access
+- `join`, `reverse`, `sort` - Array operations
+- `default` - Fallback values
+
+### Custom marktoflow Filters
+- `split(delimiter)` - Split string into array
+- `match(pattern, group)` - Regex extraction
+- `notMatch(pattern)` - Regex negative test
+- `regexReplace(pattern, replacement, flags)` - Regex substitution
+- `parse_json`, `to_json` - JSON operations
+- `count`, `sum`, `unique`, `flatten` - Array operations
+
+### Control Structures
+```jinja
+{% for item in items %}
+  {{ item }}
+{% endfor %}
+
+{% if condition %}
+  ...
+{% elif other %}
+  ...
+{% else %}
+  ...
+{% endif %}
+```
+
+### Loop Variables
+```jinja
+{% for item in items %}
+  {{ loop.index }}      {# 1-based index #}
+  {{ loop.index0 }}     {# 0-based index #}
+  {{ loop.first }}      {# true if first iteration #}
+  {{ loop.last }}       {# true if last iteration #}
+{% endfor %}
+```
+
+See [Template Expressions Guide](../../docs/TEMPLATE-EXPRESSIONS.md) for complete documentation.
