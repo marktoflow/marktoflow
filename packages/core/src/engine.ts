@@ -26,6 +26,7 @@ import {
   isReduceStep,
   isParallelStep,
   isTryStep,
+  isScriptStep,
   type IfStep,
   type SwitchStep,
   type ForEachStep,
@@ -35,6 +36,7 @@ import {
   type ReduceStep,
   type ParallelStep,
   type TryStep,
+  type ScriptStep,
   type ActionStep,
   type SubWorkflowStep,
   type Permissions,
@@ -62,6 +64,9 @@ import {
 import { RollbackRegistry } from './rollback.js';
 import { parseFile } from './parser.js';
 import { resolve, dirname } from 'node:path';
+import { executeBuiltInOperation, isBuiltInOperation } from './built-in-operations.js';
+import { renderTemplate } from './template-engine.js';
+import { executeScriptAsync } from './script-executor.js';
 
 // ============================================================================
 // Helper Functions
@@ -236,52 +241,24 @@ export class CircuitBreaker {
 // ============================================================================
 
 /**
- * Smart serialization for template interpolation.
- * Converts values to strings in a meaningful way for different types.
- */
-function serializeValue(value: unknown): string {
-  if (value === undefined || value === null) {
-    return '';
-  }
-
-  // For primitives, use standard string conversion
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-
-  // For objects and arrays, use JSON serialization for readability
-  // This makes them useful in prompts and messages instead of "[object Object]"
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch (error) {
-    // Fallback to string conversion if JSON serialization fails
-    return String(value);
-  }
-}
-
-/**
  * Resolve template variables in a value.
- * Supports {{variable}} and {{inputs.name}} syntax.
+ * Supports {{variable}}, {{inputs.name}}, and Nunjucks filters.
+ *
+ * Uses Nunjucks as the template engine with:
+ * - Legacy regex operator support (=~, !~, //) converted to filters
+ * - Custom filters for string, array, object, date operations
+ * - Jinja2-style control flow ({% for %}, {% if %}, etc.)
  */
 export function resolveTemplates(value: unknown, context: ExecutionContext): unknown {
   if (typeof value === 'string') {
-    // Check if the entire string is a single template expression
-    const singleTemplateMatch = value.match(/^\{\{([^}]+)\}\}$/);
-    if (singleTemplateMatch) {
-      // Return the actual value without converting to string
-      const path = singleTemplateMatch[1].trim();
-      const resolved = resolveVariablePath(path, context);
-      // For single template expressions, return the actual value (could be object, array, etc.)
-      // If undefined, return empty string for backward compatibility
-      return resolved !== undefined ? resolved : '';
-    }
+    // Build the template context with all available variables
+    const templateContext: Record<string, unknown> = {
+      inputs: context.inputs,
+      ...context.variables,
+    };
 
-    // Otherwise, do string interpolation with smart serialization
-    return value.replace(/\{\{([^}]+)\}\}/g, (_, varPath) => {
-      const path = varPath.trim();
-      const resolved = resolveVariablePath(path, context);
-      return serializeValue(resolved);
-    });
+    // Use the new Nunjucks-based template engine with legacy syntax support
+    return renderTemplate(value, templateContext);
   }
 
   if (Array.isArray(value)) {
@@ -489,6 +466,10 @@ export class WorkflowEngine {
 
     if (isTryStep(step)) {
       return this.executeTryStep(step, context, sdkRegistry, stepExecutor);
+    }
+
+    if (isScriptStep(step)) {
+      return this.executeScriptStep(step, context);
     }
 
     // Default: action or workflow step
@@ -1184,11 +1165,18 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
 
         const stepWithResolvedInputs = { ...step, inputs: resolvedInputs };
 
-        // Execute step with executor context
-        const output = await this.executeWithTimeout(
-          () => stepExecutor(stepWithResolvedInputs, context, sdkRegistry, executorContext),
-          step.timeout ?? this.config.defaultTimeout
-        );
+        // Check if this is a built-in operation
+        let output: unknown;
+        if (isBuiltInOperation(step.action)) {
+          // Execute built-in operation directly (no timeout, no SDK executor needed)
+          output = executeBuiltInOperation(step.action, resolvedInputs, context);
+        } else {
+          // Execute step with executor context
+          output = await this.executeWithTimeout(
+            () => stepExecutor(stepWithResolvedInputs, context, sdkRegistry, executorContext),
+            step.timeout ?? this.config.defaultTimeout
+          );
+        }
 
         circuitBreaker.recordSuccess();
 
@@ -1367,8 +1355,19 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
   /**
    * Resolve a condition value with support for nested properties.
    * Handles direct variable references and nested paths.
+   * Uses Nunjucks for template expressions with filters/regex.
    */
   private resolveConditionValue(path: string, context: ExecutionContext): unknown {
+    // If it looks like a template expression, resolve it
+    if (path.includes('|') || path.includes('=~') || path.includes('!~')) {
+      // Build template context
+      const templateContext: Record<string, unknown> = {
+        inputs: context.inputs,
+        ...context.variables,
+      };
+      return renderTemplate(`{{ ${path} }}`, templateContext);
+    }
+
     // First try to parse as a literal value (true, false, numbers, etc.)
     const parsedValue = this.parseValue(path);
 
@@ -2006,6 +2005,59 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
         }
       }
 
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Execute a script step (inline JavaScript).
+   */
+  private async executeScriptStep(
+    step: ScriptStep,
+    context: ExecutionContext
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve any templates in the code
+      const resolvedInputs = resolveTemplates(step.inputs, context) as {
+        code: string;
+        timeout?: number;
+      };
+
+      // Execute the script with the workflow context
+      const result = await executeScriptAsync(
+        resolvedInputs.code,
+        {
+          variables: context.variables,
+          inputs: context.inputs,
+          steps: context.stepMetadata,
+        },
+        {
+          timeout: resolvedInputs.timeout ?? 5000,
+        }
+      );
+
+      if (!result.success) {
+        return createStepResult(
+          step.id,
+          StepStatus.FAILED,
+          null,
+          startedAt,
+          0,
+          result.error ?? 'Script execution failed'
+        );
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, result.value, startedAt);
+    } catch (error) {
       return createStepResult(
         step.id,
         StepStatus.FAILED,

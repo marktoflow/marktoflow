@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
+    "nunjucks": "^3.2.4",
     "amqplib": "^0.10.9",
     "better-sqlite3": "11.10.0",
     "chokidar": "^5.0.0",
@@ -41,7 +42,8 @@
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.8",
-    "@types/better-sqlite3": "^7.6.0"
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/nunjucks": "^3.2.6"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

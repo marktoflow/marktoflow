@@ -23,6 +23,7 @@ export const StepType = {
   REDUCE: 'reduce',
   PARALLEL: 'parallel',
   TRY: 'try',
+  SCRIPT: 'script',
 } as const;
 
 export type StepType = (typeof StepType)[keyof typeof StepType];
@@ -241,6 +242,16 @@ const TryStepSchema = BaseStepSchema.extend({
   finally: StepArraySchema.optional(),
 });
 
+// Script step - inline JavaScript execution
+const ScriptStepSchema = BaseStepSchema.extend({
+  type: z.literal('script'),
+  inputs: z.object({
+    code: z.string(),
+    timeout: z.number().optional().default(5000),
+  }),
+  errorHandling: ErrorHandlingSchema.optional(),
+});
+
 // Discriminated union of all step types
 const WorkflowStepUnionSchema: z.ZodTypeAny = z.union([
   ActionStepSchema,
@@ -254,6 +265,7 @@ const WorkflowStepUnionSchema: z.ZodTypeAny = z.union([
   ReduceStepSchema,
   ParallelStepSchema,
   TryStepSchema,
+  ScriptStepSchema,
   // Backward compatibility: steps without 'type' field
   z
     .object({
@@ -338,6 +350,7 @@ export type ReduceStep = z.infer<typeof ReduceStepSchema>;
 export type ParallelStep = z.infer<typeof ParallelStepSchema>;
 export type ParallelBranch = z.infer<typeof ParallelBranchSchema>;
 export type TryStep = z.infer<typeof TryStepSchema>;
+export type ScriptStep = z.infer<typeof ScriptStepSchema>;
 
 export type WorkflowStep = z.infer<typeof WorkflowStepUnionSchema>;
 
@@ -387,6 +400,10 @@ export function isParallelStep(step: WorkflowStep): step is ParallelStep {
 
 export function isTryStep(step: WorkflowStep): step is TryStep {
   return (step as TryStep).type === 'try';
+}
+
+export function isScriptStep(step: WorkflowStep): step is ScriptStep {
+  return (step as ScriptStep).type === 'script';
 }
 
 // ============================================================================

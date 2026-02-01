@@ -18,6 +18,11 @@ This guide provides comprehensive documentation for marktoflow's features, integ
 
 marktoflow v2.0 brings powerful new capabilities and integrations:
 
+- ✅ **Nunjucks Template System** - Industry-standard Jinja2-compatible templating
+  - `{{ repo | split('/') | first }}` - Clean pipeline syntax
+  - `{{ error | match('/timeout/') }}` - Regex pattern matching
+  - Built-in operations: core.set, core.transform, core.extract, core.format
+  - Full control structures: `{% for %}`, `{% if %}`, `{% elif %}`
 - ✅ **Workflow Control Flow** - If/else conditionals, switch/case, loops, parallel execution, try/catch error handling
 - ✅ **Visual Workflow Designer** - Web-based drag-and-drop editor with AI assistance
 - ✅ **Native SDK integrations** - Direct SDK method calls with full type safety
@@ -564,6 +569,168 @@ steps:
 **Example Workflows:**
 
 See the [Control Flow Guide](CONTROL-FLOW-GUIDE.md) for detailed examples including map/filter/reduce operations, concurrent execution, switch/case routing, and try/catch patterns.
+
+### Template Expressions (Nunjucks)
+
+marktoflow v2.0 uses **[Nunjucks](https://mozilla.github.io/nunjucks/)** as its template engine - a powerful Jinja2-compatible system with pipeline syntax, regex filters, and 50+ custom helpers:
+
+#### Pipeline Syntax
+
+Chain operations together for clean, readable transformations:
+
+```yaml
+steps:
+  # Extract owner from GitHub repo
+  - action: github.repos.get
+    inputs:
+      owner: "{{ inputs.repo | split('/') | first() }}"
+      repo: "{{ inputs.repo | split('/') | last() }}"
+
+  # Format PR title as slug
+  - action: core.set
+    inputs:
+      slug: "{{ pr.title | slugify() }}"
+      upper_name: "{{ user.name | upper() | trim() }}"
+
+  # Chain multiple filters
+  - action: slack.chat.postMessage
+    inputs:
+      text: "{{ users | join(', ') | prefix('Team: ') }}"
+```
+
+#### Regex Filters
+
+Pattern matching and extraction using Nunjucks filters:
+
+```yaml
+steps:
+  # Check if error message matches pattern
+  - type: if
+    condition: "{{ error_message | match('/timeout/') }}"
+    then: [...]
+
+  # Negative pattern match
+  - type: if
+    condition: "{{ status | notMatch('/^(error|failed)/') }}"
+    then: [...]
+
+  # Extract with capture groups
+  - action: core.set
+    inputs:
+      issue_key: "{{ message | match('/([A-Z]+-\\d+)/', 1) }}"  # "ABC-123"
+
+  # Regex replacement
+  - action: core.set
+    inputs:
+      cleaned: "{{ text | regexReplace('/\\d+/', '', 'g') }}"
+```
+
+#### Built-in Helpers (60+)
+
+**String Helpers:**
+- `split`, `join`, `trim`, `upper`, `lower`
+- `slugify`, `prefix`, `suffix`, `replace`
+- `truncate`, `substring`, `contains`
+
+**Array Helpers:**
+- `first`, `last`, `nth`, `count`, `sum`
+- `unique`, `flatten`, `reverse`, `sort`, `slice`
+
+**Object Helpers:**
+- `path`, `keys`, `values`, `entries`
+- `pick`, `omit`, `merge`
+
+**Logic & Validation:**
+- `default`, `or`, `and`, `not`, `ternary`
+- `is_array`, `is_object`, `is_string`, `is_number`, `is_empty`, `is_null`
+
+**Date, JSON, Math:**
+- `now`, `format_date`, `add_days`, `subtract_days`, `diff_days`
+- `parse_json`, `to_json`
+- `abs`, `round`, `floor`, `ceil`, `min`, `max`
+
+**Examples:**
+
+```yaml
+steps:
+  # CSV processing
+  - action: core.transform
+    inputs:
+      input: "{{ csv_data | split(',') | unique() | sort() }}"
+      operation: map
+      expression: "{{ item | trim() | upper() }}"
+
+  # Safe value access
+  - action: slack.chat.postMessage
+    inputs:
+      text: "{{ user.name | default('Unknown') }}"
+      channel: "{{ config.channel | default('#general') }}"
+
+  # Conditional formatting
+  - action: github.issues.createComment
+    inputs:
+      body: "{{ approved | ternary('✅ Approved', '❌ Rejected') }}"
+
+  # Date operations
+  - action: jira.issues.create
+    inputs:
+      due_date: "{{ now() | add_days(7) | format_date('YYYY-MM-DD') }}"
+```
+
+#### Built-in Operations
+
+Declarative operations for common tasks without script blocks:
+
+```yaml
+steps:
+  # Set variables
+  - action: core.set
+    inputs:
+      count: 42
+      message: "Hello World"
+
+  # Transform arrays
+  - action: core.transform
+    inputs:
+      input: "{{ issues }}"
+      operation: map
+      expression: "{{ item.key }}"
+    output_variable: issue_keys
+
+  # Extract nested values safely
+  - action: core.extract
+    inputs:
+      input: "{{ api_response }}"
+      path: "data.user.email"
+      default: "unknown@example.com"
+    output_variable: email
+
+  # Format values
+  - action: core.format
+    inputs:
+      value: "{{ timestamp }}"
+      type: date
+      format: "YYYY-MM-DD HH:mm:ss"
+    output_variable: formatted_date
+```
+
+**Transform Operations:**
+- `map` - Transform each item
+- `filter` - Select matching items
+- `reduce` - Aggregate to single value
+- `find` - Find first matching item
+- `group_by` - Group by field
+- `unique` - Remove duplicates
+- `sort` - Sort by field
+
+**Format Types:**
+- `date` - Date formatting with custom patterns
+- `number` - Number formatting with decimals
+- `currency` - Currency formatting (USD, EUR, GBP, JPY)
+- `string` - String templates
+- `json` - JSON formatting with indentation
+
+See [TEMPLATE-EXPRESSIONS.md](TEMPLATE-EXPRESSIONS.md) for complete documentation of all Nunjucks filters and features.
 
 ### Native MCP Support
 

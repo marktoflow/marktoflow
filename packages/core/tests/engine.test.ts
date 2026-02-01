@@ -131,6 +131,28 @@ describe('resolveTemplates', () => {
     const result = resolveTemplates('{{undefined_var}}', context);
     expect(result).toBe('');
   });
+
+  it('should apply Nunjucks filters', () => {
+    const result = resolveTemplates('{{ message | upper }}', context);
+    expect(result).toBe('HELLO WORLD');
+  });
+
+  it('should apply custom split filter', () => {
+    const testContext = {
+      ...context,
+      variables: {
+        ...context.variables,
+        repo: 'owner/name',
+      },
+    };
+    const result = resolveTemplates('{{ repo | split("/") | first }}', testContext);
+    expect(result).toBe('owner');
+  });
+
+  it('should apply chained filters', () => {
+    const result = resolveTemplates('{{ message | lower | capitalize }}', context);
+    expect(result).toBe('Hello world');
+  });
 });
 
 describe('WorkflowEngine', () => {
