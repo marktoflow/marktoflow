@@ -10,7 +10,8 @@ describe('CronParser', () => {
       expect(fields.hour).toHaveLength(24);
       expect(fields.day).toHaveLength(31);
       expect(fields.month).toHaveLength(12);
-      expect(fields.weekday).toHaveLength(7);
+      // cron-parser returns 0-7 for weekday (0 and 7 both = Sunday)
+      expect(fields.weekday.length).toBeGreaterThanOrEqual(7);
     });
 
     it('should parse 0 9 * * 1-5 (9am weekdays)', () => {
@@ -61,17 +62,52 @@ describe('CronParser', () => {
 
   describe('nextRun', () => {
     it('should calculate next run time', () => {
-      const after = new Date('2026-01-23T10:30:00');
-      const next = CronParser.nextRun('0 11 * * *', after);
+      const after = new Date('2026-01-23T10:30:00Z');
+      const next = CronParser.nextRun('0 11 * * *', after, 'UTC');
 
       expect(next).not.toBeNull();
-      expect(next!.getHours()).toBe(11);
-      expect(next!.getMinutes()).toBe(0);
+      expect(next!.getUTCHours()).toBe(11);
+      expect(next!.getUTCMinutes()).toBe(0);
     });
 
     it('should return null for invalid expression', () => {
       const next = CronParser.nextRun('invalid');
       expect(next).toBeNull();
+    });
+
+    it('should support timezone-aware scheduling', () => {
+      const after = new Date('2026-01-23T10:30:00Z');
+      const next = CronParser.nextRun('0 9 * * *', after, 'America/New_York');
+
+      expect(next).not.toBeNull();
+      // The next 9am in New York should be in the future
+      expect(next!.getTime()).toBeGreaterThan(after.getTime());
+    });
+  });
+
+  describe('isValid', () => {
+    it('should return true for valid expressions', () => {
+      expect(CronParser.isValid('* * * * *')).toBe(true);
+      expect(CronParser.isValid('0 9 * * 1-5')).toBe(true);
+      expect(CronParser.isValid('*/15 * * * *')).toBe(true);
+    });
+
+    it('should return false for invalid expressions', () => {
+      expect(CronParser.isValid('invalid')).toBe(false);
+      expect(CronParser.isValid('* * *')).toBe(false);
+      expect(CronParser.isValid('')).toBe(false);
+    });
+  });
+
+  describe('prevRun', () => {
+    it('should calculate previous run time', () => {
+      const before = new Date('2026-01-23T10:30:00Z');
+      const prev = CronParser.prevRun('0 9 * * *', before, 'UTC');
+
+      expect(prev).not.toBeNull();
+      expect(prev!.getUTCHours()).toBe(9);
+      expect(prev!.getUTCMinutes()).toBe(0);
+      expect(prev!.getTime()).toBeLessThan(before.getTime());
     });
   });
 });

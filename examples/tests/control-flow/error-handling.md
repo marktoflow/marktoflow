@@ -115,7 +115,7 @@ finally:
       message: |
         Request completed for user {{ inputs.user_id }}
         Timestamp: {{ Date.now() }}
-        API Used: {{ api_response ? 'Primary or Fallback' : 'None' }}
+        API Used: {{ api_response | ternary('Primary or Fallback', 'None') }}
 
   - id: update_metrics
     name: 'Update API Metrics'
@@ -242,7 +242,7 @@ catch:
 finally:
   - action: analytics.track
     inputs:
-      feature_used: "{{ result ? 'enhanced' : 'basic' }}"
+      feature_used: "{{ result | ternary('enhanced', 'basic') }}"
 ```
 
 ### 4. Multi-Step with Partial Success
@@ -328,6 +328,6 @@ finally:
       value: "{{ Date.now() - start_time }}"
       tags:
         - "user:{{ inputs.user_id }}"
-        - "api:{{ api_response ? 'primary' : 'fallback' }}"
-        - "status:{{ api_response ? 'success' : 'failed' }}"
+        - "api:{{ api_response | ternary('primary', 'fallback') }}"
+        - "status:{{ api_response | ternary('success', 'failed') }}"
 ```

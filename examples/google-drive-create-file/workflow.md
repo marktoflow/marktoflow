@@ -71,7 +71,7 @@ inputs:
   content: '{{ inputs.content }}'
   contentType: 'text/plain'
   mimeType: 'text/plain'
-  parents: '{{ inputs.folder_id ? [inputs.folder_id] : [] }}'
+  parents: '{{ [inputs.folder_id] if inputs.folder_id else [] }}'
 output_variable: created_file
 ```
 

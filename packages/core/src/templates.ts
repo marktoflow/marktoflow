@@ -1,10 +1,12 @@
 /**
  * Workflow template library for marktoflow.
+ * Uses Nunjucks for template rendering with full filter/conditional support.
  */
 
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { parse, stringify } from 'yaml';
+import { parse } from 'yaml';
+import { renderTemplate } from './template-engine.js';
 
 export enum TemplateCategory {
   CODE_QUALITY = 'code_quality',
@@ -112,6 +114,15 @@ export class WorkflowTemplate {
     return { valid: errors.length === 0, errors };
   }
 
+  /**
+   * Render the template with the given variables using Nunjucks.
+   *
+   * Features enabled by using Nunjucks:
+   * - Filters: {{ template.name | upper }}, {{ value | split('/') | first }}
+   * - Conditionals: {% if template.enabled %}...{% endif %}
+   * - Loops: {% for item in items %}...{% endfor %}
+   * - All custom filters from nunjucks-filters.ts
+   */
   render(variables: Record<string, unknown> = {}): string {
     const values: Record<string, unknown> = { ...variables };
     for (const variable of this.variables) {
@@ -120,19 +131,15 @@ export class WorkflowTemplate {
       }
     }
 
-    let result = this.content;
-    for (const [name, value] of Object.entries(values)) {
-      let strValue = '';
-      if (Array.isArray(value) || typeof value === 'object') {
-        strValue = stringify(value).trim();
-      } else if (typeof value === 'boolean') {
-        strValue = String(value).toLowerCase();
-      } else {
-        strValue = String(value);
-      }
-      result = result.replace(new RegExp(`\\{\\{\\s*template\\.${name}\\s*\\}\\}`, 'g'), strValue);
-    }
-    return result;
+    // Build the template context with 'template' namespace
+    const templateContext: Record<string, unknown> = {
+      template: values,
+      ...values, // Also expose at top level for convenience
+    };
+
+    // Render using Nunjucks
+    const rendered = renderTemplate(this.content, templateContext);
+    return typeof rendered === 'string' ? rendered : String(rendered);
   }
 
   instantiate(outputPath: string, variables: Record<string, unknown> = {}, workflowId?: string): string {

@@ -180,7 +180,7 @@ inputs:
     - type: section
       text:
         type: mrkdwn
-        text: "{{ ai_response.choices[0].message.content }}"
+        text: "{{ ai_response.choices | first | path('message.content') }}"
 
     - type: divider
 

@@ -59,6 +59,8 @@ describe('Telegram Integration', () => {
     describe('sendMessage', () => {
       it('should send a text message', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
           json: async () => ({
             ok: true,
             result: {
@@ -89,6 +91,8 @@ describe('Telegram Integration', () => {
     describe('getMe', () => {
       it('should get bot information', async () => {
         mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
           json: async () => ({
             ok: true,
             result: {
@@ -109,7 +113,10 @@ describe('Telegram Integration', () => {
 
     describe('error handling', () => {
       it('should throw on API error', async () => {
+        // Telegram returns errors in the JSON body (ok=false) but HTTP 200
         mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
           json: async () => ({
             ok: false,
             description: 'Bad Request: chat not found',

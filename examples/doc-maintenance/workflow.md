@@ -177,7 +177,7 @@ steps:
 
             Existing documentation:
             ---
-            {{ component.docs[0].content }}
+            {{ component.docs | first | path('content') }}
             ---
 
             Return the updated documentation content, preserving all valid existing content.
@@ -192,7 +192,7 @@ steps:
           script: write_docs.py
           args:
             component_path: '{{ component.path }}'
-            doc_file: '{{ component.docs[0].filename }}'
+            doc_file: '{{ component.docs | first | path("filename") }}'
             content: '{{ updated_docs }}'
             dry_run: '{{ inputs.dry_run }}'
         output_variable: write_result
@@ -218,7 +218,7 @@ steps:
     inputs:
       message: |
         [{{ loop.index + 1 }}/{{ components_list.total }}] {{ component.name }}
-        - Status: {{ analysis.needs_update ? 'UPDATED' : 'VALID' }}
+        - Status: {{ analysis.needs_update | ternary('UPDATED', 'VALID') }}
         - Confidence: {{ analysis.confidence }}
         - Issues: {{ analysis.issues.length }}
 ```
