@@ -369,8 +369,73 @@ class Scheduler {
 
 ## Testing
 
+The core package includes comprehensive unit and integration tests.
+
+### Running Tests
+
 ```bash
-npm test
+# Run all tests (unit + integration)
+pnpm test
+
+# Run only unit tests
+pnpm test:unit
+
+# Run only integration tests
+pnpm test:integration
+
+# Run specific test file
+pnpm test path/to/test.ts
+
+# Run tests matching a pattern
+pnpm test:integration -t "transform"
+
+# Watch mode
+pnpm test --watch
+```
+
+### Test Structure
+
+- **Unit Tests** (`tests/`) - Fast, isolated tests for individual functions and classes
+- **Integration Tests** (`integration-tests/`) - End-to-end workflow execution tests organized by feature:
+  - `suites/built-in-operations.integration.test.ts` - Transform, filter, reduce, etc.
+  - `suites/control-flow.integration.test.ts` - If/else, loops, parallel execution
+  - `suites/error-handling.integration.test.ts` - Retry, circuit breaker, error recovery
+  - `suites/nunjucks-filters.integration.test.ts` - Template engine filters
+  - `suites/script-execution.integration.test.ts` - JavaScript script execution
+  - `suites/variable-resolution.integration.test.ts` - Template variables and context
+
+### Writing Integration Tests
+
+Integration tests use real workflow definitions and the full execution engine:
+
+```typescript
+import { loadInline, createSmartExecutor } from '../helpers/test-utils.js';
+import { WorkflowEngine } from '../../src/engine.js';
+
+const engine = new WorkflowEngine();
+
+it('should execute workflow', async () => {
+  const { workflow } = loadInline(`
+    ---
+    workflow:
+      id: test-workflow
+      name: Test Workflow
+    steps:
+      - id: step1
+        type: action
+        action: core.set
+        inputs:
+          value: "Hello"
+        output_variable: result
+    ---
+  `);
+
+  const { executor, registry } = createSmartExecutor();
+  const result = await engine.execute(workflow, {}, registry, executor);
+
+  expect(result.status).toBe(WorkflowStatus.COMPLETED);
+  expect(result.output.result).toBe('Hello');
+});
 ```
 
 ## Links

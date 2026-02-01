@@ -305,7 +305,7 @@ export const TriggerSchema = z.object({
 });
 
 export const WorkflowInputSchema = z.object({
-  type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
+  type: z.enum(['string', 'number', 'integer', 'boolean', 'array', 'object']),
   required: z.boolean().default(false),
   default: z.unknown().optional(),
   description: z.string().optional(),

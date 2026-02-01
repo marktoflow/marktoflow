@@ -24,6 +24,9 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config integration-tests/vitest.integration.config.ts",
+    "test:integration:watch": "vitest --config integration-tests/vitest.integration.config.ts",
+    "test:all": "vitest run && vitest run --config integration-tests/vitest.integration.config.ts",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

@@ -71,12 +71,35 @@ export function renderTemplate(
   context: Record<string, unknown>
 ): unknown {
   // Check if the entire string is a single template expression
-  const singleTemplateMatch = template.match(/^\{\{\s*([^}]+?)\s*\}\}$/);
+  // Handle nested braces in object literals like {{ foo | merge({a: 1}) }}
+  const trimmed = template.trim();
+  if (trimmed.startsWith('{{') && trimmed.endsWith('}}')) {
+    // Check if there are no other {{ or }} markers (unbalanced)
+    const inner = trimmed.slice(2, -2);
+    // Count braces to ensure we only have one top-level expression
+    let braceCount = 0;
+    let hasUnbalancedTemplates = false;
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === '{') {
+        if (inner[i + 1] === '{') {
+          hasUnbalancedTemplates = true;
+          break;
+        }
+        braceCount++;
+      } else if (inner[i] === '}') {
+        if (inner[i + 1] === '}') {
+          hasUnbalancedTemplates = true;
+          break;
+        }
+        braceCount--;
+      }
+    }
 
-  if (singleTemplateMatch) {
-    // Single expression - return the actual value (could be object, array, etc.)
-    const expression = singleTemplateMatch[1].trim();
-    return evaluateExpression(expression, context);
+    if (!hasUnbalancedTemplates && braceCount === 0) {
+      // Single expression - return the actual value (could be object, array, etc.)
+      const expression = inner.trim();
+      return evaluateExpression(expression, context);
+    }
   }
 
   // String with multiple expressions, control flow, or plain text - render as string
@@ -108,6 +131,18 @@ function evaluateExpression(expression: string, context: Record<string, unknown>
       return result !== undefined ? result : '';
     }
 
+    // Check if this is an arithmetic expression (has +, -, *, /, etc. but no filters)
+    // If so, evaluate it as JavaScript for proper numeric operations
+    if (!expression.includes('|') && /[+\-*/]/.test(expression)) {
+      try {
+        // Create a safe evaluation context
+        const fn = new Function(...Object.keys(context), `return ${expression}`);
+        return fn(...Object.values(context));
+      } catch {
+        // Fall through to Nunjucks if JavaScript evaluation fails
+      }
+    }
+
     // Has filters or complex expression - use Nunjucks with JSON serialization
     // to preserve the actual type
     const wrappedTemplate = `{{ ${expression} | to_json }}`;
@@ -115,7 +150,8 @@ function evaluateExpression(expression: string, context: Record<string, unknown>
 
     // Parse JSON to get the actual type
     try {
-      return JSON.parse(jsonResult);
+      const parsed = JSON.parse(jsonResult);
+      return parsed;
     } catch {
       // Not valid JSON (e.g., undefined, function result)
       // Try direct rendering and return the string result

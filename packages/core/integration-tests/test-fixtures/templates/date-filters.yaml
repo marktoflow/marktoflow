@@ -1,0 +1,34 @@
+---
+workflow:
+  id: date-filters
+  name: Date Filter Tests
+
+steps:
+  - id: test-format-date
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ timestamp | format_date('YYYY-MM-DD') }}"
+    output_variable: format_date_result
+
+  - id: test-add-days
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ timestamp | add_days(7) }}"
+    output_variable: add_days_result
+
+  - id: test-subtract-days
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ timestamp | subtract_days(3) }}"
+    output_variable: subtract_days_result
+
+  - id: test-diff-days
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ date1 | diff_days(date2) }}"
+    output_variable: diff_days_result
+---

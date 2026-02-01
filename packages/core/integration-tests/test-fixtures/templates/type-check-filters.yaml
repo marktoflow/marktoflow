@@ -1,0 +1,48 @@
+---
+workflow:
+  id: type-check-filters
+  name: Type Check Filter Tests
+
+steps:
+  - id: test-is-array
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ items | is_array }}"
+    output_variable: is_array_result
+
+  - id: test-is-object
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj | is_object }}"
+    output_variable: is_object_result
+
+  - id: test-is-string
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ text | is_string }}"
+    output_variable: is_string_result
+
+  - id: test-is-number
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ num | is_number }}"
+    output_variable: is_number_result
+
+  - id: test-is-empty
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ empty_array | is_empty }}"
+    output_variable: is_empty_result
+
+  - id: test-is-null
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ null_value | is_null }}"
+    output_variable: is_null_result
+---

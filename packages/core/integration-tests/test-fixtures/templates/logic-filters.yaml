@@ -1,0 +1,41 @@
+---
+workflow:
+  id: logic-filters
+  name: Logic Filter Tests
+
+steps:
+  - id: test-ternary-true
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ active | ternary('enabled', 'disabled') }}"
+    output_variable: ternary_true_result
+
+  - id: test-ternary-false
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ inactive | ternary('enabled', 'disabled') }}"
+    output_variable: ternary_false_result
+
+  - id: test-and
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ a | and(b) }}"
+    output_variable: and_result
+
+  - id: test-or
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ empty | or(fallback) }}"
+    output_variable: or_result
+
+  - id: test-not
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ flag | not }}"
+    output_variable: not_result
+---

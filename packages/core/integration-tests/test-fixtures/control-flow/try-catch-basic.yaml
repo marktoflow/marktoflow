@@ -1,0 +1,30 @@
+---
+workflow:
+  id: try-catch-basic
+  name: Basic Try/Catch Test
+
+steps:
+  - id: error-handling
+    type: try
+    try:
+      - id: risky-operation
+        type: action
+        action: mock.fail
+        inputs:
+          message: "Simulated error"
+    catch:
+      - id: handle-error
+        type: action
+        action: mock.set
+        inputs:
+          result: "error-handled"
+          errorMessage: "{{ error.message }}"
+        output_variable: recovery
+    finally:
+      - id: cleanup
+        type: action
+        action: mock.set
+        inputs:
+          result: "cleanup-done"
+        output_variable: cleanup_result
+---

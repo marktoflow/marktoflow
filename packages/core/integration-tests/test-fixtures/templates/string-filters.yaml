@@ -1,0 +1,55 @@
+---
+workflow:
+  id: string-filters
+  name: String Filter Tests
+
+steps:
+  - id: test-split
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ path | split('/') }}"
+    output_variable: split_result
+
+  - id: test-slugify
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ title | slugify }}"
+    output_variable: slug_result
+
+  - id: test-prefix
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ name | prefix('@') }}"
+    output_variable: prefix_result
+
+  - id: test-suffix
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ name | suffix('!') }}"
+    output_variable: suffix_result
+
+  - id: test-truncate
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ text | truncate(10) }}"
+    output_variable: truncate_result
+
+  - id: test-substring
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ text | substring(0, 5) }}"
+    output_variable: substring_result
+
+  - id: test-contains
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ text | contains('hello') }}"
+    output_variable: contains_result
+---

@@ -223,9 +223,10 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
       const stepRaw = parseYaml(yamlContent) as Record<string, unknown>;
 
       // Skip non-step code blocks
-      // Check for action, workflow, or control flow fields
+      // Check for action, workflow, control flow, or script fields
       const isActionStep = !!stepRaw.action;
       const isWorkflowStep = !!stepRaw.workflow;
+      const isScriptStep = stepRaw.type === 'script';
       const isControlFlowStep =
         stepRaw.type === 'for_each' ||
         stepRaw.type === 'if' ||
@@ -242,7 +243,7 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
         (stepRaw.expression && stepRaw.cases) || // switch
         stepRaw.branches; // parallel
 
-      if (!isActionStep && !isWorkflowStep && !isControlFlowStep) {
+      if (!isActionStep && !isWorkflowStep && !isScriptStep && !isControlFlowStep) {
         continue;
       }
 
@@ -473,6 +474,16 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
         finally: raw.finally
           ? normalizeSteps(raw.finally as Array<Record<string, unknown>>)
           : undefined,
+      };
+
+    case 'script':
+      return {
+        ...base,
+        type: 'script',
+        inputs: raw.inputs || {},
+        errorHandling: normalizeErrorHandling(
+          raw.error_handling || raw.errorHandling || raw.on_error
+        ),
       };
 
     default:

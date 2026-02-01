@@ -1,0 +1,48 @@
+---
+workflow:
+  id: math-filters
+  name: Math Filter Tests
+
+steps:
+  - id: test-round
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ num | round }}"
+    output_variable: round_result
+
+  - id: test-round-decimals
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ num | round(2) }}"
+    output_variable: round_decimals_result
+
+  - id: test-floor
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ num | floor }}"
+    output_variable: floor_result
+
+  - id: test-ceil
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ num | ceil }}"
+    output_variable: ceil_result
+
+  - id: test-min
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ numbers | min }}"
+    output_variable: min_result
+
+  - id: test-max
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ numbers | max }}"
+    output_variable: max_result
+---

@@ -1,0 +1,55 @@
+---
+workflow:
+  id: object-filters
+  name: Object Filter Tests
+
+steps:
+  - id: test-path
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ data | path('user.profile.name') }}"
+    output_variable: path_result
+
+  - id: test-keys
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj | keys }}"
+    output_variable: keys_result
+
+  - id: test-values
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj | values }}"
+    output_variable: values_result
+
+  - id: test-entries
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj | entries }}"
+    output_variable: entries_result
+
+  - id: test-pick
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj | pick('a', 'c') }}"
+    output_variable: pick_result
+
+  - id: test-omit
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj | omit('b') }}"
+    output_variable: omit_result
+
+  - id: test-merge
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ obj1 | merge(obj2) }}"
+    output_variable: merge_result
+---

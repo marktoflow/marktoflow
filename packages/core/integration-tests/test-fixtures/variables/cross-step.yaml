@@ -1,0 +1,27 @@
+---
+workflow:
+  id: cross-step-test
+  name: Cross-Step Variable Passing Test
+
+steps:
+  - id: step-1-set
+    type: action
+    action: core.set
+    inputs:
+      value: 100
+    output_variable: step1_value
+
+  - id: step-2-use
+    type: action
+    action: core.set
+    inputs:
+      doubled: "{{ step1_value.value * 2 }}"
+    output_variable: step2_value
+
+  - id: step-3-chain
+    type: action
+    action: core.set
+    inputs:
+      tripled: "{{ step2_value.doubled + step1_value.value }}"
+    output_variable: step3_value
+---

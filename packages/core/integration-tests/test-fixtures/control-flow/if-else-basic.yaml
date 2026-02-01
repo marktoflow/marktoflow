@@ -1,0 +1,24 @@
+---
+workflow:
+  id: if-else-basic
+  name: Basic If/Else Test
+
+steps:
+  - id: check-positive
+    type: if
+    condition: "value > 0"
+    then:
+      - id: positive-result
+        type: action
+        action: mock.set
+        inputs:
+          result: positive
+        output_variable: outcome
+    else:
+      - id: negative-result
+        type: action
+        action: mock.set
+        inputs:
+          result: negative
+        output_variable: outcome
+---

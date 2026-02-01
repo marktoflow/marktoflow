@@ -1,0 +1,31 @@
+---
+workflow:
+  id: core-extract-test
+  name: core.extract Test
+
+steps:
+  - id: extract-nested
+    type: action
+    action: core.extract
+    inputs:
+      input: "{{ api_response }}"
+      path: "data.users[0].email"
+    output_variable: first_email
+
+  - id: extract-with-default
+    type: action
+    action: core.extract
+    inputs:
+      input: "{{ api_response }}"
+      path: "data.missing.field"
+      default: "not-found"
+    output_variable: missing_with_default
+
+  - id: extract-array-element
+    type: action
+    action: core.extract
+    inputs:
+      input: "{{ api_response }}"
+      path: "data.users[1].name"
+    output_variable: second_user_name
+---

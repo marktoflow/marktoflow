@@ -1,0 +1,39 @@
+---
+workflow:
+  id: switch-basic
+  name: Basic Switch Test
+
+steps:
+  - id: route-priority
+    type: switch
+    expression: "{{ priority }}"
+    cases:
+      high:
+        - id: handle-high
+          type: action
+          action: mock.set
+          inputs:
+            result: "urgent-queue"
+          output_variable: queue
+      medium:
+        - id: handle-medium
+          type: action
+          action: mock.set
+          inputs:
+            result: "normal-queue"
+          output_variable: queue
+      low:
+        - id: handle-low
+          type: action
+          action: mock.set
+          inputs:
+            result: "batch-queue"
+          output_variable: queue
+    default:
+      - id: handle-unknown
+        type: action
+        action: mock.set
+        inputs:
+          result: "default-queue"
+        output_variable: queue
+---

@@ -1,0 +1,20 @@
+---
+workflow:
+  id: json-filters
+  name: JSON Filter Tests
+
+steps:
+  - id: test-parse-json
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ json_string | parse_json }}"
+    output_variable: parse_json_result
+
+  - id: test-to-json
+    type: action
+    action: mock.set
+    inputs:
+      value: "{{ data | to_json }}"
+    output_variable: to_json_result
+---

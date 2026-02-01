@@ -1,0 +1,22 @@
+---
+workflow:
+  id: continue-on-error-test
+  name: Continue on Error Test
+
+steps:
+  - id: failing-step
+    type: action
+    action: mock.fail
+    inputs:
+      message: "This will fail"
+    error_handling:
+      action: continue
+    output_variable: failed_result
+
+  - id: next-step
+    type: action
+    action: mock.success
+    inputs:
+      message: "This should still run"
+    output_variable: success_result
+---
