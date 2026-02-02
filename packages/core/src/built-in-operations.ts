@@ -6,10 +6,13 @@
  * - core.transform: Map/filter/reduce transformations
  * - core.extract: Nested path access
  * - core.format: Date/number/string formatting
+ * - file.read: Read files with format conversion (docx, pdf, xlsx)
+ * - file.write: Write files (text or binary)
  */
 
 import { ExecutionContext } from './models.js';
 import { resolveTemplates, resolveVariablePath } from './engine.js';
+import { executeFileOperation, isFileOperation } from './file-operations.js';
 
 // ============================================================================
 // Types
@@ -543,7 +546,7 @@ export function executeBuiltInOperation(
   rawInputs: Record<string, unknown>,
   resolvedInputs: Record<string, unknown>,
   context: ExecutionContext
-): unknown {
+): unknown | Promise<unknown> {
   switch (action) {
     case 'core.set':
       return executeSet(resolvedInputs, context);
@@ -559,6 +562,10 @@ export function executeBuiltInOperation(
       return executeFormat(resolvedInputs as unknown as FormatOperationInputs, context);
 
     default:
+      // Check if it's a file operation
+      if (isFileOperation(action)) {
+        return executeFileOperation(action, resolvedInputs, context);
+      }
       return null; // Not a built-in operation
   }
 }
@@ -568,5 +575,5 @@ export function executeBuiltInOperation(
  */
 export function isBuiltInOperation(action: string): boolean {
   const builtInActions = ['core.set', 'core.transform', 'core.extract', 'core.format'];
-  return builtInActions.includes(action);
+  return builtInActions.includes(action) || isFileOperation(action);
 }

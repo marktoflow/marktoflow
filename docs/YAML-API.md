@@ -1023,6 +1023,196 @@ then:
       content: '{{ generated_content }}'
 ```
 
+#### `file.read`
+
+Reads a file from the filesystem with automatic format conversion. Supports text files, MS Word (.docx), PDF, Excel (.xlsx), and binary files.
+
+```yaml
+action: file.read
+inputs:
+  path: string               # File path to read (supports templates)
+  encoding: string           # Optional: Text encoding (default: 'utf8')
+output_variable: file_content
+```
+
+**Output:**
+```json
+{
+  "content": "file content or base64 for binary",
+  "path": "/absolute/path/to/file",
+  "size": 1234,
+  "originalFormat": "text|docx|pdf|xlsx|binary",
+  "convertedFrom": "format name if converted"
+}
+```
+
+**Supported Formats:**
+
+- **Text files** (30+ extensions): .txt, .md, .json, .yaml, .xml, .html, .css, .js, .ts, .py, .java, .c, .cpp, .sh, .sql, .csv, .log, .env, .ini, .toml, .cfg, .conf, and more
+- **MS Word** (.docx): Converted to markdown using mammoth package
+- **PDF** (.pdf): Converted to text/markdown using pdf-parse package
+- **Excel** (.xlsx): Converted to CSV using xlsx package
+- **Binary files**: Returned as base64-encoded string
+
+**Optional Dependencies:**
+
+For document conversion, install these packages as needed:
+```bash
+pnpm add mammoth pdf-parse xlsx
+```
+
+**Examples:**
+
+**Read Text File:**
+```yaml
+action: file.read
+inputs:
+  path: './data/config.json'
+output_variable: config
+```
+
+**Read MS Word Document (converted to markdown):**
+```yaml
+action: file.read
+inputs:
+  path: '{{ inputs.document_path }}'
+output_variable: doc
+# Output: doc.content contains markdown, doc.convertedFrom = 'docx'
+```
+
+**Read PDF (converted to text):**
+```yaml
+action: file.read
+inputs:
+  path: './reports/report.pdf'
+output_variable: report
+# Output: report.content contains text, report.convertedFrom = 'pdf'
+```
+
+**Read Excel Spreadsheet (converted to CSV):**
+```yaml
+action: file.read
+inputs:
+  path: './data/spreadsheet.xlsx'
+output_variable: data
+# Output: data.content contains CSV, data.convertedFrom = 'xlsx'
+```
+
+**Read Binary File (base64 encoded):**
+```yaml
+action: file.read
+inputs:
+  path: './images/logo.png'
+output_variable: image
+# Output: image.content is base64, image.convertedFrom = 'binary (base64 encoded)'
+```
+
+**Template Path Resolution:**
+```yaml
+action: file.read
+inputs:
+  path: '{{ inputs.base_dir }}/{{ inputs.filename }}'
+output_variable: file_data
+```
+
+#### `file.write`
+
+Writes data to a file on the filesystem. Supports text, binary (base64), and automatic JSON serialization for objects.
+
+```yaml
+action: file.write
+inputs:
+  path: string               # File path to write (supports templates)
+  data: string|object        # Data to write (text, base64, or object)
+  encoding: string           # Optional: 'utf8' (default) or 'base64'
+  createDirectory: boolean   # Optional: Create parent dirs (default: false)
+output_variable: write_result
+```
+
+**Output:**
+```json
+{
+  "path": "/absolute/path/to/file",
+  "size": 1234,
+  "success": true
+}
+```
+
+**Examples:**
+
+**Write Text File:**
+```yaml
+action: file.write
+inputs:
+  path: './output/result.txt'
+  data: '{{ processed_text }}'
+output_variable: file_written
+```
+
+**Write JSON Object (auto-formatted):**
+```yaml
+action: file.write
+inputs:
+  path: './output/data.json'
+  data: '{{ results_object }}'
+output_variable: json_written
+# If data is an object, it's automatically JSON.stringify'd with indentation
+```
+
+**Write Binary Data (base64):**
+```yaml
+action: file.write
+inputs:
+  path: './output/image.png'
+  data: '{{ base64_image_data }}'
+  encoding: 'base64'
+output_variable: image_written
+```
+
+**Create Nested Directories:**
+```yaml
+action: file.write
+inputs:
+  path: './reports/2024/january/summary.html'
+  data: '{{ html_content }}'
+  createDirectory: true
+output_variable: report_written
+```
+
+**Template Path and Data:**
+```yaml
+action: file.write
+inputs:
+  path: '{{ inputs.output_dir }}/{{ inputs.filename }}'
+  data: 'Report generated at {{ now() }}\n\n{{ report_content }}'
+  createDirectory: true
+output_variable: result
+```
+
+**Write from Previous Step:**
+```yaml
+# Step 1: Read and process
+action: file.read
+inputs:
+  path: './input.txt'
+output_variable: input_file
+
+# Step 2: Transform
+action: agent.chat.completions
+inputs:
+  messages:
+    - role: user
+      content: 'Summarize: {{ input_file.content }}'
+output_variable: summary
+
+# Step 3: Write result
+action: file.write
+inputs:
+  path: './output/summary.txt'
+  data: '{{ summary.choices[0].message.content }}'
+output_variable: output_file
+```
+
 ### Best Practices
 
 #### 1. Always Set Outputs Explicitly

@@ -1180,7 +1180,8 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
           // Execute built-in operation directly (no timeout, no SDK executor needed)
           // For built-in operations, pass both resolved and unresolved inputs
           // to allow selective resolution of template expressions
-          output = executeBuiltInOperation(step.action, step.inputs, resolvedInputs, context);
+          // Await in case operation is async (e.g., file operations)
+          output = await executeBuiltInOperation(step.action, step.inputs, resolvedInputs, context);
         } else {
           // Execute step with executor context
           output = await this.executeWithTimeout(

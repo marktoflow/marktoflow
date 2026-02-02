@@ -458,3 +458,15 @@ export {
   type ScriptContext,
   type ScriptResult,
 } from './script-executor.js';
+
+// File Operations (read/write with format conversion)
+export {
+  executeFileRead,
+  executeFileWrite,
+  executeFileOperation,
+  isFileOperation,
+  type FileReadInputs,
+  type FileWriteInputs,
+  type FileReadResult,
+  type FileWriteResult,
+} from './file-operations.js';
