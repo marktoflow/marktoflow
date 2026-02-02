@@ -391,16 +391,50 @@ export class TeamsClient {
   }
 }
 
+/**
+ * Load saved Teams tokens from credential storage
+ */
+async function loadTeamsTokens(): Promise<{ access_token?: string; refresh_token?: string } | null> {
+  try {
+    // Dynamic import to avoid circular dependencies
+    const { createCredentialManager } = await import('@marktoflow/core');
+    const { homedir } = await import('node:os');
+    const { join } = await import('node:path');
+
+    const stateDir = join(homedir(), '.marktoflow', 'state');
+    const credentialManager = createCredentialManager({ stateDir });
+
+    const credentialName = 'oauth:teams';
+    if (!credentialManager.exists(credentialName)) {
+      return null;
+    }
+
+    const decrypted = credentialManager.get(credentialName);
+    return JSON.parse(decrypted);
+  } catch {
+    return null;
+  }
+}
+
 export const TeamsInitializer: SDKInitializer = {
   async initialize(_module: unknown, config: ToolConfig): Promise<unknown> {
     const clientId = config.auth?.['client_id'] as string | undefined;
     const clientSecret = config.auth?.['client_secret'] as string | undefined;
     const tenantId = config.auth?.['tenant_id'] as string | undefined;
-    const accessToken = config.auth?.['access_token'] as string | undefined;
+    let accessToken = config.auth?.['access_token'] as string | undefined;
+
+    // Try to load saved tokens if no access token provided
+    if (!accessToken) {
+      const savedTokens = await loadTeamsTokens();
+      if (savedTokens?.access_token) {
+        accessToken = savedTokens.access_token;
+      }
+    }
 
     if (!accessToken && (!clientId || !clientSecret || !tenantId)) {
       throw new Error(
-        'Microsoft Teams SDK requires either auth.access_token or auth.client_id, auth.client_secret, and auth.tenant_id'
+        'Microsoft Teams SDK requires auth.access_token (or run "marktoflow connect teams" first), ' +
+        'or provide auth.client_id, auth.client_secret, and auth.tenant_id for client credentials flow'
       );
     }
 
@@ -410,11 +444,11 @@ export const TeamsInitializer: SDKInitializer = {
         if (accessToken) {
           done(null, accessToken);
         } else {
-          // In production, you would get a token using @azure/identity
-          // For now, we'll throw an error
+          // Client credentials flow would require @azure/identity
           done(
             new Error(
-              'Token acquisition not implemented. Please provide access_token or implement Azure authentication.'
+              'No access token available. Run "marktoflow connect teams" to authenticate, ' +
+              'or provide auth.access_token in your workflow.'
             ),
             null
           );
