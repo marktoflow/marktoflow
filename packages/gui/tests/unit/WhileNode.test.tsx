@@ -227,4 +227,24 @@ describe('WhileNode', () => {
       expect(progressBar).toHaveAttribute('style', expect.stringContaining('50%'));
     });
   });
+
+  describe('handles', () => {
+    it('should render correct handles', () => {
+      const { container } = renderNode();
+
+      // Body handle (Right)
+      const bodyHandle = container.querySelector('.react-flow__handle-right');
+      expect(bodyHandle).toBeInTheDocument();
+      expect(bodyHandle?.getAttribute('data-id')).toEqual(expect.stringContaining('body'));
+
+      // Loop-back handle (Left)
+      const loopBackHandle = container.querySelector('.react-flow__handle-left');
+      expect(loopBackHandle).toBeInTheDocument();
+      expect(loopBackHandle?.getAttribute('data-id')).toEqual(expect.stringContaining('loop-back'));
+
+      // Exit handle (Bottom)
+      const exitHandle = container.querySelector('.react-flow__handle-bottom');
+      expect(exitHandle).toBeInTheDocument();
+    });
+  });
 });

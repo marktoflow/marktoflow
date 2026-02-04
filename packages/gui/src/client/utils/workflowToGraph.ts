@@ -1,4 +1,5 @@
 import type { Node, Edge } from '@xyflow/react';
+import { parse } from 'yaml';
 
 interface WorkflowStep {
   id: string;
@@ -53,82 +54,26 @@ function extractControlFlowFromMarkdown(markdown?: string): WorkflowStep[] {
   while ((match = codeBlockRegex.exec(markdown)) !== null) {
     const yamlContent = match[1];
 
-    // Check if this is a control flow block
-    const typeMatch = yamlContent.match(/^type:\s*(while|for_each|for|switch|parallel|try|if|map|filter|reduce)/m);
-    if (typeMatch) {
-      const type = typeMatch[1] as WorkflowStep['type'];
-      const id = `control-flow-${type}-${stepIndex++}`;
+    try {
+      // Parse the YAML content
+      const parsedStep = parse(yamlContent);
 
-      // Extract common properties
-      const conditionMatch = yamlContent.match(/condition:\s*["'](.+?)["']/);
-      const itemsMatch = yamlContent.match(/items:\s*["'](.+?)["']/);
-      const maxIterMatch = yamlContent.match(/max_iterations:\s*(\d+)/);
-      const expressionMatch = yamlContent.match(/expression:\s*["'](.+?)["']/);
-      const itemVarMatch = yamlContent.match(/item_variable:\s*(\w+)/);
+      // Check if this is a control flow block
+      if (parsedStep && parsedStep.type && ['while', 'for_each', 'for', 'switch', 'parallel', 'try', 'if', 'map', 'filter', 'reduce'].includes(parsedStep.type)) {
+        const id = parsedStep.id || `control-flow-${parsedStep.type}-${stepIndex++}`;
 
-      // Extract switch expression
-      const switchExprMatch = yamlContent.match(/expression:\s*["'](.+?)["']/);
+        // Create the step object preserving all properties
+        const step: WorkflowStep = {
+          ...parsedStep,
+          id,
+          // Ensure inputs is initialized
+          inputs: parsedStep.inputs || {},
+        };
 
-      // Extract variables for while loops
-      const variables: Record<string, { initial: unknown }> = {};
-      const varsMatch = yamlContent.match(/variables:\s*\n((?:  .*\n)*)/);
-      if (varsMatch) {
-        const varsContent = varsMatch[1];
-        const varLines = varsContent.split('\n').filter(Boolean);
-        varLines.forEach(line => {
-          const varMatch = line.match(/^\s+(\w+):\s*$/);
-          if (varMatch) {
-            const varName = varMatch[1];
-            // Try to find initial value on next line
-            const initMatch = varsContent.match(new RegExp(`${varName}:\\s*\\n\\s+initial:\\s*(.+)`));
-            if (initMatch) {
-              try {
-                variables[varName] = { initial: JSON.parse(initMatch[1]) };
-              } catch {
-                variables[varName] = { initial: initMatch[1].trim() };
-              }
-            }
-          }
-        });
+        controlFlowSteps.push(step);
       }
-
-      // Build step data based on type
-      const step: WorkflowStep = {
-        id,
-        type,
-        name: type === 'map' ? 'Map Transform' :
-              type === 'filter' ? 'Filter Transform' :
-              type === 'reduce' ? 'Reduce Transform' :
-              type === 'switch' ? 'Switch/Case' :
-              type === 'parallel' ? 'Parallel Execution' :
-              type === 'try' ? 'Try/Catch' :
-              type === 'if' ? 'If/Else' :
-              `${type.charAt(0).toUpperCase() + type.slice(1)} Loop`,
-        inputs: {},
-      };
-
-      // Add type-specific properties
-      if (conditionMatch) step.condition = conditionMatch[1];
-      if (itemsMatch) step.items = itemsMatch[1];
-      if (maxIterMatch) step.maxIterations = parseInt(maxIterMatch[1], 10);
-      if (Object.keys(variables).length > 0) step.variables = variables;
-
-      // Transform-specific properties
-      if (type === 'map' || type === 'filter' || type === 'reduce') {
-        if (itemVarMatch) {
-          step.inputs = { ...step.inputs, itemVariable: itemVarMatch[1] };
-        }
-        if (expressionMatch) {
-          step.inputs = { ...step.inputs, expression: expressionMatch[1] };
-        }
-      }
-
-      // Switch-specific properties
-      if (type === 'switch' && switchExprMatch) {
-        step.inputs = { ...step.inputs, expression: switchExprMatch[1] };
-      }
-
-      controlFlowSteps.push(step);
+    } catch (e) {
+      console.warn('Failed to parse control flow YAML block:', e);
     }
   }
 
@@ -144,21 +89,211 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
 
   const VERTICAL_SPACING = 180;
   const HORIZONTAL_OFFSET = 250;
-  let currentY = 0;
 
   // Try to extract control flow from markdown if available
   const controlFlowSteps = extractControlFlowFromMarkdown(workflow.markdown);
   const allSteps = [...workflow.steps, ...controlFlowSteps];
 
+  // Helper for recursive step processing
+  const processSteps = (
+    steps: WorkflowStep[],
+    startX: number,
+    startY: number,
+    parentId?: string
+  ): { lastNodeId: string | null; endY: number } => {
+    let currentY = startY;
+    let prevNodeId: string | null = null;
+
+    steps.forEach((step, index) => {
+      // Ensure step has an ID
+      if (!step.id) {
+        step.id = parentId
+          ? `${parentId}-step-${index}`
+          : `step-${Date.now()}-${index}`;
+      }
+
+      const isSubWorkflow = !!step.workflow;
+      const isControlFlow = !!step.type && ['while', 'for_each', 'for', 'switch', 'parallel', 'try', 'if', 'map', 'filter', 'reduce'].includes(step.type);
+
+      let nodeType = 'step';
+      if (isSubWorkflow) {
+        nodeType = 'subworkflow';
+      } else if (isControlFlow) {
+        nodeType = step.type!;
+      }
+
+      // Build node data based on type
+      const baseData = {
+        id: step.id,
+        name: step.name,
+        action: step.action,
+        workflowPath: step.workflow,
+        status: 'pending' as const,
+      };
+
+      // Add control-flow specific data
+      let nodeData: any = { ...baseData };
+      if (step.type === 'while') {
+        nodeData = {
+          ...baseData,
+          condition: step.condition || 'true',
+          maxIterations: step.maxIterations || 100,
+          variables: step.variables,
+        };
+      } else if (step.type === 'for_each' || step.type === 'for') {
+        const items = step.items || '[]';
+        nodeData = {
+          ...baseData,
+          items: items === 'unknown' ? '[]' : items,
+          itemVariable: step.inputs?.itemVariable as string,
+        };
+      } else if (step.type === 'switch') {
+        nodeData = {
+          ...baseData,
+          expression: step.inputs?.expression as string || step.condition || '',
+          cases: {},
+          hasDefault: true,
+        };
+      } else if (step.type === 'parallel') {
+        nodeData = {
+          ...baseData,
+          branches: [],
+          maxConcurrent: 0,
+        };
+      } else if (step.type === 'try') {
+        nodeData = {
+          ...baseData,
+          hasCatch: true,
+          hasFinally: false,
+        };
+      } else if (step.type === 'if') {
+        nodeData = {
+          ...baseData,
+          condition: step.condition || 'true',
+          hasElse: true,
+        };
+      } else if (step.type === 'map' || step.type === 'filter' || step.type === 'reduce') {
+        const items = step.items || (step.inputs?.items as string) || '[]';
+        nodeData = {
+          ...baseData,
+          transformType: step.type,
+          items: items === 'unknown' ? '[]' : items, // Guard against 'unknown' string
+          itemVariable: step.inputs?.itemVariable as string,
+          expression: step.inputs?.expression as string,
+          condition: step.condition,
+        };
+      } else {
+        // Regular step
+        nodeData = {
+          ...baseData,
+          condition: step.condition,
+          items: step.items,
+          maxIterations: step.maxIterations,
+          variables: step.variables,
+        };
+      }
+
+      const node: Node = {
+        id: step.id,
+        type: nodeType,
+        position: {
+          x: startX,
+          y: currentY,
+        },
+        data: nodeData,
+      };
+
+      nodes.push(node);
+
+      // Connect from previous sibling (Next Step Logic)
+      if (prevNodeId) {
+        const edge: Edge = {
+          id: `e-${prevNodeId}-${step.id}`,
+          source: prevNodeId,
+          target: step.id,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#ff6d5a', strokeWidth: 2 },
+        };
+
+        // Add condition label if present
+        if (step.conditions && step.conditions.length > 0) {
+          edge.label = 'conditional';
+          edge.labelStyle = { fill: '#a0a0c0', fontSize: 10 };
+          edge.labelBgStyle = { fill: '#232340' };
+        }
+
+        edges.push(edge);
+      }
+
+      // Handle Nested Steps for Loops (Recursive)
+      if ((step.type === 'while' || step.type === 'for_each' || step.type === 'for') && step.steps && step.steps.length > 0) {
+        // Position children to the right and potentially slightly down
+        const childStartX = startX + 350;
+        // Offset Y slightly to align better with side handles 
+        const childStartY = currentY + 20;
+
+        const { lastNodeId: lastChildId, endY: childrenEndY } = processSteps(step.steps, childStartX, childStartY, step.id);
+
+        const loopColor = step.type === 'while' ? '#fb923c' : '#f093fb';
+
+        // Connect Loop (Body/Right) -> First Child
+        edges.push({
+          id: `e-${step.id}-body-start`,
+          source: step.id,
+          target: step.steps[0].id,
+          sourceHandle: 'body',
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: loopColor, strokeWidth: 2 },
+          label: step.type === 'while' ? 'do' : 'each',
+          labelStyle: { fill: loopColor, fontSize: 10 },
+          labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.8 },
+        });
+
+        // Connect Last Child -> Loop (Loop Back/Left)
+        if (lastChildId) {
+          edges.push({
+            id: `e-${lastChildId}-${step.id}-loop-back`,
+            source: lastChildId,
+            target: step.id,
+            targetHandle: 'loop-back',
+            type: 'smoothstep',
+            animated: true,
+            style: {
+              stroke: loopColor,
+              strokeWidth: 2,
+              strokeDasharray: '5,5',
+            },
+          });
+        }
+
+        // Ensure next sibling starts below the block
+        // Use childrenEndY but careful not to overlap if children are short
+        currentY = Math.max(currentY + VERTICAL_SPACING, childrenEndY);
+      } else {
+        // Regular spacing
+        currentY += VERTICAL_SPACING;
+      }
+
+      prevNodeId = step.id;
+    });
+
+    return { lastNodeId: prevNodeId, endY: currentY };
+  };
+
   // Add trigger node if triggers are defined
+  let startY = 0;
+  let triggerId: string | null = null;
+
   if (workflow.triggers && workflow.triggers.length > 0) {
     const trigger = workflow.triggers[0]; // Primary trigger
-    const triggerId = `trigger-${workflow.metadata.id}`;
+    triggerId = `trigger-${workflow.metadata.id}`;
 
     nodes.push({
       id: triggerId,
       type: 'trigger',
-      position: { x: HORIZONTAL_OFFSET, y: currentY },
+      position: { x: HORIZONTAL_OFFSET, y: startY },
       data: {
         id: triggerId,
         name: workflow.metadata.name,
@@ -170,197 +305,47 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
       },
     });
 
-    currentY += VERTICAL_SPACING;
-
-    // Edge from trigger to first step
-    if (allSteps.length > 0) {
-      edges.push({
-        id: `e-${triggerId}-${allSteps[0].id}`,
-        source: triggerId,
-        target: allSteps[0].id,
-        type: 'smoothstep',
-        animated: false,
-        style: { stroke: '#ff6d5a', strokeWidth: 2 },
-      });
-    }
+    startY += VERTICAL_SPACING;
   }
 
-  // Create nodes for each step
-  allSteps.forEach((step, index) => {
-    const isSubWorkflow = !!step.workflow;
-    const isControlFlow = !!step.type && ['while', 'for_each', 'for', 'switch', 'parallel', 'try', 'if', 'map', 'filter', 'reduce'].includes(step.type);
+  // Process all steps recursively
+  const { lastNodeId: lastStepId, endY } = processSteps(allSteps, HORIZONTAL_OFFSET, startY);
 
-    let nodeType = 'step';
-    if (isSubWorkflow) {
-      nodeType = 'subworkflow';
-    } else if (isControlFlow) {
-      nodeType = step.type!;
-    }
-
-    // Build node data based on type
-    const baseData = {
-      id: step.id,
-      name: step.name,
-      action: step.action,
-      workflowPath: step.workflow,
-      status: 'pending' as const,
-    };
-
-    // Add control-flow specific data
-    let nodeData = { ...baseData };
-    if (step.type === 'while') {
-      nodeData = {
-        ...baseData,
-        condition: step.condition || 'true',
-        maxIterations: step.maxIterations || 100,
-        variables: step.variables,
-      };
-    } else if (step.type === 'for_each' || step.type === 'for') {
-      nodeData = {
-        ...baseData,
-        items: step.items || '[]',
-        itemVariable: step.inputs?.itemVariable as string,
-      };
-    } else if (step.type === 'switch') {
-      nodeData = {
-        ...baseData,
-        expression: step.inputs?.expression as string || step.condition || '',
-        cases: {},
-        hasDefault: true,
-      };
-    } else if (step.type === 'parallel') {
-      nodeData = {
-        ...baseData,
-        branches: [],
-        maxConcurrent: 0,
-      };
-    } else if (step.type === 'try') {
-      nodeData = {
-        ...baseData,
-        hasCatch: true,
-        hasFinally: false,
-      };
-    } else if (step.type === 'if') {
-      nodeData = {
-        ...baseData,
-        condition: step.condition || 'true',
-        hasElse: true,
-      };
-    } else if (step.type === 'map' || step.type === 'filter' || step.type === 'reduce') {
-      nodeData = {
-        ...baseData,
-        transformType: step.type,
-        items: step.items || '[]',
-        itemVariable: step.inputs?.itemVariable as string,
-        expression: step.inputs?.expression as string,
-        condition: step.condition,
-      };
-    } else {
-      // Regular step
-      nodeData = {
-        ...baseData,
-        condition: step.condition,
-        items: step.items,
-        maxIterations: step.maxIterations,
-        variables: step.variables,
-      };
-    }
-
-    const node: Node = {
-      id: step.id,
-      type: nodeType,
-      position: {
-        x: HORIZONTAL_OFFSET,
-        y: currentY + index * VERTICAL_SPACING,
-      },
-      data: nodeData,
-    };
-
-    nodes.push(node);
-
-    // Create edge to next step
-    if (index < allSteps.length - 1) {
-      const nextStep = allSteps[index + 1];
-      const edge: Edge = {
-        id: `e-${step.id}-${nextStep.id}`,
-        source: step.id,
-        target: nextStep.id,
-        type: 'smoothstep',
-        animated: false,
-        style: { stroke: '#ff6d5a', strokeWidth: 2 },
-      };
-
-      // Add condition label if present
-      if (nextStep.conditions && nextStep.conditions.length > 0) {
-        edge.label = 'conditional';
-        edge.labelStyle = { fill: '#a0a0c0', fontSize: 10 };
-        edge.labelBgStyle = { fill: '#232340' };
-      }
-
-      edges.push(edge);
-    }
-
-    // Add loop-back edge for loops
-    if (step.type === 'while' || step.type === 'for_each' || step.type === 'for') {
-      const loopColor = step.type === 'while' ? '#fb923c' : '#f093fb';
-      edges.push({
-        id: `e-${step.id}-loop-back`,
-        source: step.id,
-        target: step.id,
-        sourceHandle: 'loop-back',
-        type: 'smoothstep',
-        animated: true,
-        style: {
-          stroke: loopColor,
-          strokeWidth: 2,
-          strokeDasharray: '5,5',
-        },
-        label: step.type === 'while' ? 'while true' : 'for each item',
-        labelStyle: { fill: loopColor, fontSize: 9 },
-        labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.9 },
-      });
-    }
-
-    // Add iteration indicator for transform operations (map/filter/reduce)
-    if (step.type === 'map' || step.type === 'filter' || step.type === 'reduce') {
-      const transformColor = '#14b8a6';
-      const label = step.type === 'map' ? 'transform each' :
-                    step.type === 'filter' ? 'test each' :
-                    'accumulate';
-      edges.push({
-        id: `e-${step.id}-transform-flow`,
-        source: step.id,
-        target: step.id,
-        sourceHandle: 'loop-back',
-        type: 'smoothstep',
-        animated: true,
-        style: {
-          stroke: transformColor,
-          strokeWidth: 1.5,
-          strokeDasharray: '3,3',
-        },
-        label,
-        labelStyle: { fill: transformColor, fontSize: 8 },
-        labelBgStyle: { fill: '#1a1a2e', fillOpacity: 0.9 },
-      });
-    }
-  });
+  // Connect trigger to first step
+  if (triggerId && allSteps.length > 0) {
+    edges.push({
+      id: `e-${triggerId}-${allSteps[0].id}`,
+      source: triggerId,
+      target: allSteps[0].id,
+      type: 'smoothstep',
+      animated: false,
+      style: { stroke: '#ff6d5a', strokeWidth: 2 },
+    });
+  }
 
   // Add output node at the end
   if (allSteps.length > 0) {
     const outputId = `output-${workflow.metadata.id}`;
-    const lastStep = allSteps[allSteps.length - 1];
-    const outputY = currentY + allSteps.length * VERTICAL_SPACING;
 
-    // Collect all output variables
-    const outputVariables = allSteps
+    // Collect all output variables (flattened)
+    const flattenSteps = (steps: WorkflowStep[]): WorkflowStep[] => {
+      let flat: WorkflowStep[] = [];
+      steps.forEach(s => {
+        flat.push(s);
+        if (s.steps) flat = flat.concat(flattenSteps(s.steps));
+      });
+      return flat;
+    };
+    const flatSteps = flattenSteps(allSteps);
+
+    const outputVariables = flatSteps
       .filter((s) => s.outputVariable)
       .map((s) => s.outputVariable as string);
 
     nodes.push({
       id: outputId,
       type: 'output',
-      position: { x: HORIZONTAL_OFFSET, y: outputY },
+      position: { x: HORIZONTAL_OFFSET, y: endY },
       data: {
         id: outputId,
         name: 'Workflow Output',
@@ -369,20 +354,23 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
       },
     });
 
-    // Edge from last step to output
-    edges.push({
-      id: `e-${lastStep.id}-${outputId}`,
-      source: lastStep.id,
-      target: outputId,
-      type: 'smoothstep',
-      animated: false,
-      style: { stroke: '#ff6d5a', strokeWidth: 2 },
-    });
-  }
+    // Edge from last step to output (if last step exists and isn't the loop itself ending improperly?)
+    // If the workflow ended with a loop, lastStepId is the loop node.
+    if (lastStepId) {
+      edges.push({
+        id: `e-${lastStepId}-${outputId}`,
+        source: lastStepId,
+        target: outputId,
+        type: 'smoothstep',
+        animated: false,
+        style: { stroke: '#ff6d5a', strokeWidth: 2 },
+      });
+    }
 
-  // Add data flow edges based on variable references
-  const variableEdges = findVariableDependencies(allSteps);
-  edges.push(...variableEdges);
+    // Add data flow edges based on variable references (using flattened steps)
+    const variableEdges = findVariableDependencies(flatSteps);
+    edges.push(...variableEdges);
+  }
 
   return { nodes, edges };
 }
@@ -444,8 +432,10 @@ function findVariableDependencies(steps: WorkflowStep[]): Edge[] {
 /**
  * Extracts template variable references from inputs
  */
-function findTemplateVariables(inputs: Record<string, unknown>): string[] {
+function findTemplateVariables(inputs: Record<string, unknown> | undefined): string[] {
   const variables: string[] = [];
+  if (!inputs) return variables;
+
   const templateRegex = /\{\{\s*([^}]+)\s*\}\}/g;
 
   function extractFromValue(value: unknown): void {
