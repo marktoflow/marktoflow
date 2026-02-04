@@ -139,17 +139,26 @@ function WhileNodeComponent({ data, selected }: NodeProps<WhileNodeType>) {
         </div>
       </div>
 
-      {/* Output handle */}
+      {/* Output handle (Exit) */}
       <Handle
         type="source"
         position={Position.Bottom}
         className="!w-3 !h-3 !bg-primary !border-2 !border-node-bg"
       />
 
-      {/* Loop-back handle (left side for iteration feedback) */}
+      {/* Loop Body handle (Start Loop) */}
+      <Handle
+        id="body"
+        type="source"
+        position={Position.Right}
+        className="!w-3 !h-3 !bg-orange-500 !border-2 !border-node-bg"
+        style={{ top: '50%', right: '-6px' }}
+      />
+
+      {/* Loop-back handle (End Loop Return) */}
       <Handle
         id="loop-back"
-        type="source"
+        type="target"
         position={Position.Left}
         className="!w-3 !h-3 !bg-orange-500 !border-2 !border-node-bg"
         style={{ top: '50%', left: '-6px' }}
