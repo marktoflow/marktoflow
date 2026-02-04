@@ -21,6 +21,7 @@ const PACKAGES = [
   'packages/integrations',
   'packages/cli',
   'packages/gui',
+  'packages/marktoflow',
 ];
 
 function getPackageJson(packagePath) {
