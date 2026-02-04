@@ -12,10 +12,6 @@
   "bugs": {
     "url": "https://github.com/marktoflow/marktoflow/issues"
   },
-  "bin": {
-    "marktoflow": "./node_modules/.bin/marktoflow",
-    "marktoflow-gui": "./node_modules/.bin/marktoflow-gui"
-  },
   "scripts": {},
   "dependencies": {
     "@marktoflow/cli": "workspace:*",
