@@ -200,10 +200,10 @@ pnpm publish
 
 📋 Publish Plan
 
-  1. @marktoflow/core@2.0.0-alpha.13
-  2. @marktoflow/integrations@2.0.0-alpha.13
-  3. @marktoflow/cli@2.0.0-alpha.13
-  4. @marktoflow/gui@2.0.0-alpha.13
+  1. @marktoflow/core@2.0.0-alpha.14
+  2. @marktoflow/integrations@2.0.0-alpha.14
+  3. @marktoflow/cli@2.0.0-alpha.14
+  4. @marktoflow/gui@2.0.0-alpha.14
 
 📝 Process:
   1. Replace workspace:* with actual versions
@@ -509,10 +509,10 @@ For complete details on the publishing system:
 
 **Latest Published Versions**:
 
-- @marktoflow/core@2.0.0-alpha.13
-- @marktoflow/integrations@2.0.0-alpha.13
-- @marktoflow/cli@2.0.0-alpha.13
-- @marktoflow/gui@2.0.0-alpha.13
+- @marktoflow/core@2.0.0-alpha.14
+- @marktoflow/integrations@2.0.0-alpha.14
+- @marktoflow/cli@2.0.0-alpha.14
+- @marktoflow/gui@2.0.0-alpha.14
 
 **Installation**:
 
