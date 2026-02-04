@@ -4,7 +4,7 @@
 
 **CLI-first agent automation framework** with native MCP support and direct SDK integration.
 
-**Version:** 2.0.0-alpha.12
+**Version:** 2.0.0-alpha.13
 
 ---
 

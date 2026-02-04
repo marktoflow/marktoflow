@@ -1,0 +1,47 @@
+{
+  "name": "@marktoflow/marktoflow",
+  "version": "2.0.0-alpha.13",
+  "description": "Complete marktoflow installation - agent automation framework with native MCP support",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marktoflow/marktoflow.git",
+    "directory": "packages/marktoflow"
+  },
+  "homepage": "https://github.com/marktoflow/marktoflow#readme",
+  "bugs": {
+    "url": "https://github.com/marktoflow/marktoflow/issues"
+  },
+  "bin": {
+    "marktoflow": "./node_modules/.bin/marktoflow",
+    "marktoflow-gui": "./node_modules/.bin/marktoflow-gui"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@marktoflow/cli": "workspace:*",
+    "@marktoflow/core": "workspace:*",
+    "@marktoflow/gui": "workspace:*",
+    "@marktoflow/integrations": "workspace:*"
+  },
+  "files": [
+    "README.md"
+  ],
+  "keywords": [
+    "marktoflow",
+    "automation",
+    "workflow",
+    "cli",
+    "gui",
+    "mcp",
+    "slack",
+    "github",
+    "jira",
+    "ai-agents",
+    "metapackage"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Scott Glover",
+  "license": "Apache-2.0"
+}

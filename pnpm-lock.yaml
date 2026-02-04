@@ -395,6 +395,21 @@ importers:
         specifier: ^8.16.0
         version: 8.16.0
 
+  packages/marktoflow:
+    dependencies:
+      '@marktoflow/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@marktoflow/core':
+        specifier: workspace:*
+        version: link:../core
+      '@marktoflow/gui':
+        specifier: workspace:*
+        version: link:../gui
+      '@marktoflow/integrations':
+        specifier: workspace:*
+        version: link:../integrations
+
 packages:
 
   '@acemir/cssom@0.9.31':

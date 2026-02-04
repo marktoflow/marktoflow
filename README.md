@@ -4,7 +4,7 @@
 
 An agent automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.12 (TypeScript)
+**Version:** 2.0.0-alpha.13 (TypeScript)
 
 ---
 
@@ -47,17 +47,28 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 
 ### Installation
 
-**Option 1: Install from npm (Recommended)**
+**Option 1: Complete Installation (Recommended)**
 
 ```bash
-# Install globally from npm
+# Install all marktoflow packages globally
+npm install -g @marktoflow/marktoflow
+
+# Verify installation
+marktoflow version
+marktoflow gui --help
+```
+
+**Option 2: CLI Only**
+
+```bash
+# Install just the CLI
 npm install -g @marktoflow/cli
 
 # Verify installation
 marktoflow version
 ```
 
-**Option 2: Use npx (No Installation)**
+**Option 3: Use npx (No Installation)**
 
 ```bash
 # Run commands directly without installation

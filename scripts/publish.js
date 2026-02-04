@@ -26,6 +26,7 @@ const PACKAGES = [
   { name: 'integrations', path: 'packages/integrations', order: 2 },
   { name: 'cli', path: 'packages/cli', order: 3 },
   { name: 'gui', path: 'packages/gui', order: 4 },
+  { name: 'marktoflow', path: 'packages/marktoflow', order: 5 },
 ];
 
 function exec(command, cwd = rootDir, options = {}) {
@@ -219,6 +220,8 @@ async function main() {
 
     if (!dryRun) {
       console.log('\n📦 Installation command:');
+      console.log('  npm install -g @marktoflow/marktoflow@alpha');
+      console.log('\n  Or individual packages:');
       console.log('  npm install @marktoflow/cli@alpha @marktoflow/gui@alpha');
     }
   } catch (error) {

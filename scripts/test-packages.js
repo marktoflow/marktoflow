@@ -48,6 +48,7 @@ function createTarballs() {
     { name: 'integrations', path: 'packages/integrations' },
     { name: 'cli', path: 'packages/cli' },
     { name: 'gui', path: 'packages/gui' },
+    { name: 'marktoflow', path: 'packages/marktoflow' },
   ];
 
   const tarballs = [];
