@@ -58,10 +58,10 @@ When you run `pnpm publish`, it:
 1. **Shows Publish Plan**
    ```
    📋 Publish Plan
-     1. @marktoflow/core@2.0.0-alpha.13
-     2. @marktoflow/integrations@2.0.0-alpha.13
-     3. @marktoflow/cli@2.0.0-alpha.13
-     4. @marktoflow/gui@2.0.0-alpha.13
+     1. @marktoflow/core@2.0.0-alpha.14
+     2. @marktoflow/integrations@2.0.0-alpha.14
+     3. @marktoflow/cli@2.0.0-alpha.14
+     4. @marktoflow/gui@2.0.0-alpha.14
    ```
 
 2. **Asks for Confirmation**
@@ -275,10 +275,10 @@ $ pnpm publish
 
 📋 Publish Plan
 
-  1. @marktoflow/core@2.0.0-alpha.13
-  2. @marktoflow/integrations@2.0.0-alpha.13
-  3. @marktoflow/cli@2.0.0-alpha.13
-  4. @marktoflow/gui@2.0.0-alpha.13
+  1. @marktoflow/core@2.0.0-alpha.14
+  2. @marktoflow/integrations@2.0.0-alpha.14
+  3. @marktoflow/cli@2.0.0-alpha.14
+  4. @marktoflow/gui@2.0.0-alpha.14
 
 📝 Process:
   1. Replace workspace:* with actual versions
@@ -298,10 +298,10 @@ $ pnpm publish
   ✓ Backed up: packages/integrations/package.json
   ✓ Backed up: packages/cli/package.json
   ✓ Backed up: packages/gui/package.json
-  ✓ packages/cli: @marktoflow/core → 2.0.0-alpha.13
-  ✓ packages/cli: @marktoflow/integrations → 2.0.0-alpha.13
-  ✓ packages/cli: @marktoflow/gui → 2.0.0-alpha.13 (optional)
-  ✓ packages/gui: @marktoflow/core → 2.0.0-alpha.13
+  ✓ packages/cli: @marktoflow/core → 2.0.0-alpha.14
+  ✓ packages/cli: @marktoflow/integrations → 2.0.0-alpha.14
+  ✓ packages/cli: @marktoflow/gui → 2.0.0-alpha.14 (optional)
+  ✓ packages/gui: @marktoflow/core → 2.0.0-alpha.14
 ✅ Packages prepared for publishing
 
 🔨 Building packages...
@@ -312,10 +312,10 @@ $ pnpm publish
 ✅ All tests passed!
 
 📤 Publishing packages...
-+ @marktoflow/core@2.0.0-alpha.13
-+ @marktoflow/integrations@2.0.0-alpha.13
-+ @marktoflow/cli@2.0.0-alpha.13
-+ @marktoflow/gui@2.0.0-alpha.13
++ @marktoflow/core@2.0.0-alpha.14
++ @marktoflow/integrations@2.0.0-alpha.14
++ @marktoflow/cli@2.0.0-alpha.14
++ @marktoflow/gui@2.0.0-alpha.14
 
 🔄 Restoring workspace:* dependencies...
   ✓ Restored: packages/core/package.json
@@ -325,10 +325,10 @@ $ pnpm publish
 ✅ Backup restored
 
 ✅ Verifying publication...
-  ✓ @marktoflow/core@2.0.0-alpha.13 is published
-  ✓ @marktoflow/integrations@2.0.0-alpha.13 is published
-  ✓ @marktoflow/cli@2.0.0-alpha.13 is published
-  ✓ @marktoflow/gui@2.0.0-alpha.13 is published
+  ✓ @marktoflow/core@2.0.0-alpha.14 is published
+  ✓ @marktoflow/integrations@2.0.0-alpha.14 is published
+  ✓ @marktoflow/cli@2.0.0-alpha.14 is published
+  ✓ @marktoflow/gui@2.0.0-alpha.14 is published
 
 ✅ Publish complete!
 
