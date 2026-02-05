@@ -44,7 +44,7 @@ import {
   overrideModelInWorkflow,
 } from './utils/index.js';
 
-const VERSION = '2.0.0-alpha.14';
+const VERSION = '2.0.0-alpha.15';
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
