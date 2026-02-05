@@ -1,0 +1,76 @@
+name: Publish to GitHub Packages
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
+
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com/
+          scope: '@marktoflow'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Configure pnpm for GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@marktoflow:registry=https://npm.pkg.github.com" >> .npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Prepare packages for publishing
+        run: pnpm publish:prepare
+
+      - name: Test packages
+        run: pnpm publish:test
+
+      - name: Publish packages
+        run: |
+          # Publish packages in dependency order
+          cd packages/core && pnpm publish --no-git-checks --access public
+          cd ../integrations && pnpm publish --no-git-checks --access public
+          cd ../cli && pnpm publish --no-git-checks --access public
+          cd ../gui && pnpm publish --no-git-checks --access public
+          cd ../marktoflow && pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Restore workspace dependencies
+        if: always()
+        run: pnpm publish:restore
