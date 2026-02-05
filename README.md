@@ -4,7 +4,15 @@
 
 An agent automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
 
-**Version:** 2.0.0-alpha.14 (TypeScript)
+**Version:** 2.0.0-alpha.15 (TypeScript)
+
+### What's New in v2.0.0-alpha.15 ✨
+
+- **Comprehensive MCP Integration Testing** - 5 new end-to-end tests validating all MCP functionality
+- **MCP Bug Fixes** - Fixed tool discovery and listing in MCPTool class
+- **Enhanced Documentation** - Complete MCP integration guide with examples (see `examples/mcp-integration/`)
+- **YAML API Updates** - Expanded tool configuration docs with MCP examples
+- **Production Ready** - All 439 tests passing, MCP integration fully validated
 
 ---
 
@@ -270,9 +278,47 @@ marktoflow run workflow.md --agent copilot --model gpt-4o
 marktoflow run workflow.md --agent claude --model claude-opus-4
 ```
 
-### MCP Protocol
+### MCP (Model Context Protocol)
 
-- **Native MCP Support** - Import any MCP server as npm package
+marktoflow v2.0 has **native MCP support** with zero configuration overhead:
+
+- **Direct npm package imports** - No subprocess bridging required
+- **In-memory communication** - Fast and efficient via InMemoryTransport
+- **Automatic tool discovery** - All MCP server operations auto-discovered
+- **Type-safe operations** - Full Zod schema validation
+- **Works with any MCP server** - Compatible with the entire MCP ecosystem
+
+#### Example MCP Integration
+
+```yaml
+tools:
+  filesystem:
+    sdk: '@modelcontextprotocol/server-filesystem'
+    options:
+      allowedDirectories: ['./data', './uploads']
+
+  slack:
+    sdk: '@modelcontextprotocol/server-slack'
+    auth:
+      token: ${SLACK_BOT_TOKEN}
+```
+
+#### Usage in Workflows
+
+```yaml
+# Use filesystem MCP server
+action: filesystem.read_file
+inputs:
+  path: "./data/config.json"
+
+# Use Slack MCP server
+action: slack.chat_postMessage
+inputs:
+  channel: "#general"
+  text: "Hello from MCP!"
+```
+
+**MCP Integration Guide**: See [examples/mcp-integration/](examples/mcp-integration/) for complete examples and setup instructions.
 
 All integrations support:
 

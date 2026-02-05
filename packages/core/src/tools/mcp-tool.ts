@@ -28,15 +28,15 @@ export class MCPTool extends Tool {
     if (this.implementation.packageName) {
       const config = this.buildConfig();
       const client = await this.loader.loadNative(this.implementation.packageName, config);
-      const tools = await (client as any).listTools?.();
-      if (Array.isArray(tools)) {
-        for (const tool of tools) {
-          this.operations[tool.name] = {
-            name: tool.name,
-            description: tool.description,
-            input_schema: tool.inputSchema ?? tool.input_schema ?? {},
-          };
-        }
+      const toolsResponse = await (client as any).listTools?.();
+      // The MCP SDK returns { tools: [...] } not just an array
+      const toolsArray = Array.isArray(toolsResponse) ? toolsResponse : toolsResponse?.tools ?? [];
+      for (const tool of toolsArray) {
+        this.operations[tool.name] = {
+          name: tool.name,
+          description: tool.description,
+          input_schema: tool.inputSchema ?? tool.input_schema ?? {},
+        };
       }
       this.client = client;
     } else if (this.implementation.specPath) {

@@ -105,14 +105,16 @@ workflow:
 
 ### `tools` (optional)
 
-Defines external service integrations and AI agents used in the workflow.
+Defines external service integrations, MCP servers, and AI agents used in the workflow.
+
+marktoflow v2.0 has **native MCP (Model Context Protocol) support**, allowing you to use any MCP-compatible server as a tool with zero configuration overhead.
 
 #### Structure
 
 ```yaml
 tools:
   <tool_name>:
-    sdk: string                      # Required: npm package or MCP server
+    sdk: string                      # Required: npm package, MCP server, or SDK package
     auth:                            # Optional: Authentication credentials
       <key>: string | ${ENV_VAR}
     options:                         # Optional: Tool-specific options
@@ -123,9 +125,115 @@ tools:
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `sdk` | `string` | Yes | npm package name (e.g., `@slack/web-api`) or MCP server name |
+| `sdk` | `string` | Yes | npm package name (e.g., `@slack/web-api`), MCP server package (e.g., `@modelcontextprotocol/server-filesystem`), or native SDK |
 | `auth` | `object` | No | Authentication credentials (tool-specific) |
-| `options` | `object` | No | Additional configuration options |
+| `options` | `object` | No | Additional configuration options (passed to MCP servers or SDKs) |
+
+#### Tool Types
+
+marktoflow supports three types of tool integrations:
+
+1. **MCP Servers** - Native MCP protocol support with in-memory communication
+2. **SDK Packages** - Direct npm package imports (Slack SDK, Google APIs, etc.)
+3. **OpenAPI/REST** - HTTP-based integrations via OpenAPI specs
+
+### MCP (Model Context Protocol) Integration
+
+marktoflow v2.0 includes **native MCP support** with:
+- ✅ Direct npm package imports (no subprocess bridging)
+- ✅ In-memory communication (fast and efficient)
+- ✅ Automatic tool discovery from MCP servers
+- ✅ Type-safe operations with Zod validation
+- ✅ Works with any MCP-compatible server
+
+#### MCP Server Configuration
+
+```yaml
+tools:
+  <tool_name>:
+    sdk: <mcp-package-name>          # MCP server npm package
+    auth:                            # Optional: Server authentication
+      token: ${TOKEN_ENV_VAR}
+    options:                         # Optional: Server-specific options
+      allowedDirectories: [...]
+      maxFileSize: 1000000
+```
+
+#### MCP Examples
+
+**Filesystem Server**
+```yaml
+tools:
+  filesystem:
+    sdk: '@modelcontextprotocol/server-filesystem'
+    options:
+      allowedDirectories: ['./data', './uploads']
+      maxFileSize: 10485760  # 10MB
+
+# Usage in steps:
+# action: filesystem.read_file
+# action: filesystem.write_file
+# action: filesystem.list_directory
+```
+
+**Slack MCP Server**
+```yaml
+tools:
+  slack:
+    sdk: '@modelcontextprotocol/server-slack'
+    auth:
+      token: ${SLACK_BOT_TOKEN}
+
+# Usage in steps:
+# action: slack.chat_postMessage
+# action: slack.users_list
+# action: slack.channels_list
+```
+
+**GitHub MCP Server**
+```yaml
+tools:
+  github:
+    sdk: '@modelcontextprotocol/server-github'
+    auth:
+      token: ${GITHUB_TOKEN}
+    options:
+      owner: 'myorg'
+      repo: 'myrepo'
+
+# Usage in steps:
+# action: github.create_issue
+# action: github.list_pull_requests
+# action: github.get_file_contents
+```
+
+**Custom MCP Server**
+```yaml
+tools:
+  custom:
+    sdk: './my-custom-mcp-server.js'  # Local MCP server
+    options:
+      customOption: 'value'
+```
+
+#### How MCP Works in marktoflow
+
+1. **Install MCP package**: `npm install @modelcontextprotocol/server-slack`
+2. **Configure in workflow**: Add to `tools` section with `sdk` pointing to package
+3. **Use in steps**: Reference as `toolName.operation` (e.g., `slack.chat_postMessage`)
+4. **Automatic discovery**: marktoflow auto-discovers all operations from the MCP server
+
+#### MCP vs SDK Integration
+
+| Feature | MCP Servers | SDK Packages |
+|---------|-------------|--------------|
+| Protocol | Model Context Protocol | Direct SDK calls |
+| Setup | `npm install` package | `npm install` + adapter code |
+| Discovery | Automatic tool listing | Manual operation definitions |
+| Type Safety | Built-in with Zod | SDK-dependent |
+| Best For | Standardized tools | Custom integrations |
+
+See the [MCP Integration Guide](../examples/mcp-integration/README.md) for complete examples.
 
 #### Authentication Types
 
