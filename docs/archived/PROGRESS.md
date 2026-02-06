@@ -11,11 +11,58 @@
 
 - **Core Features**: All core features implemented
 - **Build**: All packages compile successfully
-- **Tests**: 145+ passing tests across all packages
-- **Integrations**: 20+ native service integrations
-- **GUI**: Visual workflow designer with AI assistance
+- **Tests**: 1,377 passing tests across all packages (479 core + 898 integrations)
+- **Integrations**: 30+ native service integrations with input validation
+- **GUI**: Visual workflow designer with AI assistance and forms
 
 ### Recent Development
+
+#### n8n Feature Parity Plan (2026-02-05) - Enterprise Features
+
+**External Secrets Management:**
+- Implemented SecretManager with pluggable provider architecture
+- Providers: Environment variables, HashiCorp Vault, AWS Secrets Manager, Azure Key Vault
+- Secret reference syntax: `${secret:provider://path#key}`
+- Configurable caching with TTL, error handling policies
+- Transparent integration with SDKRegistry for credential resolution
+
+**Automatic OAuth Token Refresh:**
+- Gmail: OAuth2 token refresh via `tokens` event listener with persistent storage
+- Outlook: Pre-check refresh before SDK initialization with 5-minute buffer
+- Google services: Shared OAuth2 refresh mechanism
+- Credentials saved to `.marktoflow/credentials/` for cross-session persistence
+
+**Execution History CLI:**
+- `marktoflow history` - List, filter, and inspect past executions
+- `marktoflow replay <run-id>` - Replay executions with original inputs
+- Step-level detail view with timeline and output inspection
+
+**Forms & Human-in-the-Loop:**
+- Wait step with `mode: form` for human approval workflows
+- GUI form routes for rendering and submitting form data
+- ExecutionManager for managing paused/resumed executions
+- WebSocket real-time status updates
+
+**Enhanced Dry-Run:**
+- Nunjucks template engine integration (replaced regex-based resolution)
+- Control flow step simulation (if/switch/for_each/while/parallel/try)
+- Service-specific mock response generators (Slack, GitHub, Jira, Gmail, etc.)
+
+**Input Validation & Reliability:**
+- Zod-based input validation schemas for all 30+ integrations
+- Reliability wrapper with automatic retries, circuit breakers, exponential backoff
+- Contract testing infrastructure with MSW (256 tests across 28 services)
+- Comprehensive error classification and HTTP status mapping
+
+**Credential Encryption:**
+- AES-256-GCM encrypted credential storage
+- Support for Age, GPG, Fernet encryption backends
+- SQLite and in-memory credential stores
+
+**Test Coverage:**
+- 479 core tests (unit + integration)
+- 898 integration tests (service + contract + reliability)
+- 1,377 total tests passing
 
 #### Session 18 (2026-01-25) - Control Flow GUI & Documentation
 

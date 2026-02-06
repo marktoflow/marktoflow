@@ -8,11 +8,16 @@ An agent automation framework that enables markdown-based workflows with native 
 
 ### What's New in v2.0.0-alpha.15 ✨
 
-- **Comprehensive MCP Integration Testing** - 5 new end-to-end tests validating all MCP functionality
-- **MCP Bug Fixes** - Fixed tool discovery and listing in MCPTool class
-- **Enhanced Documentation** - Complete MCP integration guide with examples (see `examples/mcp-integration/`)
-- **YAML API Updates** - Expanded tool configuration docs with MCP examples
-- **Production Ready** - All 439 tests passing, MCP integration fully validated
+- **External Secrets Management** - Integrate with HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, or environment variables using `${secret:provider://path}` syntax
+- **Automatic OAuth Token Refresh** - Gmail and Outlook tokens refresh transparently before expiration with persistent credential storage
+- **Execution History** - `marktoflow history` command to list, inspect, and replay past workflow executions
+- **Forms & Human-in-the-Loop** - Pause workflows for human approval via web forms with real-time status updates
+- **Enhanced Dry-Run** - Full Nunjucks template resolution, control flow simulation, and service-specific mock responses
+- **Input Validation Schemas** - Zod-based validation for all 30+ integrations with detailed error messages
+- **Contract Testing** - MSW-based contract tests for all API integrations (256 tests across 28 services)
+- **Reliability Wrapper** - Automatic retries, circuit breakers, and exponential backoff for SDK calls
+- **Credential Encryption** - AES-256-GCM encrypted credential storage
+- **1,377 tests passing** across core and integrations
 
 ---
 
@@ -45,6 +50,10 @@ marktoflow is a **CLI-first automation framework** that lets you define workflow
 - **AI Agent Integration**: GitHub Copilot, OpenAI Codex, Claude Code, OpenCode, Ollama (beta)
 - **Visual Workflow Designer**: Web-based drag-and-drop editor with AI assistance
 - **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
+- **External Secrets Management**: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault integration
+- **Automatic OAuth Refresh**: Transparent token refresh for Gmail, Outlook, and Google services
+- **Execution History**: List, inspect, and replay past workflow executions
+- **Input Validation**: Zod-based schema validation for all 30+ integrations
 - **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
 - **Universal Triggering**: Webhooks, File Watchers, Cron Schedules
 - **Webhook Server**: Built-in HTTP server with Slack Socket Mode support
@@ -324,8 +333,11 @@ All integrations support:
 
 - ✅ Full TypeScript type safety
 - ✅ Automatic retry with circuit breakers
+- ✅ Input validation with Zod schemas
 - ✅ Built-in error handling
-- ✅ Credential encryption
+- ✅ Credential encryption (AES-256-GCM)
+- ✅ External secrets management
+- ✅ Automatic OAuth token refresh
 - ✅ Cost tracking
 
 ---
@@ -378,6 +390,12 @@ See `examples/` directory for production-ready workflow templates:
 - **[sub-workflows](examples/sub-workflows/)** - Reusable workflow composition
 - **[daily-standup](examples/daily-standup/)** - Team update aggregation (scheduled)
 - **[incident-response](examples/incident-response/)** - Incident coordination (webhook-triggered)
+
+### Enterprise Workflows
+
+- **[approval-workflow](examples/approval-workflow/)** - Human-in-the-loop with web forms
+- **[oauth-refresh-demo](examples/oauth-refresh-demo/)** - Automatic OAuth token refresh
+- **[secrets-example](examples/secrets-example/)** - External secrets management
 
 ---
 
