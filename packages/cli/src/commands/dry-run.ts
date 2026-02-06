@@ -213,6 +213,35 @@ function generateOllamaMock(_method: string, inputs: Record<string, unknown>): u
   };
 }
 
+/**
+ * Generate mock response for wait steps
+ */
+function generateWaitMockResponse(step: any): unknown {
+  if (step.mode === 'form') {
+    return {
+      mode: 'form',
+      formSubmitted: true,
+      resumeToken: 'mock-resume-token-' + Math.random().toString(36).substring(7),
+      fields: step.fields || {},
+      formUrl: 'http://localhost:3001/form/mock-run-id/mock-step-id/mock-token',
+    };
+  } else if (step.mode === 'webhook') {
+    return {
+      mode: 'webhook',
+      webhookReceived: true,
+      resumeToken: 'mock-resume-token-' + Math.random().toString(36).substring(7),
+      webhookUrl: 'http://localhost:3001/webhook/mock-run-id/mock-step-id/mock-token',
+    };
+  } else {
+    // Duration-based wait
+    return {
+      mode: 'duration',
+      waitedFor: step.duration || '1m',
+      completed: true,
+    };
+  }
+}
+
 // ============================================================================
 // Dry-Run Executor
 // ============================================================================
@@ -225,6 +254,7 @@ export interface DryRunOptions {
 
 export interface DryRunStepResult {
   stepId: string;
+  stepType: string;
   action?: string; // Optional for sub-workflows
   workflow?: string; // Path to sub-workflow
   status: 'completed' | 'skipped' | 'would-fail';
@@ -284,16 +314,55 @@ export async function executeDryRun(
     }
 
     // Resolve inputs with template variables
-    const resolvedInputs = resolveInputTemplates(step.inputs, context);
+    const resolvedInputs = step.inputs ? resolveInputTemplates(step.inputs, context) : {};
 
-    // Generate mock response (skip for sub-workflows in dry-run mode)
+    // Generate mock response based on step type
     let mockOutput = null;
+    let stepType = 'unknown';
+
     if (stepStatus !== 'skipped') {
-      if (step.action) {
+      if (step.type === 'action' && step.action) {
+        stepType = 'action';
         mockOutput = generateMockResponse(step.action, resolvedInputs);
-      } else if (step.workflow) {
-        // For sub-workflows, generate a simple mock output
-        mockOutput = { subWorkflowResult: 'mock-sub-workflow-output' };
+      } else if (step.type === 'workflow' && step.workflow) {
+        stepType = 'workflow';
+        mockOutput = { subWorkflowCompleted: true, status: 'success' };
+      } else if (step.type === 'wait') {
+        stepType = 'wait';
+        mockOutput = generateWaitMockResponse(step);
+      } else if (step.type === 'if') {
+        stepType = 'if';
+        mockOutput = { conditionEvaluated: true, branchTaken: 'then' };
+      } else if (step.type === 'switch') {
+        stepType = 'switch';
+        mockOutput = { caseMatched: 'default', branchExecuted: true };
+      } else if (step.type === 'parallel') {
+        stepType = 'parallel';
+        mockOutput = { branchesCompleted: step.branches?.length || 0 };
+      } else if (step.type === 'for_each') {
+        stepType = 'for_each';
+        mockOutput = { itemsProcessed: 3, iterations: 3 };
+      } else if (step.type === 'while') {
+        stepType = 'while';
+        mockOutput = { iterations: 2, conditionFalse: true };
+      } else if (step.type === 'try') {
+        stepType = 'try';
+        mockOutput = { tryBlockCompleted: true, errorsCaught: 0 };
+      } else if (step.type === 'map') {
+        stepType = 'map';
+        mockOutput = [{ mapped: 'value1' }, { mapped: 'value2' }];
+      } else if (step.type === 'filter') {
+        stepType = 'filter';
+        mockOutput = [{ filtered: 'item1' }];
+      } else if (step.type === 'reduce') {
+        stepType = 'reduce';
+        mockOutput = { accumulated: 'result' };
+      } else if (step.type === 'script') {
+        stepType = 'script';
+        mockOutput = { scriptCompleted: true, exitCode: 0 };
+      } else if (step.type === 'merge') {
+        stepType = 'merge';
+        mockOutput = { merged: true };
       }
     }
 
@@ -306,6 +375,7 @@ export async function executeDryRun(
 
     const stepResult: DryRunStepResult = {
       stepId: step.id,
+      stepType,
       action: step.action,
       workflow: step.workflow,
       status: stepStatus,
@@ -352,9 +422,13 @@ function evaluateConditions(conditions: string[], context: ExecutionContext): bo
  * Resolve template variables in inputs
  */
 function resolveInputTemplates(
-  inputs: Record<string, unknown>,
+  inputs: Record<string, unknown> | undefined,
   context: ExecutionContext
 ): Record<string, unknown> {
+  if (!inputs) {
+    return {};
+  }
+
   const resolved: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(inputs)) {
@@ -394,10 +468,57 @@ function displayStepResult(result: DryRunStepResult, options: DryRunOptions): vo
         ? chalk.yellow('○')
         : chalk.red('✗');
 
-  const actionOrWorkflow = result.action || `workflow: ${result.workflow}` || 'unknown';
+  // Build step description based on type
+  let stepDesc = '';
+  switch (result.stepType) {
+    case 'action':
+      stepDesc = result.action || 'unknown action';
+      break;
+    case 'workflow':
+      stepDesc = `sub-workflow: ${result.workflow}`;
+      break;
+    case 'wait':
+      stepDesc = 'wait (human-in-the-loop)';
+      break;
+    case 'if':
+      stepDesc = 'if/else condition';
+      break;
+    case 'switch':
+      stepDesc = 'switch/case';
+      break;
+    case 'parallel':
+      stepDesc = 'parallel execution';
+      break;
+    case 'for_each':
+      stepDesc = 'for-each loop';
+      break;
+    case 'while':
+      stepDesc = 'while loop';
+      break;
+    case 'try':
+      stepDesc = 'try/catch';
+      break;
+    case 'map':
+      stepDesc = 'map transform';
+      break;
+    case 'filter':
+      stepDesc = 'filter transform';
+      break;
+    case 'reduce':
+      stepDesc = 'reduce transform';
+      break;
+    case 'script':
+      stepDesc = 'script execution';
+      break;
+    case 'merge':
+      stepDesc = 'merge data';
+      break;
+    default:
+      stepDesc = result.stepType;
+  }
 
   console.log(
-    `${statusIcon} ${chalk.cyan(result.stepId)} ${chalk.gray('→')} ${chalk.white(actionOrWorkflow)} ${chalk.dim(`(${result.duration.toFixed(0)}ms)`)}`
+    `${statusIcon} ${chalk.cyan(result.stepId)} ${chalk.gray('→')} ${chalk.white(stepDesc)} ${chalk.dim(`(${result.duration.toFixed(0)}ms)`)}`
   );
 
   if (options.verbose) {
