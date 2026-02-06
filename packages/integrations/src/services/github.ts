@@ -1,15 +1,20 @@
 import { Octokit } from '@octokit/rest';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
+import { githubSchemas } from '../reliability/schemas/github.js';
 
 export const GitHubInitializer: SDKInitializer = {
   async initialize(_module: unknown, config: ToolConfig): Promise<unknown> {
     const token = config.auth?.['token'] as string;
-    // GitHub API can be used without token for public data, but usually we want a token
-    // We'll enforce token for now to match other integrations, or make it optional.
-    // Let's make it optional but recommended.
-    
-    return new Octokit({ 
-      auth: token 
+    if (!token) {
+      throw new Error('GitHub SDK requires auth.token');
+    }
+    const client = new Octokit({ auth: token });
+    return wrapIntegration('github', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+      inputSchemas: githubSchemas,
     });
   },
 };

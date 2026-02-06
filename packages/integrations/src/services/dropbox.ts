@@ -8,6 +8,7 @@
 
 import { Dropbox } from 'dropbox';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface DropboxFileMetadata {
   name: string;
@@ -249,10 +250,15 @@ export const DropboxInitializer: SDKInitializer = {
 
     const client = new Dropbox({ accessToken });
     const wrapper = new DropboxClient(client);
+    const wrapped = wrapIntegration('dropbox', wrapper, {
+      timeout: 60000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client: wrapper,
-      actions: wrapper,
+      client: wrapped,
+      actions: wrapped,
       rawClient: client,
     };
   },

@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 
@@ -435,9 +436,14 @@ export const WhatsAppInitializer: SDKInitializer = {
     }
 
     const client = new WhatsAppClient(phoneNumberId, accessToken);
+    const wrapped = wrapIntegration('whatsapp', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

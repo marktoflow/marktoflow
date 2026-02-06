@@ -2,6 +2,8 @@ import { google, gmail_v1 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { wrapIntegration } from '../reliability/wrapper.js';
+import { gmailSchemas } from '../reliability/schemas/gmail.js';
 
 export interface GmailEmail {
   id: string;
@@ -466,6 +468,11 @@ export const GmailInitializer: SDKInitializer = {
       }
     }
 
-    return sdk;
+    return wrapIntegration('gmail', sdk as Record<string, unknown>, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+      inputSchemas: gmailSchemas,
+    });
   },
 };

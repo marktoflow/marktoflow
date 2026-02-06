@@ -9,6 +9,7 @@
 import { shopifyApi, Session, LATEST_API_VERSION } from '@shopify/shopify-api';
 import '@shopify/shopify-api/adapters/node';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface ShopifyProduct {
   id?: string;
@@ -246,10 +247,15 @@ export const ShopifyInitializer: SDKInitializer = {
     }
 
     const client = new ShopifyClient(shop, accessToken);
+    const wrapped = wrapIntegration('shopify', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

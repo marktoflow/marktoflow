@@ -7,6 +7,7 @@
 
 import { google, drive_v3 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 import { Readable } from 'stream';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -452,6 +453,10 @@ export const GoogleDriveInitializer: SDKInitializer = {
       }
     }
 
-    return sdk;
+    return wrapIntegration('google-drive', sdk, {
+      timeout: 60000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
   },
 };

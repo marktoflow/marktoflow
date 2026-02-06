@@ -34,8 +34,13 @@ export {
   type Permissions,
   type SubagentConfig,
   type ScriptStep,
+  type WaitStep,
+  type MergeStep,
+  type FormField,
   // Type guards
   isScriptStep,
+  isWaitStep,
+  isMergeStep,
   // Helpers
   createExecutionContext,
   createStepResult,
@@ -64,6 +69,7 @@ export {
   KeyNotFoundError,
   CredentialNotFoundError,
   FernetEncryptor,
+  AES256GCMEncryptor,
   AgeEncryptor,
   GPGEncryptor,
   InMemoryCredentialStore,
@@ -458,6 +464,16 @@ export {
   type ScriptContext,
   type ScriptResult,
 } from './script-executor.js';
+
+// OAuth Token Manager
+export {
+  OAuthTokenManager,
+  createOAuthTokenManager,
+  TOKEN_ENDPOINTS,
+  type OAuthServiceConfig,
+  type OAuthTokenData,
+  type OAuthTokenManagerEvents,
+} from './oauth-manager.js';
 
 // File Operations (read/write with format conversion)
 export {

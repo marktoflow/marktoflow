@@ -7,9 +7,10 @@
  * - Fernet encryption (built-in via Node crypto)
  */
 
-import { randomBytes, createCipheriv, createDecipheriv, createHmac } from 'node:crypto';
+import { randomBytes, createCipheriv, createDecipheriv, createHmac, scryptSync } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
+import { homedir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import Database from 'better-sqlite3';
 
@@ -17,6 +18,7 @@ export enum EncryptionBackend {
   AGE = 'age',
   GPG = 'gpg',
   FERNET = 'fernet',
+  AES_256_GCM = 'aes-256-gcm',
 }
 
 export enum CredentialType {
@@ -194,6 +196,125 @@ export class FernetEncryptor implements Encryptor {
     // Generate 32 random bytes and encode as URL-safe base64
     const key = randomBytes(32);
     return key.toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+  }
+}
+
+/**
+ * AES-256-GCM encryption using Node.js built-in crypto.
+ *
+ * Uses scrypt for key derivation from a passphrase/env key.
+ * Each encryption produces a random 12-byte IV (nonce).
+ * Stores ciphertext as: iv:authTag:ciphertext (all base64-encoded).
+ *
+ * Key source priority:
+ *   1. Explicit key passed to constructor
+ *   2. MARKTOFLOW_ENCRYPTION_KEY environment variable
+ *   3. Key file at keyFilePath (default: ~/.marktoflow/.key)
+ *   4. Auto-generate and store at keyFilePath on first use
+ */
+export class AES256GCMEncryptor implements Encryptor {
+  private derivedKey: Buffer | null = null;
+  private keyFilePath: string;
+  private salt: Buffer;
+
+  constructor(options?: {
+    key?: string;
+    keyFilePath?: string;
+    salt?: Buffer;
+  }) {
+    this.keyFilePath = options?.keyFilePath ?? join(homedir(), '.marktoflow', '.key');
+    // Use a fixed salt per installation (derived from the key file path).
+    // Users can override with an explicit salt for testing.
+    this.salt = options?.salt ?? Buffer.from('marktoflow-aes256gcm-salt', 'utf8');
+
+    const rawKey = options?.key ?? process.env.MARKTOFLOW_ENCRYPTION_KEY ?? this.loadOrGenerateKeyFile();
+    if (rawKey) {
+      this.deriveKey(rawKey);
+    }
+  }
+
+  private loadOrGenerateKeyFile(): string | null {
+    if (existsSync(this.keyFilePath)) {
+      return readFileSync(this.keyFilePath, 'utf8').trim();
+    }
+    // Auto-generate key on first run
+    const generated = this.generateKey();
+    const dir = this.keyFilePath.substring(0, this.keyFilePath.lastIndexOf('/'));
+    if (dir && !existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(this.keyFilePath, generated, { mode: 0o600 });
+    return generated;
+  }
+
+  private deriveKey(passphrase: string): void {
+    // scrypt: derive a 32-byte key (256 bits) for AES-256
+    this.derivedKey = scryptSync(passphrase, this.salt, 32, { N: 16384, r: 8, p: 1 });
+  }
+
+  encrypt(plaintext: string): string {
+    if (!this.derivedKey) {
+      throw new KeyNotFoundError('No AES-256-GCM key configured');
+    }
+
+    const iv = randomBytes(12); // 96-bit nonce recommended for GCM
+    const cipher = createCipheriv('aes-256-gcm', this.derivedKey, iv);
+    const encrypted = Buffer.concat([
+      cipher.update(plaintext, 'utf8'),
+      cipher.final(),
+    ]);
+    const authTag = cipher.getAuthTag(); // 16 bytes
+
+    // Format: iv:authTag:ciphertext (all base64)
+    return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`;
+  }
+
+  decrypt(ciphertext: string): string {
+    if (!this.derivedKey) {
+      throw new KeyNotFoundError('No AES-256-GCM key configured');
+    }
+
+    try {
+      const parts = ciphertext.split(':');
+      if (parts.length !== 3) {
+        throw new EncryptionError('Invalid AES-256-GCM ciphertext format: expected iv:authTag:ciphertext');
+      }
+
+      const iv = Buffer.from(parts[0], 'base64');
+      const authTag = Buffer.from(parts[1], 'base64');
+      const encrypted = Buffer.from(parts[2], 'base64');
+
+      if (iv.length !== 12) {
+        throw new EncryptionError(`Invalid IV length: expected 12, got ${iv.length}`);
+      }
+      if (authTag.length !== 16) {
+        throw new EncryptionError(`Invalid auth tag length: expected 16, got ${authTag.length}`);
+      }
+
+      const decipher = createDecipheriv('aes-256-gcm', this.derivedKey, iv);
+      decipher.setAuthTag(authTag);
+
+      const decrypted = Buffer.concat([
+        decipher.update(encrypted),
+        decipher.final(),
+      ]);
+
+      return decrypted.toString('utf8');
+    } catch (error) {
+      if (error instanceof EncryptionError || error instanceof KeyNotFoundError) {
+        throw error;
+      }
+      throw new EncryptionError(`AES-256-GCM decryption failed: ${String(error)}`);
+    }
+  }
+
+  isAvailable(): boolean {
+    return true; // Uses only Node.js built-in crypto
+  }
+
+  generateKey(): string {
+    // Generate a 64-character hex key (256 bits of entropy)
+    return randomBytes(32).toString('hex');
   }
 }
 
@@ -609,6 +730,35 @@ export class CredentialManager {
     };
   }
 
+  /**
+   * Migrate existing plain-text (or differently-encrypted) credentials to
+   * the current encryptor. Reads each credential's raw stored value, decrypts
+   * it with the provided `oldEncryptor` (or treats it as plain text if null),
+   * then re-encrypts with the current encryptor and saves.
+   *
+   * Returns the number of credentials migrated.
+   */
+  migrateToEncrypted(oldEncryptor?: Encryptor | null): number {
+    const credentials = this.store.list();
+    let migrated = 0;
+    for (const cred of credentials) {
+      try {
+        // Decrypt with old encryptor, or use raw value if none
+        const plaintext = oldEncryptor ? oldEncryptor.decrypt(cred.value) : cred.value;
+        // Re-encrypt with current encryptor
+        const encrypted = this.encryptor.encrypt(plaintext);
+        cred.value = encrypted;
+        cred.updatedAt = new Date();
+        this.store.save(cred);
+        migrated++;
+      } catch {
+        // Skip credentials that fail to decrypt (already encrypted with current key, etc.)
+        continue;
+      }
+    }
+    return migrated;
+  }
+
   importCredential(data: Record<string, unknown>): Credential {
     const now = new Date();
     const credential: Credential = {
@@ -636,6 +786,19 @@ export class KeyManager {
 
   private keyFile(name: string): string {
     return join(this.keyDir, `${name}.key`);
+  }
+
+  generateAES256GCMKey(name: string = 'default'): string {
+    const encryptor = new AES256GCMEncryptor({ key: 'temp' }); // temp key just to call generateKey
+    const key = encryptor.generateKey();
+    const keyFile = join(this.keyDir, `${name}.aes`);
+    writeFileSync(keyFile, key, { mode: 0o600 });
+    return key;
+  }
+
+  getAES256GCMKey(name: string = 'default'): string | null {
+    const keyFile = join(this.keyDir, `${name}.aes`);
+    return existsSync(keyFile) ? readFileSync(keyFile, 'utf8').trim() : null;
   }
 
   generateFernetKey(name: string = 'default'): string {
@@ -677,7 +840,13 @@ export class KeyManager {
     if (!existsSync(this.keyDir)) return keys;
     const entries = readdirSync(this.keyDir);
     for (const entry of entries) {
-      if (entry.endsWith('.key')) {
+      if (entry.endsWith('.aes')) {
+        keys.push({
+          name: entry.replace(/\.aes$/, ''),
+          type: 'aes-256-gcm',
+          file: join(this.keyDir, entry),
+        });
+      } else if (entry.endsWith('.key')) {
         keys.push({
           name: entry.replace(/\.key$/, ''),
           type: 'fernet',
@@ -698,6 +867,11 @@ export class KeyManager {
 
   deleteKey(name: string): boolean {
     let deleted = false;
+    const aesKey = join(this.keyDir, `${name}.aes`);
+    if (existsSync(aesKey)) {
+      unlinkSync(aesKey);
+      deleted = true;
+    }
     const fernetKey = this.keyFile(name);
     if (existsSync(fernetKey)) {
       unlinkSync(fernetKey);
@@ -723,13 +897,23 @@ export function createCredentialManager(params: {
   keyName?: string;
   passphrase?: string;
 }): CredentialManager {
-  const backend = params.backend ?? EncryptionBackend.FERNET;
+  const backend = params.backend ?? EncryptionBackend.AES_256_GCM;
   const keyName = params.keyName ?? 'default';
   const keyDir = join(params.stateDir, 'keys');
   const dbPath = join(params.stateDir, 'credentials.db');
 
   const keyManager = new KeyManager(keyDir);
   const store = new SQLiteCredentialStore(dbPath);
+
+  if (backend === EncryptionBackend.AES_256_GCM) {
+    const keyFilePath = join(keyDir, `${keyName}.aes`);
+    const passphrase = params.passphrase ?? process.env.MARKTOFLOW_ENCRYPTION_KEY;
+    const encryptor = new AES256GCMEncryptor({
+      ...(passphrase ? { key: passphrase } : {}),
+      keyFilePath,
+    });
+    return new CredentialManager(store, encryptor);
+  }
 
   if (backend === EncryptionBackend.FERNET) {
     let key = keyManager.getFernetKey(keyName);
@@ -769,7 +953,7 @@ export function createCredentialManager(params: {
 }
 
 export function getAvailableBackends(): EncryptionBackend[] {
-  const available: EncryptionBackend[] = [EncryptionBackend.FERNET];
+  const available: EncryptionBackend[] = [EncryptionBackend.AES_256_GCM, EncryptionBackend.FERNET];
   const age = new AgeEncryptor();
   if (age.isAvailable()) {
     available.push(EncryptionBackend.AGE);

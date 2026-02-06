@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface MySQLConfig {
   host: string;
@@ -340,9 +341,14 @@ export const MySQLInitializer: SDKInitializer = {
 
     await client.connect();
 
+    const wrapped = wrapIntegration('mysql', client, {
+      timeout: 60000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

@@ -19,13 +19,12 @@ describe('GitHub Integration', () => {
     return expect(client).resolves.toBeInstanceOf(Octokit);
   });
   
-  it('should initialize without token', async () => {
+  it('should reject initialization without token', async () => {
      const config = {
       sdk: '@octokit/rest',
       auth: {}
     };
-    
-    const client = await GitHubInitializer.initialize({}, config);
-    expect(client).toBeInstanceOf(Octokit);
+
+    await expect(GitHubInitializer.initialize({}, config)).rejects.toThrow('GitHub SDK requires auth.token');
   });
 });

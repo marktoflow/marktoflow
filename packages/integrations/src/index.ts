@@ -341,3 +341,22 @@ export * from './adapters/codex-workflow.js';
 
 // Export tools
 export * from './tools/script.js';
+
+// Export reliability layer
+export {
+  wrapIntegration,
+  IntegrationRequestError,
+  normalizeError,
+  type WrapperOptions,
+  type ActionCallOptions,
+  type IntegrationError,
+} from './reliability/index.js';
+
+// Export input validation schemas
+export { slackSchemas } from './reliability/schemas/slack.js';
+export { githubSchemas } from './reliability/schemas/github.js';
+export { gmailSchemas } from './reliability/schemas/gmail.js';
+export { notionSchemas } from './reliability/schemas/notion.js';
+export { jiraSchemas } from './reliability/schemas/jira.js';
+export { discordSchemas } from './reliability/schemas/discord.js';
+export { linearSchemas } from './reliability/schemas/linear.js';

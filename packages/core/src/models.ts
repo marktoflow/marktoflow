@@ -24,6 +24,8 @@ export const StepType = {
   PARALLEL: 'parallel',
   TRY: 'try',
   SCRIPT: 'script',
+  WAIT: 'wait',
+  MERGE: 'merge',
 } as const;
 
 export type StepType = (typeof StepType)[keyof typeof StepType];
@@ -182,6 +184,10 @@ const ForEachStepSchema = BaseStepSchema.extend({
   indexVariable: z.string().optional(),
   steps: StepArraySchema,
   errorHandling: ErrorHandlingSchema.optional(),
+  /** Process items in batches of this size. When set, {{ batch }} contains the current batch. */
+  batchSize: z.number().int().min(1).optional(),
+  /** Pause between batches in milliseconds (useful for rate limiting) */
+  pauseBetweenBatches: z.number().int().min(0).optional(),
 });
 
 // While loop step
@@ -252,6 +258,42 @@ const ScriptStepSchema = BaseStepSchema.extend({
   errorHandling: ErrorHandlingSchema.optional(),
 });
 
+// Wait/Pause step - pauses workflow execution
+const FormFieldSchema = z.object({
+  type: z.enum(['string', 'text', 'number', 'boolean', 'select', 'date', 'email', 'url']),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  required: z.boolean().optional().default(false),
+  default: z.unknown().optional(),
+  options: z.array(z.string()).optional(), // For select type
+  validation: z.record(z.unknown()).optional(),
+});
+
+const WaitStepSchema = BaseStepSchema.extend({
+  type: z.literal('wait'),
+  /** Wait mode: duration (time-based), webhook (callback URL), form (human input) */
+  mode: z.enum(['duration', 'webhook', 'form']),
+  /** Duration string for mode=duration (e.g., "2h", "30m", "5s") */
+  duration: z.string().optional(),
+  /** Form fields for mode=form */
+  fields: z.record(FormFieldSchema).optional(),
+  /** Webhook path override for mode=webhook */
+  webhookPath: z.string().optional(),
+});
+
+// Merge step - combines data from multiple sources
+const MergeStepSchema = BaseStepSchema.extend({
+  type: z.literal('merge'),
+  /** Merge mode */
+  mode: z.enum(['append', 'match', 'diff', 'combine_by_field']),
+  /** Template expressions resolving to arrays to merge */
+  sources: z.array(z.string()).min(2, 'At least 2 sources required'),
+  /** Field name to match/diff/combine on */
+  matchField: z.string().optional(),
+  /** For combine mode: how to handle conflicts */
+  onConflict: z.enum(['keep_first', 'keep_last', 'merge_fields']).optional().default('keep_last'),
+});
+
 // Discriminated union of all step types
 const WorkflowStepUnionSchema: z.ZodTypeAny = z.union([
   ActionStepSchema,
@@ -266,6 +308,8 @@ const WorkflowStepUnionSchema: z.ZodTypeAny = z.union([
   ParallelStepSchema,
   TryStepSchema,
   ScriptStepSchema,
+  WaitStepSchema,
+  MergeStepSchema,
   // Backward compatibility: steps without 'type' field
   z
     .object({
@@ -351,6 +395,9 @@ export type ParallelStep = z.infer<typeof ParallelStepSchema>;
 export type ParallelBranch = z.infer<typeof ParallelBranchSchema>;
 export type TryStep = z.infer<typeof TryStepSchema>;
 export type ScriptStep = z.infer<typeof ScriptStepSchema>;
+export type WaitStep = z.infer<typeof WaitStepSchema>;
+export type MergeStep = z.infer<typeof MergeStepSchema>;
+export type FormField = z.infer<typeof FormFieldSchema>;
 
 export type WorkflowStep = z.infer<typeof WorkflowStepUnionSchema>;
 
@@ -404,6 +451,14 @@ export function isTryStep(step: WorkflowStep): step is TryStep {
 
 export function isScriptStep(step: WorkflowStep): step is ScriptStep {
   return (step as ScriptStep).type === 'script';
+}
+
+export function isWaitStep(step: WorkflowStep): step is WaitStep {
+  return (step as WaitStep).type === 'wait';
+}
+
+export function isMergeStep(step: WorkflowStep): step is MergeStep {
+  return (step as MergeStep).type === 'merge';
 }
 
 // ============================================================================

@@ -7,6 +7,7 @@
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { BaseApiClient } from './base-client.js';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 const AIRTABLE_API_URL = 'https://api.airtable.com/v0';
 
@@ -410,9 +411,14 @@ export const AirtableInitializer: SDKInitializer = {
     }
 
     const client = new AirtableClient(token, baseId);
+    const wrapped = wrapIntegration('airtable', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

@@ -24,6 +24,10 @@ import {
   Scheduler,
   TemplateRegistry,
   loadConfig,
+  createCredentialManager,
+  getAvailableBackends,
+  EncryptionBackend,
+  StateStore,
 } from '@marktoflow/core';
 import { registerIntegrations } from '@marktoflow/integrations';
 import { workerCommand } from './worker.js';
@@ -34,6 +38,8 @@ import { runUpdateWizard, listAgents } from './commands/update.js';
 import { parse as parseYaml } from 'yaml';
 import { executeDryRun, displayDryRunSummary } from './commands/dry-run.js';
 import { WorkflowDebugger, parseBreakpoints } from './commands/debug.js';
+import { executeTestConnection } from './commands/test-connection.js';
+import { executeHistory, executeHistoryDetail, executeReplay } from './commands/history.js';
 import {
   parseInputPairs,
   debugLogInputs,
@@ -258,6 +264,7 @@ program
   .option('--dry-run', 'Parse workflow without executing')
   .action(async (workflowPath, options) => {
     const spinner = ora('Loading workflow...').start();
+    let stateStore: StateStore | undefined;
 
     try {
       const config = getConfig();
@@ -372,6 +379,11 @@ program
       // Track which steps we've logged to avoid duplicate output on retries
       const loggedSteps = new Set<string>();
 
+      // Create StateStore for execution history
+      const stateDir = join(process.cwd(), '.marktoflow');
+      mkdirSync(stateDir, { recursive: true });
+      stateStore = new StateStore(join(stateDir, 'state.db'));
+
       const engine = new WorkflowEngine(
         {},
         {
@@ -432,8 +444,12 @@ program
               }
             }
           },
-        }
+        },
+        stateStore
       );
+
+      // Set workflow path for execution history
+      engine.workflowPath = resolvedPath;
 
       const registry = new SDKRegistry();
       registerIntegrations(registry);
@@ -557,7 +573,8 @@ program
 
       console.log(`  Completed: ${completed}, Failed: ${failed}, Skipped: ${skipped}`);
 
-      // Exit successfully to avoid hanging due to open SDK connections
+      // Close StateStore and exit successfully to avoid hanging due to open SDK connections
+      stateStore.close();
       process.exit(0);
     } catch (error) {
       spinner.fail(`Execution failed: ${error}`);
@@ -592,6 +609,8 @@ program
         }
       }
 
+      // Close StateStore if it was created
+      stateStore?.close();
       process.exit(1);
     }
   });
@@ -796,6 +815,116 @@ toolsCmd
       const definition = registry.getDefinition(toolName);
       const types = definition?.implementations.map((impl) => impl.type).join(', ') ?? '';
       console.log(`  ${chalk.cyan(toolName)} ${types ? `(${types})` : ''}`);
+    }
+  });
+
+// --- credentials ---
+const credentialsCmd = program.command('credentials').description('Credential management');
+
+credentialsCmd
+  .command('list')
+  .description('List stored credentials')
+  .option('--state-dir <path>', 'State directory', join('.marktoflow', 'credentials'))
+  .option('--backend <backend>', 'Encryption backend (aes-256-gcm, fernet, age, gpg)')
+  .option('--tag <tag>', 'Filter by tag')
+  .option('--show-expired', 'Include expired credentials')
+  .action((options) => {
+    try {
+      const stateDir = options.stateDir;
+      const backend = (options.backend as EncryptionBackend) ?? undefined;
+      const manager = createCredentialManager({ stateDir, backend });
+      const credentials = manager.list(options.tag, options.showExpired);
+
+      if (credentials.length === 0) {
+        console.log(chalk.yellow('No credentials found.'));
+        return;
+      }
+
+      console.log(chalk.bold(`Credentials (${credentials.length}):\n`));
+      for (const cred of credentials) {
+        const expired = cred.expiresAt && cred.expiresAt < new Date();
+        const status = expired ? chalk.red(' [EXPIRED]') : '';
+        console.log(`  ${chalk.cyan(cred.name)}${status}`);
+        console.log(`    Type: ${cred.credentialType}`);
+        if (cred.description) {
+          console.log(`    Description: ${cred.description}`);
+        }
+        console.log(`    Created: ${cred.createdAt.toISOString()}`);
+        console.log(`    Updated: ${cred.updatedAt.toISOString()}`);
+        if (cred.expiresAt) {
+          console.log(`    Expires: ${cred.expiresAt.toISOString()}`);
+        }
+        if (cred.tags.length > 0) {
+          console.log(`    Tags: ${cred.tags.join(', ')}`);
+        }
+        console.log();
+      }
+    } catch (error) {
+      console.log(chalk.red(`Failed to list credentials: ${error}`));
+      process.exit(1);
+    }
+  });
+
+credentialsCmd
+  .command('verify')
+  .description('Verify credential encryption is working')
+  .option('--state-dir <path>', 'State directory', join('.marktoflow', 'credentials'))
+  .option('--backend <backend>', 'Encryption backend (aes-256-gcm, fernet, age, gpg)')
+  .action((options) => {
+    try {
+      const stateDir = options.stateDir;
+      const backend = (options.backend as EncryptionBackend) ?? undefined;
+
+      console.log(chalk.bold('Credential Encryption Verification\n'));
+
+      // Show available backends
+      const backends = getAvailableBackends();
+      console.log(chalk.bold('Available backends:'));
+      for (const b of backends) {
+        const isDefault = b === EncryptionBackend.AES_256_GCM;
+        const marker = isDefault ? chalk.green(' (default)') : '';
+        const selected = (backend ?? EncryptionBackend.AES_256_GCM) === b ? chalk.cyan(' <-- selected') : '';
+        console.log(`  ${chalk.cyan(b)}${marker}${selected}`);
+      }
+      console.log();
+
+      // Test encrypt/decrypt round-trip
+      const manager = createCredentialManager({ stateDir, backend });
+      const testValue = `verify-test-${Date.now()}`;
+      const testName = `__verify_test_${Date.now()}`;
+
+      console.log('Testing encrypt/decrypt round-trip...');
+      manager.set({ name: testName, value: testValue, tags: ['__test'] });
+      const decrypted = manager.get(testName);
+
+      if (decrypted === testValue) {
+        console.log(chalk.green('  Round-trip: PASS'));
+      } else {
+        console.log(chalk.red('  Round-trip: FAIL'));
+        console.log(chalk.red(`    Expected: ${testValue}`));
+        console.log(chalk.red(`    Got: ${decrypted}`));
+        process.exit(1);
+      }
+
+      // Verify stored value is encrypted (not plain text)
+      const raw = manager.get(testName, false);
+      if (raw !== testValue) {
+        console.log(chalk.green('  Encryption: PASS (stored value is encrypted)'));
+      } else {
+        console.log(chalk.red('  Encryption: FAIL (stored value is plain text)'));
+        process.exit(1);
+      }
+
+      // Cleanup test credential
+      manager.delete(testName);
+      console.log(chalk.green('\n  All checks passed.'));
+
+      // Show credential count
+      const credentials = manager.list();
+      console.log(`\n  Stored credentials: ${credentials.length}`);
+    } catch (error) {
+      console.log(chalk.red(`Verification failed: ${error}`));
+      process.exit(1);
     }
   });
 
@@ -1237,6 +1366,45 @@ program
     if (configuredCount === 0) {
       console.log(chalk.yellow('\n  Run `marktoflow connect <service>` to set up integrations'));
     }
+  });
+
+// --- test-connection ---
+program
+  .command('test-connection [service]')
+  .description('Test service connection(s)')
+  .option('-a, --all', 'Test all configured services')
+  .action(async (service: string | undefined, options: { all?: boolean }) => {
+    await executeTestConnection(service, options);
+  });
+
+// --- history ---
+program
+  .command('history [runId]')
+  .description('View execution history')
+  .option('-n, --limit <count>', 'Number of executions to show', '20')
+  .option('-s, --status <status>', 'Filter by status (completed, failed, running)')
+  .option('-w, --workflow <id>', 'Filter by workflow ID')
+  .option('--step <stepId>', 'Show specific step details (requires runId)')
+  .action((runId: string | undefined, options: { limit?: string; status?: string; workflow?: string; step?: string }) => {
+    if (runId) {
+      executeHistoryDetail(runId, { step: options.step });
+    } else {
+      executeHistory({
+        limit: options.limit ? parseInt(options.limit, 10) : 20,
+        status: options.status,
+        workflow: options.workflow,
+      });
+    }
+  });
+
+// --- replay ---
+program
+  .command('replay <runId>')
+  .description('Replay a previous execution with the same inputs')
+  .option('--from <stepId>', 'Resume from specific step')
+  .option('--dry-run', 'Preview what would be executed')
+  .action(async (runId: string, options: { from?: string; dryRun?: boolean }) => {
+    await executeReplay(runId, options);
   });
 
 // --- gui ---

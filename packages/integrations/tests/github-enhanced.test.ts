@@ -23,15 +23,13 @@ describe('GitHub Integration - Enhanced', () => {
       // Octokit stores auth in internal property
     });
 
-    it('should initialize Octokit without token (public access)', async () => {
+    it('should reject initialization without token', async () => {
       const config = {
         sdk: '@octokit/rest',
         auth: {}
       };
 
-      const client = await GitHubInitializer.initialize({}, config);
-
-      expect(client).toBeInstanceOf(Octokit);
+      await expect(GitHubInitializer.initialize({}, config)).rejects.toThrow('GitHub SDK requires auth.token');
     });
   });
 

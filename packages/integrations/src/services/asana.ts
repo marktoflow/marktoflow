@@ -9,6 +9,7 @@
 // @ts-expect-error - asana doesn't have types
 import asana from 'asana';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface AsanaTask {
   gid?: string;
@@ -252,10 +253,15 @@ export const AsanaInitializer: SDKInitializer = {
     const client = asana.Client ? asana.Client.create().useAccessToken(accessToken) : asana.default?.Client?.create().useAccessToken(accessToken);
 
     const wrapper = new AsanaClient(client);
+    const wrapped = wrapIntegration('asana', wrapper, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client: wrapper,
-      actions: wrapper,
+      client: wrapped,
+      actions: wrapped,
       rawClient: client,
     };
   },
