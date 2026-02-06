@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  30+ native integrations. Built-in AI agent support. Visual editor. No vendor lock-in.
+  38 native integrations. Built-in AI agent support. Visual editor. No vendor lock-in.
 </p>
 
 <p align="center">
@@ -80,7 +80,7 @@ steps:
 
 ## Integrations
 
-30+ native SDK integrations — all with TypeScript types, retry logic, and input validation.
+38 native SDK integrations — all with TypeScript types, retry logic, and input validation.
 
 | Category | Services |
 |----------|----------|
@@ -105,7 +105,7 @@ steps:
 | [`@marktoflow/core`](packages/core) | Parser, engine, state management, plugin system |
 | [`@marktoflow/cli`](packages/cli) | Command-line interface and workflow runner |
 | [`@marktoflow/gui`](packages/gui) | Visual workflow designer (web UI) |
-| [`@marktoflow/integrations`](packages/integrations) | 30+ service integrations and AI adapters |
+| [`@marktoflow/integrations`](packages/integrations) | 38 service integrations and AI adapters |
 
 ## Examples
 
