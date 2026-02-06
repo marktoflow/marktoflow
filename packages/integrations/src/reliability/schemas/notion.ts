@@ -6,13 +6,15 @@ import { z } from 'zod';
 
 export const notionSchemas: Record<string, z.ZodTypeAny> = {
   createPage: z.object({
-    parentId: z.string().min(1, 'parentId is required'),
-    parentType: z.enum(['database', 'page']).optional().default('database'),
+    parentPageId: z.string().optional(),
+    parentDatabaseId: z.string().optional(),
     title: z.string().min(1, 'title is required'),
     properties: z.record(z.unknown()).optional(),
     children: z.array(z.record(z.unknown())).optional(),
-    icon: z.string().optional(),
-    cover: z.string().optional(),
+    icon: z.union([z.object({ emoji: z.string() }), z.object({ external: z.object({ url: z.string() }) })]).optional(),
+    cover: z.object({ external: z.object({ url: z.string() }) }).optional(),
+  }).refine((d) => d.parentPageId || d.parentDatabaseId, {
+    message: 'Either parentPageId or parentDatabaseId is required',
   }),
 
   getPage: z.object({
