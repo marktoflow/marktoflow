@@ -50,4 +50,9 @@ export const jiraSchemas: Record<string, z.ZodTypeAny> = {
     maxResults: z.number().int().min(1).max(100).optional(),
     startAt: z.number().int().min(0).optional(),
   }).optional().default({}),
+
+  'projects.searchProjects': z.object({
+    maxResults: z.number().int().min(1).max(100).optional(),
+    startAt: z.number().int().min(0).optional(),
+  }).optional().default({}),
 };
