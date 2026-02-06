@@ -1,124 +1,44 @@
-# marktoflow - Agent Automation Framework
+<p align="center">
+  <img src="assets/marktoflow-logo.png" alt="marktoflow" width="200" />
+</p>
 
-**Write once, run anywhere.**
+<h1 align="center">marktoflow</h1>
 
-An agent automation framework that enables markdown-based workflows with native MCP support, direct SDK integrations, and distributed execution.
+<p align="center">
+  <strong>Open-source workflow automation where your workflows are just markdown files.</strong>
+</p>
 
-**Version:** 2.0.0-alpha.15 (TypeScript)
+<p align="center">
+  30+ native integrations. Built-in AI agent support. Visual editor. No vendor lock-in.
+</p>
 
-### What's New in v2.0.0-alpha.15 ✨
-
-#### Core Features
-- **External Secrets Management** - Integrate with HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, or environment variables using `${secret:provider://path}` syntax
-- **Automatic OAuth Token Refresh** - Gmail and Outlook tokens refresh transparently before expiration with persistent credential storage
-- **Execution History** - `marktoflow history` command to list, inspect, and replay past workflow executions
-- **Forms & Human-in-the-Loop** - Pause workflows for human approval via web forms with real-time status updates
-- **Enhanced Dry-Run** - Full Nunjucks template resolution, control flow simulation, and service-specific mock responses
-- **Input Validation Schemas** - Zod-based validation for all 30+ integrations with detailed error messages
-- **Contract Testing** - MSW-based contract tests for all API integrations (256 tests across 28 services)
-- **Reliability Wrapper** - Automatic retries, circuit breakers, and exponential backoff for SDK calls
-- **Credential Encryption** - AES-256-GCM encrypted credential storage
-
-#### GUI Improvements
-- **Enterprise Design System** - Professional slate/blue palette with comprehensive design tokens for seamless light/dark theming
-- **Real Execution API** - Live workflow execution with WebSocket status updates (replaced simulation)
-- **Input Collection Dialog** - Validates and collects required workflow inputs before execution
-- **Validation Panel** - Comprehensive dry-run validation with warnings and step analysis
-- **Template Library** - Quick-start templates for Slack, GitHub, HTTP, and scheduled workflows
-- **Enhanced Search** - Filter workflows by name with improved empty states
-- **534 tests passing** across core, integrations, and GUI
-
----
-
-## What is marktoflow?
-
-marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 30+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
-
-**Key Differentiators:**
-
-- 🖥️ **CLI-First** - Design and run workflows from your terminal
-- 📝 **Workflows as Markdown** - Human-readable, version-controlled automation
-- 🔌 **Native SDK Integration** - Direct method calls with full type safety
-- 🤖 **AI Agent Support** - Use your existing Copilot/Claude subscriptions, no extra API keys
-- 🌐 **Universal REST Client** - Connect to any API without custom integrations
-- 🎨 **Visual Designer (Optional)** - Web-based drag-and-drop editor with AI assistance
-- 🏢 **Enterprise Ready** - RBAC, approvals, audit logging, cost tracking
-
----
-
-## Key Features
-
-- **CLI-First Design**: Create, edit, and run workflows from your terminal
-- **Workflow as Code**: Define workflows in Markdown + YAML
-- **Nunjucks Templates**: Jinja2-compatible pipeline syntax (`{{ value | split('/') | first }}`), regex filters, 50+ custom helpers
-- **Workflow Control Flow**: If/else, switch/case, for-each/while loops, parallel execution, map/filter/reduce, try/catch
-- **Sub-Workflows**: Compose reusable workflow components with unlimited nesting
-- **Command Line Execution**: Run bash, Python, Node.js, and custom scripts directly
-- **Native MCP Support**: Direct import of MCP server packages
-- **Direct SDK Integration**: Built-in support for 30+ services with official SDKs
-- **AI Agent Integration**: GitHub Copilot, OpenAI Codex, Claude Code, OpenCode, Ollama (beta)
-- **Visual Workflow Designer**: Web-based drag-and-drop editor with AI assistance
-- **Enterprise Ready**: RBAC, Approval Workflows, Audit Logging, Cost Tracking
-- **External Secrets Management**: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault integration
-- **Automatic OAuth Refresh**: Transparent token refresh for Gmail, Outlook, and Google services
-- **Execution History**: List, inspect, and replay past workflow executions
-- **Input Validation**: Zod-based schema validation for all 30+ integrations
-- **Distributed Execution**: Scalable queue system (Redis/RabbitMQ/InMemory)
-- **Universal Triggering**: Webhooks, File Watchers, Cron Schedules
-- **Webhook Server**: Built-in HTTP server with Slack Socket Mode support
+<p align="center">
+  <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/v/@marktoflow/marktoflow" alt="npm version" /></a>
+  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License" /></a>
+  <a href="https://github.com/marktoflow/marktoflow/stargazers"><img src="https://img.shields.io/github/stars/marktoflow/marktoflow" alt="GitHub stars" /></a>
+  <a href="https://github.com/marktoflow/marktoflow/actions"><img src="https://img.shields.io/github/actions/workflow/status/marktoflow/marktoflow/ci.yml?branch=main" alt="Build" /></a>
+  <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/dm/@marktoflow/marktoflow" alt="Downloads" /></a>
+</p>
 
 ---
 
 ## Quick Start
 
-### Installation
-
-**Option 1: Complete Installation (Recommended)**
-
 ```bash
-# Install all marktoflow packages globally
 npm install -g @marktoflow/marktoflow
 
-# Verify installation
-marktoflow version
-marktoflow gui --help
-```
-
-**Option 2: CLI Only**
-
-```bash
-# Install just the CLI
-npm install -g @marktoflow/cli
-
-# Verify installation
-marktoflow version
-```
-
-**Option 3: Use npx (No Installation)**
-
-```bash
-# Run commands directly without installation
-npx @marktoflow/cli init
-npx @marktoflow/cli run workflow.md
-```
-
-See [Installation Guide](docs/INSTALLATION.md) for complete setup instructions including PATH configuration and troubleshooting.
-
-### Initialize a Project
-
-```bash
 marktoflow init
+
+marktoflow run workflow.md
 ```
 
-### Create Your First Workflow
+That's it. Your workflow is a markdown file with YAML frontmatter:
 
-Create `.marktoflow/workflows/hello-world.md`:
-
-```markdown
+```yaml
 ---
 workflow:
   id: hello-world
-  name: 'Hello World'
+  name: Hello World
 
 tools:
   slack:
@@ -127,364 +47,96 @@ tools:
       token: '${SLACK_BOT_TOKEN}'
 
 steps:
-  - id: send
-    action: slack.chat.postMessage
+  - action: slack.chat.postMessage
     inputs:
       channel: '#general'
       text: 'Hello from marktoflow!'
 ---
-
-# Hello World
-
-This workflow sends a message to Slack using the official SDK.
 ```
 
-### Run the Workflow
+## Why marktoflow?
+
+| | What you get |
+|---|---|
+| **Markdown-native** | Workflows are `.md` files — readable, diffable, version-controlled |
+| **MCP-first** | Native Model Context Protocol support with zero config |
+| **Direct SDK calls** | Official SDKs, full TypeScript types, no wrapper APIs |
+| **AI agents included** | Use your existing Copilot/Claude/Codex subscriptions — no extra API keys |
+| **Visual editor** | Optional drag-and-drop GUI with `marktoflow gui` |
+| **Cost tracking** | Know exactly what each workflow run costs |
+
+## How it compares
+
+| Feature | marktoflow | Zapier | n8n | GitHub Actions |
+|---------|:----------:|:------:|:---:|:--------------:|
+| Open source | Yes | No | Yes | No |
+| Workflow format | Markdown | Proprietary | JSON | YAML |
+| Version control | Git-native | No | Limited | Git-native |
+| AI agent support | Built-in | Add-on | Plugin | Limited |
+| Direct SDK access | Yes | No | No | Via actions |
+| Visual editor | Yes | Yes | Yes | No |
+| Self-hosted | Yes | No | Yes | Runners only |
+| Per-task pricing | Free | Yes | Free (self-host) | Minutes-based |
+
+## Integrations
+
+30+ native SDK integrations — all with TypeScript types, retry logic, and input validation.
+
+| Category | Services |
+|----------|----------|
+| **Communication** | Slack, Teams, Discord, Telegram, WhatsApp, Twilio |
+| **Email** | Gmail, Outlook, SendGrid, Mailchimp |
+| **Google Workspace** | Sheets, Calendar, Drive, Docs |
+| **Project Management** | Jira, Linear, Asana, Trello |
+| **Knowledge** | Notion, Confluence |
+| **Developer** | GitHub, Airtable |
+| **Payments** | Stripe, Shopify |
+| **Support** | Zendesk |
+| **Storage** | Dropbox, AWS S3 |
+| **Databases** | Supabase, PostgreSQL, MySQL |
+| **Universal** | HTTP client (any REST API) |
+| **AI Agents** | GitHub Copilot, Claude Code, OpenAI Codex, OpenCode, Ollama |
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| [`@marktoflow/marktoflow`](packages/marktoflow) | All-in-one install (CLI + GUI + integrations) |
+| [`@marktoflow/core`](packages/core) | Parser, engine, state management, plugin system |
+| [`@marktoflow/cli`](packages/cli) | Command-line interface and workflow runner |
+| [`@marktoflow/gui`](packages/gui) | Visual workflow designer (web UI) |
+| [`@marktoflow/integrations`](packages/integrations) | 30+ service integrations and AI adapters |
+
+## Examples
+
+Production-ready workflow templates in [`examples/`](examples/):
+
+- **[codebase-qa](examples/codebase-qa/)** — AI-powered Q&A via Slack/Telegram
+- **[copilot-code-review](examples/copilot-code-review/)** — PR review with GitHub Copilot
+- **[daily-standup](examples/daily-standup/)** — Jira + Slack standup automation
+- **[incident-response](examples/incident-response/)** — Multi-service incident coordination
+- **[approval-workflow](examples/approval-workflow/)** — Human-in-the-loop with web forms
+- **[sprint-planning](examples/sprint-planning/)** — AI-assisted sprint planning
 
 ```bash
-# Run the workflow from the command line
-marktoflow run hello-world.md
-
-# Or with custom inputs
-marktoflow run hello-world.md --input message="Custom message"
-
-# Override AI agent provider at runtime
-marktoflow run hello-world.md --agent copilot
-
-# Override model name at runtime
-marktoflow run hello-world.md --model claude-sonnet-4
-
-# Combine agent and model overrides
-marktoflow run hello-world.md --agent claude --model claude-opus-4
-
-# Verbose output (show step execution)
-marktoflow run hello-world.md --verbose
-
-# Debug mode (detailed output with stack traces)
-marktoflow run hello-world.md --debug
-
-# Dry run (simulate without executing)
-marktoflow run hello-world.md --dry-run
+marktoflow run examples/daily-standup/workflow.md
 ```
-
-**That's it!** marktoflow is CLI-first - create workflows as markdown files and run them from your terminal.
-
-### Start a Webhook Server
-
-Receive events from Slack, Telegram, or GitHub and trigger workflows automatically:
-
-```bash
-# Start webhook server (auto-discovers workflows with webhook triggers)
-marktoflow serve --port 3000
-
-# Use Slack Socket Mode (no public URL needed)
-marktoflow serve --socket
-```
-
-See [Webhook Server Documentation](docs/DETAILED-GUIDE.md#webhook-server) for complete setup.
-
----
-
-## Supported Integrations
-
-marktoflow v2.0 includes native SDK integrations for 30+ services:
-
-### Communication & Collaboration
-
-- **Slack** (`@slack/web-api`) - Messages, channels, Socket Mode triggers
-- **Microsoft Teams** (`@microsoft/microsoft-graph-client`) - Teams, channels, messages, chats, online meetings
-- **Discord** (`discord`) - Messages, threads, webhooks, guild management
-- **Telegram** (`telegram`) - Bot API, messages, photos, documents, inline keyboards, webhooks
-- **WhatsApp** (`whatsapp`) - Business API, text, templates, media, interactive messages, locations
-- **Twilio** (`twilio`) - SMS, voice calls, WhatsApp messaging, verification
-
-### Email & Marketing
-
-- **Gmail** (`google-gmail`) - Send/receive emails, Pub/Sub triggers, labels
-- **Outlook** (`@microsoft/microsoft-graph-client`) - Emails, calendar, Graph subscriptions
-- **SendGrid** (`@sendgrid/mail`) - Transactional email delivery
-- **Mailchimp** (`@mailchimp/mailchimp_marketing`) - Email marketing campaigns and automation
-
-### Google Workspace
-
-All Google services share the same OAuth credentials but use service-specific SDK names:
-
-- **Google Sheets** (`google-sheets`) - Spreadsheet CRUD, read/write values, formatting, batch updates
-- **Google Calendar** (`google-calendar`) - Event management, free/busy queries, conference data, webhooks
-- **Google Drive** (`google-drive`) - File/folder operations, sharing, permissions, search
-- **Google Docs** (`google-docs`) - Document creation/editing, text formatting, tables, images
-
-**Note:** All Google services use the same `googleapis` npm package but are accessed via service-specific SDK names (`google-gmail`, `google-sheets`, etc.). They share the same OAuth credentials.
-
-### Project Management
-
-- **Jira** (`jira.js`) - Issues, sprints, transitions, search (JQL)
-- **Linear** (`linear`) - Issues, projects, GraphQL API
-- **Asana** (`asana`) - Tasks, projects, workspaces, portfolios
-- **Trello** (`trello`) - Boards, lists, cards, members, labels
-
-### Documentation & Knowledge
-
-- **Notion** (`notion`) - Pages, databases, blocks, search
-- **Confluence** (`confluence`) - Pages, spaces, comments, CQL search
-
-### Developer Tools
-
-- **GitHub** (`@octokit/rest`) - PRs, issues, repos, webhooks
-- **Airtable** (`airtable`) - Records, pagination, batch operations
-
-### Payments & E-commerce
-
-- **Stripe** (`stripe`) - Payment processing, subscriptions, invoices, customers, products
-- **Shopify** (`@shopify/shopify-api`) - Products, orders, inventory, customers
-
-### Customer Support
-
-- **Zendesk** (`node-zendesk`) - Tickets, users, organizations, search
-
-### Cloud Storage
-
-- **Dropbox** (`dropbox`) - Files, folders, sharing, search
-- **AWS S3** (`@aws-sdk/client-s3`) - Object storage, buckets, uploads, downloads
-
-### Databases
-
-- **Supabase** (`supabase`) - Database CRUD via REST, authentication, file storage, RPC functions
-- **PostgreSQL** (`pg`) - Direct database connection, query execution, transactions, connection pooling
-- **MySQL** (`mysql2`) - Direct database connection, query execution, transactions, connection pooling
-
-### Universal REST API Client
-
-- **HTTP Client** (`http`) - Connect to **any REST API** with full support for:
-  - All HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD)
-  - Multiple auth types (Bearer Token, Basic Auth, API Key)
-  - GraphQL queries
-  - Custom headers and query parameters
-  - See [REST API Guide](docs/REST-API-GUIDE.md) for complete documentation
-
-### AI Agents
-
-Use your **existing AI coding agents without extra API keys** - authenticate once via CLI tools and leverage them in workflows:
-
-- **GitHub Copilot** (`@github/copilot-sdk`) - Use your existing GitHub Copilot subscription via `copilot auth`
-- **OpenAI Codex** (`openai-codex-sdk`) - Leverage OpenAI Codex via existing CLI authentication
-- **Claude Code** - Use your existing Claude subscription via Claude CLI
-- **OpenCode** - SDK + CLI supporting 75+ AI backends including GPT-4, Claude, Gemini
-- **Ollama (beta)** - Run local LLMs without any API keys or subscriptions
-
-**No extra costs**: If you already use these AI coding assistants in your IDE, you can use them in marktoflow workflows without paying for separate API access.
-
-**Runtime Agent Override**: Switch AI providers on the fly using the `--agent` flag:
-
-```bash
-# Test with different AI providers without editing workflow files
-marktoflow run workflow.md --agent claude        # Use Claude Code
-marktoflow run workflow.md --agent copilot       # Use GitHub Copilot
-marktoflow run workflow.md --agent ollama        # Use local Ollama
-```
-
-**Model Override**: Change the model at runtime using the `--model` flag:
-
-```bash
-# Override model for any AI agent
-marktoflow run workflow.md --model claude-sonnet-4
-marktoflow run workflow.md --model gpt-4o
-marktoflow run workflow.md --model claude-opus-4
-
-# Combine with agent override
-marktoflow run workflow.md --agent copilot --model gpt-4o
-marktoflow run workflow.md --agent claude --model claude-opus-4
-```
-
-### MCP (Model Context Protocol)
-
-marktoflow v2.0 has **native MCP support** with zero configuration overhead:
-
-- **Direct npm package imports** - No subprocess bridging required
-- **In-memory communication** - Fast and efficient via InMemoryTransport
-- **Automatic tool discovery** - All MCP server operations auto-discovered
-- **Type-safe operations** - Full Zod schema validation
-- **Works with any MCP server** - Compatible with the entire MCP ecosystem
-
-#### Example MCP Integration
-
-```yaml
-tools:
-  filesystem:
-    sdk: '@modelcontextprotocol/server-filesystem'
-    options:
-      allowedDirectories: ['./data', './uploads']
-
-  slack:
-    sdk: '@modelcontextprotocol/server-slack'
-    auth:
-      token: ${SLACK_BOT_TOKEN}
-```
-
-#### Usage in Workflows
-
-```yaml
-# Use filesystem MCP server
-action: filesystem.read_file
-inputs:
-  path: "./data/config.json"
-
-# Use Slack MCP server
-action: slack.chat_postMessage
-inputs:
-  channel: "#general"
-  text: "Hello from MCP!"
-```
-
-**MCP Integration Guide**: See [examples/mcp-integration/](examples/mcp-integration/) for complete examples and setup instructions.
-
-All integrations support:
-
-- ✅ Full TypeScript type safety
-- ✅ Automatic retry with circuit breakers
-- ✅ Input validation with Zod schemas
-- ✅ Built-in error handling
-- ✅ Credential encryption (AES-256-GCM)
-- ✅ External secrets management
-- ✅ Automatic OAuth token refresh
-- ✅ Cost tracking
-
----
-
-## Visual Workflow Designer
-
-While marktoflow is CLI-first, it also includes an optional web-based visual editor with enterprise-grade design and full feature parity with the CLI:
-
-```bash
-marktoflow gui
-```
-
-Features:
-
-- **Drag-and-Drop Editor** - Visual node-based workflow canvas
-- **Enhanced Control Flow Visualization** - Rich execution state indicators
-- **AI Assistance** - Natural language commands to modify workflows
-- **Multiple AI Backends** - Claude Code, GitHub Copilot, Claude API, Ollama
-- **Real-time Execution** - Run and debug workflows from the UI with live status
-- **Live File Sync** - Changes sync automatically with workflow files
-
-**Visual Execution Features:**
-
-- **Early Exit Indicators** - See when loops exit early (break/error) with contextual warnings
-- **Skipped Branch Visualization** - Grayed-out branches that weren't executed
-- **Progress Tracking** - Real-time iteration counters and progress bars
-- **Rate Limiting Warnings** - Visual alerts for parallel execution throttling
-- **Failed Branch Tracking** - Red highlighting for failed parallel branches
-- **Execution State Badges** - Contextual icons (LogOut, AlertTriangle) showing exit reasons
-
-**Note**: The visual designer is completely optional. All workflows can be created and managed via CLI and text editor.
-
-See [GUI User Guide](docs/GUI_USER_GUIDE.md) for detailed documentation.
-
----
-
-## Example Workflows
-
-See `examples/` directory for production-ready workflow templates:
-
-### AI Agent Workflows
-
-- **[codebase-qa](examples/codebase-qa/)** - Answer questions about codebases via Slack/Telegram webhooks
-- **[agent-task-executor](examples/agent-task-executor/)** - Execute agent tasks from messages with pass/fail reporting
-- **[copilot-code-review](examples/copilot-code-review/)** - AI code review with GitHub Copilot
-- **[sprint-planning](examples/sprint-planning/)** - AI-powered sprint planning
-
-### Automation Workflows
-
-- **[sub-workflows](examples/sub-workflows/)** - Reusable workflow composition
-- **[daily-standup](examples/daily-standup/)** - Team update aggregation (scheduled)
-- **[incident-response](examples/incident-response/)** - Incident coordination (webhook-triggered)
-
-### Enterprise Workflows
-
-- **[approval-workflow](examples/approval-workflow/)** - Human-in-the-loop with web forms
-- **[oauth-refresh-demo](examples/oauth-refresh-demo/)** - Automatic OAuth token refresh
-- **[secrets-example](examples/secrets-example/)** - External secrets management
-
----
 
 ## Documentation
 
-### Getting Started
+- [Installation Guide](docs/INSTALLATION.md)
+- [Detailed Guide](docs/DETAILED-GUIDE.md)
+- [REST API Guide](docs/REST-API-GUIDE.md)
+- [Template Expressions](docs/TEMPLATE-EXPRESSIONS.md)
+- [Control Flow](docs/CONTROL-FLOW-GUIDE.md)
+- [GUI User Guide](docs/GUI_USER_GUIDE.md)
 
-- [Installation Guide](docs/INSTALLATION.md) - Complete installation with troubleshooting
-- [Detailed Guide](docs/DETAILED-GUIDE.md) - Comprehensive feature documentation
-- [REST API Guide](docs/REST-API-GUIDE.md) - Connect to any REST API
+## Community
 
-### Core Concepts
-
-- [Template Expressions Guide](docs/TEMPLATE-EXPRESSIONS.md) - Nunjucks templates, pipeline syntax, regex filters, 50+ custom helpers
-- [Control Flow Guide](docs/CONTROL-FLOW-GUIDE.md) - If/else, loops, parallel execution
-
-### Visual Designer
-
-- [GUI User Guide](docs/GUI_USER_GUIDE.md) - Using the visual workflow editor
-- [GUI Developer Guide](docs/GUI_DEVELOPER_GUIDE.md) - Extending the GUI
-
-### Advanced Topics
-
-- [Playwright Guide](docs/PLAYWRIGHT-GUIDE.md) - Browser automation
-- [Setup Guides](docs/) - GitHub Copilot, Claude Code, Ollama setup
-
-### Development
-
-- [AGENTS.md](AGENTS.md) - Development guidance for AI coding agents
-- [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to marktoflow
-- [Publishing Guide](docs/PUBLISHING.md) - Publishing packages to npm (maintainers)
-
----
-
-## Development
-
-This project is a monorepo managed with `pnpm` and `turborepo`.
-
-```bash
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
-
-# Run tests
-pnpm test
-
-# Start visual designer
-marktoflow gui
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
-
----
-
-## Publishing
-
-**For Maintainers**: Publishing uses an automated, safe process:
-
-```bash
-# Test without publishing
-pnpm publish:dry-run
-
-# Publish for real
-pnpm publish
-```
-
-See [docs/PUBLISHING.md](docs/PUBLISHING.md) for complete guide.
-
-**For Contributors**: You don't need to publish. Focus on code, tests, and docs. Maintainers handle publishing after your PR is merged.
-
----
-
-## Author
-
-**Scott Glover** <scottgl@gmail.com>
-
----
+- [GitHub Discussions](https://github.com/marktoflow/marktoflow/discussions) — Questions, ideas, show & tell
+- [Contributing](CONTRIBUTING.md) — PRs welcome
+- [Issues](https://github.com/marktoflow/marktoflow/issues) — Bug reports and feature requests
 
 ## License
 
-Apache License 2.0
+[Apache-2.0](LICENSE)

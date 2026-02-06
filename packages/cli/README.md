@@ -1,436 +1,109 @@
 # @marktoflow/cli
 
-> **Author:** Scott Glover <scottgl@gmail.com>
+> Command-line interface for running markdown-based workflow automations.
 
-**CLI-first agent automation framework** with native MCP support and direct SDK integration.
+[![npm](https://img.shields.io/npm/v/@marktoflow/cli)](https://www.npmjs.com/package/@marktoflow/cli)
 
-**Version:** 2.0.0-alpha.14
-
----
-
-## What is marktoflow?
-
-marktoflow is a **CLI-first automation framework** that lets you define workflows in Markdown + YAML and execute them across 30+ services. Write workflows as code, run them from the terminal, and optionally use the visual designer for editing.
-
-**Key Differentiators:**
-
-- 🖥️ **CLI-First** - Design and run workflows from your terminal
-- 📝 **Workflows as Markdown** - Human-readable, version-controlled automation
-- 🔌 **Native SDK Integration** - Direct method calls with full type safety
-- 🤖 **AI Agent Support** - GitHub Copilot, Claude, Ollama - use existing subscriptions
-- 🌐 **Universal REST Client** - Connect to any API without custom integrations
-- 🎨 **Visual Designer (Optional)** - Web-based drag-and-drop editor
-- 🏢 **Enterprise Ready** - RBAC, approvals, audit logging, cost tracking
-
-## Features
-
-- **Workflow Execution** - Run workflows from markdown files
-- **Interactive Setup** - Initialize projects with guided prompts
-- **OAuth Integration** - Easy OAuth setup for Gmail, Outlook
-- **Scheduling** - Background workflow scheduling with cron
-- **Webhooks** - HTTP webhook server for event-driven workflows
-- **Queue Workers** - Process workflows from queues (Redis/RabbitMQ)
-- **Dry Run Mode** - Test workflows without executing actions
-- **Debug Mode** - Detailed execution logging
-- **Doctor** - System health checks and diagnostics
-- **Template Management** - Create workflows from templates
-
-## Installation
-
-### Install globally from npm
-
-```bash
-npm install -g @marktoflow/cli@alpha
-```
-
-### Use with npx (no installation)
-
-```bash
-npx @marktoflow/cli@alpha <command>
-```
-
-### Install from GitHub
-
-```bash
-npm install -g github:marktoflow/marktoflow#main
-```
+Part of [marktoflow](../../README.md) — open-source markdown workflow automation.
 
 ## Quick Start
 
-### 1. Initialize a project
-
 ```bash
+npm install -g @marktoflow/cli
+
 marktoflow init
+marktoflow run workflow.md
 ```
 
-This creates:
-
-- `.marktoflow/` directory
-- `workflows/` directory with example workflow
-- `.marktoflow/config.yaml` configuration file
-
-### 2. Create a workflow
-
-Create `workflow.md`:
-
-```markdown
----
-workflow:
-  id: hello-world
-  name: Hello World
-
-tools:
-  slack:
-    sdk: '@slack/web-api'
-    auth:
-      token: '${SLACK_BOT_TOKEN}'
-
-inputs:
-  message:
-    type: string
-    default: 'Hello World!'
----
-
-# Hello World Workflow
-
-## Step 1: Send Message
-
-\`\`\`yaml
-action: slack.chat.postMessage
-inputs:
-channel: '#general'
-text: '{{ inputs.message }}'
-\`\`\`
-```
-
-### 3. Run the workflow
+Or without installing:
 
 ```bash
-# Set environment variable
-export SLACK_BOT_TOKEN=xoxb-your-token
-
-# Run workflow
-marktoflow run workflow.md
-
-# With inputs
-marktoflow run workflow.md --input message="Hello marktoflow!"
+npx @marktoflow/cli run workflow.md
 ```
 
-## CLI Commands
+## Features
 
-### Core Commands
+- **Workflow Execution** — Run markdown workflows from the terminal
+- **Dry Run Mode** — Test workflows without executing actions
+- **OAuth Integration** — Easy OAuth setup for Gmail, Outlook, Google services
+- **Scheduling** — Background cron-based workflow scheduling
+- **Webhooks** — Built-in HTTP server for event-driven workflows
+- **Templates** — Create workflows from built-in templates
+- **Diagnostics** — `marktoflow doctor` for system health checks
+- **Visual Designer** — Launch the GUI with `marktoflow gui`
 
-#### `marktoflow run <workflow>`
+## Key Commands
 
-Execute a workflow.
+### Run a workflow
 
 ```bash
-# Basic usage
 marktoflow run workflow.md
-
-# With inputs
-marktoflow run workflow.md --input key=value --input another=value
-
-# With config file
-marktoflow run workflow.md --config .marktoflow/config.yaml
-
-# Verbose output
+marktoflow run workflow.md --input key=value
+marktoflow run workflow.md --agent copilot --model gpt-4o
 marktoflow run workflow.md --verbose
+marktoflow run workflow.md --dry-run
 ```
 
-#### `marktoflow init`
-
-Initialize a new marktoflow project.
+### Validate before running
 
 ```bash
-marktoflow init
-
-# Skip prompts
-marktoflow init --yes
+marktoflow workflow validate workflow.md
 ```
 
-#### `marktoflow version`
-
-Show version information.
+### Connect services
 
 ```bash
-marktoflow version
-```
-
-#### `marktoflow doctor`
-
-Run system diagnostics.
-
-```bash
-marktoflow doctor
-```
-
-### Scheduling
-
-#### `marktoflow schedule <workflow>`
-
-Schedule a workflow to run on a cron schedule.
-
-```bash
-# Schedule workflow
-marktoflow schedule workflow.md --cron "0 9 * * 1-5"
-
-# List scheduled workflows
-marktoflow schedule list
-
-# Remove schedule
-marktoflow schedule remove <workflow-id>
-
-# Start scheduler daemon
-marktoflow schedule start
-
-# Stop scheduler daemon
-marktoflow schedule stop
-```
-
-### Webhooks
-
-#### `marktoflow webhook <workflow>`
-
-Create webhook endpoint for workflow.
-
-```bash
-# Start webhook server
-marktoflow webhook workflow.md --path /github --port 3000
-
-# With secret for signature verification
-marktoflow webhook workflow.md --path /github --secret ${WEBHOOK_SECRET}
-
-# List webhooks
-marktoflow webhook list
-
-# Stop webhook server
-marktoflow webhook stop
-```
-
-### Queue Workers
-
-#### `marktoflow worker`
-
-Start a queue worker to process workflows.
-
-```bash
-# Start worker (Redis)
-marktoflow worker --queue redis --redis-url redis://localhost:6379
-
-# Start worker (RabbitMQ)
-marktoflow worker --queue rabbitmq --rabbitmq-url amqp://localhost
-
-# Multiple workers
-marktoflow worker --concurrency 5
-```
-
-### Development
-
-#### `marktoflow dry-run <workflow>`
-
-Test workflow without executing actions.
-
-```bash
-marktoflow dry-run workflow.md
-
-# With mocked responses
-marktoflow dry-run workflow.md --mock slack.chat.postMessage=success
-```
-
-#### `marktoflow debug <workflow>`
-
-Run workflow with detailed debug logging.
-
-```bash
-marktoflow debug workflow.md
-```
-
-### OAuth Setup
-
-#### `marktoflow connect <service>`
-
-Set up OAuth for email services.
-
-```bash
-# Gmail OAuth
 marktoflow connect gmail
-
-# Outlook OAuth
 marktoflow connect outlook
 ```
 
-This launches a browser for OAuth authentication and stores credentials securely.
-
-### Visual Designer
-
-#### `marktoflow gui`
-
-Start the visual workflow designer.
+### Schedule workflows
 
 ```bash
-# Start GUI server
+marktoflow schedule workflow.md --cron "0 9 * * 1-5"
+marktoflow schedule start
+```
+
+### Start webhook server
+
+```bash
+marktoflow serve --port 3000
+marktoflow serve --socket  # Slack Socket Mode
+```
+
+### Launch visual editor
+
+```bash
 marktoflow gui
-
-# With options
-marktoflow gui --port 3000        # Custom port
-marktoflow gui --open             # Open browser automatically
+marktoflow gui --port 3000 --open
 ```
 
-### Templates
-
-#### `marktoflow new <template>`
-
-Create workflow from template.
+### Create from template
 
 ```bash
-# List available templates
 marktoflow new --list
-
-# Create from template
 marktoflow new code-review --output workflows/code-review.md
-
-# Interactive wizard
-marktoflow new
 ```
 
-**Available Templates:**
-
-Built-in templates match the examples/ directory:
-- `code-review` - Automated GitHub PR review
-- `daily-standup` - Jira/Slack standup automation
-- `incident-response` - Multi-service incident coordination
-- `dependency-update` - Package update automation
-- `sprint-planning` - AI-assisted sprint planning
-- `web-automation` - Playwright browser automation
-- `gmail-notification` - Email automation
-- And more...
-
-### Agent & Tool Management
-
-#### `marktoflow agents list`
-
-List available AI agents.
+### Other commands
 
 ```bash
-marktoflow agents list
+marktoflow init              # Initialize project
+marktoflow version           # Show version
+marktoflow doctor            # System diagnostics
+marktoflow agents list       # List available AI agents
+marktoflow tools list        # List available integrations
+marktoflow history           # View execution history
 ```
 
-#### `marktoflow tools list`
-
-List available tools and integrations.
+## Example: Daily Standup
 
 ```bash
-marktoflow tools list
-
-# Show tool details
-marktoflow tools show slack
-```
-
-#### `marktoflow bundles list`
-
-List available tool bundles.
-
-```bash
-marktoflow bundles list
-
-# Install bundle
-marktoflow bundles install my-bundle.json
-```
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# Core
-MARKTOFLOW_DB_PATH=.marktoflow/state.db
-
-# Slack
-SLACK_BOT_TOKEN=xoxb-your-token
-
-# GitHub
-GITHUB_TOKEN=ghp_your-token
-
-# Jira
-JIRA_HOST=your-domain.atlassian.net
-JIRA_EMAIL=your@email.com
-JIRA_API_TOKEN=your-token
-
-# Gmail
-GMAIL_CLIENT_ID=your-client-id
-GMAIL_CLIENT_SECRET=your-secret
-GMAIL_REFRESH_TOKEN=your-refresh-token
-
-# Outlook
-OUTLOOK_CLIENT_ID=your-client-id
-OUTLOOK_CLIENT_SECRET=your-secret
-OUTLOOK_TENANT_ID=your-tenant-id
-```
-
-### Configuration File
-
-`.marktoflow/config.yaml`:
-
-```yaml
-state:
-  dbPath: .marktoflow/state.db
-
-queue:
-  type: redis
-  redis:
-    host: localhost
-    port: 6379
-
-security:
-  rbac:
-    enabled: true
-  auditLog:
-    enabled: true
-
-costs:
-  budget:
-    daily: 100
-    monthly: 3000
-
-logging:
-  level: info
-  file: .marktoflow/logs/marktoflow.log
-```
-
-## Production Examples
-
-The [examples/](https://github.com/marktoflow/marktoflow/tree/main/examples) directory contains 14+ production-ready workflow templates you can use as starting points:
-
-- **[code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/code-review)** - Automated GitHub PR review with security, performance, and quality checks
-- **[copilot-code-review](https://github.com/marktoflow/marktoflow/tree/main/examples/copilot-code-review)** - Advanced review using GitHub Copilot SDK
-- **[daily-standup](https://github.com/marktoflow/marktoflow/tree/main/examples/daily-standup)** - Jira + Slack activity aggregation with AI summaries
-- **[dependency-update](https://github.com/marktoflow/marktoflow/tree/main/examples/dependency-update)** - Automated package updates with AI changelogs
-- **[incident-response](https://github.com/marktoflow/marktoflow/tree/main/examples/incident-response)** - PagerDuty + Slack + Jira coordination
-- **[sprint-planning](https://github.com/marktoflow/marktoflow/tree/main/examples/sprint-planning)** - Velocity analysis + AI story selection
-- **[doc-maintenance](https://github.com/marktoflow/marktoflow/tree/main/examples/doc-maintenance)** - Smart documentation updates using Ollama
-- **[web-automation](https://github.com/marktoflow/marktoflow/tree/main/examples/web-automation)** - Playwright-based browser automation
-- **[gmail-notification](https://github.com/marktoflow/marktoflow/tree/main/examples/gmail-notification)** - Email automation with Gmail API
-- **[linear-sync](https://github.com/marktoflow/marktoflow/tree/main/examples/linear-sync)** - Linear issue tracking sync
-- **[codebase-qa](https://github.com/marktoflow/marktoflow/tree/main/examples/codebase-qa)** - AI-powered codebase Q&A
-
-Run any example:
-
-```bash
-marktoflow run examples/daily-standup/workflow.md
-```
-
-## CLI Examples
-
-### Daily Standup Report
-
-```bash
-# Create workflow
-cat > workflows/daily-standup.md << 'EOF'
+cat > workflows/standup.md << 'EOF'
 ---
 workflow:
   id: daily-standup
-  name: Daily Standup Report
+  name: Daily Standup
 
 tools:
   jira:
@@ -456,159 +129,13 @@ steps:
       text: 'Working on: {{ issues.issues[0].fields.summary }}'
 EOF
 
-# Schedule for weekdays at 9 AM
-marktoflow schedule workflows/daily-standup.md --cron "0 9 * * 1-5"
-
-# Start scheduler
+marktoflow schedule workflows/standup.md --cron "0 9 * * 1-5"
 marktoflow schedule start
 ```
 
-### GitHub PR Webhook
+## Contributing
 
-```bash
-# Create webhook workflow
-cat > workflows/github-pr.md << 'EOF'
----
-workflow:
-  id: github-pr-review
-  name: GitHub PR Review Notification
-
-tools:
-  slack:
-    sdk: '@slack/web-api'
-    auth:
-      token: '${SLACK_BOT_TOKEN}'
-
-inputs:
-  pr_url:
-    type: string
-  pr_title:
-    type: string
-  author:
-    type: string
-
-steps:
-  - action: slack.chat.postMessage
-    inputs:
-      channel: '#code-review'
-      text: |
-        🔍 New PR ready for review
-        *{{ inputs.pr_title }}* by {{ inputs.author }}
-        {{ inputs.pr_url }}
-EOF
-
-# Start webhook server
-marktoflow webhook workflows/github-pr.md --path /github --port 3000
-```
-
-### Multi-Agent Workflow
-
-```bash
-cat > workflows/research-and-summarize.md << 'EOF'
----
-workflow:
-  id: research-summarize
-  name: Research and Summarize
-
-tools:
-  ollama:
-    adapter: ollama
-
-agents:
-  researcher:
-    model: llama2
-    role: research
-  writer:
-    model: llama2
-    role: summarize
-
-steps:
-  - action: ollama.generate
-    agent: researcher
-    inputs:
-      prompt: 'Research recent developments in {{ inputs.topic }}'
-    output_variable: research
-
-  - action: ollama.generate
-    agent: writer
-    inputs:
-      prompt: 'Summarize this research: {{ research.response }}'
-    output_variable: summary
-EOF
-
-marktoflow run workflows/research-and-summarize.md --input topic="quantum computing"
-```
-
-## Troubleshooting
-
-### Command not found
-
-If `marktoflow` command is not found after global installation:
-
-```bash
-# Check npm global bin directory
-npm config get prefix
-
-# Add to PATH (macOS/Linux)
-export PATH="$PATH:$(npm config get prefix)/bin"
-
-# Or use npx
-npx @marktoflow/cli@alpha version
-```
-
-### Permission errors
-
-```bash
-# Use npx instead of global install
-npx @marktoflow/cli@alpha run workflow.md
-
-# Or configure npm to use local directory
-npm config set prefix ~/.npm-global
-export PATH=~/.npm-global/bin:$PATH
-npm install -g @marktoflow/cli@alpha
-```
-
-### OAuth issues
-
-```bash
-# Re-run OAuth setup
-marktoflow connect gmail --force
-
-# Check stored credentials
-ls -la .marktoflow/credentials/
-```
-
-## Development
-
-### Install from source
-
-```bash
-git clone https://github.com/marktoflow/marktoflow.git
-cd marktoflow
-pnpm install
-pnpm build
-npm link packages/cli
-```
-
-### Run tests
-
-```bash
-pnpm test
-```
-
-## Links
-
-- [Main Repository](https://github.com/marktoflow/marktoflow)
-- [Documentation](https://github.com/marktoflow/marktoflow#readme)
-- [Installation Guide](https://github.com/marktoflow/marktoflow/blob/main/docs/INSTALLATION.md)
-- [Publishing Guide](https://github.com/marktoflow/marktoflow/blob/main/docs/PUBLISHING.md)
-- [Core Package](@marktoflow/core)
-- [Integrations Package](@marktoflow/integrations)
-
-## Support
-
-- [GitHub Issues](https://github.com/marktoflow/marktoflow/issues)
-- [Discussions](https://github.com/marktoflow/marktoflow/discussions)
+See the [contributing guide](../../CONTRIBUTING.md).
 
 ## License
 
