@@ -33,6 +33,14 @@ import { AsanaInitializer } from './services/asana.js';
 import { TrelloInitializer } from './services/trello.js';
 import { DropboxInitializer } from './services/dropbox.js';
 import { AWSS3Initializer } from './services/aws-s3.js';
+import { HubSpotInitializer } from './services/hubspot.js';
+import { SalesforceInitializer } from './services/salesforce.js';
+import { PagerDutyInitializer } from './services/pagerduty.js';
+import { SentryInitializer } from './services/sentry.js';
+import { GitLabInitializer } from './services/gitlab.js';
+import { CalendlyInitializer } from './services/calendly.js';
+import { IntercomInitializer } from './services/intercom.js';
+import { MondayInitializer } from './services/monday.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
@@ -66,13 +74,19 @@ export function registerIntegrations(registry: SDKRegistry) {
   // Project Management & Issue Tracking
   registry.registerInitializer('jira.js', JiraInitializer);
   registry.registerInitializer('linear', LinearInitializer);
+  registry.registerInitializer('asana', AsanaInitializer);
+  registry.registerInitializer('trello', TrelloInitializer);
+  registry.registerInitializer('monday', MondayInitializer);
 
   // Documentation & Knowledge
   registry.registerInitializer('notion', NotionInitializer);
   registry.registerInitializer('confluence', ConfluenceInitializer);
 
-  // Developer Tools
+  // Developer Tools & DevOps
   registry.registerInitializer('@octokit/rest', GitHubInitializer);
+  registry.registerInitializer('gitlab', GitLabInitializer);
+  registry.registerInitializer('pagerduty', PagerDutyInitializer);
+  registry.registerInitializer('sentry', SentryInitializer);
 
   // Data & Databases
   registry.registerInitializer('airtable', AirtableInitializer);
@@ -89,12 +103,14 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('@sendgrid/mail', SendGridInitializer);
   registry.registerInitializer('@mailchimp/mailchimp_marketing', MailchimpInitializer);
 
-  // Customer Support
+  // Customer Support & Scheduling
   registry.registerInitializer('node-zendesk', ZendeskInitializer);
+  registry.registerInitializer('intercom', IntercomInitializer);
+  registry.registerInitializer('calendly', CalendlyInitializer);
 
-  // Project Management
-  registry.registerInitializer('asana', AsanaInitializer);
-  registry.registerInitializer('trello', TrelloInitializer);
+  // CRM & Sales
+  registry.registerInitializer('hubspot', HubSpotInitializer);
+  registry.registerInitializer('salesforce', SalesforceInitializer);
 
   // File Storage
   registry.registerInitializer('dropbox', DropboxInitializer);
@@ -321,6 +337,71 @@ export {
   type ListObjectsOptions,
   type CopyObjectOptions,
 } from './services/aws-s3.js';
+export {
+  HubSpotClient,
+  HubSpotInitializer,
+  type HubSpotContact,
+  type HubSpotDeal,
+  type HubSpotCompany,
+  type HubSpotTicket,
+  type CreateContactInput as HubSpotCreateContactInput,
+  type CreateDealInput as HubSpotCreateDealInput,
+} from './services/hubspot.js';
+export {
+  SalesforceClient,
+  SalesforceInitializer,
+  type SalesforceQueryResult,
+  type SalesforceRecord,
+  type SalesforceObjectDescription,
+  type CreateRecordInput as SalesforceCreateRecordInput,
+} from './services/salesforce.js';
+export {
+  PagerDutyClient,
+  PagerDutyInitializer,
+  type PagerDutyIncident,
+  type PagerDutyService,
+  type CreateIncidentInput as PagerDutyCreateIncidentInput,
+} from './services/pagerduty.js';
+export {
+  SentryClient,
+  SentryInitializer,
+  type SentryIssue,
+  type SentryProject,
+  type SentryRelease,
+} from './services/sentry.js';
+export {
+  GitLabClient,
+  GitLabInitializer,
+  type GitLabProject,
+  type GitLabIssue,
+  type GitLabMergeRequest,
+  type GitLabPipeline,
+} from './services/gitlab.js';
+export {
+  CalendlyClient,
+  CalendlyInitializer,
+  type CalendlyUser,
+  type CalendlyEvent,
+  type CalendlyEventType,
+  type CalendlyInvitee,
+  type CalendlySchedulingLink,
+} from './services/calendly.js';
+export {
+  IntercomClient,
+  IntercomInitializer,
+  type IntercomContact,
+  type IntercomConversation,
+  type IntercomMessage,
+  type IntercomTag,
+} from './services/intercom.js';
+export {
+  MondayClient,
+  MondayInitializer,
+  type MondayBoard,
+  type MondayItem,
+  type MondayGroup,
+  type MondayUpdate,
+} from './services/monday.js';
 
 // Export triggers
 export { SlackSocketTrigger } from './services/slack-socket.js';
@@ -360,3 +441,11 @@ export { notionSchemas } from './reliability/schemas/notion.js';
 export { jiraSchemas } from './reliability/schemas/jira.js';
 export { discordSchemas } from './reliability/schemas/discord.js';
 export { linearSchemas } from './reliability/schemas/linear.js';
+export { hubspotSchemas } from './reliability/schemas/hubspot.js';
+export { salesforceSchemas } from './reliability/schemas/salesforce.js';
+export { pagerdutySchemas } from './reliability/schemas/pagerduty.js';
+export { sentrySchemas } from './reliability/schemas/sentry.js';
+export { gitlabSchemas } from './reliability/schemas/gitlab.js';
+export { calendlySchemas } from './reliability/schemas/calendly.js';
+export { intercomSchemas } from './reliability/schemas/intercom.js';
+export { mondaySchemas } from './reliability/schemas/monday.js';
