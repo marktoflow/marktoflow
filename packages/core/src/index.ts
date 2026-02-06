@@ -93,6 +93,28 @@ export {
   type MicrosoftOAuthRefreshResponse,
 } from './oauth-refresh.js';
 
+// External Secrets
+export {
+  SecretManager,
+  SecretNotFoundError,
+  SecretProviderError,
+  VaultProvider,
+  AWSSecretsManagerProvider,
+  AzureKeyVaultProvider,
+  EnvProvider,
+  type Secret,
+  type SecretMetadata,
+  type SecretProvider,
+  type SecretProviderConfig,
+  type SecretManagerOptions,
+  type SecretReference,
+  type CachedSecret,
+  type VaultConfig,
+  type AWSSecretsManagerConfig,
+  type AzureKeyVaultConfig,
+  type GCPSecretManagerConfig,
+} from './secrets/index.js';
+
 // Parser
 export {
   parseFile,
