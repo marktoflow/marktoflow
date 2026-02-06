@@ -13,6 +13,8 @@ export {
   // Schemas (for validation)
   WorkflowMetadataSchema,
   ToolConfigSchema,
+  WorkflowSecretProviderSchema,
+  WorkflowSecretsConfigSchema,
   ErrorHandlingSchema,
   WorkflowStepSchema,
   TriggerSchema,
@@ -23,6 +25,8 @@ export {
   // Types
   type WorkflowMetadata,
   type ToolConfig,
+  type WorkflowSecretProvider,
+  type WorkflowSecretsConfig,
   type ErrorHandling,
   type WorkflowStep,
   type Trigger,

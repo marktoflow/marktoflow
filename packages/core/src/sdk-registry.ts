@@ -8,6 +8,7 @@
 import { ToolConfig } from './models.js';
 import { McpLoader } from './mcp-loader.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SecretManager } from './secret-providers/secret-manager.js';
 
 // ============================================================================
 // Types
@@ -171,15 +172,20 @@ export class SDKRegistry {
   private loader: SDKLoader;
   private initializers: Map<string, SDKInitializer>;
   private mcpLoader: McpLoader;
+  private secretManager?: SecretManager;
 
   constructor(
     loader: SDKLoader = defaultSDKLoader,
     initializers: Record<string, SDKInitializer> = defaultInitializers,
-    mcpLoader?: McpLoader
+    mcpLoader?: McpLoader,
+    secretManager?: SecretManager
   ) {
     this.loader = loader;
     this.initializers = new Map(Object.entries(initializers));
     this.mcpLoader = mcpLoader || new McpLoader();
+    if (secretManager) {
+      this.secretManager = secretManager;
+    }
   }
 
   /**
@@ -232,42 +238,70 @@ export class SDKRegistry {
       return instance.sdk;
     }
 
+    // Resolve secret references in config.auth before initializing
+    const resolvedConfig = await this.resolveConfigSecrets(instance.config);
+
     // Load the SDK module
     // Check if there's a package name mapping (e.g., 'google-gmail' -> 'googleapis')
-    const packageName = packageNameMappings[instance.config.sdk] || instance.config.sdk;
+    const packageName = packageNameMappings[resolvedConfig.sdk] || resolvedConfig.sdk;
 
     let module: unknown;
     try {
       module = await this.loader.load(packageName);
     } catch (error) {
       // If we have an initializer, ignore load error and pass null (e.g. for 'script' tool)
-      if (this.initializers.has(instance.config.sdk)) {
+      if (this.initializers.has(resolvedConfig.sdk)) {
         module = null;
       } else {
         throw error;
       }
     }
 
-    // Initialize with config
-    const initializer = this.initializers.get(instance.config.sdk);
+    // Initialize with resolved config
+    const initializer = this.initializers.get(resolvedConfig.sdk);
     if (initializer) {
-      instance.sdk = await initializer.initialize(module, instance.config);
+      instance.sdk = await initializer.initialize(module, resolvedConfig);
     } else {
       // Check for MCP
       if (this.isMcpModule(module)) {
         try {
-          const client = await this.mcpLoader.connectModule(module, instance.config);
+          const client = await this.mcpLoader.connectModule(module, resolvedConfig);
           instance.sdk = this.createMcpProxy(client);
         } catch (error) {
-          throw new Error(`Failed to connect to MCP module '${instance.config.sdk}': ${error}`);
+          throw new Error(`Failed to connect to MCP module '${resolvedConfig.sdk}': ${error}`);
         }
       } else {
         // No custom initializer - use generic initialization
-        instance.sdk = await this.genericInitialize(module, instance.config);
+        instance.sdk = await this.genericInitialize(module, resolvedConfig);
       }
     }
 
     return instance.sdk;
+  }
+
+  /**
+   * Resolve secret references in tool configuration.
+   */
+  private async resolveConfigSecrets(config: ToolConfig): Promise<ToolConfig> {
+    if (!this.secretManager || !config.auth) {
+      return config;
+    }
+
+    const resolvedAuth: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(config.auth)) {
+      if (typeof value === 'string' && SecretManager.isSecretReference(value)) {
+        // Resolve secret reference
+        resolvedAuth[key] = await this.secretManager.resolveSecrets(value);
+      } else {
+        resolvedAuth[key] = value;
+      }
+    }
+
+    return {
+      ...config,
+      auth: resolvedAuth,
+    };
   }
 
   private isMcpModule(module: unknown): boolean {
