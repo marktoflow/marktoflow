@@ -1,52 +1,68 @@
 /**
  * Zod input schemas for Gmail actions.
+ *
+ * Note: Schema keys match googleapis SDK method paths
+ * (e.g., gmail.users.messages.list -> 'users.messages.list')
  */
 
 import { z } from 'zod';
 
 export const gmailSchemas: Record<string, z.ZodTypeAny> = {
-  getEmails: z.object({
-    query: z.string().optional(),
+  'users.messages.list': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    q: z.string().optional(),
     maxResults: z.number().int().min(1).max(500).optional(),
     labelIds: z.array(z.string()).optional(),
     pageToken: z.string().optional(),
-  }).optional().default({}),
+  }),
 
-  getEmail: z.object({
-    id: z.string().min(1, 'email id is required'),
+  'users.messages.get': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    id: z.string().min(1, 'id is required'),
     format: z.enum(['full', 'metadata', 'minimal', 'raw']).optional(),
   }),
 
-  sendEmail: z.object({
-    to: z.string().min(1, 'to is required'),
-    subject: z.string().min(1, 'subject is required'),
-    body: z.string().min(1, 'body is required'),
-    cc: z.string().optional(),
-    bcc: z.string().optional(),
-    replyTo: z.string().optional(),
-    isHtml: z.boolean().optional(),
+  'users.messages.send': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    requestBody: z.object({
+      raw: z.string().optional(),
+      threadId: z.string().optional(),
+    }).passthrough(), // Allow additional fields
   }),
 
-  createDraft: z.object({
-    to: z.string().min(1, 'to is required'),
-    subject: z.string().min(1, 'subject is required'),
-    body: z.string().min(1, 'body is required'),
-    cc: z.string().optional(),
-    bcc: z.string().optional(),
-    isHtml: z.boolean().optional(),
+  'users.messages.modify': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    id: z.string().min(1, 'id is required'),
+    requestBody: z.object({
+      addLabelIds: z.array(z.string()).optional(),
+      removeLabelIds: z.array(z.string()).optional(),
+    }).passthrough(),
   }),
 
-  deleteEmail: z.object({
-    id: z.string().min(1, 'email id is required'),
+  'users.messages.trash': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    id: z.string().min(1, 'id is required'),
   }),
 
-  modifyLabels: z.object({
-    id: z.string().min(1, 'email id is required'),
-    addLabelIds: z.array(z.string()).optional(),
-    removeLabelIds: z.array(z.string()).optional(),
+  'users.messages.delete': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    id: z.string().min(1, 'id is required'),
   }),
 
-  getLabels: z.object({}).optional().default({}),
+  'users.drafts.create': z.object({
+    userId: z.string().min(1, 'userId is required'),
+    requestBody: z.object({
+      message: z.object({
+        raw: z.string().optional(),
+      }).passthrough(),
+    }).passthrough(),
+  }),
 
-  getProfile: z.object({}).optional().default({}),
+  'users.labels.list': z.object({
+    userId: z.string().min(1, 'userId is required'),
+  }),
+
+  'users.getProfile': z.object({
+    userId: z.string().min(1, 'userId is required'),
+  }),
 };

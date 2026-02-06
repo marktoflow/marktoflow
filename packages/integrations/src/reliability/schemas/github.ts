@@ -1,11 +1,14 @@
 /**
  * Zod input schemas for GitHub (Octokit) actions.
+ *
+ * Note: Schema keys include 'rest.' prefix to match Octokit SDK method paths
+ * (e.g., octokit.rest.issues.create -> 'rest.issues.create')
  */
 
 import { z } from 'zod';
 
 export const githubSchemas: Record<string, z.ZodTypeAny> = {
-  'issues.create': z.object({
+  'rest.issues.create': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     title: z.string().min(1, 'title is required'),
@@ -15,7 +18,7 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     milestone: z.number().optional(),
   }),
 
-  'issues.update': z.object({
+  'rest.issues.update': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     issue_number: z.number().int().min(1, 'issue_number is required'),
@@ -26,7 +29,7 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     labels: z.array(z.string()).optional(),
   }),
 
-  'issues.list': z.object({
+  'rest.issues.list': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     state: z.enum(['open', 'closed', 'all']).optional(),
@@ -36,13 +39,13 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     direction: z.enum(['asc', 'desc']).optional(),
   }),
 
-  'issues.get': z.object({
+  'rest.issues.get': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     issue_number: z.number().int().min(1, 'issue_number is required'),
   }),
 
-  'issues.listComments': z.object({
+  'rest.issues.listComments': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     issue_number: z.number().int().min(1, 'issue_number is required'),
@@ -50,14 +53,14 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     page: z.number().int().min(1).optional(),
   }),
 
-  'issues.createComment': z.object({
+  'rest.issues.createComment': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     issue_number: z.number().int().min(1, 'issue_number is required'),
     body: z.string().min(1, 'body is required'),
   }),
 
-  'pulls.create': z.object({
+  'rest.pulls.create': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     title: z.string().min(1, 'title is required'),
@@ -67,7 +70,7 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     draft: z.boolean().optional(),
   }),
 
-  'pulls.list': z.object({
+  'rest.pulls.list': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     state: z.enum(['open', 'closed', 'all']).optional(),
@@ -75,19 +78,29 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     page: z.number().int().min(1).optional(),
   }),
 
-  'repos.get': z.object({
+  'rest.repos.get': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
   }),
 
-  'repos.listForOrg': z.object({
+  'rest.repos.listForOrg': z.object({
     org: z.string().min(1, 'org is required'),
     type: z.enum(['all', 'public', 'private', 'forks', 'sources', 'member']).optional(),
     per_page: z.number().int().min(1).max(100).optional(),
     page: z.number().int().min(1).optional(),
   }),
 
-  'repos.createRelease': z.object({
+  'rest.repos.listForAuthenticatedUser': z.object({
+    visibility: z.enum(['all', 'public', 'private']).optional(),
+    affiliation: z.string().optional(),
+    type: z.enum(['all', 'owner', 'public', 'private', 'member']).optional(),
+    sort: z.enum(['created', 'updated', 'pushed', 'full_name']).optional(),
+    direction: z.enum(['asc', 'desc']).optional(),
+    per_page: z.number().int().min(1).max(100).optional(),
+    page: z.number().int().min(1).optional(),
+  }).optional().default({}),
+
+  'rest.repos.createRelease': z.object({
     owner: z.string().min(1, 'owner is required'),
     repo: z.string().min(1, 'repo is required'),
     tag_name: z.string().min(1, 'tag_name is required'),
@@ -97,5 +110,5 @@ export const githubSchemas: Record<string, z.ZodTypeAny> = {
     prerelease: z.boolean().optional(),
   }),
 
-  'users.getAuthenticated': z.object({}).optional().default({}),
+  'rest.users.getAuthenticated': z.object({}).optional().default({}),
 };
