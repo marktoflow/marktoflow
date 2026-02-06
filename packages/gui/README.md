@@ -6,12 +6,24 @@ Visual workflow designer for marktoflow - a web-based drag-and-drop editor with 
 
 ## Features
 
+### Core Capabilities
 - **Visual Workflow Editor** - Drag-and-drop interface for creating and editing workflows
+- **Enterprise Design System** - Professional slate/blue color palette with comprehensive design tokens
 - **Enhanced Control Flow Visualization** - Visual execution state indicators for loops, branches, and parallel execution
 - **AI-Powered Assistance** - Natural language commands to modify workflows
 - **Multiple AI Backends** - Support for Claude Code, GitHub Copilot, and more
-- **Real-time Execution** - Run and debug workflows directly from the UI with live status updates
+- **Real-time Execution** - Run and debug workflows with live WebSocket updates
+- **Workflow Validation** - Dry-run mode to validate workflows before execution
+- **Template Library** - Quick-start templates for Slack, GitHub, HTTP, and scheduled workflows
 - **Live File Sync** - Changes sync automatically with your workflow files
+
+### New in v2.0
+- **Input Collection Dialog** - Validates and collects required workflow inputs before execution
+- **Validation Panel** - Comprehensive dry-run validation with warnings and step analysis
+- **Template Selection** - Create workflows from pre-built templates (Blank, Slack, GitHub, HTTP, Scheduled)
+- **Real Execution API** - Replaced simulation with actual workflow execution via REST API
+- **Enhanced Search** - Filter workflows by name with improved empty states
+- **Design Token System** - Seamless light/dark theme switching without CSS hacks
 
 ### Control Flow Visual Features
 
@@ -94,10 +106,12 @@ console.log('GUI available at http://localhost:3001');
 
 ### Running Workflows
 
-1. Click the "Run" button in the toolbar
-2. Provide inputs if required
-3. Watch real-time execution status via WebSocket updates
-4. View execution results in the Properties panel
+1. **Validate First** - Click "Validate" to run a dry-run check of your workflow
+2. **Execute** - Click the "Execute" button in the toolbar
+3. **Provide Inputs** - Fill in required workflow inputs in the dialog
+4. **Monitor Progress** - Watch real-time execution status via WebSocket updates
+5. **Review Results** - View execution results and history in the Properties panel
+6. **Replay** - Re-run previous executions from the history tab
 
 ## Interface Overview
 

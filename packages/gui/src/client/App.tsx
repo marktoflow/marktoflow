@@ -4,6 +4,8 @@ import { Menu, PanelRight, X } from 'lucide-react';
 import { Canvas } from './components/Canvas/Canvas';
 import { Toolbar } from './components/Canvas/Toolbar';
 import { ExecutionOverlay } from './components/Canvas/ExecutionOverlay';
+import { ExecutionInputDialog } from './components/Canvas/ExecutionInputDialog';
+import { ValidationPanel } from './components/Panels/ValidationPanel';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { PropertiesPanel } from './components/Panels/PropertiesPanel';
 import { PromptInput } from './components/Prompt/PromptInput';
@@ -61,9 +63,54 @@ export default function App() {
   }, [popToIndex, loadWorkflow]);
 
   // WebSocket for real-time updates
-  const { connected } = useWebSocket({
+  const { connected, subscribeToExecution, unsubscribeFromExecution } = useWebSocket({
     onWorkflowUpdated: () => {
       refreshWorkflows();
+    },
+    onExecutionStep: (event) => {
+      // Update execution state from WebSocket events
+      setCurrentStepId(event.stepId);
+      setExecutionSteps((prev) =>
+        prev.map((s) =>
+          s.stepId === event.stepId
+            ? { ...s, status: event.status, duration: event.duration, error: event.error }
+            : s
+        )
+      );
+      setExecutionLogs((prev) => [
+        ...prev,
+        `Step "${event.stepName || event.stepId}": ${event.status}${event.error ? ` - ${event.error}` : ''}`,
+      ]);
+
+      // Update execution store
+      if (runIdRef.current) {
+        updateStepStatus(runIdRef.current, event.stepId, event.status, event.output, event.error);
+        addLog(runIdRef.current, `Step "${event.stepName || event.stepId}": ${event.status}`);
+      }
+    },
+    onExecutionCompleted: (event) => {
+      setWorkflowStatus(event.status);
+      setCurrentStepId(null);
+      setExecutionLogs((prev) => [
+        ...prev,
+        event.status === 'completed'
+          ? 'Workflow completed successfully!'
+          : event.error || 'Workflow execution failed',
+      ]);
+
+      // Update execution store
+      if (runIdRef.current) {
+        completeExecution(runIdRef.current, event.status);
+        if (event.error) {
+          addLog(runIdRef.current, `Error: ${event.error}`);
+        }
+      }
+
+      // Unsubscribe from WebSocket
+      if (event.runId) {
+        unsubscribeFromExecution(event.runId);
+      }
+      runIdRef.current = null;
     },
   });
 
@@ -132,6 +179,13 @@ export default function App() {
   const [currentStepId, setCurrentStepId] = useState<string | null>(null);
   const runIdRef = useRef<string | null>(null);
 
+  // Input collection dialog state
+  const [showInputDialog, setShowInputDialog] = useState(false);
+  const [pendingInputs, setPendingInputs] = useState<Record<string, any>>({});
+
+  // Validation panel state
+  const [showValidationPanel, setShowValidationPanel] = useState(false);
+
   // Handle adding a new step
   const handleAddStep = useCallback(() => {
     openNewStepWizard();
@@ -154,114 +208,104 @@ export default function App() {
     [currentWorkflow, saveWorkflow]
   );
 
-  // Handle workflow execution
-  const handleExecute = useCallback(() => {
+  // Handle workflow execution with input collection
+  const handleExecute = useCallback(async (inputs?: Record<string, any>) => {
     if (isExecuting) {
-      // Stop execution
+      // Stop execution via API
       if (runIdRef.current) {
-        cancelExecution(runIdRef.current);
+        try {
+          const response = await fetch(`/api/execute/cancel/${runIdRef.current}`, {
+            method: 'POST',
+          });
+          if (response.ok) {
+            cancelExecution(runIdRef.current);
+            setWorkflowStatus('cancelled');
+            setExecutionLogs((prev) => [...prev, 'Execution cancelled by user']);
+            runIdRef.current = null;
+          }
+        } catch (error) {
+          console.error('Failed to cancel execution:', error);
+          setExecutionLogs((prev) => [...prev, 'Failed to cancel execution']);
+        }
       }
-      setWorkflowStatus('cancelled');
-      setExecutionLogs((prev) => [...prev, 'Execution cancelled by user']);
       return;
     }
 
-    if (!currentWorkflow) return;
+    if (!currentWorkflow || !selectedWorkflow) return;
 
-    // Start execution - store in history
-    const workflowName = currentWorkflow.metadata?.name || 'Untitled Workflow';
-    const runId = startExecution(
-      selectedWorkflow || 'unknown',
-      workflowName
-    );
-    runIdRef.current = runId;
+    // If inputs are not provided and workflow has inputs, show dialog
+    if (!inputs && currentWorkflow.inputs && Object.keys(currentWorkflow.inputs).length > 0) {
+      setShowInputDialog(true);
+      return;
+    }
 
-    // Update local state for overlay
-    setWorkflowStatus('running');
-    setCurrentStepId(null);
-    setExecutionLogs(['Starting workflow execution...']);
+    try {
+      // Update local state for overlay
+      setWorkflowStatus('running');
+      setCurrentStepId(null);
+      setExecutionLogs(['Starting workflow execution...']);
 
-    // Initialize steps
-    setExecutionSteps(
-      currentWorkflow.steps.map((step) => ({
-        stepId: step.id,
-        stepName: step.name || step.id,
-        status: 'pending' as StepStatus,
-      }))
-    );
+      // Initialize steps
+      setExecutionSteps(
+        currentWorkflow.steps.map((step) => ({
+          stepId: step.id,
+          stepName: step.name || step.id,
+          status: 'pending' as StepStatus,
+        }))
+      );
 
-    // Simulate execution (replace with actual execution via API)
-    simulateExecution(currentWorkflow.steps, runId);
-  }, [isExecuting, currentWorkflow, selectedWorkflow, startExecution, cancelExecution]);
+      // Call API to start execution - this returns the actual runId
+      const response = await fetch(`/api/execute/${encodeURIComponent(selectedWorkflow)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: inputs || {},
+          dryRun: false,
+        }),
+      });
 
-  // Simulate workflow execution
-  const simulateExecution = useCallback(
-    async (steps: WorkflowStep[], runId: string) => {
-      for (let i = 0; i < steps.length; i++) {
-        const step = steps[i];
-        const stepName = step.name || step.id;
-
-        // Update current step
-        setCurrentStepId(step.id);
-        setExecutionSteps((prev) =>
-          prev.map((s) =>
-            s.stepId === step.id ? { ...s, status: 'running' as StepStatus } : s
-          )
-        );
-        setExecutionLogs((prev) => [
-          ...prev,
-          'Executing step: ' + stepName,
-        ]);
-
-        // Update execution store
-        updateStepStatus(runId, step.id, 'running');
-        addLog(runId, 'Executing step: ' + stepName);
-
-        // Simulate step execution
-        await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
-
-        // Update step status
-        const success = Math.random() > 0.1; // 90% success rate
-        const duration = Math.floor(1000 + Math.random() * 1000);
-        const error = success ? undefined : 'Simulated error';
-
-        setExecutionSteps((prev) =>
-          prev.map((s) =>
-            s.stepId === step.id
-              ? {
-                  ...s,
-                  status: success ? ('completed' as StepStatus) : ('failed' as StepStatus),
-                  duration,
-                  error,
-                }
-              : s
-          )
-        );
-
-        const logMessage = success
-          ? 'Step "' + stepName + '" completed'
-          : 'Step "' + stepName + '" failed';
-        setExecutionLogs((prev) => [...prev, logMessage]);
-
-        // Update execution store
-        updateStepStatus(runId, step.id, success ? 'completed' : 'failed', undefined, error);
-        addLog(runId, logMessage);
-
-        if (!success) {
-          setWorkflowStatus('failed');
-          completeExecution(runId, 'failed');
-          runIdRef.current = null;
-          return;
-        }
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to start execution');
       }
 
-      setWorkflowStatus('completed');
-      setExecutionLogs((prev) => [...prev, 'Workflow completed successfully!']);
-      completeExecution(runId, 'completed');
-      runIdRef.current = null;
-    },
-    [updateStepStatus, addLog, completeExecution]
-  );
+      // Get the actual runId from the backend response
+      const apiResult = await response.json();
+      const runId = apiResult.runId;
+
+      // Store in history and subscribe to the correct runId
+      const workflowName = currentWorkflow.metadata?.name || 'Untitled Workflow';
+      startExecution(selectedWorkflow, workflowName, {}, runId);
+      runIdRef.current = runId;
+
+      // Subscribe to WebSocket for real-time updates with the correct runId
+      subscribeToExecution(runId);
+
+      setExecutionLogs((prev) => [...prev, `Execution started: ${runId}`]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to execute workflow:', error);
+      setWorkflowStatus('failed');
+      setExecutionLogs((prev) => [...prev, `Error: ${errorMessage}`]);
+      if (runIdRef.current) {
+        completeExecution(runIdRef.current, 'failed');
+        runIdRef.current = null;
+      }
+    }
+  }, [
+    isExecuting,
+    currentWorkflow,
+    selectedWorkflow,
+    startExecution,
+    cancelExecution,
+    subscribeToExecution,
+    updateStepStatus,
+    addLog,
+    completeExecution,
+  ]);
+
 
   // Handle save
   const handleSave = useCallback(() => {
@@ -269,6 +313,13 @@ export default function App() {
       saveWorkflow(currentWorkflow);
     }
   }, [currentWorkflow, saveWorkflow]);
+
+  // Handle validate
+  const handleValidate = useCallback(() => {
+    if (selectedWorkflow) {
+      setShowValidationPanel(true);
+    }
+  }, [selectedWorkflow]);
 
   // Handle navigating back to parent workflow
   const handleNavigateBack = useCallback(() => {
@@ -374,7 +425,7 @@ export default function App() {
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-canvas-bg">
+      <div className="flex h-screen w-screen overflow-hidden bg-bg-canvas">
         {/* Left Sidebar - Workflow List & Tools */}
         <Sidebar />
 
@@ -382,21 +433,21 @@ export default function App() {
         <div className="flex flex-1 flex-col relative">
           {/* Mobile Header */}
           {breakpoint === 'mobile' && (
-            <div className="flex items-center justify-between p-3 border-b border-node-border bg-panel-bg">
+            <div className="flex items-center justify-between p-3 border-b border-border-default bg-bg-panel">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
                 aria-label="Open menu"
               >
-                <Menu className="w-5 h-5 text-gray-400" />
+                <Menu className="w-5 h-5 text-text-secondary" />
               </button>
-              <h1 className="text-sm font-medium text-white">Marktoflow</h1>
+              <h1 className="text-sm font-medium text-text-primary">Marktoflow</h1>
               <button
                 onClick={() => setPropertiesPanelOpen(true)}
-                className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
                 aria-label="Open properties"
               >
-                <PanelRight className="w-5 h-5 text-gray-400" />
+                <PanelRight className="w-5 h-5 text-text-secondary" />
               </button>
             </div>
           )}
@@ -428,6 +479,7 @@ export default function App() {
             onAddStep={handleAddStep}
             onExecute={handleExecute}
             onSave={handleSave}
+            onValidate={handleValidate}
             isExecuting={isExecuting}
           />
 
@@ -511,6 +563,23 @@ export default function App() {
             onReject={rejectChanges}
           />
         )}
+
+        {/* Execution Input Dialog */}
+        {currentWorkflow?.inputs && (
+          <ExecutionInputDialog
+            open={showInputDialog}
+            onOpenChange={setShowInputDialog}
+            inputs={currentWorkflow.inputs}
+            onExecute={handleExecute}
+            workflowName={currentWorkflow.metadata?.name}
+          />
+        )}
+
+        {/* Validation Panel */}
+        <ValidationPanel
+          workflowPath={showValidationPanel ? selectedWorkflow : null}
+          onClose={() => setShowValidationPanel(false)}
+        />
 
         {/* Keyboard Shortcuts Modal */}
         <KeyboardShortcuts open={isShortcutsOpen} onOpenChange={setShortcutsOpen} />

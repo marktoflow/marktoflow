@@ -348,9 +348,67 @@ export const HttpInitializer: SDKInitializer = {
     }
 
     const client = new HttpClient({ baseUrl, timeout, headers, auth });
+
+    // Create action wrappers that accept inputs as a single object
+    const actions = {
+      get: async (inputs: Record<string, unknown>) => {
+        const { url, path, query, headers: inputHeaders, timeout: inputTimeout } = inputs;
+        const targetPath = (url || path) as string;
+        return client.get(targetPath, {
+          query: query as Record<string, string | number | boolean> | undefined,
+          headers: inputHeaders as Record<string, string> | undefined,
+          timeout: inputTimeout as number | undefined,
+        });
+      },
+      post: async (inputs: Record<string, unknown>) => {
+        const { url, path, body, data, query, headers: inputHeaders, timeout: inputTimeout } = inputs;
+        const targetPath = (url || path) as string;
+        const requestBody = body ?? data;
+        return client.post(targetPath, requestBody, {
+          query: query as Record<string, string | number | boolean> | undefined,
+          headers: inputHeaders as Record<string, string> | undefined,
+          timeout: inputTimeout as number | undefined,
+        });
+      },
+      put: async (inputs: Record<string, unknown>) => {
+        const { url, path, body, data, query, headers: inputHeaders, timeout: inputTimeout } = inputs;
+        const targetPath = (url || path) as string;
+        const requestBody = body ?? data;
+        return client.put(targetPath, requestBody, {
+          query: query as Record<string, string | number | boolean> | undefined,
+          headers: inputHeaders as Record<string, string> | undefined,
+          timeout: inputTimeout as number | undefined,
+        });
+      },
+      patch: async (inputs: Record<string, unknown>) => {
+        const { url, path, body, data, query, headers: inputHeaders, timeout: inputTimeout } = inputs;
+        const targetPath = (url || path) as string;
+        const requestBody = body ?? data;
+        return client.patch(targetPath, requestBody, {
+          query: query as Record<string, string | number | boolean> | undefined,
+          headers: inputHeaders as Record<string, string> | undefined,
+          timeout: inputTimeout as number | undefined,
+        });
+      },
+      delete: async (inputs: Record<string, unknown>) => {
+        const { url, path, query, headers: inputHeaders, timeout: inputTimeout } = inputs;
+        const targetPath = (url || path) as string;
+        return client.delete(targetPath, {
+          query: query as Record<string, string | number | boolean> | undefined,
+          headers: inputHeaders as Record<string, string> | undefined,
+          timeout: inputTimeout as number | undefined,
+        });
+      },
+      request: async (inputs: Record<string, unknown>) => {
+        const { url, path, ...options } = inputs;
+        const targetPath = (url || path) as string;
+        return client.request(targetPath, options as HttpRequestOptions);
+      },
+    };
+
     return {
       client,
-      actions: client,
+      actions,
       graphql: (endpoint: string) =>
         new GraphQLClient(endpoint, {
           timeout,

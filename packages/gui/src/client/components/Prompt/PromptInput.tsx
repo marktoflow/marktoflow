@@ -44,20 +44,20 @@ export function PromptInput() {
   ];
 
   return (
-    <div className="bg-panel-bg">
+    <div className="bg-bg-panel">
       {/* History Panel */}
       <PromptHistoryPanel onSelectPrompt={setPrompt} />
 
       {/* Suggestions */}
       {!prompt && !isProcessing && (
-        <div className="px-4 py-2 border-t border-node-border/50">
+        <div className="px-4 py-2 border-t border-border-default/50">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => setPrompt(suggestion)}
-                className="px-3 py-1 bg-node-bg border border-node-border rounded-full text-xs text-gray-300 hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
+                className="px-3 py-1 bg-bg-surface border border-border-default rounded-full text-xs text-text-primary hover:border-accent hover:text-accent transition-colors whitespace-nowrap"
               >
                 {suggestion}
               </button>
@@ -67,7 +67,7 @@ export function PromptInput() {
       )}
 
       {/* Input area */}
-      <div className="p-4 flex items-end gap-3 border-t border-node-border">
+      <div className="p-4 flex items-end gap-3 border-t border-border-default">
         <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
@@ -77,7 +77,7 @@ export function PromptInput() {
             placeholder="Describe the changes you want to make to the workflow..."
             disabled={isProcessing}
             rows={1}
-            className="w-full px-4 py-3 bg-node-bg border border-node-border rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary resize-none disabled:opacity-50"
+            className="w-full px-4 py-3 bg-bg-surface border border-border-default rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/50 resize-none disabled:opacity-50"
           />
           {isProcessing && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -91,17 +91,17 @@ export function PromptInput() {
           disabled={!prompt.trim() || isProcessing}
           className="w-10 h-10 rounded-lg bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
-          <Send className="w-5 h-5 text-white" />
+          <Send className="w-5 h-5 text-text-primary" />
         </button>
       </div>
 
       {/* Keyboard hint */}
-      <div className="px-4 pb-2 text-xs text-gray-500">
-        Press <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">{modKey}</kbd> +{' '}
-        <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">Enter</kbd> to send
+      <div className="px-4 pb-2 text-xs text-text-muted">
+        Press <kbd className="px-1.5 py-0.5 bg-bg-surface rounded text-text-secondary">{modKey}</kbd> +{' '}
+        <kbd className="px-1.5 py-0.5 bg-bg-surface rounded text-text-secondary">Enter</kbd> to send
         {history.length > 0 && (
           <span className="ml-4">
-            <kbd className="px-1.5 py-0.5 bg-node-bg rounded text-gray-400">↑</kbd> for last prompt
+            <kbd className="px-1.5 py-0.5 bg-bg-surface rounded text-text-secondary">↑</kbd> for last prompt
           </span>
         )}
       </div>

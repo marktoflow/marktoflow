@@ -8,6 +8,7 @@ An agent automation framework that enables markdown-based workflows with native 
 
 ### What's New in v2.0.0-alpha.15 ✨
 
+#### Core Features
 - **External Secrets Management** - Integrate with HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, or environment variables using `${secret:provider://path}` syntax
 - **Automatic OAuth Token Refresh** - Gmail and Outlook tokens refresh transparently before expiration with persistent credential storage
 - **Execution History** - `marktoflow history` command to list, inspect, and replay past workflow executions
@@ -17,7 +18,15 @@ An agent automation framework that enables markdown-based workflows with native 
 - **Contract Testing** - MSW-based contract tests for all API integrations (256 tests across 28 services)
 - **Reliability Wrapper** - Automatic retries, circuit breakers, and exponential backoff for SDK calls
 - **Credential Encryption** - AES-256-GCM encrypted credential storage
-- **1,377 tests passing** across core and integrations
+
+#### GUI Improvements
+- **Enterprise Design System** - Professional slate/blue palette with comprehensive design tokens for seamless light/dark theming
+- **Real Execution API** - Live workflow execution with WebSocket status updates (replaced simulation)
+- **Input Collection Dialog** - Validates and collects required workflow inputs before execution
+- **Validation Panel** - Comprehensive dry-run validation with warnings and step analysis
+- **Template Library** - Quick-start templates for Slack, GitHub, HTTP, and scheduled workflows
+- **Enhanced Search** - Filter workflows by name with improved empty states
+- **534 tests passing** across core, integrations, and GUI
 
 ---
 
@@ -344,7 +353,7 @@ All integrations support:
 
 ## Visual Workflow Designer
 
-While marktoflow is CLI-first, it also includes an optional web-based visual editor for those who prefer a graphical interface:
+While marktoflow is CLI-first, it also includes an optional web-based visual editor with enterprise-grade design and full feature parity with the CLI:
 
 ```bash
 marktoflow gui

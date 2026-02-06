@@ -228,6 +228,10 @@ export class ExecutionManager {
     inputs: Record<string, unknown>,
     engine: WorkflowEngine
   ): Promise<void> {
+    console.log(`[ExecutionManager] Starting async execution for ${runId}`);
+    console.log(`[ExecutionManager] Workflow: ${workflow.metadata.name} (${workflow.steps.length} steps)`);
+    console.log(`[ExecutionManager] Inputs:`, JSON.stringify(inputs, null, 2));
+
     try {
       // Set up SDK registry
       const registry = new SDKRegistry();
@@ -238,22 +242,30 @@ export class ExecutionManager {
 
       // Dynamically import and register integrations
       try {
-        // Use dynamic import with a variable to avoid TypeScript checking the module
-        const moduleName = '@marktoflow/integrations';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const integrationsModule = await (Function('moduleName', 'return import(moduleName)')(moduleName) as Promise<any>);
+        console.log('[ExecutionManager] Loading integrations...');
+        // Use direct dynamic import - works better with tsx and TypeScript
+        const integrationsModule = await import('@marktoflow/integrations');
         if (integrationsModule.registerIntegrations) {
           integrationsModule.registerIntegrations(registry);
+          console.log('[ExecutionManager] Integrations registered');
         }
-      } catch {
+      } catch (error) {
         // @marktoflow/integrations may not be available in all environments
         // Continue without it - core tools will still work
+        console.error('[ExecutionManager] Failed to load integrations:', error);
+        console.log('[ExecutionManager] Continuing with core tools only');
       }
 
+      console.log('[ExecutionManager] Registering workflow tools:', Object.keys(workflow.tools || {}));
       registry.registerTools(workflow.tools);
 
+      console.log('[ExecutionManager] Starting workflow execution...');
       // Execute workflow
       const result = await engine.execute(workflow, inputs, registry, createSDKStepExecutor());
+      console.log('[ExecutionManager] Workflow execution completed:', result.status);
+      if (result.error) {
+        console.error('[ExecutionManager] Workflow error:', result.error);
+      }
 
       // Update state store first (before marking as complete, to avoid race condition with waitForAll)
       try {
@@ -285,6 +297,13 @@ export class ExecutionManager {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // Log the error for debugging
+      console.error(`[ExecutionManager] Workflow execution failed (${runId}):`, errorMessage);
+      if (errorStack) {
+        console.error('[ExecutionManager] Stack trace:', errorStack);
+      }
 
       // Update state store first (before marking as failed, to avoid race condition with waitForAll)
       try {
