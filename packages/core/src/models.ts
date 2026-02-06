@@ -109,8 +109,21 @@ export const WorkflowMetadataSchema = z.object({
 
 export const ToolConfigSchema = z.object({
   sdk: z.string(), // e.g., "@slack/web-api"
-  auth: z.record(z.string()).optional(), // e.g., { token: "${SLACK_TOKEN}" }
+  auth: z.record(z.string()).optional(), // e.g., { token: "${SLACK_TOKEN}" } or { token: "${secret:vault://path#key}" }
   options: z.record(z.unknown()).optional(),
+});
+
+export const WorkflowSecretProviderSchema = z.object({
+  type: z.enum(['vault', 'aws', 'azure', 'env']),
+  config: z.record(z.unknown()),
+  cacheEnabled: z.boolean().optional(),
+});
+
+export const WorkflowSecretsConfigSchema = z.object({
+  providers: z.array(WorkflowSecretProviderSchema).optional(),
+  defaultCacheTTL: z.number().optional(),
+  referencePrefix: z.string().optional(),
+  throwOnNotFound: z.boolean().optional(),
 });
 
 export const ErrorHandlingSchema = z.object({
@@ -359,6 +372,7 @@ export const WorkflowInputSchema = z.object({
 export const WorkflowSchema = z.object({
   metadata: WorkflowMetadataSchema,
   tools: z.record(ToolConfigSchema).default({}),
+  secrets: WorkflowSecretsConfigSchema.optional(),
   inputs: z.record(WorkflowInputSchema).optional(),
   triggers: z.array(TriggerSchema).optional(),
   steps: z.array(WorkflowStepUnionSchema),
@@ -376,6 +390,8 @@ export const WorkflowSchema = z.object({
 
 export type WorkflowMetadata = z.infer<typeof WorkflowMetadataSchema>;
 export type ToolConfig = z.infer<typeof ToolConfigSchema>;
+export type WorkflowSecretProvider = z.infer<typeof WorkflowSecretProviderSchema>;
+export type WorkflowSecretsConfig = z.infer<typeof WorkflowSecretsConfigSchema>;
 export type ErrorHandling = z.infer<typeof ErrorHandlingSchema>;
 export type Trigger = z.infer<typeof TriggerSchema>;
 export type WorkflowInput = z.infer<typeof WorkflowInputSchema>;
