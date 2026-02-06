@@ -8,7 +8,7 @@ import { z } from 'zod';
 export const whatsappSchemas: Record<string, z.ZodTypeAny> = {
   sendText: z.object({
     to: z.string().min(1, 'to is required'),
-    body: z.string().min(1, 'body is required'),
+    text: z.string().min(1, 'text is required'),
     previewUrl: z.boolean().optional(),
   }),
 
@@ -21,15 +21,21 @@ export const whatsappSchemas: Record<string, z.ZodTypeAny> = {
 
   sendImage: z.object({
     to: z.string().min(1, 'to is required'),
-    imageUrl: z.string().url('imageUrl must be a valid URL'),
+    mediaUrl: z.string().url('mediaUrl must be a valid URL').optional(),
+    mediaId: z.string().optional(),
     caption: z.string().optional(),
+  }).refine(data => data.mediaUrl || data.mediaId, {
+    message: 'Either mediaUrl or mediaId is required',
   }),
 
   sendDocument: z.object({
     to: z.string().min(1, 'to is required'),
-    documentUrl: z.string().url('documentUrl must be a valid URL'),
+    mediaUrl: z.string().url('mediaUrl must be a valid URL').optional(),
+    mediaId: z.string().optional(),
     filename: z.string().optional(),
     caption: z.string().optional(),
+  }).refine(data => data.mediaUrl || data.mediaId, {
+    message: 'Either mediaUrl or mediaId is required',
   }),
 
   sendLocation: z.object({
