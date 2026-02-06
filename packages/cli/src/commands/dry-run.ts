@@ -7,7 +7,7 @@
 
 import chalk from 'chalk';
 import type { Workflow, ExecutionContext } from '@marktoflow/core';
-import { WorkflowStatus } from '@marktoflow/core';
+import { WorkflowStatus, renderTemplate } from '@marktoflow/core';
 
 // ============================================================================
 // Mock Response Generator
@@ -431,25 +431,33 @@ function resolveInputTemplates(
 
   const resolved: Record<string, unknown> = {};
 
+  // Build template context from execution context
+  const templateContext = {
+    inputs: context.inputs,
+    variables: context.variables,
+    // Also expose variables at root level for convenience
+    ...context.variables,
+  };
+
   for (const [key, value] of Object.entries(inputs)) {
-    if (typeof value === 'string' && value.includes('{{')) {
-      // Simple template resolution
-      let resolved_value = value;
-      const matches = value.matchAll(/\{\{([^}]+)\}\}/g);
-      for (const match of matches) {
-        const varPath = match[1].trim();
-        if (varPath.startsWith('inputs.')) {
-          const inputKey = varPath.slice(7);
-          resolved_value = resolved_value.replace(match[0], String(context.inputs[inputKey] || ''));
-        } else if (varPath in context.variables) {
-          const varValue = context.variables[varPath];
-          resolved_value = resolved_value.replace(match[0], String(varValue));
-        }
-      }
-      resolved[key] = resolved_value;
+    if (typeof value === 'string') {
+      // Use Nunjucks template engine for full support
+      // This handles {{ }}, filters, control flow, etc.
+      resolved[key] = renderTemplate(value, templateContext);
+    } else if (Array.isArray(value)) {
+      // Recursively resolve arrays
+      resolved[key] = value.map((item) =>
+        typeof item === 'object' && item !== null
+          ? resolveInputTemplates(item as Record<string, unknown>, context)
+          : typeof item === 'string'
+            ? renderTemplate(item, templateContext)
+            : item
+      );
     } else if (typeof value === 'object' && value !== null) {
+      // Recursively resolve objects
       resolved[key] = resolveInputTemplates(value as Record<string, unknown>, context);
     } else {
+      // Pass through non-template values
       resolved[key] = value;
     }
   }
