@@ -237,6 +237,8 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
         stepRaw.type === 'map' ||
         stepRaw.type === 'filter' ||
         stepRaw.type === 'reduce' ||
+        stepRaw.type === 'wait' ||
+        stepRaw.type === 'merge' ||
         // Also detect by structure (for implicit type detection)
         (stepRaw.items && stepRaw.steps) || // for_each/while
         (stepRaw.condition && (stepRaw.then || stepRaw.else)) || // if
@@ -484,6 +486,25 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
         errorHandling: normalizeErrorHandling(
           raw.error_handling || raw.errorHandling || raw.on_error
         ),
+      };
+
+    case 'wait':
+      return {
+        ...base,
+        type: 'wait',
+        mode: raw.mode,
+        duration: raw.duration,
+        fields: raw.fields,
+        webhookPath: raw.webhook_path || raw.webhookPath,
+      };
+
+    case 'merge':
+      return {
+        ...base,
+        type: 'merge',
+        mode: raw.mode,
+        sources: raw.sources,
+        keyField: raw.key_field || raw.keyField,
       };
 
     default:
