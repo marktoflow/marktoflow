@@ -39,14 +39,32 @@ pnpm --filter @marktoflow/gui dev
 ```
 marktoflow/
 ├── packages/
-│   ├── core/          # Core engine
-│   ├── integrations/  # Service integrations
-│   ├── cli/           # CLI commands
-│   └── gui/           # Visual designer
-├── examples/          # Example workflows
-├── docs/             # Documentation
-└── scripts/          # Build and publish scripts
+│   ├── core/                 # Parser, engine, state, security, costs
+│   │   ├── src/              # Source code
+│   │   ├── tests/            # Unit tests
+│   │   └── integration-tests/ # Integration tests
+│   ├── integrations/         # Service integrations + AI adapters
+│   │   ├── src/
+│   │   │   ├── services/     # 30+ native integrations
+│   │   │   ├── adapters/     # AI agents (Copilot, Claude, Ollama)
+│   │   │   └── reliability/  # Input validation schemas
+│   │   └── tests/
+│   │       └── reliability/  # Contract tests with MSW
+│   ├── cli/                  # CLI commands, OAuth flows
+│   ├── gui/                  # Visual workflow designer
+│   └── marktoflow/           # Meta-package
+├── examples/                 # Production-ready workflow templates
+├── docs/                     # Documentation
+└── scripts/                  # Build and publish scripts
 ```
+
+### Key Packages
+
+- **@marktoflow/core** - Core engine (parser, executor, state management)
+- **@marktoflow/integrations** - Service integrations and AI adapters
+- **@marktoflow/cli** - Command-line interface
+- **@marktoflow/gui** - Web-based workflow designer
+- **@marktoflow/marktoflow** - Meta-package (installs everything)
 
 ### Development Workflow
 

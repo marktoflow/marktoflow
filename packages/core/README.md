@@ -102,7 +102,7 @@ class StateManager {
 
 ## Contributing
 
-See the [contributing guide](../../CONTRIBUTING.md).
+See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/CONTRIBUTING.md).
 
 ## License
 

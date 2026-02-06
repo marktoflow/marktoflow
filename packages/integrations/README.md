@@ -116,7 +116,7 @@ For per-service setup details (environment variables, OAuth, examples), see the 
 
 ## Contributing
 
-See the [contributing guide](../../CONTRIBUTING.md).
+See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/CONTRIBUTING.md).
 
 ## License
 
