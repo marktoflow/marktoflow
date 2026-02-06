@@ -14,6 +14,7 @@ import {
   Trash2,
   Bot,
   ChevronDown,
+  CheckCircle,
 } from 'lucide-react';
 import { useCanvas } from '../../hooks/useCanvas';
 import { useEditorStore } from '../../stores/editorStore';
@@ -26,6 +27,7 @@ interface ToolbarProps {
   onAddStep: () => void;
   onExecute?: () => void;
   onSave?: () => void;
+  onValidate?: () => void;
   isExecuting?: boolean;
 }
 
@@ -33,6 +35,7 @@ export function Toolbar({
   onAddStep,
   onExecute,
   onSave,
+  onValidate,
   isExecuting = false,
 }: ToolbarProps) {
   const { autoLayout, fitView, selectedNodes, deleteSelected, duplicateSelected } =
@@ -55,7 +58,7 @@ export function Toolbar({
   const activeProvider = providers.find((p) => p.id === activeProviderId);
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-1.5 bg-panel-bg/95 backdrop-blur border border-node-border rounded-lg shadow-lg">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-1.5 bg-bg-panel/95 backdrop-blur border border-border-default rounded-lg shadow-lg">
       {/* Add Step */}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
@@ -133,7 +136,7 @@ export function Toolbar({
       {/* AI Provider */}
       <button
         onClick={() => setShowProviderSwitcher(true)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
         title="Select AI Provider"
       >
         <Bot className="w-4 h-4" />
@@ -143,24 +146,36 @@ export function Toolbar({
         <ChevronDown className="w-3 h-3" />
       </button>
 
+      <ToolbarDivider />
+
+      {/* Validate */}
+      {onValidate && (
+        <ToolbarButton
+          icon={<CheckCircle className="w-4 h-4" />}
+          label="Validate"
+          onClick={onValidate}
+          shortcut={`${modKey}T`}
+        />
+      )}
+
       {/* Execute */}
       {onExecute && (
-        <>
-          <ToolbarDivider />
-          <ToolbarButton
-            icon={
-              isExecuting ? (
-                <Pause className="w-4 h-4" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )
-            }
-            label={isExecuting ? 'Stop' : 'Execute'}
-            onClick={onExecute}
-            variant={isExecuting ? 'destructive' : 'primary'}
-            shortcut={`${modKey}⏎`}
-          />
-        </>
+        <button
+          onClick={() => onExecute()}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            isExecuting
+              ? 'bg-error hover:bg-error/90 text-text-inverse'
+              : 'bg-accent hover:bg-accent-hover text-text-inverse'
+          }`}
+          title={`${isExecuting ? 'Stop' : 'Execute'} (${modKey}⏎)`}
+        >
+          {isExecuting ? (
+            <Pause className="w-4 h-4" />
+          ) : (
+            <Play className="w-4 h-4" />
+          )}
+          <span className="hidden sm:inline">{isExecuting ? 'Stop' : 'Execute'}</span>
+        </button>
       )}
 
       {/* Save */}
@@ -200,9 +215,9 @@ function ToolbarButton({
   variant = 'default',
 }: ToolbarButtonProps) {
   const variantClasses = {
-    default: 'text-gray-300 hover:text-white hover:bg-white/10',
-    primary: 'text-primary hover:text-primary-light hover:bg-primary/10',
-    destructive: 'text-error hover:text-error hover:bg-error/10',
+    default: 'text-text-secondary hover:text-text-primary hover:bg-bg-hover',
+    primary: 'text-accent hover:text-accent-hover hover:bg-accent-muted',
+    destructive: 'text-error hover:text-error hover:bg-error-bg',
   };
 
   return (
@@ -214,14 +229,14 @@ function ToolbarButton({
     >
       {icon}
       {/* Tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-black/90 rounded text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-bg-elevated border border-border-default rounded text-xs text-text-primary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-tooltip shadow-lg">
         {label}
-        {shortcut && <span className="ml-2 text-gray-400">{shortcut}</span>}
+        {shortcut && <span className="ml-2 text-text-muted">{shortcut}</span>}
       </div>
     </button>
   );
 }
 
 function ToolbarDivider() {
-  return <div className="w-px h-6 bg-node-border mx-1" />;
+  return <div className="w-px h-6 bg-border-default mx-1" />;
 }

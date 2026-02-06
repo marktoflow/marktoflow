@@ -1,0 +1,186 @@
+/**
+ * Design Token System
+ *
+ * A comprehensive token system for the marktoflow GUI with support for light and dark modes.
+ * Colors inspired by Linear/Vercel with neutral slate/zinc grays and blue accent.
+ */
+
+/* ============================================
+   ROOT TOKENS (Light Mode Default)
+   ============================================ */
+
+:root {
+  /* Background Colors */
+  --color-bg-canvas: hsl(220, 10%, 97%);           /* Main canvas/page background */
+  --color-bg-panel: hsl(0, 0%, 100%);              /* Sidebar, properties panel */
+  --color-bg-surface: hsl(0, 0%, 100%);            /* Cards, nodes */
+  --color-bg-elevated: hsl(220, 10%, 96%);         /* Modals, dropdowns */
+  --color-bg-hover: hsl(220, 10%, 94%);            /* Hover state for interactive elements */
+  --color-bg-active: hsl(220, 10%, 92%);           /* Active/pressed state */
+
+  /* Border Colors */
+  --color-border-subtle: hsl(220, 10%, 90%);       /* Light borders */
+  --color-border-default: hsl(220, 10%, 85%);      /* Default borders */
+  --color-border-strong: hsl(220, 10%, 75%);       /* Emphasis borders */
+
+  /* Text Colors */
+  --color-text-primary: hsl(220, 13%, 10%);        /* Primary text */
+  --color-text-secondary: hsl(220, 8%, 40%);       /* Secondary text */
+  --color-text-muted: hsl(220, 6%, 60%);           /* Muted/disabled text */
+  --color-text-inverse: hsl(0, 0%, 100%);          /* Text on dark backgrounds */
+
+  /* Accent Colors */
+  --color-accent: hsl(220, 80%, 50%);              /* Primary accent (blue) */
+  --color-accent-hover: hsl(220, 80%, 45%);        /* Accent hover state */
+  --color-accent-muted: hsl(220, 80%, 95%);        /* Accent background (light) */
+
+  /* Status Colors */
+  --color-success: hsl(142, 76%, 36%);             /* Success green */
+  --color-success-bg: hsl(142, 76%, 95%);          /* Success background */
+  --color-warning: hsl(38, 92%, 50%);              /* Warning orange */
+  --color-warning-bg: hsl(38, 92%, 95%);           /* Warning background */
+  --color-error: hsl(0, 84%, 60%);                 /* Error red */
+  --color-error-bg: hsl(0, 84%, 95%);              /* Error background */
+  --color-info: hsl(199, 89%, 48%);                /* Info blue */
+  --color-info-bg: hsl(199, 89%, 95%);             /* Info background */
+
+  /* Workflow Status Colors */
+  --color-status-idle: hsl(220, 6%, 60%);
+  --color-status-running: hsl(220, 80%, 50%);
+  --color-status-success: hsl(142, 76%, 36%);
+  --color-status-error: hsl(0, 84%, 60%);
+  --color-status-paused: hsl(38, 92%, 50%);
+
+  /* Shadow Tokens */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+  --shadow-node: 0 2px 8px 0 rgb(0 0 0 / 0.08);
+  --shadow-node-selected: 0 0 0 2px var(--color-accent);
+
+  /* Border Radius Tokens */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md: 0.375rem;   /* 6px */
+  --radius-lg: 0.5rem;     /* 8px */
+  --radius-xl: 0.75rem;    /* 12px */
+  --radius-2xl: 1rem;      /* 16px */
+  --radius-full: 9999px;   /* Fully rounded */
+
+  /* Spacing Tokens */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+
+  /* Typography Tokens */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+}
+
+/* ============================================
+   DARK MODE TOKENS
+   ============================================ */
+
+.dark {
+  /* Background Colors */
+  --color-bg-canvas: hsl(220, 13%, 10%);           /* #16181d */
+  --color-bg-panel: hsl(220, 13%, 13%);            /* #1c1e24 */
+  --color-bg-surface: hsl(220, 13%, 16%);          /* #23262d */
+  --color-bg-elevated: hsl(220, 13%, 19%);         /* #2a2d35 */
+  --color-bg-hover: hsl(220, 13%, 22%);            /* Hover state */
+  --color-bg-active: hsl(220, 13%, 25%);           /* Active state */
+
+  /* Border Colors */
+  --color-border-subtle: hsl(220, 10%, 22%);
+  --color-border-default: hsl(220, 10%, 28%);
+  --color-border-strong: hsl(220, 10%, 35%);
+
+  /* Text Colors */
+  --color-text-primary: hsl(220, 10%, 95%);
+  --color-text-secondary: hsl(220, 8%, 70%);
+  --color-text-muted: hsl(220, 6%, 50%);
+  --color-text-inverse: hsl(220, 13%, 10%);
+
+  /* Accent Colors */
+  --color-accent: hsl(220, 80%, 60%);              /* #4d8af0 - brighter in dark */
+  --color-accent-hover: hsl(220, 80%, 65%);
+  --color-accent-muted: hsl(220, 80%, 15%);
+
+  /* Status Colors - Adjusted for dark mode */
+  --color-success: hsl(142, 76%, 45%);
+  --color-success-bg: hsl(142, 76%, 15%);
+  --color-warning: hsl(38, 92%, 55%);
+  --color-warning-bg: hsl(38, 92%, 15%);
+  --color-error: hsl(0, 84%, 65%);
+  --color-error-bg: hsl(0, 84%, 15%);
+  --color-info: hsl(199, 89%, 55%);
+  --color-info-bg: hsl(199, 89%, 15%);
+
+  /* Workflow Status Colors */
+  --color-status-idle: hsl(220, 6%, 50%);
+  --color-status-running: hsl(220, 80%, 60%);
+  --color-status-success: hsl(142, 76%, 45%);
+  --color-status-error: hsl(0, 84%, 65%);
+  --color-status-paused: hsl(38, 92%, 55%);
+
+  /* Shadow Tokens - More pronounced in dark mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+  --shadow-node: 0 2px 8px 0 rgb(0 0 0 / 0.5);
+  --shadow-node-selected: 0 0 0 2px var(--color-accent);
+}
+
+/* ============================================
+   SERVICE-SPECIFIC ACCENT COLORS
+   ============================================ */
+
+:root {
+  --color-service-slack: hsl(281, 60%, 50%);
+  --color-service-github: hsl(0, 0%, 10%);
+  --color-service-gmail: hsl(353, 100%, 50%);
+  --color-service-jira: hsl(208, 100%, 50%);
+  --color-service-linear: hsl(262, 100%, 65%);
+  --color-service-notion: hsl(0, 0%, 0%);
+  --color-service-discord: hsl(235, 86%, 65%);
+  --color-service-http: hsl(180, 60%, 50%);
+}
+
+.dark {
+  --color-service-github: hsl(0, 0%, 100%);
+  --color-service-notion: hsl(0, 0%, 100%);
+}

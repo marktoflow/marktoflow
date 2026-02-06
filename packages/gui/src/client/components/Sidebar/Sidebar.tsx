@@ -14,6 +14,7 @@ import { useWorkflowStore } from '../../stores/workflowStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { ImportDialog } from './ImportDialog';
+import { NewWorkflowDialog } from './NewWorkflowDialog';
 
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<'workflows' | 'tools'>(
@@ -41,11 +42,11 @@ export function Sidebar() {
     return (
       <button
         onClick={() => setSidebarOpen(true)}
-        className="w-12 bg-panel-bg border-r border-node-border flex flex-col items-center py-4 gap-4 hover:bg-white/5 transition-colors"
+        className="w-12 bg-bg-panel border-r border-border-default flex flex-col items-center py-4 gap-4 hover:bg-bg-hover transition-colors"
         aria-label="Expand sidebar"
       >
-        <ChevronRight className="w-4 h-4 text-gray-400" />
-        <FolderTree className="w-5 h-5 text-primary" />
+        <ChevronRight className="w-4 h-4 text-text-secondary" />
+        <FolderTree className="w-5 h-5 text-accent" />
       </button>
     );
   }
@@ -62,7 +63,7 @@ export function Sidebar() {
           onClick={() => setSidebarOpen(false)}
         />
         {/* Sidebar */}
-        <div className="fixed inset-y-0 left-0 w-72 bg-panel-bg border-r border-node-border flex flex-col z-50 md:hidden animate-slide-in-left">
+        <div className="fixed inset-y-0 left-0 w-72 bg-bg-panel border-r border-border-default flex flex-col z-50 md:hidden animate-slide-in-left">
           <SidebarContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -79,7 +80,7 @@ export function Sidebar() {
 
   // Desktop/Tablet sidebar
   return (
-    <div className="w-64 bg-panel-bg border-r border-node-border flex flex-col">
+    <div className="w-64 bg-bg-panel border-r border-border-default flex flex-col">
       <SidebarContent
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -113,35 +114,77 @@ function SidebarContent({
   showClose,
 }: SidebarContentProps) {
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { fetchWorkflows } = useWorkflowStore();
+
+  // Handle creating a new workflow
+  const handleCreateWorkflow = useCallback(async (name: string, template: string) => {
+    try {
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, template }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Failed to create workflow:', error);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Created workflow:', result);
+
+      // Refresh workflows list and select the new one
+      await fetchWorkflows();
+      if (result.path) {
+        onSelectWorkflow(result.path);
+      }
+    } catch (error) {
+      console.error('Failed to create workflow:', error);
+    }
+  }, [fetchWorkflows, onSelectWorkflow]);
+
+  // Filter workflows based on search query
+  const filteredWorkflows = workflows.filter((workflow) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      workflow.name.toLowerCase().includes(query) ||
+      workflow.path.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <>
       {/* Logo/Title */}
-      <div className="p-4 border-b border-node-border flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-white flex items-center gap-2">
-          <FolderTree className="w-5 h-5 text-primary" />
+      <div className="p-4 border-b border-border-default flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+          <FolderTree className="w-5 h-5 text-accent" />
           Marktoflow
         </h1>
         {showClose && (
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
             aria-label="Close sidebar"
           >
-            <X className="w-4 h-4 text-gray-400" />
+            <X className="w-4 h-4 text-text-secondary" />
           </button>
         )}
       </div>
 
       {/* Tab buttons */}
-      <div className="flex border-b border-node-border">
+      <div className="flex border-b border-border-default">
         <button
           onClick={() => setActiveTab('workflows')}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'workflows'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-gray-400 hover:text-white'
+              ? 'text-accent border-b-2 border-accent'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Workflows
@@ -150,8 +193,8 @@ function SidebarContent({
           onClick={() => setActiveTab('tools')}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'tools'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-gray-400 hover:text-white'
+              ? 'text-accent border-b-2 border-accent'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Tools
@@ -159,14 +202,25 @@ function SidebarContent({
       </div>
 
       {/* Search */}
-      <div className="p-3 border-b border-node-border">
+      <div className="p-3 border-b border-border-default">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Search ${activeTab}...`}
-            className="w-full pl-9 pr-3 py-2 bg-node-bg border border-node-border rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+            className="w-full pl-9 pr-3 py-2 bg-bg-surface border border-border-default rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+              aria-label="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -174,9 +228,10 @@ function SidebarContent({
       <div className="flex-1 overflow-y-auto p-2">
         {activeTab === 'workflows' ? (
           <WorkflowList
-            workflows={workflows}
+            workflows={filteredWorkflows}
             selectedWorkflow={selectedWorkflow}
             onSelect={onSelectWorkflow}
+            searchQuery={searchQuery}
           />
         ) : (
           <ToolsPalette />
@@ -185,14 +240,17 @@ function SidebarContent({
 
       {/* New workflow and Import buttons */}
       {activeTab === 'workflows' && (
-        <div className="p-3 border-t border-node-border space-y-2">
-          <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors">
+        <div className="p-3 border-t border-border-default space-y-2">
+          <button
+            onClick={() => setShowNewWorkflowDialog(true)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-text-inverse rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
             <Plus className="w-4 h-4" />
             New Workflow
           </button>
           <button
             onClick={() => setShowImportDialog(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-node-bg border border-node-border hover:bg-white/5 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-surface border border-border-default hover:bg-bg-hover text-text-primary rounded-lg text-sm font-medium transition-colors"
           >
             <Upload className="w-4 h-4" />
             Import
@@ -206,6 +264,13 @@ function SidebarContent({
         onOpenChange={setShowImportDialog}
         onImportComplete={() => fetchWorkflows()}
       />
+
+      {/* New Workflow Dialog */}
+      <NewWorkflowDialog
+        open={showNewWorkflowDialog}
+        onOpenChange={setShowNewWorkflowDialog}
+        onCreate={handleCreateWorkflow}
+      />
     </>
   );
 }
@@ -214,17 +279,30 @@ interface WorkflowListProps {
   workflows: Array<{ path: string; name: string }>;
   selectedWorkflow: string | null;
   onSelect: (path: string) => void;
+  searchQuery?: string;
 }
 
 function WorkflowList({
   workflows,
   selectedWorkflow,
   onSelect,
+  searchQuery = '',
 }: WorkflowListProps) {
   if (workflows.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 text-sm">
-        No workflows found
+      <div className="text-center py-8 text-text-muted text-sm">
+        {searchQuery ? (
+          <>
+            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No workflows match "{searchQuery}"</p>
+          </>
+        ) : (
+          <>
+            <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No workflows found</p>
+            <p className="text-xs mt-1 text-text-muted">Create your first workflow to get started</p>
+          </>
+        )}
       </div>
     );
   }
@@ -237,8 +315,8 @@ function WorkflowList({
           onClick={() => onSelect(workflow.path)}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
             selectedWorkflow === workflow.path
-              ? 'bg-primary/10 text-primary'
-              : 'text-gray-300 hover:bg-white/5'
+              ? 'bg-accent-muted text-accent border border-accent/20'
+              : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
           }`}
         >
           <FileText className="w-4 h-4 flex-shrink-0" />

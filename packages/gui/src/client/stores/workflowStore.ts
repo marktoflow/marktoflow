@@ -84,9 +84,33 @@ const demoWorkflow: Workflow = {
   ],
 };
 
+const SELECTED_WORKFLOW_KEY = 'marktoflow:selectedWorkflow';
+
+// Load last selected workflow from localStorage
+const loadLastSelectedWorkflow = (): string | null => {
+  try {
+    return localStorage.getItem(SELECTED_WORKFLOW_KEY);
+  } catch {
+    return null;
+  }
+};
+
+// Save selected workflow to localStorage
+const saveSelectedWorkflow = (path: string | null) => {
+  try {
+    if (path) {
+      localStorage.setItem(SELECTED_WORKFLOW_KEY, path);
+    } else {
+      localStorage.removeItem(SELECTED_WORKFLOW_KEY);
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+};
+
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   workflows: demoWorkflows,
-  selectedWorkflow: null,
+  selectedWorkflow: loadLastSelectedWorkflow(),
   currentWorkflow: null,
   isLoading: false,
   error: null,
@@ -99,6 +123,12 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       const data = await response.json();
       console.log('Loaded workflows:', data.workflows.length);
       set({ workflows: data.workflows, isLoading: false });
+
+      // Load last selected workflow if available
+      const lastSelected = get().selectedWorkflow;
+      if (lastSelected) {
+        get().loadWorkflow(lastSelected);
+      }
     } catch (error) {
       console.error('Failed to load workflows, using demo data:', error);
       // Use demo data if API fails
@@ -113,6 +143,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
   selectWorkflow: (path) => {
     set({ selectedWorkflow: path });
+    saveSelectedWorkflow(path);
     get().loadWorkflow(path);
   },
 
@@ -173,11 +204,13 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       });
       if (!response.ok) throw new Error('Failed to delete workflow');
       const workflows = get().workflows.filter((w) => w.path !== path);
+      const newSelected = workflows[0]?.path || null;
       set({
         workflows,
-        selectedWorkflow: workflows[0]?.path || null,
+        selectedWorkflow: newSelected,
         isLoading: false,
       });
+      saveSelectedWorkflow(newSelected);
     } catch (error) {
       set({ error: 'Failed to delete workflow', isLoading: false });
     }

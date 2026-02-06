@@ -70,8 +70,9 @@ export function useWebSocket(
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
+    // Allow polling first, then upgrade to websocket
+    // This works better with Vite's proxy in development
     const socket = io({
-      transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

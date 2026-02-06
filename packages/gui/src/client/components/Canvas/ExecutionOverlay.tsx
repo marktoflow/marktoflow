@@ -92,16 +92,16 @@ export function ExecutionOverlay({
   }
 
   return (
-    <div className="absolute bottom-20 left-4 right-4 z-20 bg-panel-bg border border-node-border rounded-lg shadow-xl max-h-[400px] flex flex-col">
+    <div className="absolute bottom-20 left-4 right-4 z-20 bg-bg-panel border border-border-default rounded-lg shadow-xl max-h-[400px] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-node-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
         <div className="flex items-center gap-3">
           <StatusIcon status={workflowStatus} />
           <div>
-            <div className="text-sm font-medium text-white">
+            <div className="text-sm font-medium text-text-primary">
               {getStatusText(workflowStatus)}
             </div>
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-text-secondary">
               {completedSteps}/{steps.length} steps completed
               {failedSteps > 0 && ` • ${failedSteps} failed`}
             </div>
@@ -214,7 +214,7 @@ export function ExecutionOverlay({
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-node-bg">
+      <div className="h-1 bg-bg-surface">
         <div
           className={`h-full transition-all duration-300 ${
             workflowStatus === 'failed'
@@ -228,13 +228,13 @@ export function ExecutionOverlay({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-node-border">
+      <div className="flex border-b border-border-default">
         <button
           onClick={() => setActiveTab('steps')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'steps'
               ? 'text-primary border-b-2 border-primary -mb-px'
-              : 'text-gray-400 hover:text-white'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Steps
@@ -244,7 +244,7 @@ export function ExecutionOverlay({
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'variables'
               ? 'text-primary border-b-2 border-primary -mb-px'
-              : 'text-gray-400 hover:text-white'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Variables
@@ -254,7 +254,7 @@ export function ExecutionOverlay({
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === 'logs'
               ? 'text-primary border-b-2 border-primary -mb-px'
-              : 'text-gray-400 hover:text-white'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Logs
@@ -265,7 +265,7 @@ export function ExecutionOverlay({
             className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1 ${
               activeTab === 'debug'
                 ? 'text-primary border-b-2 border-primary -mb-px'
-                : 'text-gray-400 hover:text-white'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             <Bug className="w-3 h-3" />
@@ -330,7 +330,7 @@ function StepsList({
                 ? 'bg-primary/10 border-primary'
                 : hasBreakpoint
                   ? 'bg-error/10 border-error/50'
-                  : 'bg-node-bg border-node-border'
+                  : 'bg-bg-surface border-border-default'
             }`}
           >
             {/* Breakpoint indicator/toggle */}
@@ -344,21 +344,23 @@ function StepsList({
                 }`}
                 title={hasBreakpoint ? 'Remove breakpoint' : 'Add breakpoint'}
               >
-                {hasBreakpoint && <Circle className="w-2 h-2 fill-current text-white" />}
+                {hasBreakpoint && <Circle className="w-2 h-2 fill-current text-text-primary" />}
               </button>
             )}
 
             <StepStatusIcon status={step.status} />
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-white truncate">
+              <div className="text-sm font-medium text-text-primary truncate">
                 {step.stepName || step.stepId}
               </div>
               {step.error && (
-                <div className="text-xs text-error mt-1 truncate">{step.error}</div>
+                <div className="text-xs text-error mt-1 truncate">
+                  {typeof step.error === 'string' ? step.error : step.error.message || JSON.stringify(step.error)}
+                </div>
               )}
             </div>
             {step.duration !== undefined && (
-              <div className="text-xs text-gray-400">{step.duration}ms</div>
+              <div className="text-xs text-text-secondary">{step.duration}ms</div>
             )}
           </div>
         );
@@ -371,10 +373,10 @@ function LogsViewer({ logs }: { logs: string[] }) {
   return (
     <div className="font-mono text-xs space-y-1">
       {logs.length === 0 ? (
-        <div className="text-gray-500">No logs yet...</div>
+        <div className="text-text-muted">No logs yet...</div>
       ) : (
         logs.map((log, index) => (
-          <div key={index} className="text-gray-300">
+          <div key={index} className="text-text-primary">
             {log}
           </div>
         ))
@@ -430,7 +432,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
 
   if (stepsWithData.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 text-sm">
+      <div className="text-center py-8 text-text-muted text-sm">
         No data available yet.
         <br />
         <span className="text-xs">Step inputs and outputs will appear as steps execute.</span>
@@ -448,22 +450,22 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
         return (
           <div
             key={step.stepId}
-            className="border border-node-border rounded-lg overflow-hidden"
+            className="border border-border-default rounded-lg overflow-hidden"
           >
             {/* Step Header */}
             <button
               onClick={() => toggleStep(step.stepId)}
-              className="w-full flex items-center gap-2 px-3 py-2 bg-node-bg hover:bg-white/5 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 bg-bg-surface hover:bg-white/5 transition-colors"
             >
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown className="w-4 h-4 text-text-secondary" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-text-secondary" />
               )}
-              <code className="text-sm text-white font-mono">
+              <code className="text-sm text-text-primary font-mono">
                 {step.stepName || step.stepId}
               </code>
-              <span className="text-xs text-gray-500 ml-auto">
+              <span className="text-xs text-text-muted ml-auto">
                 {hasInputs && `${Object.keys(step.inputs!).length} inputs`}
                 {hasInputs && hasOutput && ' • '}
                 {hasOutput && step.outputVariable}
@@ -472,20 +474,20 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
 
             {/* Step Data */}
             {isExpanded && (
-              <div className="bg-panel-bg border-t border-node-border">
+              <div className="bg-bg-panel border-t border-border-default">
                 {/* Inputs Section */}
                 {hasInputs && (
-                  <div className="border-b border-node-border">
+                  <div className="border-b border-border-default">
                     <button
                       onClick={() => toggleSection(`${step.stepId}-inputs`)}
                       className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 transition-colors"
                     >
                       {expandedSection.has(`${step.stepId}-inputs`) ? (
-                        <ChevronDown className="w-3 h-3 text-gray-400" />
+                        <ChevronDown className="w-3 h-3 text-text-secondary" />
                       ) : (
-                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                        <ChevronRight className="w-3 h-3 text-text-secondary" />
                       )}
-                      <span className="text-xs font-medium text-gray-400">
+                      <span className="text-xs font-medium text-text-secondary">
                         Inputs ({Object.keys(step.inputs!).length})
                       </span>
                     </button>
@@ -508,7 +510,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                             {copiedKey === `${step.stepId}-inputs` ? (
                               <Check className="w-4 h-4 text-success" />
                             ) : (
-                              <Copy className="w-4 h-4 text-gray-400" />
+                              <Copy className="w-4 h-4 text-text-secondary" />
                             )}
                           </button>
                         </div>
@@ -525,11 +527,11 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                       className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 transition-colors"
                     >
                       {expandedSection.has(`${step.stepId}-output`) ? (
-                        <ChevronDown className="w-3 h-3 text-gray-400" />
+                        <ChevronDown className="w-3 h-3 text-text-secondary" />
                       ) : (
-                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                        <ChevronRight className="w-3 h-3 text-text-secondary" />
                       )}
-                      <span className="text-xs font-medium text-gray-400">
+                      <span className="text-xs font-medium text-text-secondary">
                         Output
                       </span>
                       <code className="text-xs text-primary font-mono ml-auto">
@@ -555,7 +557,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                             {copiedKey === step.outputVariable ? (
                               <Check className="w-4 h-4 text-success" />
                             ) : (
-                              <Copy className="w-4 h-4 text-gray-400" />
+                              <Copy className="w-4 h-4 text-text-secondary" />
                             )}
                           </button>
                         </div>
@@ -588,11 +590,11 @@ function ValueRenderer({
   const [expanded, setExpanded] = useState(depth < 2);
 
   if (value === null) {
-    return <span className="text-gray-500 font-mono text-xs">null</span>;
+    return <span className="text-text-muted font-mono text-xs">null</span>;
   }
 
   if (value === undefined) {
-    return <span className="text-gray-500 font-mono text-xs">undefined</span>;
+    return <span className="text-text-muted font-mono text-xs">undefined</span>;
   }
 
   if (typeof value === 'boolean') {
@@ -619,14 +621,14 @@ function ValueRenderer({
 
   if (Array.isArray(value)) {
     if (value.length === 0) {
-      return <span className="text-gray-400 font-mono text-xs">[]</span>;
+      return <span className="text-text-secondary font-mono text-xs">[]</span>;
     }
 
     return (
       <div className="space-y-1">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors"
         >
           {expanded ? (
             <ChevronDown className="w-3 h-3" />
@@ -636,10 +638,10 @@ function ValueRenderer({
           <span className="text-xs font-mono">Array({value.length})</span>
         </button>
         {expanded && (
-          <div className="ml-4 pl-2 border-l border-node-border space-y-1">
+          <div className="ml-4 pl-2 border-l border-border-default space-y-1">
             {value.slice(0, 20).map((item, index) => (
               <div key={index} className="flex items-start gap-2">
-                <span className="text-gray-500 font-mono text-xs">[{index}]:</span>
+                <span className="text-text-muted font-mono text-xs">[{index}]:</span>
                 <ValueRenderer
                   value={item}
                   onCopy={onCopy}
@@ -650,7 +652,7 @@ function ValueRenderer({
               </div>
             ))}
             {value.length > 20 && (
-              <div className="text-gray-500 text-xs">
+              <div className="text-text-muted text-xs">
                 ... and {value.length - 20} more items
               </div>
             )}
@@ -663,14 +665,14 @@ function ValueRenderer({
   if (typeof value === 'object') {
     const entries = Object.entries(value);
     if (entries.length === 0) {
-      return <span className="text-gray-400 font-mono text-xs">{'{}'}</span>;
+      return <span className="text-text-secondary font-mono text-xs">{'{}'}</span>;
     }
 
     return (
       <div className="space-y-1">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors"
         >
           {expanded ? (
             <ChevronDown className="w-3 h-3" />
@@ -680,7 +682,7 @@ function ValueRenderer({
           <span className="text-xs font-mono">Object({entries.length} keys)</span>
         </button>
         {expanded && (
-          <div className="ml-4 pl-2 border-l border-node-border space-y-1">
+          <div className="ml-4 pl-2 border-l border-border-default space-y-1">
             {entries.slice(0, 30).map(([key, val]) => (
               <div key={key} className="flex items-start gap-2">
                 <span className="text-primary font-mono text-xs">{key}:</span>
@@ -694,7 +696,7 @@ function ValueRenderer({
               </div>
             ))}
             {entries.length > 30 && (
-              <div className="text-gray-500 text-xs">
+              <div className="text-text-muted text-xs">
                 ... and {entries.length - 30} more keys
               </div>
             )}
@@ -704,7 +706,7 @@ function ValueRenderer({
     );
   }
 
-  return <span className="text-gray-400 font-mono text-xs">{String(value)}</span>;
+  return <span className="text-text-secondary font-mono text-xs">{String(value)}</span>;
 }
 
 function getTypeLabel(value: unknown): string {
@@ -724,7 +726,7 @@ function StatusIcon({ status }: { status: WorkflowStatus }) {
     case 'failed':
       return <XCircle className="w-5 h-5 text-error" />;
     case 'cancelled':
-      return <Square className="w-5 h-5 text-gray-400" />;
+      return <Square className="w-5 h-5 text-text-secondary" />;
     default:
       return <div className="w-5 h-5 rounded-full bg-gray-500" />;
   }
@@ -739,7 +741,7 @@ function StepStatusIcon({ status }: { status: StepStatus }) {
     case 'failed':
       return <XCircle className="w-4 h-4 text-error" />;
     case 'skipped':
-      return <SkipForward className="w-4 h-4 text-gray-400" />;
+      return <SkipForward className="w-4 h-4 text-text-secondary" />;
     default:
       return <div className="w-4 h-4 rounded-full border-2 border-gray-500" />;
   }
@@ -788,23 +790,23 @@ function DebugPanel({
       {/* Breakpoints Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-white flex items-center gap-2">
+          <h4 className="text-sm font-medium text-text-primary flex items-center gap-2">
             <Circle className="w-3 h-3 text-error" />
             Breakpoints ({debug.breakpoints.size})
           </h4>
           {debug.breakpoints.size > 0 && onClearBreakpoints && (
             <button
               onClick={onClearBreakpoints}
-              className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
+              className="text-xs text-text-secondary hover:text-text-primary flex items-center gap-1"
             >
               <Trash2 className="w-3 h-3" />
               Clear all
             </button>
           )}
         </div>
-        <div className="bg-node-bg rounded-lg p-3">
+        <div className="bg-bg-surface rounded-lg p-3">
           {debug.breakpoints.size === 0 ? (
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-text-muted">
               No breakpoints set. Click the dot next to a step to add one.
             </div>
           ) : (
@@ -812,7 +814,7 @@ function DebugPanel({
               {Array.from(debug.breakpoints).map((stepId) => (
                 <div
                   key={stepId}
-                  className="flex items-center gap-2 text-xs text-gray-300"
+                  className="flex items-center gap-2 text-xs text-text-primary"
                 >
                   <Circle className="w-2 h-2 fill-current text-error" />
                   <span className="font-mono">{stepId}</span>
@@ -825,17 +827,17 @@ function DebugPanel({
 
       {/* Call Stack Section */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-white">Call Stack</h4>
-        <div className="bg-node-bg rounded-lg p-3">
+        <h4 className="text-sm font-medium text-text-primary">Call Stack</h4>
+        <div className="bg-bg-surface rounded-lg p-3">
           {debug.callStack.length === 0 ? (
-            <div className="text-xs text-gray-500">No active call stack</div>
+            <div className="text-xs text-text-muted">No active call stack</div>
           ) : (
             <div className="space-y-1">
               {debug.callStack.map((frame, index) => (
                 <div
                   key={index}
                   className={`flex items-center gap-2 text-xs ${
-                    index === 0 ? 'text-primary' : 'text-gray-400'
+                    index === 0 ? 'text-primary' : 'text-text-secondary'
                   }`}
                 >
                   <ArrowRight className="w-3 h-3" />
@@ -849,8 +851,8 @@ function DebugPanel({
 
       {/* Watch Expressions Section */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-white">Watch Expressions</h4>
-        <div className="bg-node-bg rounded-lg p-3 space-y-2">
+        <h4 className="text-sm font-medium text-text-primary">Watch Expressions</h4>
+        <div className="bg-bg-surface rounded-lg p-3 space-y-2">
           {/* Add new watch expression */}
           {onAddWatchExpression && (
             <div className="flex items-center gap-2">
@@ -860,12 +862,12 @@ function DebugPanel({
                 onChange={(e) => setNewWatchExpr(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddWatch()}
                 placeholder="Add expression..."
-                className="flex-1 bg-transparent border border-node-border rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                className="flex-1 bg-transparent border border-border-default rounded px-2 py-1 text-xs text-text-primary placeholder-gray-500 focus:outline-none focus:border-primary"
               />
               <button
                 onClick={handleAddWatch}
                 disabled={!newWatchExpr.trim()}
-                className="p-1 text-gray-400 hover:text-white disabled:opacity-50"
+                className="p-1 text-text-secondary hover:text-text-primary disabled:opacity-50"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -874,7 +876,7 @@ function DebugPanel({
 
           {/* Watch list */}
           {debug.watchExpressions.length === 0 ? (
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-text-muted">
               No watch expressions. Add an expression to monitor its value.
             </div>
           ) : (
@@ -886,15 +888,15 @@ function DebugPanel({
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-primary font-mono truncate">{expr}</span>
-                    <span className="text-gray-500">=</span>
-                    <span className="text-gray-300 font-mono truncate">
+                    <span className="text-text-muted">=</span>
+                    <span className="text-text-primary font-mono truncate">
                       (not evaluated)
                     </span>
                   </div>
                   {onRemoveWatchExpression && (
                     <button
                       onClick={() => onRemoveWatchExpression(expr)}
-                      className="p-1 text-gray-500 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1 text-text-muted hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -908,23 +910,23 @@ function DebugPanel({
 
       {/* Debug State Info */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-white">Debug State</h4>
-        <div className="bg-node-bg rounded-lg p-3 text-xs space-y-1">
+        <h4 className="text-sm font-medium text-text-primary">Debug State</h4>
+        <div className="bg-bg-surface rounded-lg p-3 text-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Current Step:</span>
-            <span className="text-white font-mono">
+            <span className="text-text-secondary">Current Step:</span>
+            <span className="text-text-primary font-mono">
               {debug.currentStepId || '(none)'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Paused at Breakpoint:</span>
-            <span className={debug.pausedAtBreakpoint ? 'text-error' : 'text-gray-500'}>
+            <span className="text-text-secondary">Paused at Breakpoint:</span>
+            <span className={debug.pausedAtBreakpoint ? 'text-error' : 'text-text-muted'}>
               {debug.pausedAtBreakpoint ? 'Yes' : 'No'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-400">Step Over Pending:</span>
-            <span className={debug.stepOverPending ? 'text-warning' : 'text-gray-500'}>
+            <span className="text-text-secondary">Step Over Pending:</span>
+            <span className={debug.stepOverPending ? 'text-warning' : 'text-text-muted'}>
               {debug.stepOverPending ? 'Yes' : 'No'}
             </span>
           </div>

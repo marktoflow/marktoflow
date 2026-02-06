@@ -49,7 +49,7 @@ interface ExecutionState {
   debug: DebugState;
 
   // Existing methods
-  startExecution: (workflowId: string, workflowName: string, inputs?: Record<string, unknown>) => string;
+  startExecution: (workflowId: string, workflowName: string, inputs?: Record<string, unknown>, providedRunId?: string) => string;
   updateStepStatus: (runId: string, stepId: string, status: StepStatus, output?: unknown, error?: string, outputVariable?: string, inputs?: Record<string, unknown>) => void;
   completeExecution: (runId: string, status: WorkflowStatus, outputs?: Record<string, unknown>) => void;
   addLog: (runId: string, message: string) => void;
@@ -96,8 +96,9 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   isLoadingHistory: false,
   debug: initialDebugState,
 
-  startExecution: (workflowId, workflowName, inputs) => {
-    const runId = 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  startExecution: (workflowId, workflowName, inputs, providedRunId) => {
+    // Use provided runId from backend, or generate one if not provided
+    const runId = providedRunId || 'run-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     const newRun: ExecutionRun = {
       id: runId,
       workflowId,
