@@ -7,6 +7,7 @@
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { BaseApiClient } from './base-client.js';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 const TELEGRAM_API_URL = 'https://api.telegram.org';
 
@@ -455,9 +456,14 @@ export const TelegramInitializer: SDKInitializer = {
     }
 
     const client = new TelegramClient(token);
+    const wrapped = wrapIntegration('telegram', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

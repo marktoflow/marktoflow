@@ -6,6 +6,8 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
+import { linearSchemas } from '../reliability/schemas/linear.js';
 
 const LINEAR_API_URL = 'https://api.linear.app/graphql';
 
@@ -449,9 +451,15 @@ export const LinearInitializer: SDKInitializer = {
     }
 
     const client = new LinearClient(apiKey);
+    const wrapped = wrapIntegration('linear', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+      inputSchemas: linearSchemas,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

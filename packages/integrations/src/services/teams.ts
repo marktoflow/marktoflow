@@ -8,6 +8,7 @@
 
 import { Client } from '@microsoft/microsoft-graph-client';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface TeamsTeam {
   id: string;
@@ -457,9 +458,14 @@ export const TeamsInitializer: SDKInitializer = {
     });
 
     const teamsClient = new TeamsClient(client);
+    const wrapped = wrapIntegration('teams', teamsClient, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client: teamsClient,
-      actions: teamsClient,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

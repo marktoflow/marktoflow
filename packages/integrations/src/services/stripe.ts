@@ -8,6 +8,7 @@
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import Stripe from 'stripe';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 // Re-export Stripe types for convenience
 export type StripeCustomer = Stripe.Customer;
@@ -380,9 +381,14 @@ export const StripeInitializer: SDKInitializer = {
     const apiVersion = config.options?.['api_version'] as string | undefined;
 
     const client = new StripeClient(apiKey, { apiVersion });
+    const wrapped = wrapIntegration('stripe', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

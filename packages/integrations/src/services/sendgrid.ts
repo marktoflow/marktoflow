@@ -8,6 +8,7 @@
 
 import sgMail from '@sendgrid/mail';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -98,10 +99,15 @@ export const SendGridInitializer: SDKInitializer = {
     }
 
     const client = new SendGridClient(apiKey);
+    const wrapped = wrapIntegration('sendgrid', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

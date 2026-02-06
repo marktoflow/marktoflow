@@ -7,6 +7,7 @@
 
 import { google, docs_v1 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -492,6 +493,10 @@ export const GoogleDocsInitializer: SDKInitializer = {
       }
     }
 
-    return sdk;
+    return wrapIntegration('google-docs', sdk, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
   },
 };

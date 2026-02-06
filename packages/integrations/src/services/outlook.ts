@@ -1,5 +1,6 @@
 import { Client, PageCollection } from '@microsoft/microsoft-graph-client';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface OutlookEmail {
   id: string;
@@ -670,6 +671,10 @@ export const OutlookInitializer: SDKInitializer = {
       }
     }
 
-    return sdk;
+    return wrapIntegration('outlook', sdk, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
   },
 };

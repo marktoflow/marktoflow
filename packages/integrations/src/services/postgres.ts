@@ -6,6 +6,7 @@
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface PostgresConfig {
   host: string;
@@ -317,9 +318,14 @@ export const PostgresInitializer: SDKInitializer = {
 
     await client.connect();
 
+    const wrapped = wrapIntegration('postgres', client, {
+      timeout: 60000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

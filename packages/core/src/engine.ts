@@ -27,6 +27,8 @@ import {
   isParallelStep,
   isTryStep,
   isScriptStep,
+  isWaitStep,
+  isMergeStep,
   type IfStep,
   type SwitchStep,
   type ForEachStep,
@@ -37,6 +39,8 @@ import {
   type ParallelStep,
   type TryStep,
   type ScriptStep,
+  type WaitStep,
+  type MergeStep,
   type ActionStep,
   type SubWorkflowStep,
   type Permissions,
@@ -73,6 +77,28 @@ import { executeScriptAsync } from './script-executor.js';
 // ============================================================================
 
 /**
+ * Parse a duration string like "2h", "30m", "5s", "100ms" into milliseconds.
+ */
+function parseDuration(duration: string): number {
+  const match = duration.match(/^(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)$/i);
+  if (!match) {
+    const asNum = Number(duration);
+    if (!isNaN(asNum)) return asNum; // Treat bare numbers as milliseconds
+    throw new Error(`Invalid duration format: "${duration}". Use format like "2h", "30m", "5s", "100ms"`);
+  }
+  const value = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  switch (unit) {
+    case 'ms': return value;
+    case 's': return value * 1000;
+    case 'm': return value * 60 * 1000;
+    case 'h': return value * 60 * 60 * 1000;
+    case 'd': return value * 24 * 60 * 60 * 1000;
+    default: return value;
+  }
+}
+
+/**
  * Convert error to string for display/logging
  */
 function errorToString(error: unknown): string {
@@ -84,6 +110,20 @@ function errorToString(error: unknown): string {
   } catch {
     return String(error);
   }
+}
+
+/**
+ * Get a field value from an object by key path.
+ */
+function getField(item: unknown, field: string): unknown {
+  if (!item || typeof item !== 'object') return undefined;
+  const parts = field.split('.');
+  let current: unknown = item;
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
 }
 
 // ============================================================================
@@ -399,7 +439,7 @@ export class WorkflowEngine {
   private failoverConfig: FailoverConfig;
   private healthTracker: AgentHealthTracker;
   private failoverEvents: FailoverEvent[] = [];
-  private workflowPath?: string; // Base path for resolving sub-workflows
+  public workflowPath?: string; // Base path for resolving sub-workflows (public for CLI state tracking)
   private workflowPermissions?: Permissions; // Workflow-level permissions
   private promptCache: Map<string, LoadedPrompt> = new Map(); // Cache for loaded prompts
 
@@ -481,6 +521,14 @@ export class WorkflowEngine {
       return this.executeScriptStep(step, context);
     }
 
+    if (isWaitStep(step)) {
+      return this.executeWaitStep(step, context);
+    }
+
+    if (isMergeStep(step)) {
+      return this.executeMergeStep(step, context);
+    }
+
     // Default: action or workflow step
     return this.executeStepWithFailover(step, context, sdkRegistry, stepExecutor);
   }
@@ -516,7 +564,7 @@ export class WorkflowEngine {
       this.stateStore.createExecution({
         runId: context.runId,
         workflowId: workflow.metadata.id,
-        workflowPath: 'unknown',
+        workflowPath: this.workflowPath ?? 'unknown',
         status: WorkflowStatus.RUNNING,
         startedAt: startedAt,
         completedAt: null,
@@ -1565,6 +1613,7 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
 
   /**
    * Execute a for-each loop step.
+   * Supports optional batch_size and pause_between_batches for rate limiting.
    */
   private async executeForEachStep(
     step: ForEachStep,
@@ -1573,6 +1622,13 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
     stepExecutor: StepExecutor
   ): Promise<StepResult> {
     const startedAt = new Date();
+
+    const cleanupLoopVars = () => {
+      delete context.variables[step.itemVariable];
+      delete context.variables['loop'];
+      delete context.variables['batch'];
+      if (step.indexVariable) delete context.variables[step.indexVariable];
+    };
 
     try {
       // Resolve items array
@@ -1593,10 +1649,20 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
         return createStepResult(step.id, StepStatus.SKIPPED, [], startedAt);
       }
 
-      // Execute steps for each item
+      const batchSize = step.batchSize;
+      const pauseBetweenBatches = step.pauseBetweenBatches;
+
+      // If batch mode, process items in batches
+      if (batchSize && batchSize > 0) {
+        return await this.executeForEachBatched(
+          step, items, batchSize, pauseBetweenBatches ?? 0,
+          context, sdkRegistry, stepExecutor, startedAt
+        );
+      }
+
+      // Standard item-by-item execution
       const results: unknown[] = [];
       for (let i = 0; i < items.length; i++) {
-        // Inject loop variables
         context.variables[step.itemVariable] = items[i];
         context.variables['loop'] = {
           index: i,
@@ -1620,13 +1686,9 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
           if (result.status === StepStatus.FAILED) {
             const errorAction = step.errorHandling?.action ?? 'stop';
             if (errorAction === 'stop') {
-              // Clean up loop variables
-              delete context.variables[step.itemVariable];
-              delete context.variables['loop'];
-              if (step.indexVariable) delete context.variables[step.indexVariable];
+              cleanupLoopVars();
               return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, result.error);
             }
-            // 'continue' - skip to next iteration
             break;
           }
         }
@@ -1634,18 +1696,10 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
         results.push(context.variables[step.itemVariable]);
       }
 
-      // Clean up loop variables
-      delete context.variables[step.itemVariable];
-      delete context.variables['loop'];
-      if (step.indexVariable) delete context.variables[step.indexVariable];
-
+      cleanupLoopVars();
       return createStepResult(step.id, StepStatus.COMPLETED, results, startedAt);
     } catch (error) {
-      // Clean up loop variables on error
-      delete context.variables[step.itemVariable];
-      delete context.variables['loop'];
-      if (step.indexVariable) delete context.variables[step.indexVariable];
-
+      cleanupLoopVars();
       return createStepResult(
         step.id,
         StepStatus.FAILED,
@@ -1655,6 +1709,85 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
         error instanceof Error ? error.message : String(error)
       );
     }
+  }
+
+  /**
+   * Execute for-each in batch mode.
+   * Items are split into batches; {{ batch }} contains the current batch array.
+   */
+  private async executeForEachBatched(
+    step: ForEachStep,
+    items: unknown[],
+    batchSize: number,
+    pauseBetweenBatches: number,
+    context: ExecutionContext,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor,
+    startedAt: Date
+  ): Promise<StepResult> {
+    const results: unknown[] = [];
+    const totalBatches = Math.ceil(items.length / batchSize);
+
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const batchStart = batchIndex * batchSize;
+      const batchItems = items.slice(batchStart, batchStart + batchSize);
+
+      // Pause between batches (not before first batch)
+      if (batchIndex > 0 && pauseBetweenBatches > 0) {
+        await new Promise((resolve) => setTimeout(resolve, pauseBetweenBatches));
+      }
+
+      // Expose batch-level variables
+      context.variables['batch'] = batchItems;
+      context.variables['loop'] = {
+        index: batchIndex,
+        first: batchIndex === 0,
+        last: batchIndex === totalBatches - 1,
+        length: totalBatches,
+        batchSize,
+        batchStart,
+        totalItems: items.length,
+      };
+
+      // Process each item in the batch
+      for (let i = 0; i < batchItems.length; i++) {
+        const globalIndex = batchStart + i;
+        context.variables[step.itemVariable] = batchItems[i];
+
+        if (step.indexVariable) {
+          context.variables[step.indexVariable] = globalIndex;
+        }
+
+        for (const iterStep of step.steps) {
+          const result = await this.executeStep(iterStep, context, sdkRegistry, stepExecutor);
+
+          if (result.status === StepStatus.COMPLETED && iterStep.outputVariable) {
+            context.variables[iterStep.outputVariable] = result.output;
+          }
+
+          if (result.status === StepStatus.FAILED) {
+            const errorAction = step.errorHandling?.action ?? 'stop';
+            if (errorAction === 'stop') {
+              delete context.variables[step.itemVariable];
+              delete context.variables['loop'];
+              delete context.variables['batch'];
+              if (step.indexVariable) delete context.variables[step.indexVariable];
+              return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0, result.error);
+            }
+            break;
+          }
+        }
+
+        results.push(context.variables[step.itemVariable]);
+      }
+    }
+
+    delete context.variables[step.itemVariable];
+    delete context.variables['loop'];
+    delete context.variables['batch'];
+    if (step.indexVariable) delete context.variables[step.indexVariable];
+
+    return createStepResult(step.id, StepStatus.COMPLETED, results, startedAt);
   }
 
   /**
@@ -2069,6 +2202,270 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
       }
 
       return createStepResult(step.id, StepStatus.COMPLETED, result.value, startedAt);
+    } catch (error) {
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  // ============================================================================
+  // Wait Step Execution
+  // ============================================================================
+
+  /**
+   * Execute a wait/pause step.
+   *
+   * For mode=duration: In-process wait (suitable for short durations).
+   *   For persistent long-duration waits, a WaitManager should checkpoint
+   *   the execution and resume it later via the scheduler.
+   *
+   * For mode=webhook: Returns a resume URL. The execution will be
+   *   checkpointed and resumed when the URL is called.
+   *
+   * For mode=form: Returns form fields. The execution will be
+   *   checkpointed and resumed when the form is submitted.
+   */
+  private async executeWaitStep(
+    step: WaitStep,
+    context: ExecutionContext
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      switch (step.mode) {
+        case 'duration': {
+          if (!step.duration) {
+            return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+              'Wait step with mode=duration requires a duration');
+          }
+          const resolvedDuration = resolveTemplates(step.duration, context) as string;
+          const ms = parseDuration(resolvedDuration);
+
+          // For short durations (under 5 minutes), do in-process wait
+          if (ms <= 300000) {
+            await new Promise((resolve) => setTimeout(resolve, ms));
+            return createStepResult(step.id, StepStatus.COMPLETED, { waited: ms }, startedAt);
+          }
+
+          // For longer durations, checkpoint and schedule resume
+          // The StateStore will persist the execution state
+          if (this.stateStore) {
+            this.stateStore.saveCheckpoint({
+              runId: context.runId,
+              stepIndex: context.currentStepIndex,
+              stepName: step.id,
+              status: StepStatus.COMPLETED,
+              startedAt: startedAt,
+              completedAt: new Date(),
+              inputs: { mode: 'duration', resumeAt: new Date(Date.now() + ms).toISOString() },
+              outputs: { waiting: true },
+              error: null,
+              retryCount: 0,
+            });
+          }
+
+          // Set execution status to indicate waiting
+          const resumeAt = new Date(Date.now() + ms).toISOString();
+          return createStepResult(step.id, StepStatus.COMPLETED, {
+            waiting: true,
+            mode: 'duration',
+            resumeAt,
+            durationMs: ms,
+          }, startedAt);
+        }
+
+        case 'webhook': {
+          // Generate a unique resume URL
+          const resumeToken = crypto.randomUUID();
+          const webhookPath = step.webhookPath
+            ? (resolveTemplates(step.webhookPath, context) as string)
+            : `/resume/${context.runId}/${step.id}/${resumeToken}`;
+
+          if (this.stateStore) {
+            this.stateStore.saveCheckpoint({
+              runId: context.runId,
+              stepIndex: context.currentStepIndex,
+              stepName: step.id,
+              status: StepStatus.COMPLETED,
+              startedAt: startedAt,
+              completedAt: new Date(),
+              inputs: { mode: 'webhook', resumeToken, webhookPath },
+              outputs: { waiting: true },
+              error: null,
+              retryCount: 0,
+            });
+          }
+
+          return createStepResult(step.id, StepStatus.COMPLETED, {
+            waiting: true,
+            mode: 'webhook',
+            resumeToken,
+            webhookPath,
+          }, startedAt);
+        }
+
+        case 'form': {
+          if (!step.fields || Object.keys(step.fields).length === 0) {
+            return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+              'Wait step with mode=form requires fields');
+          }
+
+          const resumeToken = crypto.randomUUID();
+
+          if (this.stateStore) {
+            this.stateStore.saveCheckpoint({
+              runId: context.runId,
+              stepIndex: context.currentStepIndex,
+              stepName: step.id,
+              status: StepStatus.COMPLETED,
+              startedAt: startedAt,
+              completedAt: new Date(),
+              inputs: { mode: 'form', resumeToken, fields: step.fields },
+              outputs: { waiting: true },
+              error: null,
+              retryCount: 0,
+            });
+          }
+
+          return createStepResult(step.id, StepStatus.COMPLETED, {
+            waiting: true,
+            mode: 'form',
+            resumeToken,
+            fields: step.fields,
+            formPath: `/form/${context.runId}/${step.id}/${resumeToken}`,
+          }, startedAt);
+        }
+
+        default:
+          return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+            `Unknown wait mode: ${(step as WaitStep).mode}`);
+      }
+    } catch (error) {
+      return createStepResult(
+        step.id,
+        StepStatus.FAILED,
+        null,
+        startedAt,
+        0,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  // ============================================================================
+  // Merge Step Execution
+  // ============================================================================
+
+  /**
+   * Execute a merge step - combines data from multiple sources.
+   */
+  private async executeMergeStep(
+    step: MergeStep,
+    context: ExecutionContext
+  ): Promise<StepResult> {
+    const startedAt = new Date();
+
+    try {
+      // Resolve all source expressions to arrays
+      const resolvedSources: unknown[][] = [];
+      for (const source of step.sources) {
+        const resolved = resolveTemplates(source, context);
+        if (!Array.isArray(resolved)) {
+          return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+            `Merge source "${source}" did not resolve to an array`);
+        }
+        resolvedSources.push(resolved);
+      }
+
+      let result: unknown[];
+
+      switch (step.mode) {
+        case 'append':
+          result = resolvedSources.flat();
+          break;
+
+        case 'match': {
+          if (!step.matchField) {
+            return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+              'Merge mode "match" requires matchField');
+          }
+          // Return items that appear in ALL sources (by matchField)
+          const fieldSets = resolvedSources.map((source) =>
+            new Set(source.map((item) => getField(item, step.matchField!)))
+          );
+          // Intersection of all field sets
+          const commonKeys = fieldSets.reduce((acc, set) =>
+            new Set([...acc].filter((key) => set.has(key)))
+          );
+          // Return items from first source that match
+          result = resolvedSources[0].filter((item) =>
+            commonKeys.has(getField(item, step.matchField!))
+          );
+          break;
+        }
+
+        case 'diff': {
+          if (!step.matchField) {
+            return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+              'Merge mode "diff" requires matchField');
+          }
+          // Return items from first source NOT found in other sources
+          const otherKeys = new Set(
+            resolvedSources.slice(1).flat().map((item) => getField(item, step.matchField!))
+          );
+          result = resolvedSources[0].filter((item) =>
+            !otherKeys.has(getField(item, step.matchField!))
+          );
+          break;
+        }
+
+        case 'combine_by_field': {
+          if (!step.matchField) {
+            return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+              'Merge mode "combine_by_field" requires matchField');
+          }
+          // Group items by matchField and merge their properties
+          const grouped = new Map<unknown, Record<string, unknown>>();
+          const onConflict = step.onConflict ?? 'keep_last';
+
+          for (const source of resolvedSources) {
+            for (const item of source) {
+              if (!item || typeof item !== 'object') continue;
+              const key = getField(item, step.matchField!);
+              const existing = grouped.get(key);
+              if (existing) {
+                if (onConflict === 'keep_first') {
+                  // Only add new fields
+                  for (const [k, v] of Object.entries(item as Record<string, unknown>)) {
+                    if (!(k in existing)) existing[k] = v;
+                  }
+                } else if (onConflict === 'keep_last') {
+                  Object.assign(existing, item as Record<string, unknown>);
+                } else {
+                  // merge_fields: deep merge
+                  Object.assign(existing, item as Record<string, unknown>);
+                }
+              } else {
+                grouped.set(key, { ...(item as Record<string, unknown>) });
+              }
+            }
+          }
+          result = Array.from(grouped.values());
+          break;
+        }
+
+        default:
+          return createStepResult(step.id, StepStatus.FAILED, null, startedAt, 0,
+            `Unknown merge mode: ${(step as MergeStep).mode}`);
+      }
+
+      return createStepResult(step.id, StepStatus.COMPLETED, result, startedAt);
     } catch (error) {
       return createStepResult(
         step.id,

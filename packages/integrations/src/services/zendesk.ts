@@ -8,6 +8,7 @@
 
 import zendesk from 'node-zendesk';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface ZendeskTicket {
   id?: number;
@@ -197,10 +198,15 @@ export const ZendeskInitializer: SDKInitializer = {
     });
 
     const wrapper = new ZendeskClient(client);
+    const wrapped = wrapIntegration('zendesk', wrapper, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client: wrapper,
-      actions: wrapper,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

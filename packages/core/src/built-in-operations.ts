@@ -561,6 +561,36 @@ export function executeBuiltInOperation(
     case 'core.format':
       return executeFormat(resolvedInputs as unknown as FormatOperationInputs, context);
 
+    case 'core.aggregate':
+      return executeAggregate(resolvedInputs, context);
+
+    case 'core.compare':
+      return executeCompare(resolvedInputs, context);
+
+    case 'core.rename_keys':
+      return executeRenameKeys(resolvedInputs);
+
+    case 'core.limit':
+      return executeLimit(resolvedInputs);
+
+    case 'core.sort':
+      return executeSortOperation(resolvedInputs);
+
+    case 'core.crypto':
+      return executeCrypto(resolvedInputs);
+
+    case 'core.datetime':
+      return executeDatetime(resolvedInputs);
+
+    case 'core.parse':
+      return executeParse(resolvedInputs);
+
+    case 'core.compress':
+      return executeCompress(resolvedInputs);
+
+    case 'core.decompress':
+      return executeDecompress(resolvedInputs);
+
     default:
       // Check if it's a file operation
       if (isFileOperation(action)) {
@@ -574,6 +604,387 @@ export function executeBuiltInOperation(
  * Check if an action is a built-in operation
  */
 export function isBuiltInOperation(action: string): boolean {
-  const builtInActions = ['core.set', 'core.transform', 'core.extract', 'core.format'];
+  const builtInActions = [
+    'core.set', 'core.transform', 'core.extract', 'core.format',
+    'core.aggregate', 'core.compare', 'core.rename_keys', 'core.limit',
+    'core.sort', 'core.crypto', 'core.datetime', 'core.parse',
+    'core.compress', 'core.decompress',
+  ];
   return builtInActions.includes(action) || isFileOperation(action);
+}
+
+// ============================================================================
+// core.aggregate - Common aggregation presets
+// ============================================================================
+
+export function executeAggregate(
+  inputs: Record<string, unknown>,
+  _context: ExecutionContext
+): unknown {
+  const items = inputs.input as unknown[];
+  const operation = inputs.operation as string;
+  const field = inputs.field as string | undefined;
+
+  if (!Array.isArray(items)) throw new Error('core.aggregate: input must be an array');
+
+  const values = field
+    ? items.map((item) => {
+        if (item && typeof item === 'object') return (item as Record<string, unknown>)[field];
+        return item;
+      })
+    : items;
+
+  const numValues = values.map(Number).filter((n) => !isNaN(n));
+
+  switch (operation) {
+    case 'sum':
+      return numValues.reduce((a, b) => a + b, 0);
+    case 'avg':
+    case 'average':
+      return numValues.length > 0 ? numValues.reduce((a, b) => a + b, 0) / numValues.length : 0;
+    case 'count':
+      return items.length;
+    case 'min':
+      return numValues.length > 0 ? Math.min(...numValues) : null;
+    case 'max':
+      return numValues.length > 0 ? Math.max(...numValues) : null;
+    case 'first':
+      return items[0] ?? null;
+    case 'last':
+      return items[items.length - 1] ?? null;
+    case 'concat':
+      return values.join(inputs.separator as string ?? ', ');
+    case 'unique_count':
+      return new Set(values).size;
+    default:
+      throw new Error(`core.aggregate: unknown operation "${operation}"`);
+  }
+}
+
+// ============================================================================
+// core.compare - Compare two datasets
+// ============================================================================
+
+export function executeCompare(
+  inputs: Record<string, unknown>,
+  _context: ExecutionContext
+): unknown {
+  const source1 = inputs.source1 as unknown[];
+  const source2 = inputs.source2 as unknown[];
+  const field = inputs.field as string;
+
+  if (!Array.isArray(source1) || !Array.isArray(source2)) {
+    throw new Error('core.compare: source1 and source2 must be arrays');
+  }
+  if (!field) throw new Error('core.compare: field is required');
+
+  const getVal = (item: unknown) =>
+    item && typeof item === 'object' ? (item as Record<string, unknown>)[field] : item;
+
+  const set1 = new Set(source1.map(getVal));
+  const set2 = new Set(source2.map(getVal));
+
+  return {
+    added: source2.filter((item) => !set1.has(getVal(item))),
+    removed: source1.filter((item) => !set2.has(getVal(item))),
+    unchanged: source1.filter((item) => set2.has(getVal(item))),
+    total_source1: source1.length,
+    total_source2: source2.length,
+  };
+}
+
+// ============================================================================
+// core.rename_keys - Rename object keys
+// ============================================================================
+
+export function executeRenameKeys(inputs: Record<string, unknown>): unknown {
+  const input = inputs.input;
+  const mapping = inputs.mapping as Record<string, string>;
+
+  if (!mapping || typeof mapping !== 'object') {
+    throw new Error('core.rename_keys: mapping is required');
+  }
+
+  const rename = (obj: Record<string, unknown>): Record<string, unknown> => {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const newKey = mapping[key] ?? key;
+      result[newKey] = value;
+    }
+    return result;
+  };
+
+  if (Array.isArray(input)) {
+    return input.map((item) =>
+      item && typeof item === 'object' ? rename(item as Record<string, unknown>) : item
+    );
+  }
+
+  if (input && typeof input === 'object') {
+    return rename(input as Record<string, unknown>);
+  }
+
+  return input;
+}
+
+// ============================================================================
+// core.limit - Limit array items
+// ============================================================================
+
+export function executeLimit(inputs: Record<string, unknown>): unknown {
+  const items = inputs.input as unknown[];
+  const count = inputs.count as number;
+  const offset = (inputs.offset as number) ?? 0;
+
+  if (!Array.isArray(items)) throw new Error('core.limit: input must be an array');
+  if (typeof count !== 'number') throw new Error('core.limit: count is required');
+
+  return items.slice(offset, offset + count);
+}
+
+// ============================================================================
+// core.sort - Sort array
+// ============================================================================
+
+export function executeSortOperation(inputs: Record<string, unknown>): unknown {
+  const items = inputs.input as unknown[];
+  const field = inputs.field as string | undefined;
+  const direction = (inputs.direction as string) ?? 'asc';
+
+  if (!Array.isArray(items)) throw new Error('core.sort: input must be an array');
+
+  const sorted = [...items].sort((a, b) => {
+    const va = field && a && typeof a === 'object' ? (a as Record<string, unknown>)[field] : a;
+    const vb = field && b && typeof b === 'object' ? (b as Record<string, unknown>)[field] : b;
+
+    if (typeof va === 'number' && typeof vb === 'number') return va - vb;
+    return String(va ?? '').localeCompare(String(vb ?? ''));
+  });
+
+  return direction === 'desc' ? sorted.reverse() : sorted;
+}
+
+// ============================================================================
+// core.crypto - Cryptographic operations
+// ============================================================================
+
+export function executeCrypto(inputs: Record<string, unknown>): unknown {
+  const { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv } = require('node:crypto');
+  const operation = inputs.operation as string;
+  const data = inputs.data as string;
+
+  switch (operation) {
+    case 'hash': {
+      const algorithm = (inputs.algorithm as string) ?? 'sha256';
+      const encoding = (inputs.encoding as string) ?? 'hex';
+      return createHash(algorithm).update(data).digest(encoding);
+    }
+    case 'hmac': {
+      const algorithm = (inputs.algorithm as string) ?? 'sha256';
+      const key = inputs.key as string;
+      const encoding = (inputs.encoding as string) ?? 'hex';
+      if (!key) throw new Error('core.crypto: key required for hmac');
+      return createHmac(algorithm, key).update(data).digest(encoding);
+    }
+    case 'random': {
+      const size = (inputs.size as number) ?? 32;
+      const encoding = (inputs.encoding as string) ?? 'hex';
+      return randomBytes(size).toString(encoding);
+    }
+    case 'encrypt': {
+      const key = inputs.key as string;
+      const algorithm = (inputs.algorithm as string) ?? 'aes-256-gcm';
+      if (!key) throw new Error('core.crypto: key required for encrypt');
+      const keyBuf = Buffer.from(key, 'hex');
+      const iv = randomBytes(16);
+      const cipher = createCipheriv(algorithm, keyBuf, iv);
+      let encrypted = cipher.update(data, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+      const authTag = algorithm.includes('gcm') ? cipher.getAuthTag().toString('hex') : '';
+      return { encrypted, iv: iv.toString('hex'), authTag };
+    }
+    case 'decrypt': {
+      const key = inputs.key as string;
+      const algorithm = (inputs.algorithm as string) ?? 'aes-256-gcm';
+      const encrypted = inputs.encrypted as string;
+      const iv = inputs.iv as string;
+      const authTag = inputs.authTag as string;
+      if (!key || !encrypted || !iv) throw new Error('core.crypto: key, encrypted, iv required for decrypt');
+      const keyBuf = Buffer.from(key, 'hex');
+      const decipher = createDecipheriv(algorithm, keyBuf, Buffer.from(iv, 'hex'));
+      if (algorithm.includes('gcm') && authTag) {
+        decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+      }
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    }
+    default:
+      throw new Error(`core.crypto: unknown operation "${operation}"`);
+  }
+}
+
+// ============================================================================
+// core.datetime - Date/time operations
+// ============================================================================
+
+export function executeDatetime(inputs: Record<string, unknown>): unknown {
+  const operation = inputs.operation as string;
+  const date = inputs.date ? new Date(inputs.date as string) : new Date();
+
+  switch (operation) {
+    case 'now':
+      return new Date().toISOString();
+    case 'parse':
+      return date.toISOString();
+    case 'format': {
+      const fmt = (inputs.format as string) ?? 'iso';
+      if (fmt === 'iso') return date.toISOString();
+      if (fmt === 'date') return date.toISOString().split('T')[0];
+      if (fmt === 'time') return date.toISOString().split('T')[1]?.replace('Z', '');
+      if (fmt === 'unix') return Math.floor(date.getTime() / 1000);
+      if (fmt === 'unix_ms') return date.getTime();
+      return date.toISOString();
+    }
+    case 'add': {
+      const amount = inputs.amount as number;
+      const unit = (inputs.unit as string) ?? 'days';
+      const ms = { ms: 1, seconds: 1000, minutes: 60000, hours: 3600000, days: 86400000, weeks: 604800000 };
+      const mult = ms[unit as keyof typeof ms] ?? ms.days;
+      return new Date(date.getTime() + amount * mult).toISOString();
+    }
+    case 'subtract': {
+      const amount = inputs.amount as number;
+      const unit = (inputs.unit as string) ?? 'days';
+      const ms = { ms: 1, seconds: 1000, minutes: 60000, hours: 3600000, days: 86400000, weeks: 604800000 };
+      const mult = ms[unit as keyof typeof ms] ?? ms.days;
+      return new Date(date.getTime() - amount * mult).toISOString();
+    }
+    case 'diff': {
+      const date2 = new Date(inputs.date2 as string);
+      const unit = (inputs.unit as string) ?? 'days';
+      const diffMs = date.getTime() - date2.getTime();
+      const divisors = { ms: 1, seconds: 1000, minutes: 60000, hours: 3600000, days: 86400000 };
+      return diffMs / (divisors[unit as keyof typeof divisors] ?? divisors.days);
+    }
+    case 'start_of': {
+      const unit = (inputs.unit as string) ?? 'day';
+      const d = new Date(date);
+      if (unit === 'day') { d.setHours(0, 0, 0, 0); }
+      else if (unit === 'month') { d.setDate(1); d.setHours(0, 0, 0, 0); }
+      else if (unit === 'year') { d.setMonth(0, 1); d.setHours(0, 0, 0, 0); }
+      else if (unit === 'hour') { d.setMinutes(0, 0, 0); }
+      return d.toISOString();
+    }
+    case 'end_of': {
+      const unit = (inputs.unit as string) ?? 'day';
+      const d = new Date(date);
+      if (unit === 'day') { d.setHours(23, 59, 59, 999); }
+      else if (unit === 'month') { d.setMonth(d.getMonth() + 1, 0); d.setHours(23, 59, 59, 999); }
+      else if (unit === 'year') { d.setMonth(11, 31); d.setHours(23, 59, 59, 999); }
+      return d.toISOString();
+    }
+    default:
+      throw new Error(`core.datetime: unknown operation "${operation}"`);
+  }
+}
+
+// ============================================================================
+// core.parse - Parse structured data formats
+// ============================================================================
+
+export function executeParse(inputs: Record<string, unknown>): unknown {
+  const data = inputs.data as string;
+  const format = inputs.format as string;
+
+  if (!data || typeof data !== 'string') throw new Error('core.parse: data must be a string');
+  if (!format) throw new Error('core.parse: format is required');
+
+  switch (format) {
+    case 'json':
+      return JSON.parse(data);
+    case 'csv': {
+      const delimiter = (inputs.delimiter as string) ?? ',';
+      const hasHeader = (inputs.header as boolean) ?? true;
+      const lines = data.split('\n').filter((l) => l.trim());
+      if (lines.length === 0) return [];
+      if (hasHeader) {
+        const headers = lines[0].split(delimiter).map((h) => h.trim());
+        return lines.slice(1).map((line) => {
+          const values = line.split(delimiter);
+          const obj: Record<string, string> = {};
+          headers.forEach((h, i) => { obj[h] = (values[i] ?? '').trim(); });
+          return obj;
+        });
+      }
+      return lines.map((line) => line.split(delimiter).map((v) => v.trim()));
+    }
+    case 'xml': {
+      // Simple XML to object parser (handles basic cases)
+      const result: Record<string, unknown> = {};
+      const tagRegex = /<(\w+)(?:\s[^>]*)?>([^<]*)<\/\1>/g;
+      let match;
+      while ((match = tagRegex.exec(data)) !== null) {
+        result[match[1]] = match[2].trim();
+      }
+      return result;
+    }
+    case 'yaml': {
+      // Use the yaml package if available, otherwise basic parsing
+      try {
+        const yaml = require('yaml');
+        return yaml.parse(data);
+      } catch {
+        throw new Error('core.parse: yaml format requires the "yaml" package');
+      }
+    }
+    case 'url_params': {
+      const params = new URLSearchParams(data);
+      const result: Record<string, string> = {};
+      params.forEach((value, key) => { result[key] = value; });
+      return result;
+    }
+    default:
+      throw new Error(`core.parse: unknown format "${format}"`);
+  }
+}
+
+// ============================================================================
+// core.compress / core.decompress - Compression operations
+// ============================================================================
+
+export function executeCompress(inputs: Record<string, unknown>): unknown {
+  const { gzipSync, deflateSync } = require('node:zlib');
+  const data = inputs.data as string;
+  const algorithm = (inputs.algorithm as string) ?? 'gzip';
+
+  if (!data) throw new Error('core.compress: data is required');
+
+  const buf = Buffer.from(data, 'utf8');
+  switch (algorithm) {
+    case 'gzip':
+      return gzipSync(buf).toString('base64');
+    case 'deflate':
+      return deflateSync(buf).toString('base64');
+    default:
+      throw new Error(`core.compress: unknown algorithm "${algorithm}"`);
+  }
+}
+
+export function executeDecompress(inputs: Record<string, unknown>): unknown {
+  const { gunzipSync, inflateSync } = require('node:zlib');
+  const data = inputs.data as string;
+  const algorithm = (inputs.algorithm as string) ?? 'gzip';
+
+  if (!data) throw new Error('core.decompress: data is required');
+
+  const buf = Buffer.from(data, 'base64');
+  switch (algorithm) {
+    case 'gzip':
+      return gunzipSync(buf).toString('utf8');
+    case 'deflate':
+      return inflateSync(buf).toString('utf8');
+    default:
+      throw new Error(`core.decompress: unknown algorithm "${algorithm}"`);
+  }
 }

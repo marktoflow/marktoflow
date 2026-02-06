@@ -7,6 +7,7 @@
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { BaseApiClient } from './base-client.js';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface SupabaseQueryOptions {
   select?: string;
@@ -469,9 +470,14 @@ export const SupabaseInitializer: SDKInitializer = {
     }
 
     const client = new SupabaseClient(supabaseUrl, supabaseKey);
+    const wrapped = wrapIntegration('supabase', client, {
+      timeout: 60000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

@@ -8,6 +8,7 @@
 
 import twilio from 'twilio';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export type TwilioClient = twilio.Twilio;
 
@@ -193,10 +194,15 @@ export const TwilioInitializer: SDKInitializer = {
 
     const client = twilio(accountSid, authToken);
     const wrapper = new TwilioClientWrapper(client);
+    const wrapped = wrapIntegration('twilio', wrapper, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client: wrapper,
-      actions: wrapper,
+      client: wrapped,
+      actions: wrapped,
       rawClient: client,
     };
   },

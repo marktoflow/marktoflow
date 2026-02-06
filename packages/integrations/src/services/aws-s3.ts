@@ -25,6 +25,7 @@ import {
   type CopyObjectCommandInput,
 } from '@aws-sdk/client-s3';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface UploadObjectOptions {
   bucket: string;
@@ -222,10 +223,15 @@ export const AWSS3Initializer: SDKInitializer = {
     });
 
     const wrapper = new AWSS3Client(client);
+    const wrapped = wrapIntegration('aws-s3', wrapper, {
+      timeout: 60000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client: wrapper,
-      actions: wrapper,
+      client: wrapped,
+      actions: wrapped,
       rawClient: client,
     };
   },

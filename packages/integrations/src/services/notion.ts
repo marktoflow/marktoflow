@@ -7,6 +7,8 @@
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { BaseApiClient } from './base-client.js';
+import { wrapIntegration } from '../reliability/wrapper.js';
+import { notionSchemas } from '../reliability/schemas/notion.js';
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
@@ -462,9 +464,15 @@ export const NotionInitializer: SDKInitializer = {
     }
 
     const client = new NotionClient(token);
+    const wrapped = wrapIntegration('notion', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+      inputSchemas: notionSchemas,
+    });
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

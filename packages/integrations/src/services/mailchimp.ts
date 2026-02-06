@@ -9,6 +9,7 @@
 // @ts-expect-error - mailchimp doesn't have types
 import mailchimp from '@mailchimp/mailchimp_marketing';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface MailchimpMember {
   email_address: string;
@@ -252,10 +253,15 @@ export const MailchimpInitializer: SDKInitializer = {
     }
 
     const client = new MailchimpClient(apiKey, server);
+    const wrapped = wrapIntegration('mailchimp', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client,
-      actions: client,
+      client: wrapped,
+      actions: wrapped,
     };
   },
 };

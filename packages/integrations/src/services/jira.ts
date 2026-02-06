@@ -1,5 +1,7 @@
 import { Version2Client, Version3Client } from 'jira.js';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
+import { jiraSchemas } from '../reliability/schemas/jira.js';
 
 export const JiraInitializer: SDKInitializer = {
   async initialize(_module: unknown, config: ToolConfig): Promise<unknown> {
@@ -35,6 +37,12 @@ export const JiraInitializer: SDKInitializer = {
       },
     };
 
-    return useVersion3 ? new Version3Client(authConfig) : new Version2Client(authConfig);
+    const client = useVersion3 ? new Version3Client(authConfig) : new Version2Client(authConfig);
+    return wrapIntegration('jira', client, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+      inputSchemas: jiraSchemas,
+    });
   },
 };

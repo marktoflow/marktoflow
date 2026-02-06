@@ -9,6 +9,7 @@
 // @ts-expect-error - trello doesn't have types
 import Trello from 'trello';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { wrapIntegration } from '../reliability/wrapper.js';
 
 export interface TrelloCard {
   id?: string;
@@ -265,10 +266,15 @@ export const TrelloInitializer: SDKInitializer = {
 
     const client = new Trello(apiKey, token);
     const wrapper = new TrelloClient(client);
+    const wrapped = wrapIntegration('trello', wrapper, {
+      timeout: 30000,
+      retryOn: [429, 500, 502, 503],
+      maxRetries: 3,
+    });
 
     return {
-      client: wrapper,
-      actions: wrapper,
+      client: wrapped,
+      actions: wrapped,
       rawClient: client,
     };
   },
