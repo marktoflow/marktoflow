@@ -694,6 +694,187 @@ export class WorkflowEngine {
   }
 
   /**
+   * Resume a paused execution (e.g., after form submission).
+   *
+   * @param runId - The execution run ID
+   * @param stepId - The step ID that was waiting
+   * @param resumeData - Data from the resume action (e.g., form submission)
+   * @param sdkRegistry - SDK registry for step execution
+   * @param stepExecutor - Step executor function
+   * @returns Workflow result from resumed execution
+   */
+  async resumeExecution(
+    runId: string,
+    stepId: string,
+    resumeData: Record<string, unknown>,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor
+  ): Promise<WorkflowResult> {
+    if (!this.stateStore) {
+      throw new Error('Cannot resume execution: StateStore not configured');
+    }
+
+    // Load execution from state store
+    const execution = this.stateStore.getExecution(runId);
+    if (!execution) {
+      throw new Error(`Execution ${runId} not found`);
+    }
+
+    if (execution.status !== WorkflowStatus.RUNNING) {
+      throw new Error(`Cannot resume execution ${runId}: status is ${execution.status}`);
+    }
+
+    // Load workflow
+    const { workflow } = await parseFile(execution.workflowPath);
+    this.workflowPath = execution.workflowPath;
+
+    // Find the step that was waiting
+    const stepIndex = workflow.steps.findIndex(s => s.id === stepId);
+    if (stepIndex === -1) {
+      throw new Error(`Step ${stepId} not found in workflow`);
+    }
+
+    // Load all checkpoints to rebuild context
+    const checkpoints = this.stateStore.getCheckpoints(runId);
+    const stepResults: StepResult[] = [];
+    const context = createExecutionContext(workflow, execution.inputs || {});
+    context.runId = runId;
+    context.status = WorkflowStatus.RUNNING;
+
+    // Rebuild context from checkpoints
+    for (let i = 0; i < stepIndex; i++) {
+      const checkpoint = checkpoints.find(cp => cp.stepIndex === i);
+      if (checkpoint) {
+        const step = workflow.steps[i];
+
+        // Recreate step result
+        const result = createStepResult(
+          step.id,
+          checkpoint.status,
+          checkpoint.outputs,
+          checkpoint.startedAt,
+          checkpoint.retryCount,
+          checkpoint.error || undefined
+        );
+
+        stepResults.push(result);
+
+        // Restore step metadata
+        context.stepMetadata[step.id] = {
+          status: checkpoint.status.toLowerCase(),
+          retryCount: checkpoint.retryCount,
+          ...(checkpoint.error ? { error: checkpoint.error } : {}),
+        };
+
+        // Restore output variable
+        if (step.outputVariable && checkpoint.status === StepStatus.COMPLETED) {
+          context.variables[step.outputVariable] = checkpoint.outputs;
+        }
+      }
+    }
+
+    // Inject resume data into context
+    context.variables[`${stepId}_response`] = resumeData;
+
+    // Continue execution from next step
+    const startedAt = new Date(execution.startedAt);
+    this.workflowPermissions = workflow.permissions;
+
+    try {
+      for (let i = stepIndex + 1; i < workflow.steps.length; i++) {
+        const step = workflow.steps[i];
+        context.currentStepIndex = i;
+
+        const result = await this.executeStep(step, context, sdkRegistry, stepExecutor);
+        stepResults.push(result);
+
+        context.stepMetadata[step.id] = {
+          status: result.status.toLowerCase(),
+          retryCount: result.retryCount,
+          ...(result.error ? { error: errorToString(result.error) } : {}),
+        };
+
+        if (step.outputVariable && result.status === StepStatus.COMPLETED) {
+          context.variables[step.outputVariable] = result.output;
+        }
+
+        if (result.status === StepStatus.COMPLETED &&
+            result.output &&
+            typeof result.output === 'object' &&
+            '__workflow_outputs__' in result.output) {
+          const outputObj = result.output as Record<string, unknown>;
+          const outputs = outputObj['__workflow_outputs__'] as Record<string, unknown>;
+          context.workflowOutputs = outputs;
+        }
+
+        if (result.status === StepStatus.FAILED) {
+          let errorAction = 'stop';
+          if ('errorHandling' in step && step.errorHandling?.action) {
+            errorAction = step.errorHandling.action;
+          }
+
+          if (errorAction === 'stop' || errorAction === 'rollback') {
+            if (errorAction === 'rollback' && this.rollbackRegistry) {
+              await this.rollbackRegistry.rollbackAllAsync({
+                context,
+                inputs: context.inputs,
+                variables: context.variables,
+              });
+            }
+            context.status = WorkflowStatus.FAILED;
+            const workflowError = result.error ? errorToString(result.error) : `Step ${step.id} failed`;
+            const workflowResult = this.buildWorkflowResult(
+              workflow,
+              context,
+              stepResults,
+              startedAt,
+              workflowError
+            );
+            this.events.onWorkflowComplete?.(workflow, workflowResult);
+            return workflowResult;
+          }
+        }
+      }
+
+      context.status = WorkflowStatus.COMPLETED;
+    } catch (error) {
+      context.status = WorkflowStatus.FAILED;
+
+      if (this.stateStore) {
+        this.stateStore.updateExecution(runId, {
+          status: WorkflowStatus.FAILED,
+          completedAt: new Date(),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
+      const workflowResult = this.buildWorkflowResult(
+        workflow,
+        context,
+        stepResults,
+        startedAt,
+        error instanceof Error ? error.message : String(error)
+      );
+
+      this.events.onWorkflowComplete?.(workflow, workflowResult);
+      return workflowResult;
+    }
+
+    const workflowResult = this.buildWorkflowResult(workflow, context, stepResults, startedAt);
+
+    if (this.stateStore) {
+      this.stateStore.updateExecution(runId, {
+        status: context.status,
+        completedAt: new Date(),
+        outputs: context.variables,
+      });
+    }
+
+    this.events.onWorkflowComplete?.(workflow, workflowResult);
+    return workflowResult;
+  }
+
+  /**
    * Execute a workflow from a file.
    * This method automatically sets the workflow path for resolving sub-workflows.
    */

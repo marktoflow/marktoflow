@@ -10,11 +10,13 @@ import { existsSync, mkdirSync } from 'fs';
 import { StateStore } from '@marktoflow/core';
 import { workflowRoutes } from './routes/workflows.js';
 import { aiRoutes } from './routes/ai.js';
-import { executeRoutes } from './routes/execute.js';
+import { executeRoutes, setExecutionManager as setExecuteExecutionManager } from './routes/execute.js';
 import { toolsRoutes } from './routes/tools.js';
 import { executionRoutes } from './routes/executions.js';
+import { formRoutes, setExecutionManager as setFormExecutionManager } from './routes/form.js';
 import { setupWebSocket } from './websocket/index.js';
 import { FileWatcher } from './services/FileWatcher.js';
+import { ExecutionManager } from './services/ExecutionManager.js';
 
 // Get the directory where this file is located
 const __filename = fileURLToPath(import.meta.url);
@@ -77,6 +79,7 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
   app.use('/api/execute', executeRoutes);
   app.use('/api/executions', executionRoutes);
   app.use('/api/tools', toolsRoutes);
+  app.use('/api/form', formRoutes);
 
   // Health check
   app.get('/api/health', (_req, res) => {
@@ -93,7 +96,14 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
   }
 
   // WebSocket
-  setupWebSocket(io);
+  const wsEmitter = setupWebSocket(io);
+
+  // Create ExecutionManager with StateStore and WebSocket
+  const executionManager = new ExecutionManager(stateStore, wsEmitter, WORKFLOW_DIR);
+
+  // Set execution manager for routes
+  setExecuteExecutionManager(executionManager, WORKFLOW_DIR);
+  setFormExecutionManager(executionManager);
 
   // File watcher for live updates
   fileWatcher = new FileWatcher(WORKFLOW_DIR, io);

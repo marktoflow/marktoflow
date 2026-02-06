@@ -369,6 +369,162 @@ export class ExecutionManager {
   }
 
   /**
+   * Resume a paused execution (e.g., after form submission)
+   */
+  async resumeExecution(
+    runId: string,
+    stepId: string,
+    resumeData: Record<string, unknown>
+  ): Promise<void> {
+    // Check if execution exists
+    const execution = this.stateStore.getExecution(runId);
+    if (!execution) {
+      throw new Error(`Execution ${runId} not found`);
+    }
+
+    if (execution.status !== WorkflowStatus.RUNNING) {
+      throw new Error(`Cannot resume execution ${runId}: status is ${execution.status}`);
+    }
+
+    // Create new engine instance for resumption
+    const abortController = new AbortController();
+    const { workflow } = await parseFile(execution.workflowPath);
+
+    const engine = new WorkflowEngine(
+      {},
+      {
+        onStepStart: (step) => {
+          const stepIndex = workflow.steps.findIndex(s => s.id === step.id);
+          if (this.wsEmitter) {
+            this.wsEmitter.emitExecutionStep(runId, {
+              stepId: step.id,
+              stepIndex,
+              status: 'running',
+              action: step.action,
+            });
+          }
+        },
+        onStepComplete: (step, result) => {
+          const stepIndex = workflow.steps.findIndex(s => s.id === step.id);
+          if (this.wsEmitter) {
+            this.wsEmitter.emitExecutionStep(runId, {
+              stepId: step.id,
+              stepIndex,
+              status: result.status,
+              duration: result.duration,
+              output: result.output,
+              error: result.error,
+            });
+          }
+        },
+      },
+      this.stateStore
+    );
+
+    engine.workflowPath = execution.workflowPath;
+
+    // Track active execution
+    const activeExecution: ActiveExecution = {
+      runId,
+      workflowPath: execution.workflowPath,
+      workflowId: workflow.metadata.id,
+      startedAt: execution.startedAt,
+      status: 'running',
+      currentStep: execution.currentStep,
+      totalSteps: workflow.steps.length,
+      abortController,
+      engine,
+    };
+    this.activeExecutions.set(runId, activeExecution);
+
+    // Emit resumption event
+    if (this.wsEmitter) {
+      this.wsEmitter.emitExecutionStep(runId, {
+        stepId,
+        status: 'resumed',
+        resumeData,
+      });
+    }
+
+    // Set up SDK registry
+    const registry = new SDKRegistry();
+    registry.registerInitializer('core', CoreInitializer);
+    registry.registerInitializer('workflow', WorkflowInitializer);
+
+    // Register integrations
+    try {
+      const moduleName = '@marktoflow/integrations';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const integrationsModule = await (Function('moduleName', 'return import(moduleName)')(moduleName) as Promise<any>);
+      if (integrationsModule.registerIntegrations) {
+        integrationsModule.registerIntegrations(registry);
+      }
+    } catch {
+      // Continue without integrations
+    }
+
+    registry.registerTools(workflow.tools);
+
+    // Resume execution asynchronously
+    try {
+      const result = await engine.resumeExecution(
+        runId,
+        stepId,
+        resumeData,
+        registry,
+        createSDKStepExecutor()
+      );
+
+      // Update state store
+      this.stateStore.updateExecution(runId, {
+        status: result.status,
+        completedAt: new Date(),
+        outputs: result.output || null,
+        error: result.error || null,
+      });
+
+      // Update active execution
+      const active = this.activeExecutions.get(runId);
+      if (active) {
+        active.status = result.status === WorkflowStatus.COMPLETED ? 'completed' : 'failed';
+      }
+
+      // Emit completion
+      if (this.wsEmitter) {
+        this.wsEmitter.emitExecutionCompleted(runId, {
+          status: result.status,
+          duration: result.duration,
+          stepResults: result.stepResults,
+          outputs: result.output,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      this.stateStore.updateExecution(runId, {
+        status: WorkflowStatus.FAILED,
+        completedAt: new Date(),
+        error: errorMessage,
+      });
+
+      const active = this.activeExecutions.get(runId);
+      if (active) {
+        active.status = 'failed';
+      }
+
+      if (this.wsEmitter) {
+        this.wsEmitter.emitExecutionCompleted(runId, {
+          status: WorkflowStatus.FAILED,
+          error: errorMessage,
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Get execution status
    */
   getExecutionStatus(runId: string): ExecutionStatus | null {
