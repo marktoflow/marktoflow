@@ -116,9 +116,17 @@ tools:
   <tool_name>:
     sdk: string                      # Required: npm package, MCP server, or SDK package
     auth:                            # Optional: Authentication credentials
-      <key>: string | ${ENV_VAR}
+      <key>: string | ${ENV_VAR} | ${secret:provider://path}
     options:                         # Optional: Tool-specific options
       <key>: any
+
+secrets:                             # Optional: External secrets configuration
+  providers:
+    - type: string                   # Provider type: env, vault, aws, azure
+      config:                        # Provider-specific configuration
+        <key>: any
+  defaultCacheTTL: number            # Cache TTL in seconds (default: 300)
+  throwOnNotFound: boolean           # Throw on missing secrets (default: true)
 ```
 
 #### Properties
@@ -126,8 +134,21 @@ tools:
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `sdk` | `string` | Yes | npm package name (e.g., `@slack/web-api`), MCP server package (e.g., `@modelcontextprotocol/server-filesystem`), or native SDK |
-| `auth` | `object` | No | Authentication credentials (tool-specific) |
+| `auth` | `object` | No | Authentication credentials. Values can be plain strings, `${ENV_VAR}` references, or `${secret:provider://path}` secret references |
 | `options` | `object` | No | Additional configuration options (passed to MCP servers or SDKs) |
+
+#### Secret References
+
+Auth values can reference external secret stores using the syntax `${secret:provider://path#key}`:
+
+| Provider | Syntax | Example |
+|----------|--------|---------|
+| Environment | `${secret:env://VAR}` | `${secret:env://SLACK_TOKEN}` |
+| HashiCorp Vault | `${secret:vault://path}` | `${secret:vault://slack/bot-token}` |
+| AWS Secrets Manager | `${secret:aws://name#key}` | `${secret:aws://prod/slack#token}` |
+| Azure Key Vault | `${secret:azure://name}` | `${secret:azure://slack-token}` |
+
+Secrets are resolved at SDK initialization time before credentials are passed to the SDK.
 
 #### Tool Types
 
