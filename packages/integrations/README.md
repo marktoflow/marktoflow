@@ -1351,9 +1351,42 @@ npx @marktoflow/cli@alpha connect outlook
 
 ## Testing
 
+### Running All Tests
+
 ```bash
 npm test
 ```
+
+### Contract Tests
+
+marktoflow includes comprehensive contract tests for all integrations. Contract tests validate that integrations work correctly without hitting real APIs by using [MSW (Mock Service Worker)](https://mswjs.io/) to intercept HTTP requests.
+
+**Test Coverage:** 28 integrations with 256+ contract tests covering:
+- SDK behavior validation
+- Input validation with Zod schemas
+- Response handling
+- Error handling
+
+**Run contract tests:**
+
+```bash
+# All contract tests
+npm test tests/reliability/
+
+# Specific integration
+npm test tests/reliability/slack-contract.test.ts
+
+# Google APIs
+npm test tests/reliability/google-*-contract.test.ts
+```
+
+**Benefits:**
+- ✅ No API credentials required
+- ✅ Fast execution (no network calls)
+- ✅ Reliable (no flaky tests)
+- ✅ CI/CD friendly
+
+For detailed documentation on contract tests, see [tests/reliability/README.md](./tests/reliability/README.md).
 
 ## Links
 
