@@ -113,7 +113,7 @@ export {
   type AWSSecretsManagerConfig,
   type AzureKeyVaultConfig,
   type GCPSecretManagerConfig,
-} from './secrets/index.js';
+} from './secret-providers/index.js';
 
 // Parser
 export {
