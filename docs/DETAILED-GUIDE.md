@@ -32,6 +32,14 @@ marktoflow v2.0 brings powerful new capabilities and integrations:
 - ✅ **30+ built-in integrations** - Slack, GitHub, Jira, Gmail, Outlook, Google Suite, Telegram, WhatsApp, databases, and more
 - ✅ **Full TypeScript** - Type-safe workflows and integrations
 - ✅ **Enterprise features** - RBAC, approvals, audit logging, cost tracking
+- ✅ **External Secrets Management** - HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, environment variable providers
+- ✅ **Automatic OAuth Refresh** - Transparent token refresh for Gmail, Outlook, and Google services
+- ✅ **Execution History** - List, inspect, and replay past workflow executions via CLI
+- ✅ **Forms & Human-in-the-Loop** - Pause workflows for human approval via web forms
+- ✅ **Enhanced Dry-Run** - Full Nunjucks templates, control flow simulation, mock responses
+- ✅ **Input Validation** - Zod-based schema validation for all 30+ integrations
+- ✅ **Reliability Wrapper** - Automatic retries, circuit breakers, exponential backoff
+- ✅ **Credential Encryption** - AES-256-GCM encrypted credential storage
 
 ---
 
@@ -271,6 +279,18 @@ marktoflow run <workflow.md>       # Run a workflow
 marktoflow run --dry-run           # Simulate workflow without executing
 marktoflow debug <workflow.md>     # Debug workflow step-by-step
 marktoflow workflow list           # List available workflows
+marktoflow workflow validate <f>   # Validate workflow syntax
+```
+
+### Execution History
+
+```bash
+marktoflow history                 # List recent executions
+marktoflow history --limit 20     # Limit number of results
+marktoflow history --status failed # Filter by status (completed, failed, running)
+marktoflow history <run-id>        # Show detailed execution info
+marktoflow history <run-id> --step <name>  # Show specific step details
+marktoflow replay <run-id>         # Replay a previous execution with same inputs
 ```
 
 ### Service Connections
@@ -870,6 +890,144 @@ marktoflow serve --socket --app-token xapp-... --bot-token xoxb-...
 - ✅ Works behind firewalls
 - ✅ Simpler development setup
 - ✅ Real-time bidirectional communication
+
+### External Secrets Management
+
+marktoflow supports external secret stores for secure credential management. Instead of storing secrets in environment variables or config files, reference them using the secret reference syntax:
+
+```yaml
+tools:
+  slack:
+    sdk: '@slack/web-api'
+    auth:
+      token: '${secret:vault://slack/bot-token}'
+  github:
+    sdk: '@octokit/rest'
+    auth:
+      token: '${secret:aws://github-token}'
+```
+
+**Supported Providers:**
+
+| Provider | Syntax | Description |
+|----------|--------|-------------|
+| Environment | `${secret:env://VAR_NAME}` | Read from environment variables |
+| HashiCorp Vault | `${secret:vault://path/to/secret}` | Vault KV secrets engine |
+| AWS Secrets Manager | `${secret:aws://secret-name#key}` | AWS Secrets Manager with optional JSON key |
+| Azure Key Vault | `${secret:azure://secret-name}` | Azure Key Vault secrets |
+
+**Workflow Configuration:**
+
+```yaml
+secrets:
+  providers:
+    - type: vault
+      config:
+        address: 'https://vault.example.com'
+        token: '${VAULT_TOKEN}'
+    - type: aws
+      config:
+        region: 'us-east-1'
+  defaultCacheTTL: 300  # Cache secrets for 5 minutes
+```
+
+Secrets are resolved transparently at SDK initialization time. SDKs receive plain credentials without knowledge of the secret source.
+
+### Automatic OAuth Token Refresh
+
+marktoflow automatically refreshes expired OAuth2 tokens for supported services:
+
+- **Gmail** - Google OAuth2 with automatic token refresh via `tokens` event listener
+- **Outlook** - Microsoft Graph API with pre-check refresh before initialization
+- **Google Sheets/Calendar/Drive/Docs** - Shared Google OAuth2 refresh mechanism
+
+**How it works:**
+
+1. On SDK initialization, marktoflow checks if the access token is expired or expires within 5 minutes
+2. If expired, it refreshes using the stored refresh token
+3. New tokens are saved to `.marktoflow/credentials/` for future use
+4. The SDK initializes with a valid token
+
+```yaml
+tools:
+  gmail:
+    sdk: 'google-gmail'
+    auth:
+      client_id: '${GOOGLE_CLIENT_ID}'
+      client_secret: '${GOOGLE_CLIENT_SECRET}'
+      redirect_uri: '${GOOGLE_REDIRECT_URI}'
+      refresh_token: '${GOOGLE_REFRESH_TOKEN}'
+      # access_token auto-refreshes when expired
+```
+
+Run `marktoflow connect gmail` to set up OAuth credentials interactively.
+
+### Dry-Run Mode
+
+Simulate workflow execution without making real API calls:
+
+```bash
+marktoflow run workflow.md --dry-run
+```
+
+**Features:**
+
+- Full Nunjucks template resolution with proper variable substitution
+- Control flow simulation (if/else, switch, for_each, while, parallel, try/catch)
+- Service-specific mock responses for Slack, GitHub, Jira, Gmail, Linear, Notion
+- Step-by-step execution summary with simulated outputs
+- Input validation against workflow schemas
+
+### Forms & Human-in-the-Loop
+
+Pause workflow execution to collect human input via web forms:
+
+```yaml
+steps:
+  - type: wait
+    mode: form
+    form:
+      title: 'Approval Required'
+      fields:
+        - name: approved
+          type: boolean
+          label: 'Approve this request?'
+          required: true
+        - name: comments
+          type: string
+          label: 'Comments'
+    output_variable: approval_result
+
+  - type: if
+    condition: "{{ approval_result.approved }}"
+    then:
+      - action: slack.chat.postMessage
+        inputs:
+          text: 'Request approved!'
+```
+
+Forms are served via the GUI server and support real-time status updates via WebSocket.
+
+### Execution History
+
+View and replay past workflow executions:
+
+```bash
+# List recent executions
+marktoflow history
+
+# Filter by status
+marktoflow history --status failed
+
+# View detailed execution info with step timeline
+marktoflow history abc123
+
+# View specific step details
+marktoflow history abc123 --step "Send notification"
+
+# Replay a previous execution with original inputs
+marktoflow replay abc123
+```
 
 ---
 
