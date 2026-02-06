@@ -83,6 +83,16 @@ export {
   type CredentialStore,
 } from './credentials.js';
 
+// OAuth Token Refresh
+export {
+  refreshGoogleToken,
+  refreshMicrosoftToken,
+  refreshOAuthToken,
+  type OAuthTokens,
+  type GoogleOAuthRefreshResponse,
+  type MicrosoftOAuthRefreshResponse,
+} from './oauth-refresh.js';
+
 // Parser
 export {
   parseFile,

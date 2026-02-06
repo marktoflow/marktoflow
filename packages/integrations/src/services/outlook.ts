@@ -1,6 +1,8 @@
 import { Client, PageCollection } from '@microsoft/microsoft-graph-client';
-import { ToolConfig, SDKInitializer } from '@marktoflow/core';
+import { ToolConfig, SDKInitializer, refreshMicrosoftToken } from '@marktoflow/core';
 import { wrapIntegration } from '../reliability/wrapper.js';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 
 export interface OutlookEmail {
   id: string;
@@ -641,16 +643,119 @@ export class OutlookActions {
   }
 }
 
+/**
+ * Load saved Outlook OAuth tokens from credentials directory
+ */
+function loadOutlookTokens(): {
+  access_token?: string;
+  refresh_token?: string;
+  client_id?: string;
+  client_secret?: string;
+  tenant_id?: string;
+  expires_at?: number;
+} | null {
+  const credentialsPath = join('.marktoflow', 'credentials', 'outlook.json');
+  if (!existsSync(credentialsPath)) return null;
+
+  try {
+    return JSON.parse(readFileSync(credentialsPath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save Outlook OAuth tokens to credentials directory
+ */
+function saveOutlookTokens(tokens: {
+  access_token: string;
+  refresh_token: string;
+  expires_in?: number;
+  client_id?: string;
+  client_secret?: string;
+  tenant_id?: string;
+}): void {
+  const credentialsPath = join('.marktoflow', 'credentials', 'outlook.json');
+  const dir = dirname(credentialsPath);
+
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+
+  const data = {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    client_id: tokens.client_id,
+    client_secret: tokens.client_secret,
+    tenant_id: tokens.tenant_id,
+    expires_at: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : undefined,
+  };
+
+  writeFileSync(credentialsPath, JSON.stringify(data, null, 2));
+}
+
+/**
+ * Check if token is expired or will expire soon (within 5 minutes)
+ */
+function isTokenExpired(expiresAt?: number): boolean {
+  if (!expiresAt) return false;
+  const bufferMs = 5 * 60 * 1000; // 5 minutes
+  return Date.now() >= expiresAt - bufferMs;
+}
+
 export const OutlookInitializer: SDKInitializer = {
   async initialize(_module: unknown, config: ToolConfig): Promise<unknown> {
-    const token = config.auth?.['token'] as string | undefined;
-    if (!token) {
-      throw new Error('Outlook SDK requires auth.token');
+    let accessToken = config.auth?.['token'] as string | undefined;
+    const clientId = config.auth?.['client_id'] as string | undefined;
+    const clientSecret = config.auth?.['client_secret'] as string | undefined;
+    const tenantId = (config.auth?.['tenant_id'] as string | undefined) || 'common';
+
+    // Try loading from saved credentials if not provided
+    let savedTokens = loadOutlookTokens();
+    if (!accessToken && savedTokens) {
+      accessToken = savedTokens.access_token;
+    }
+
+    if (!accessToken) {
+      throw new Error('Outlook SDK requires auth.token or saved credentials');
+    }
+
+    // Check if token is expired and refresh if needed
+    if (savedTokens && isTokenExpired(savedTokens.expires_at) && savedTokens.refresh_token) {
+      const effectiveClientId = clientId || savedTokens.client_id;
+      const effectiveClientSecret = clientSecret || savedTokens.client_secret;
+      const effectiveTenantId = tenantId || savedTokens.tenant_id || 'common';
+
+      if (effectiveClientId && effectiveClientSecret) {
+        try {
+          const newTokens = await refreshMicrosoftToken(
+            effectiveClientId,
+            effectiveClientSecret,
+            savedTokens.refresh_token,
+            effectiveTenantId
+          );
+
+          accessToken = newTokens.accessToken;
+
+          // Save refreshed tokens
+          saveOutlookTokens({
+            access_token: newTokens.accessToken,
+            refresh_token: newTokens.refreshToken || savedTokens.refresh_token,
+            expires_in: newTokens.expiresIn,
+            client_id: effectiveClientId,
+            client_secret: effectiveClientSecret,
+            tenant_id: effectiveTenantId,
+          });
+        } catch (error) {
+          console.error('Failed to refresh Outlook token:', error);
+          throw new Error('Outlook token expired and refresh failed. Please re-authenticate.');
+        }
+      }
     }
 
     const client = Client.init({
       authProvider: (done) => {
-        done(null, token);
+        done(null, accessToken);
       },
     });
 
