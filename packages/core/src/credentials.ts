@@ -712,6 +712,95 @@ export class CredentialManager {
     });
   }
 
+  /**
+   * Check if an OAuth token is expired or will expire soon
+   */
+  isTokenExpired(name: string, bufferMinutes: number = 5): boolean {
+    const credential = this.store.get(name);
+    if (!credential || !credential.expiresAt) {
+      return false; // No expiration set
+    }
+
+    const now = new Date();
+    const bufferMs = bufferMinutes * 60 * 1000;
+    const expiryWithBuffer = new Date(credential.expiresAt.getTime() - bufferMs);
+
+    return expiryWithBuffer <= now;
+  }
+
+  /**
+   * Update OAuth access token after refresh
+   */
+  updateOAuthToken(name: string, newAccessToken: string, expiresIn?: number): Credential {
+    const existing = this.store.get(name);
+    if (!existing) {
+      throw new CredentialNotFoundError(`Credential '${name}' not found`);
+    }
+
+    // Calculate new expiration time if provided
+    let newExpiresAt = existing.expiresAt;
+    if (expiresIn) {
+      newExpiresAt = new Date(Date.now() + expiresIn * 1000);
+    }
+
+    const params: {
+      name: string;
+      value: string;
+      credentialType?: CredentialType;
+      description?: string;
+      metadata?: Record<string, unknown>;
+      expiresAt?: Date;
+      tags?: string[];
+    } = {
+      name,
+      value: newAccessToken,
+      credentialType: existing.credentialType,
+    };
+
+    if (existing.description) params.description = existing.description;
+    if (existing.metadata) params.metadata = existing.metadata;
+    if (newExpiresAt) params.expiresAt = newExpiresAt;
+    if (existing.tags && existing.tags.length > 0) params.tags = existing.tags;
+
+    return this.set(params);
+  }
+
+  /**
+   * Get OAuth tokens with automatic expiration checking
+   */
+  getOAuthTokens(name: string): {
+    accessToken: string;
+    refreshToken?: string;
+    clientId?: string;
+    clientSecret?: string;
+    isExpired: boolean;
+  } {
+    const credential = this.store.get(name);
+    if (!credential) {
+      throw new CredentialNotFoundError(`Credential '${name}' not found`);
+    }
+
+    const accessToken = this.encryptor.decrypt(credential.value);
+    const metadata = credential.metadata || {};
+
+    const result: {
+      accessToken: string;
+      refreshToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      isExpired: boolean;
+    } = {
+      accessToken,
+      isExpired: this.isTokenExpired(name),
+    };
+
+    if (metadata.refresh_token) result.refreshToken = metadata.refresh_token as string;
+    if (metadata.client_id) result.clientId = metadata.client_id as string;
+    if (metadata.client_secret) result.clientSecret = metadata.client_secret as string;
+
+    return result;
+  }
+
   export(name: string): Record<string, unknown> {
     const credential = this.store.get(name);
     if (!credential) {

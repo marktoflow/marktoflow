@@ -1,6 +1,6 @@
 import { google, gmail_v1 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { wrapIntegration } from '../reliability/wrapper.js';
 import { gmailSchemas } from '../reliability/schemas/gmail.js';
@@ -448,6 +448,29 @@ export const GmailInitializer: SDKInitializer = {
     oauth2Client.setCredentials({
       refresh_token: refreshToken,
       access_token: accessToken,
+    });
+
+    // Listen for token refresh events and persist new tokens
+    oauth2Client.on('tokens', (tokens) => {
+      if (tokens.access_token && refreshToken) {
+        // Save new access token to credentials file
+        const credentialsPath = join('.marktoflow', 'credentials', 'gmail.json');
+        try {
+          const currentData = existsSync(credentialsPath)
+            ? JSON.parse(readFileSync(credentialsPath, 'utf-8'))
+            : {};
+
+          currentData.access_token = tokens.access_token;
+          currentData.refresh_token = tokens.refresh_token || refreshToken;
+          if (tokens.expiry_date) {
+            currentData.expiry_date = tokens.expiry_date;
+          }
+
+          writeFileSync(credentialsPath, JSON.stringify(currentData, null, 2));
+        } catch (error) {
+          console.error('Failed to persist refreshed Gmail token:', error);
+        }
+      }
     });
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
