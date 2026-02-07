@@ -17,7 +17,7 @@ function OutputNodeComponent({ data, selected }: NodeProps<OutputNodeType>) {
   const statusConfig = {
     pending: {
       icon: Clock,
-      color: 'text-gray-400',
+      color: 'text-text-muted',
       borderColor: 'border-gray-500',
       bgColor: 'bg-gray-500/10',
     },
@@ -58,10 +58,10 @@ function OutputNodeComponent({ data, selected }: NodeProps<OutputNodeType>) {
           <Flag className={`w-4 h-4 ${config.color}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-medium text-text-muted uppercase tracking-wider">
             Output
           </div>
-          <div className="text-sm font-medium text-white truncate">
+          <div className="text-sm font-medium text-text-primary truncate">
             {data.name || 'Workflow End'}
           </div>
         </div>
@@ -70,8 +70,8 @@ function OutputNodeComponent({ data, selected }: NodeProps<OutputNodeType>) {
 
       {/* Variables */}
       {data.variables && data.variables.length > 0 && (
-        <div className="px-3 py-2 border-t border-white/10">
-          <div className="text-xs text-gray-500 mb-1">Output Variables</div>
+        <div className="px-3 py-2 border-t border-border-subtle">
+          <div className="text-xs text-text-muted mb-1">Output Variables</div>
           <div className="flex flex-wrap gap-1">
             {data.variables.map((variable) => (
               <code
@@ -87,15 +87,15 @@ function OutputNodeComponent({ data, selected }: NodeProps<OutputNodeType>) {
 
       {/* Description */}
       {data.description && (
-        <div className="px-3 py-2 border-t border-white/10">
-          <div className="text-xs text-gray-400">{data.description}</div>
+        <div className="px-3 py-2 border-t border-border-subtle">
+          <div className="text-xs text-text-secondary">{data.description}</div>
         </div>
       )}
 
       {/* Result preview */}
       {status === 'completed' && data.result !== undefined && (
-        <div className="px-3 py-2 border-t border-white/10">
-          <div className="text-xs text-gray-500 mb-1">Result</div>
+        <div className="px-3 py-2 border-t border-border-subtle">
+          <div className="text-xs text-text-muted mb-1">Result</div>
           <pre className="text-xs text-success font-mono bg-black/20 rounded p-1.5 overflow-x-auto max-h-20">
             {typeof data.result === 'string'
               ? data.result.slice(0, 100)
