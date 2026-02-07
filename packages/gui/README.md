@@ -36,6 +36,7 @@ const server = await startServer({
 ## Features
 
 - **Drag-and-Drop Editor** — Visual node-based workflow canvas with pan/zoom
+- **Auto-Layout** — Dagre-based auto-layout on workflow load with per-node-type sizing; also available via Cmd+L
 - **AI Assistance** — Natural language commands to modify workflows (Claude, Copilot, Ollama)
 - **Command Palette (Cmd+K)** — Fuzzy search across actions, workflows, nodes, and settings
 - **Real-time Execution** — Run workflows and watch live status via WebSocket
@@ -53,15 +54,16 @@ const server = await startServer({
 
 ## AI Providers
 
-| Provider | Authentication |
-|----------|----------------|
-| Claude Code | Claude CLI (`claude`) |
-| GitHub Copilot | `copilot auth login` |
-| OpenAI Codex | Codex CLI |
-| OpenCode | `opencode /connect` |
-| Claude API | `ANTHROPIC_API_KEY` |
-| Ollama | Local server at `localhost:11434` |
-| Demo Mode | Always available |
+| Provider | Auth Type | Authentication |
+|----------|-----------|----------------|
+| Claude Code | SDK | Claude CLI — `claude login` |
+| GitHub Copilot | SDK | Copilot CLI — `copilot auth login` |
+| OpenAI Codex | SDK | `OPENAI_API_KEY` env var (auto-detected) |
+| Claude API | API Key | `ANTHROPIC_API_KEY` env var |
+| Ollama | Local | `ollama serve` on `localhost:11434` |
+| Demo Mode | — | Always available |
+
+SDK-based providers show connection status and auth instructions in the provider switcher instead of empty config forms. Codex auto-activates when `OPENAI_API_KEY` is set. Copilot dynamically fetches available models from the SDK.
 
 ## Keyboard Shortcuts
 

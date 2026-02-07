@@ -53,7 +53,7 @@ interface SessionEvent {
 export class CopilotProvider implements AgentProvider {
   readonly id = 'copilot';
   readonly name = 'GitHub Copilot';
-  readonly capabilities: AgentCapabilities = {
+  capabilities: AgentCapabilities = {
     streaming: true,
     toolUse: true,
     codeExecution: true,
@@ -73,6 +73,8 @@ export class CopilotProvider implements AgentProvider {
   private error: string | undefined;
   private cliPath?: string;
   private cliUrl?: string;
+  private cachedModels: string[] | null = null;
+  private modelsFetchedAt: number = 0;
 
   async initialize(config: AgentConfig): Promise<void> {
     try {
@@ -120,6 +122,9 @@ export class CopilotProvider implements AgentProvider {
           }
           this.ready = true;
           this.error = undefined;
+
+          // Fetch available models asynchronously after successful init
+          this.fetchAndCacheModels().catch(() => {});
         }
       } catch (pingError) {
         this.ready = false;
@@ -128,6 +133,36 @@ export class CopilotProvider implements AgentProvider {
     } catch (err) {
       this.ready = false;
       this.error = err instanceof Error ? err.message : 'Unknown error initializing Copilot';
+    }
+  }
+
+  /**
+   * Fetch and cache available models from the Copilot SDK.
+   * Uses a 5-minute TTL cache to avoid excessive API calls.
+   */
+  private async fetchAndCacheModels(): Promise<void> {
+    const MODEL_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    const now = Date.now();
+
+    if (this.cachedModels && now - this.modelsFetchedAt < MODEL_CACHE_TTL) {
+      return;
+    }
+
+    try {
+      const client = this.client as { listModels?: () => Promise<Array<{ id?: string; name?: string }>> };
+      if (typeof client.listModels === 'function') {
+        const models = await client.listModels();
+        const modelIds = models
+          .map((m) => m.id || m.name)
+          .filter((id): id is string => !!id);
+        if (modelIds.length > 0) {
+          this.cachedModels = modelIds;
+          this.modelsFetchedAt = now;
+          this.capabilities = { ...this.capabilities, models: modelIds };
+        }
+      }
+    } catch {
+      // Silently fall back to hardcoded defaults
     }
   }
 

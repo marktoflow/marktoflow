@@ -393,25 +393,82 @@ Get the status of all available AI providers.
 **Response:**
 ```json
 {
-  "active": "claude",
-  "providers": {
-    "claude": {
-      "ready": true,
-      "model": "claude-sonnet-4-20250514"
+  "activeProvider": "claude-code",
+  "providers": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code (SDK)",
+      "status": "ready",
+      "isActive": true,
+      "description": "Model: claude-sonnet-4-20250514",
+      "authType": "sdk",
+      "authInstructions": "Authenticate using the Claude CLI: run \"claude login\" in your terminal.",
+      "availableModels": ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"]
     },
-    "copilot": {
-      "ready": false,
-      "error": "Not authenticated"
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot (SDK)",
+      "status": "needs_config",
+      "isActive": false,
+      "description": "SDK-based authentication",
+      "authType": "sdk",
+      "authInstructions": "Authenticate using the Copilot CLI: run \"copilot auth login\" in your terminal.",
+      "availableModels": ["gpt-4.1", "gpt-4o", "gpt-4-turbo", "claude-3.5-sonnet"]
     },
-    "ollama": {
-      "ready": true,
-      "model": "llama3.2"
+    {
+      "id": "codex",
+      "name": "OpenAI Codex (SDK)",
+      "status": "ready",
+      "isActive": false,
+      "description": "Model: codex-1",
+      "authType": "sdk",
+      "authInstructions": "Set the OPENAI_API_KEY environment variable, then restart the GUI server."
     },
-    "demo": {
-      "ready": true
+    {
+      "id": "claude",
+      "name": "Claude (API Key)",
+      "status": "needs_config",
+      "isActive": false,
+      "authType": "api_key",
+      "configOptions": { "apiKey": true, "model": true }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama (Local)",
+      "status": "unavailable",
+      "isActive": false,
+      "description": "Local inference",
+      "authType": "local",
+      "authInstructions": "Start Ollama locally: run \"ollama serve\" in your terminal.",
+      "configOptions": { "baseUrl": true, "model": true }
+    },
+    {
+      "id": "demo",
+      "name": "Demo Mode",
+      "status": "ready",
+      "isActive": false,
+      "description": "Simulated responses for testing",
+      "authType": "demo"
     }
-  }
+  ]
 }
+```
+
+**Provider fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique provider identifier |
+| `name` | string | Human-readable name |
+| `status` | string | `ready`, `needs_config`, or `unavailable` |
+| `isActive` | boolean | Whether this is the active provider |
+| `description` | string? | Short status text (model name or auth type) |
+| `authType` | string? | `sdk`, `api_key`, `local`, or `demo` |
+| `authInstructions` | string? | How to authenticate (shown for SDK providers) |
+| `availableModels` | string[]? | Models available for selection |
+| `configOptions` | object? | Which config fields the UI should show (`apiKey`, `baseUrl`, `model`) |
+
+Note: SDK providers that are already `ready` (e.g., Codex with `OPENAI_API_KEY` set) omit `configOptions` so the UI does not show an unnecessary config form.
 ```
 
 ---
@@ -427,7 +484,7 @@ Set and configure the active AI provider.
 **Parameters:**
 | Name | Type | Description |
 |------|------|-------------|
-| `providerId` | string | Provider ID: `claude`, `copilot`, `ollama`, `demo` |
+| `providerId` | string | Provider ID: `claude-code`, `copilot`, `codex`, `claude`, `ollama`, `demo` |
 
 **Request Body:**
 ```json

@@ -5,9 +5,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAgentStore } from '../../stores/agentStore';
+import type { Provider } from '../../stores/agentStore';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
-import { Check, Settings, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Settings, AlertCircle, Loader2, Info } from 'lucide-react';
 
 interface ProviderSwitcherProps {
   open: boolean;
@@ -34,8 +35,12 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     const provider = providers.find((p) => p.id === providerId);
     if (!provider) return;
 
-    if (provider.status === 'needs_config') {
-      // Show config modal
+    if (provider.authType === 'sdk') {
+      // SDK providers: show info/config modal (even for needs_config)
+      setSelectedProviderId(providerId);
+      setShowConfig(true);
+    } else if (provider.status === 'needs_config') {
+      // Non-SDK providers: show config modal
       setSelectedProviderId(providerId);
       setShowConfig(true);
     } else if (provider.status === 'ready') {
@@ -51,6 +56,20 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     if (!selectedProviderId) return;
 
     const success = await setProvider(selectedProviderId, configData);
+    if (success) {
+      setShowConfig(false);
+      setConfigData({ apiKey: '', baseUrl: '', model: '' });
+      onOpenChange(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    if (!selectedProviderId) return;
+    const provider = providers.find((p) => p.id === selectedProviderId);
+    if (!provider || provider.status !== 'ready') return;
+
+    const config = configData.model ? { model: configData.model } : undefined;
+    const success = await setProvider(selectedProviderId, config);
     if (success) {
       setShowConfig(false);
       setConfigData({ apiKey: '', baseUrl: '', model: '' });
@@ -88,58 +107,66 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     const provider = providers.find((p) => p.id === selectedProviderId);
     if (!provider) return null;
 
+    const isSDK = provider.authType === 'sdk';
+
     return (
       <Modal
         open={showConfig}
         onOpenChange={setShowConfig}
         title={`Configure ${provider.name}`}
-        description="Enter configuration details for this provider"
+        description={isSDK ? 'SDK-based provider' : 'Enter configuration details for this provider'}
         size="md"
       >
         <div className="p-4 space-y-4">
-          {provider.configOptions?.apiKey && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                API Key
-              </label>
-              <input
-                type="password"
-                value={configData.apiKey}
-                onChange={(e) => setConfigData({ ...configData, apiKey: e.target.value })}
-                className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Enter API key"
-              />
-            </div>
-          )}
+          {isSDK ? (
+            <SDKProviderConfig provider={provider} configData={configData} setConfigData={setConfigData} />
+          ) : (
+            <>
+              {provider.configOptions?.apiKey && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={configData.apiKey}
+                    onChange={(e) => setConfigData({ ...configData, apiKey: e.target.value })}
+                    className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter API key"
+                  />
+                </div>
+              )}
 
-          {provider.configOptions?.baseUrl && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Base URL
-              </label>
-              <input
-                type="text"
-                value={configData.baseUrl}
-                onChange={(e) => setConfigData({ ...configData, baseUrl: e.target.value })}
-                className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Enter base URL"
-              />
-            </div>
-          )}
+              {provider.configOptions?.baseUrl && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Base URL
+                  </label>
+                  <input
+                    type="text"
+                    value={configData.baseUrl}
+                    onChange={(e) => setConfigData({ ...configData, baseUrl: e.target.value })}
+                    className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter base URL"
+                  />
+                </div>
+              )}
 
-          {provider.configOptions?.model && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Model
-              </label>
-              <input
-                type="text"
-                value={configData.model}
-                onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
-                className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Enter model name"
-              />
-            </div>
+              {provider.configOptions?.model && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Model
+                  </label>
+                  <input
+                    type="text"
+                    value={configData.model}
+                    onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
+                    className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter model name"
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -147,9 +174,19 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
           <Button variant="secondary" onClick={() => setShowConfig(false)}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleConfigSave} disabled={isLoading}>
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Activate'}
-          </Button>
+          {isSDK ? (
+            <Button
+              variant="primary"
+              onClick={handleActivate}
+              disabled={isLoading || provider.status !== 'ready'}
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Activate'}
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={handleConfigSave} disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Activate'}
+            </Button>
+          )}
         </ModalFooter>
       </Modal>
     );
@@ -208,8 +245,11 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                   {provider.isActive && (
                     <Check className="w-4 h-4 text-primary" />
                   )}
-                  {provider.status === 'needs_config' && (
+                  {provider.status === 'needs_config' && !provider.authType?.startsWith('sdk') && (
                     <Settings className="w-4 h-4 text-yellow-500" />
+                  )}
+                  {provider.authType === 'sdk' && provider.status === 'needs_config' && (
+                    <Info className="w-4 h-4 text-yellow-500" />
                   )}
                   <span className="text-xs text-gray-500">
                     {getStatusLabel(provider.status)}
@@ -228,5 +268,61 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
         </Button>
       </ModalFooter>
     </Modal>
+  );
+}
+
+/** SDK provider info panel shown inside the config modal */
+function SDKProviderConfig({
+  provider,
+  configData,
+  setConfigData,
+}: {
+  provider: Provider;
+  configData: { model: string };
+  setConfigData: (data: { apiKey: string; baseUrl: string; model: string }) => void;
+}) {
+  const isConnected = provider.status === 'ready';
+
+  return (
+    <>
+      {/* Connection status */}
+      <div className={`flex items-center gap-2 p-3 rounded border ${
+        isConnected
+          ? 'bg-green-500/10 border-green-500/30'
+          : 'bg-yellow-500/10 border-yellow-500/30'
+      }`}>
+        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'}`} />
+        <span className={`text-sm ${isConnected ? 'text-green-400' : 'text-yellow-400'}`}>
+          {isConnected ? 'Connected and ready' : 'Not connected'}
+        </span>
+      </div>
+
+      {/* Auth instructions */}
+      {provider.authInstructions && (
+        <div className="flex items-start gap-2 p-3 bg-white/5 rounded border border-white/10">
+          <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-gray-300">{provider.authInstructions}</p>
+        </div>
+      )}
+
+      {/* Model dropdown (if models available) */}
+      {provider.availableModels && provider.availableModels.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Model
+          </label>
+          <select
+            value={configData.model}
+            onChange={(e) => setConfigData({ apiKey: '', baseUrl: '', model: e.target.value })}
+            className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Default</option>
+            {provider.availableModels.map((model) => (
+              <option key={model} value={model}>{model}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </>
   );
 }

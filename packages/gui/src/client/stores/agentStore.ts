@@ -16,6 +16,9 @@ export interface Provider {
     baseUrl?: boolean;
     model?: boolean;
   };
+  authType?: 'sdk' | 'api_key' | 'local' | 'demo';
+  authInstructions?: string;
+  availableModels?: string[];
 }
 
 export interface AgentStatus {
