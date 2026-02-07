@@ -97,6 +97,15 @@ const CREATE_TABLES_SQL = `
   CREATE INDEX IF NOT EXISTS idx_checkpoints_run_id ON checkpoints(run_id);
 `;
 
+function safeJsonParse(value: string, context: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    console.warn(`[marktoflow] Corrupted JSON in ${context}:`, (e as Error).message);
+    return null;
+  }
+}
+
 export class StateStore {
   private db: Database.Database;
 
@@ -218,10 +227,8 @@ export class StateStore {
 
     sql += ' ORDER BY started_at DESC';
 
-    if (options.limit) {
-      sql += ' LIMIT ?';
-      params.push(options.limit);
-    }
+    sql += ' LIMIT ?';
+    params.push(options.limit || 1000);
     if (options.offset) {
       sql += ' OFFSET ?';
       params.push(options.offset);
@@ -249,10 +256,10 @@ export class StateStore {
       completedAt: row['completed_at'] ? new Date(row['completed_at'] as string) : null,
       currentStep: row['current_step'] as number,
       totalSteps: row['total_steps'] as number,
-      inputs: row['inputs'] ? JSON.parse(row['inputs'] as string) : null,
-      outputs: row['outputs'] ? JSON.parse(row['outputs'] as string) : null,
+      inputs: row['inputs'] ? safeJsonParse(row['inputs'] as string, `execution ${row['run_id']} inputs`) as Record<string, unknown> | null : null,
+      outputs: row['outputs'] ? safeJsonParse(row['outputs'] as string, `execution ${row['run_id']} outputs`) as Record<string, unknown> | null : null,
       error: row['error'] as string | null,
-      metadata: row['metadata'] ? JSON.parse(row['metadata'] as string) : null,
+      metadata: row['metadata'] ? safeJsonParse(row['metadata'] as string, `execution ${row['run_id']} metadata`) as Record<string, unknown> | null : null,
     };
   }
 
@@ -319,8 +326,8 @@ export class StateStore {
       status: row['status'] as StepStatus,
       startedAt: new Date(row['started_at'] as string),
       completedAt: row['completed_at'] ? new Date(row['completed_at'] as string) : null,
-      inputs: row['inputs'] ? JSON.parse(row['inputs'] as string) : null,
-      outputs: row['outputs'] ? JSON.parse(row['outputs'] as string) : null,
+      inputs: row['inputs'] ? safeJsonParse(row['inputs'] as string, `checkpoint ${row['run_id']}:${row['step_index']} inputs`) as Record<string, unknown> | null : null,
+      outputs: row['outputs'] ? safeJsonParse(row['outputs'] as string, `checkpoint ${row['run_id']}:${row['step_index']} outputs`) : null,
       error: row['error'] as string | null,
       retryCount: row['retry_count'] as number,
     };

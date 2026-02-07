@@ -1175,8 +1175,8 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
           ...(output !== undefined ? { output } : {}),
           ...(error !== undefined ? { error } : {}),
         };
-      } catch {
-        // JSON parse failed, treat as message
+      } catch (e) {
+        console.warn('[marktoflow] Failed to parse JSON block in sub-agent response:', (e as Error).message);
       }
     }
 
@@ -1192,8 +1192,8 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
           ...(error !== undefined ? { error } : {}),
         };
       }
-    } catch {
-      // Not JSON
+    } catch (e) {
+      console.warn('[marktoflow] Sub-agent response is not valid JSON:', (e as Error).message);
     }
 
     // Return the content as a message

@@ -382,9 +382,13 @@ export interface AuditStore {
 
 export class InMemoryAuditStore implements AuditStore {
   private events: AuditEvent[] = [];
+  private maxSize = 10000;
 
   async save(event: AuditEvent): Promise<void> {
     this.events.push(event);
+    if (this.events.length > this.maxSize) {
+      this.events = this.events.slice(-this.maxSize);
+    }
   }
 
   async query(filters: any): Promise<AuditEvent[]> {

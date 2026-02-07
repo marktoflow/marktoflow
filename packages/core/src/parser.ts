@@ -583,7 +583,11 @@ function resolveEnvironmentVariables(workflow: Workflow): void {
   const resolve = (value: unknown): unknown => {
     if (typeof value === 'string') {
       return value.replace(/\$\{([^}]+)\}/g, (_, varName) => {
-        return process.env[varName] || '';
+        const envValue = process.env[varName];
+        if (envValue === undefined) {
+          console.warn(`[marktoflow] Environment variable \${${varName}} is not set`);
+        }
+        return envValue || '';
       });
     }
     if (Array.isArray(value)) {
