@@ -48,6 +48,7 @@ const server = await startServer({
 - **Accessibility (WCAG 2.1 AA)** — SkipNav, ARIA live regions, @axe-core/react dev auditing
 - **Live File Sync** — Changes sync automatically with your `.md` workflow files
 - **Input Collection** — Validates and collects required inputs before execution
+- **User Settings Panel** — Centralized preferences (theme, canvas, editor, execution, AI, notifications) persisted to `~/.marktoflow/settings.json`
 - **Enterprise Design System** — Professional light/dark theming with design tokens
 
 ## AI Providers
@@ -71,6 +72,7 @@ const server = await startServer({
 | `Cmd/Ctrl + Shift + Z` | Redo |
 | `Cmd/Ctrl + K` | Open Command Palette |
 | `Cmd/Ctrl + P` | Quick Workflow Switcher |
+| `Cmd/Ctrl + ,` | Open Settings |
 | `Cmd/Ctrl + Shift + T` | Toggle theme |
 | `Delete` | Delete selected |
 | `Cmd/Ctrl + D` | Duplicate selected |

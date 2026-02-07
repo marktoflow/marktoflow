@@ -697,6 +697,7 @@ Access the audit trail from the Admin panel. See the [API Reference](./GUI_API_R
 | `Cmd/Ctrl + Enter` | Execute workflow |
 | `Cmd/Ctrl + K` | Open Command Palette |
 | `Cmd/Ctrl + P` | Quick Workflow Switcher |
+| `Cmd/Ctrl + ,` | Open Settings |
 | `Cmd/Ctrl + Shift + T` | Toggle theme |
 | `?` | Show keyboard shortcuts |
 
@@ -733,11 +734,42 @@ Access the audit trail from the Admin panel. See the [API Reference](./GUI_API_R
 
 ## Themes and Customization
 
+### Settings Panel
+
+The Settings panel provides centralized control over all user preferences. Open it via:
+
+- **Gear icon** at the bottom of the sidebar
+- **Keyboard shortcut**: `Cmd/Ctrl + ,`
+- **Command Palette**: Search for "Open Settings"
+
+Settings are organized into six categories:
+
+| Category | Settings |
+|----------|----------|
+| **General** | Theme (dark / light / system) |
+| **Canvas** | Show grid, snap to grid, grid size, minimap, edge animation |
+| **Editor** | Auto-save toggle + interval, auto-validate, confirm before delete |
+| **Execution** | Confirm before execute, auto-scroll logs, execution notifications |
+| **AI** | Show/hide prompt bar, AI suggestions |
+| **Notifications** | Per-event notification toggles (execution, save, connection) |
+
+Each section has a **Reset to Defaults** button to restore that category's default values.
+
+### Settings Persistence
+
+Settings are persisted to `~/.marktoflow/settings.json` on the server filesystem. This means:
+
+- Settings survive browser refreshes and restarts
+- You can inspect and manually edit `~/.marktoflow/settings.json`
+- New settings added in future versions automatically get their defaults
+
 ### Theme Toggle
 
-Click the theme button in the top-right corner to switch between:
+Click the theme button in the top-right corner to quickly switch between:
 - **Dark Mode** (default) - Easy on the eyes
 - **Light Mode** - Better in bright environments
+
+For a three-option picker (Light / Dark / System), use the Settings panel's General section.
 
 ### Responsive Design
 

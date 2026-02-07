@@ -1,16 +1,23 @@
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeStore, type Theme } from '../../stores/themeStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface ThemeToggleProps {
   showLabel?: boolean;
 }
 
 export function ThemeToggle({ showLabel = false }: ThemeToggleProps) {
-  const { theme, toggleTheme } = useThemeStore();
+  const { theme } = useThemeStore();
+  const { updateSetting } = useSettingsStore();
+
+  const handleToggle = () => {
+    const newTheme: Theme = theme === 'dark' ? 'light' : 'dark';
+    updateSetting('general', 'theme', newTheme);
+  };
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={handleToggle}
       className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-black/5 transition-colors"
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
@@ -33,7 +40,9 @@ interface ThemePickerProps {
 }
 
 export function ThemePicker({ className }: ThemePickerProps) {
-  const { theme, setTheme } = useThemeStore();
+  const { theme } = useThemeStore();
+  const { updateSetting } = useSettingsStore();
+  const setTheme = (t: Theme) => updateSetting('general', 'theme', t);
 
   const themes: { value: Theme; icon: typeof Sun; label: string }[] = [
     { value: 'light', icon: Sun, label: 'Light' },

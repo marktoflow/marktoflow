@@ -16,9 +16,10 @@ Complete REST API and WebSocket documentation for the Marktoflow GUI server.
 8. [Collaboration API](#collaboration-api)
 9. [Admin / Governance API](#admin--governance-api)
 10. [Templates API](#templates-api)
-11. [WebSocket Events](#websocket-events)
-12. [Error Handling](#error-handling)
-13. [Rate Limiting](#rate-limiting)
+11. [Settings API](#settings-api)
+12. [WebSocket Events](#websocket-events)
+13. [Error Handling](#error-handling)
+14. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -1327,6 +1328,79 @@ Get a specific template with full workflow content.
   }
 }
 ```
+
+---
+
+## Settings API
+
+User preferences are persisted to `~/.marktoflow/settings.json`. The API provides read/write access with automatic deep-merging against defaults, so new settings added in future versions get their defaults without user intervention.
+
+### Get Settings
+
+```http
+GET /api/settings
+```
+
+Returns the full settings object, merged with defaults.
+
+**Response:**
+```json
+{
+  "general": { "theme": "dark" },
+  "canvas": { "showGrid": true, "snapToGrid": true, "gridSize": 20, "showMinimap": true, "animateEdges": true },
+  "editor": { "autoSaveEnabled": false, "autoSaveIntervalMs": 30000, "autoValidateOnChange": true, "confirmBeforeDelete": true },
+  "execution": { "confirmBeforeExecute": true, "autoScrollLogs": true, "showExecutionNotifications": true },
+  "ai": { "showPromptBar": true, "showAISuggestions": true },
+  "notifications": { "executionComplete": true, "executionFailed": true, "workflowSaved": false, "connectionStatus": true }
+}
+```
+
+---
+
+### Replace All Settings
+
+```http
+PUT /api/settings
+```
+
+Full replacement of all settings. The body is deep-merged with defaults, so you can send a partial object.
+
+**Request Body:**
+```json
+{
+  "general": { "theme": "light" }
+}
+```
+
+**Response:** Full settings object (same format as GET).
+
+---
+
+### Update a Category
+
+```http
+PATCH /api/settings/:category
+```
+
+Partially update one settings category. Only the provided keys are changed; other keys in the category are preserved.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `category` | string | One of: `general`, `canvas`, `editor`, `execution`, `ai`, `notifications` |
+
+**Request Body:**
+```json
+{
+  "showGrid": false,
+  "gridSize": 40
+}
+```
+
+**Response:** Full settings object (same format as GET).
+
+**Error Responses:**
+- `400` - Unknown settings category
 
 ---
 

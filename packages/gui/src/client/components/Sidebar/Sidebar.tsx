@@ -9,12 +9,15 @@ import {
   Loader2,
   X,
   Upload,
+  Settings2,
 } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { ImportDialog } from './ImportDialog';
 import { NewWorkflowDialog } from './NewWorkflowDialog';
+import { SettingsPanel } from '../Settings/SettingsPanel';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<'workflows' | 'tools'>(
@@ -258,6 +261,18 @@ function SidebarContent({
         </div>
       )}
 
+      {/* Settings button - always visible at bottom */}
+      <div className="p-3 border-t border-border-default">
+        <button
+          onClick={() => useSettingsStore.getState().openSettings()}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+          title="Settings (⌘,)"
+        >
+          <Settings2 className="w-4 h-4" />
+          Settings
+        </button>
+      </div>
+
       {/* Import Dialog */}
       <ImportDialog
         open={showImportDialog}
@@ -271,6 +286,9 @@ function SidebarContent({
         onOpenChange={setShowNewWorkflowDialog}
         onCreate={handleCreateWorkflow}
       />
+
+      {/* Settings Panel */}
+      <SettingsPanel />
     </>
   );
 }
