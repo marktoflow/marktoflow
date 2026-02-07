@@ -67,8 +67,14 @@ export class WorkflowService {
         for (const entry of entries) {
           const fullPath = join(dir, entry.name);
 
-          // Skip hidden directories and node_modules
-          if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'dist') {
+          // Skip hidden directories, build output, dependencies, source code, and test fixtures
+          const skipDirs = new Set([
+            'node_modules', 'dist', 'build', 'coverage',
+            'test-fixtures', '__tests__', '__mocks__', 'fixtures',
+            'integration-tests',
+            'src', 'packages', 'docs', 'scripts',
+          ]);
+          if (entry.name.startsWith('.') || skipDirs.has(entry.name)) {
             continue;
           }
 

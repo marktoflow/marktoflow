@@ -3,6 +3,7 @@ import { useWorkflowStore } from '../stores/workflowStore';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useWebSocket } from './useWebSocket';
 import { workflowToGraph } from '../utils/workflowToGraph';
+import { applyDagreLayout } from '../utils/applyDagreLayout';
 
 export function useWorkflow() {
   const {
@@ -54,7 +55,7 @@ export function useWorkflow() {
   useEffect(() => {
     if (currentWorkflow) {
       const { nodes, edges } = workflowToGraph(currentWorkflow as any);
-      setNodes(nodes);
+      setNodes(applyDagreLayout(nodes, edges));
       setEdges(edges);
     }
   }, [currentWorkflow, setNodes, setEdges]);
