@@ -86,10 +86,10 @@ function SubWorkflowNodeComponent({
           <FolderOpen className="w-5 h-5 text-info" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white truncate">
+          <div className="text-sm font-medium text-text-primary truncate">
             {data.name || data.id}
           </div>
-          <div className="text-xs text-gray-400">Sub-workflow</div>
+          <div className="text-xs text-text-secondary">Sub-workflow</div>
         </div>
         <button
           onClick={handleDrillDown}
@@ -102,7 +102,7 @@ function SubWorkflowNodeComponent({
 
       {/* Node body */}
       <div className="p-3">
-        <div className="text-xs text-gray-400 font-mono truncate">
+        <div className="text-xs text-text-secondary font-mono truncate">
           {data.workflowPath}
         </div>
         {data.stepCount !== undefined && (
