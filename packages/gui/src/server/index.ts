@@ -18,6 +18,7 @@ import { versionRoutes } from './routes/versions.js';
 import { collaborationRoutes } from './routes/collaboration.js';
 import { adminRoutes } from './routes/admin.js';
 import { templateRoutes } from './routes/templates.js';
+import { settingsRoutes } from './routes/settings.js';
 import { setupWebSocket } from './websocket/index.js';
 import { FileWatcher } from './services/FileWatcher.js';
 import { ExecutionManager } from './services/ExecutionManager.js';
@@ -88,6 +89,7 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
   app.use('/api/collaboration', collaborationRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/templates', templateRoutes);
+  app.use('/api/settings', settingsRoutes);
 
   // Health check
   app.get('/api/health', (_req, res) => {

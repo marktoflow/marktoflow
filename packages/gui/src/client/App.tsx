@@ -33,6 +33,7 @@ import { useLayoutStore, getBreakpoint } from './stores/layoutStore';
 import { useCommandStore, type Command } from './stores/commandStore';
 import { useThemeStore } from './stores/themeStore';
 import { useOnboardingStore } from './stores/onboardingStore';
+import { useSettingsStore } from './stores/settingsStore';
 import type { WorkflowStep, StepStatus, WorkflowStatus } from '@shared/types';
 
 export default function App() {
@@ -160,6 +161,12 @@ export default function App() {
   // Command palette
   const { open: openCommandPalette, registerCommands } = useCommandStore();
   const { toggleTheme } = useThemeStore();
+  const { openSettings } = useSettingsStore();
+
+  // Load settings on mount
+  useEffect(() => {
+    useSettingsStore.getState().loadSettings();
+  }, []);
   const { workflows } = useWorkflowStore();
 
   // Status message for accessibility live region
@@ -174,6 +181,7 @@ export default function App() {
       { id: 'validate', label: 'Validate Workflow', category: 'action', execute: () => handleValidate(), keywords: ['check', 'lint'] },
       { id: 'add-step', label: 'Add New Step', category: 'action', shortcut: 'N', execute: () => handleAddStep(), keywords: ['create', 'new'] },
       // Settings
+      { id: 'open-settings', label: 'Open Settings', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + ,`, execute: () => openSettings(), keywords: ['preferences', 'config'] },
       { id: 'toggle-theme', label: 'Toggle Theme', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Shift + T`, execute: () => toggleTheme(), keywords: ['dark', 'light', 'mode'] },
       { id: 'show-shortcuts', label: 'Show Keyboard Shortcuts', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + /`, execute: () => setShortcutsOpen(true), keywords: ['keys', 'hotkeys'] },
       { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'setting', execute: () => setSidebarOpen(!sidebarOpen), keywords: ['panel', 'left'] },
@@ -399,6 +407,13 @@ export default function App() {
 
       const isMeta = e.metaKey || e.ctrlKey;
 
+      // Cmd/Ctrl + ,: Open settings
+      if (isMeta && e.key === ',') {
+        e.preventDefault();
+        openSettings();
+        return;
+      }
+
       // Cmd/Ctrl + K: Command palette
       if (isMeta && e.key === 'k') {
         e.preventDefault();
@@ -488,7 +503,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot, debug.enabled, isPaused, enableDebugMode, disableDebugMode, stepOver, stepInto, stepOut, resumeExecution, openCommandPalette, toggleTheme]);
+  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot, debug.enabled, isPaused, enableDebugMode, disableDebugMode, stepOver, stepInto, stepOut, resumeExecution, openCommandPalette, toggleTheme, openSettings]);
 
   return (
     <ReactFlowProvider>

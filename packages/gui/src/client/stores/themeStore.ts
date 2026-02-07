@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export type Theme = 'dark' | 'light' | 'system';
 
@@ -30,43 +29,31 @@ function applyTheme(resolvedTheme: 'dark' | 'light') {
   }
 }
 
-export const useThemeStore = create<ThemeState>()(
-  persist(
-    (set, get) => ({
-      theme: 'dark',
-      resolvedTheme: 'dark',
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  theme: 'dark',
+  resolvedTheme: 'dark',
 
-      setTheme: (theme: Theme) => {
-        const resolvedTheme = theme === 'system' ? getSystemTheme() : theme;
-        applyTheme(resolvedTheme);
-        set({ theme, resolvedTheme });
-      },
+  setTheme: (theme: Theme) => {
+    const resolvedTheme = theme === 'system' ? getSystemTheme() : theme;
+    applyTheme(resolvedTheme);
+    set({ theme, resolvedTheme });
+  },
 
-      toggleTheme: () => {
-        const { theme } = get();
-        const newTheme: Theme = theme === 'dark' ? 'light' : 'dark';
-        const resolvedTheme = newTheme === 'system' ? getSystemTheme() : newTheme;
-        applyTheme(resolvedTheme);
-        set({ theme: newTheme, resolvedTheme: resolvedTheme });
-      },
-    }),
-    {
-      name: 'marktoflow-theme',
-      onRehydrateStorage: () => (state) => {
-        // Apply theme when storage is rehydrated
-        if (state) {
-          const resolvedTheme = state.theme === 'system' ? getSystemTheme() : state.theme;
-          applyTheme(resolvedTheme);
-          state.resolvedTheme = resolvedTheme;
-        }
-      },
-    }
-  )
-);
+  toggleTheme: () => {
+    const { theme } = get();
+    const newTheme: Theme = theme === 'dark' ? 'light' : 'dark';
+    const resolvedTheme = newTheme === 'system' ? getSystemTheme() : newTheme;
+    applyTheme(resolvedTheme);
+    set({ theme: newTheme, resolvedTheme: resolvedTheme });
+  },
+}));
+
+// Apply dark theme immediately on load (before settings load from server)
+applyTheme('dark');
 
 // Listen for system theme changes
 if (typeof window !== 'undefined') {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const { theme, setTheme } = useThemeStore.getState();
     if (theme === 'system') {
       setTheme('system'); // Re-resolve the theme
