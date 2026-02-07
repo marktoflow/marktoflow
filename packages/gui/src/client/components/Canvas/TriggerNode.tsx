@@ -91,10 +91,10 @@ function TriggerNodeComponent({ data, selected }: NodeProps<TriggerNodeType>) {
           <Icon className={`w-4 h-4 ${config.color}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-medium text-text-muted uppercase tracking-wider">
             {config.label}
           </div>
-          <div className="text-sm font-medium text-white truncate">
+          <div className="text-sm font-medium text-text-primary truncate">
             {data.name || 'Trigger'}
           </div>
         </div>
@@ -104,12 +104,12 @@ function TriggerNodeComponent({ data, selected }: NodeProps<TriggerNodeType>) {
       </div>
 
       {/* Details */}
-      <div className="px-3 py-2 border-t border-white/10">
-        <div className="text-xs text-gray-400 font-mono truncate" title={getSubtitle()}>
+      <div className="px-3 py-2 border-t border-border-subtle">
+        <div className="text-xs text-text-secondary font-mono truncate" title={getSubtitle()}>
           {getSubtitle()}
         </div>
         {data.lastTriggered && (
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-text-muted mt-1">
             Last: {new Date(data.lastTriggered).toLocaleString()}
           </div>
         )}

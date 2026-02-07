@@ -28,7 +28,7 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
     NonNullable<StepNodeData['status']>,
     { icon: typeof Clock; color: string; bgColor: string; animate?: boolean }
   > = {
-    pending: { icon: Clock, color: 'text-gray-400', bgColor: 'bg-gray-400/10' },
+    pending: { icon: Clock, color: 'text-text-muted', bgColor: 'bg-gray-400/10' },
     running: {
       icon: Play,
       color: 'text-warning',
@@ -43,7 +43,7 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
     failed: { icon: XCircle, color: 'text-error', bgColor: 'bg-error/10' },
     skipped: {
       icon: AlertCircle,
-      color: 'text-gray-500',
+      color: 'text-text-muted',
       bgColor: 'bg-gray-500/10',
     },
   };
@@ -76,10 +76,10 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
             <ServiceIcon className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-white truncate">
+            <div className="text-sm font-medium text-text-primary truncate">
               {data.name || data.id}
             </div>
-            <div className="text-xs text-gray-400 truncate">{serviceName}</div>
+            <div className="text-xs text-text-secondary truncate">{serviceName}</div>
           </div>
           <div
             className={`w-6 h-6 rounded-full ${config.bgColor} flex items-center justify-center`}
@@ -92,7 +92,7 @@ function StepNodeComponent({ data, selected }: NodeProps<StepNodeType>) {
 
         {/* Node body */}
         <div className="p-3">
-          <div className="text-xs text-gray-300 font-mono truncate">
+          <div className="text-xs text-text-secondary font-mono truncate">
             {methodName}
           </div>
           {data.retryCount && data.retryCount > 0 && (
