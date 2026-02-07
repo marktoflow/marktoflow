@@ -174,14 +174,29 @@ export function Canvas() {
   );
 
   // Handle step save
+  const saveWorkflow = useWorkflowStore((s) => s.saveWorkflow);
+  const { updateNodeData } = useCanvasStore();
   const handleStepSave = useCallback(
     (updatedStep: WorkflowStep) => {
-      // TODO: Update workflow through store
-      console.log('Saving step:', updatedStep);
+      if (currentWorkflow) {
+        const updatedSteps = currentWorkflow.steps.map((s) =>
+          s.id === updatedStep.id ? updatedStep : s
+        );
+        const updatedWorkflow = { ...currentWorkflow, steps: updatedSteps };
+        saveWorkflow(updatedWorkflow);
+
+        // Update the canvas node data to reflect changes
+        updateNodeData(updatedStep.id, {
+          name: updatedStep.name,
+          action: updatedStep.action,
+          inputs: updatedStep.inputs,
+          outputVariable: updatedStep.outputVariable,
+        });
+      }
       setIsEditorOpen(false);
       setEditingStep(null);
     },
-    []
+    [currentWorkflow, saveWorkflow, updateNodeData]
   );
 
   // Context menu handlers
@@ -220,13 +235,29 @@ export function Canvas() {
     setContextMenuNode(null);
   }, [contextMenuNode, deleteSelected]);
 
-  const handleContextExecute = useCallback(() => {
-    if (contextMenuNode) {
-      console.log('Execute step:', contextMenuNode.data.id);
-      // TODO: Implement single step execution
+  const selectedWorkflow = useWorkflowStore((s) => s.selectedWorkflow);
+  const handleContextExecute = useCallback(async () => {
+    if (contextMenuNode && selectedWorkflow) {
+      const stepId = contextMenuNode.data.id as string;
+      try {
+        updateNodeData(stepId, { status: 'running' });
+        const response = await fetch(`/api/execute/${encodeURIComponent(selectedWorkflow)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inputs: {}, stepId }),
+        });
+        if (!response.ok) {
+          throw new Error('Execution failed');
+        }
+        const data = await response.json();
+        updateNodeData(stepId, { status: data.status === 'started' ? 'running' : 'completed' });
+      } catch (e) {
+        console.error('Step execution failed:', e);
+        updateNodeData(stepId, { status: 'failed' });
+      }
     }
     setContextMenuNode(null);
-  }, [contextMenuNode]);
+  }, [contextMenuNode, selectedWorkflow, updateNodeData]);
 
   // Handle right-click on node
   const onNodeContextMenu = useCallback(
@@ -280,11 +311,26 @@ export function Canvas() {
 
         // Add the node to the canvas
         setNodes([...nodes, newNode]);
+
+        // Sync to workflow model
+        if (currentWorkflow) {
+          const newStep: WorkflowStep = {
+            id: newId,
+            name: tool.name + ' Action',
+            action: tool.id + '.' + (tool.actions?.[0] || 'action'),
+            inputs: {},
+          };
+          const updatedWorkflow = {
+            ...currentWorkflow,
+            steps: [...currentWorkflow.steps, newStep],
+          };
+          saveWorkflow(updatedWorkflow);
+        }
       } catch (e) {
         console.error('Failed to parse dropped tool data:', e);
       }
     },
-    [nodes, setNodes, screenToFlowPosition]
+    [nodes, setNodes, screenToFlowPosition, currentWorkflow, saveWorkflow]
   );
 
   // Get available variables for the editing step

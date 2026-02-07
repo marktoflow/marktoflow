@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { useWorkflowStore } from './workflowStore';
+import { useCanvasStore } from './canvasStore';
+import { workflowToGraph } from '../utils/workflowToGraph';
 
 export interface PromptHistoryItem {
   prompt: string;
@@ -95,10 +97,10 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     // Update workflow store
     useWorkflowStore.getState().saveWorkflow(pendingChanges);
 
-    // TODO: Convert workflow to graph and update canvas
-    // const { nodes, edges } = workflowToGraph(pendingChanges);
-    // useCanvasStore.getState().setNodes(nodes);
-    // useCanvasStore.getState().setEdges(edges);
+    // Convert workflow to graph and update canvas
+    const { nodes, edges } = workflowToGraph(pendingChanges);
+    useCanvasStore.getState().setNodes(nodes);
+    useCanvasStore.getState().setEdges(edges);
 
     set({ pendingChanges: null });
   },

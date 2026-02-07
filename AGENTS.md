@@ -25,6 +25,7 @@ This file provides guidance for AI coding agents working on this project.
 # Build & Test
 pnpm build                    # Build all packages
 pnpm test                     # Run all tests (unit + integration)
+pnpm test:smoke               # Run smoke tests (full system validation)
 pnpm test:unit                # Run unit tests only
 pnpm test:integration         # Run integration tests only
 pnpm test --filter=@marktoflow/core         # Core only

@@ -9,6 +9,7 @@
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "test:all": "turbo run test:all",
+    "test:smoke": "vitest run --config tests/smoke/vitest.smoke.config.ts",
     "lint": "turbo run lint",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
     "clean": "turbo run clean && rm -rf node_modules",

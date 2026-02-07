@@ -118,7 +118,7 @@ export class TriggerManager {
       watcher.start();
     }
     if (!this.webhookReceiver.isRunning()) {
-      this.webhookReceiver.start().catch(() => undefined);
+      this.webhookReceiver.start().catch((err) => console.error('[marktoflow] Failed to start webhook receiver:', err));
     }
   }
 
