@@ -13,6 +13,16 @@ export const WS_EVENTS = {
   AI_PROCESSING: 'ai:processing',
   AI_RESPONSE: 'ai:response',
 
+  // Collaboration
+  PRESENCE_JOIN: 'presence:join',
+  PRESENCE_LEAVE: 'presence:leave',
+  PRESENCE_UPDATE: 'presence:update',
+  COMMENT_ADDED: 'comment:added',
+  COMMENT_RESOLVED: 'comment:resolved',
+  LOCK_ACQUIRED: 'lock:acquired',
+  LOCK_RELEASED: 'lock:released',
+  VERSION_CREATED: 'version:created',
+
   // Client -> Server
   WORKFLOW_SUBSCRIBE: 'workflow:subscribe',
   WORKFLOW_UNSUBSCRIBE: 'workflow:unsubscribe',

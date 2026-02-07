@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '../common/Button';
+import { TimelineView } from '../Execution/TimelineView';
 import type { StepStatus, WorkflowStatus } from '@shared/types';
 import type { DebugState } from '../../stores/executionStore';
 
@@ -80,7 +81,7 @@ export function ExecutionOverlay({
   onAddWatchExpression,
   onRemoveWatchExpression,
 }: ExecutionOverlayProps) {
-  const [activeTab, setActiveTab] = useState<'steps' | 'variables' | 'logs' | 'debug'>('steps');
+  const [activeTab, setActiveTab] = useState<'steps' | 'variables' | 'logs' | 'timeline' | 'debug'>('steps');
   const isDebugEnabled = debug?.enabled ?? false;
 
   const completedSteps = steps.filter((s) => s.status === 'completed').length;
@@ -259,6 +260,16 @@ export function ExecutionOverlay({
         >
           Logs
         </button>
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'timeline'
+              ? 'text-primary border-b-2 border-primary -mb-px'
+              : 'text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          Timeline
+        </button>
         {isDebugEnabled && (
           <button
             onClick={() => setActiveTab('debug')}
@@ -290,6 +301,9 @@ export function ExecutionOverlay({
         )}
         {activeTab === 'logs' && (
           <LogsViewer logs={logs} />
+        )}
+        {activeTab === 'timeline' && (
+          <TimelineView steps={steps.map((s) => ({ ...s, stepName: s.stepName || s.stepId }))} />
         )}
         {activeTab === 'debug' && isDebugEnabled && (
           <DebugPanel

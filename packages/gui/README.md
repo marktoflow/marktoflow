@@ -37,9 +37,15 @@ const server = await startServer({
 
 - **Drag-and-Drop Editor** — Visual node-based workflow canvas with pan/zoom
 - **AI Assistance** — Natural language commands to modify workflows (Claude, Copilot, Ollama)
+- **Command Palette (Cmd+K)** — Fuzzy search across actions, workflows, nodes, and settings
 - **Real-time Execution** — Run workflows and watch live status via WebSocket
 - **Validation Panel** — Dry-run checks before execution
-- **Template Library** — Quick-start templates for Slack, GitHub, HTTP, and scheduled workflows
+- **Version Control & History** — Snapshots, side-by-side diff, and non-destructive restore
+- **Collaboration** — Workflow locking (5-min auto-release), threaded node comments, presence indicators
+- **Template Gallery & Onboarding** — Browse templates seeded from examples/, 6-step interactive tour
+- **Canvas Enhancements** — Sticky notes (6 colors, markdown), group nodes (collapse/expand/lock), alignment and distribute tools
+- **Enterprise Governance** — RBAC roles (admin/editor/viewer/operator), environment management, secrets with masked values, audit trail
+- **Accessibility (WCAG 2.1 AA)** — SkipNav, ARIA live regions, @axe-core/react dev auditing
 - **Live File Sync** — Changes sync automatically with your `.md` workflow files
 - **Input Collection** — Validates and collects required inputs before execution
 - **Enterprise Design System** — Professional light/dark theming with design tokens
@@ -63,6 +69,9 @@ const server = await startServer({
 | `Cmd/Ctrl + S` | Save workflow |
 | `Cmd/Ctrl + Z` | Undo |
 | `Cmd/Ctrl + Shift + Z` | Redo |
+| `Cmd/Ctrl + K` | Open Command Palette |
+| `Cmd/Ctrl + P` | Quick Workflow Switcher |
+| `Cmd/Ctrl + Shift + T` | Toggle theme |
 | `Delete` | Delete selected |
 | `Cmd/Ctrl + D` | Duplicate selected |
 

@@ -16,6 +16,9 @@ const shortcuts: Shortcut[] = [
   { keys: ['⌘', 'Z'], description: 'Undo', category: 'General' },
   { keys: ['⌘', '⇧', 'Z'], description: 'Redo', category: 'General' },
   { keys: ['⌘', '?'], description: 'Show keyboard shortcuts', category: 'General' },
+  { keys: ['⌘', 'K'], description: 'Open command palette', category: 'General' },
+  { keys: ['⌘', 'P'], description: 'Quick workflow switcher', category: 'General' },
+  { keys: ['⌘', '⇧', 'T'], description: 'Toggle theme', category: 'General' },
 
   // Canvas
   { keys: ['N'], description: 'Add new step', category: 'Canvas' },

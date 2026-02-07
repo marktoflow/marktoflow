@@ -18,6 +18,10 @@ import {
 } from './components/common/KeyboardShortcuts';
 import { ThemeToggle } from './components/common/ThemeToggle';
 import { Breadcrumb, type BreadcrumbItem } from './components/common/Breadcrumb';
+import { CommandPalette } from './components/CommandPalette/CommandPalette';
+import { OnboardingTour } from './components/Onboarding/OnboardingTour';
+import { SkipNav } from './components/Accessibility/SkipNav';
+import { LiveRegion } from './components/Accessibility/LiveRegion';
 import { useWorkflow } from './hooks/useWorkflow';
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePromptStore } from './stores/promptStore';
@@ -26,6 +30,9 @@ import { useNavigationStore } from './stores/navigationStore';
 import { useWorkflowStore } from './stores/workflowStore';
 import { useExecutionStore } from './stores/executionStore';
 import { useLayoutStore, getBreakpoint } from './stores/layoutStore';
+import { useCommandStore, type Command } from './stores/commandStore';
+import { useThemeStore } from './stores/themeStore';
+import { useOnboardingStore } from './stores/onboardingStore';
 import type { WorkflowStep, StepStatus, WorkflowStatus } from '@shared/types';
 
 export default function App() {
@@ -149,6 +156,45 @@ export default function App() {
     propertiesPanelOpen,
     setPropertiesPanelOpen,
   } = useLayoutStore();
+
+  // Command palette
+  const { open: openCommandPalette, registerCommands } = useCommandStore();
+  const { toggleTheme } = useThemeStore();
+  const { workflows } = useWorkflowStore();
+
+  // Status message for accessibility live region
+  const [liveMessage, setLiveMessage] = useState('');
+
+  // Register commands on mount and when dependencies change
+  useEffect(() => {
+    const commands: Command[] = [
+      // Actions
+      { id: 'save', label: 'Save Workflow', category: 'action', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + S`, execute: () => handleSave(), keywords: ['save', 'persist'] },
+      { id: 'execute', label: 'Execute Workflow', category: 'action', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Enter`, execute: () => handleExecute(), keywords: ['run', 'start'] },
+      { id: 'validate', label: 'Validate Workflow', category: 'action', execute: () => handleValidate(), keywords: ['check', 'lint'] },
+      { id: 'add-step', label: 'Add New Step', category: 'action', shortcut: 'N', execute: () => handleAddStep(), keywords: ['create', 'new'] },
+      // Settings
+      { id: 'toggle-theme', label: 'Toggle Theme', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Shift + T`, execute: () => toggleTheme(), keywords: ['dark', 'light', 'mode'] },
+      { id: 'show-shortcuts', label: 'Show Keyboard Shortcuts', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + /`, execute: () => setShortcutsOpen(true), keywords: ['keys', 'hotkeys'] },
+      { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'setting', execute: () => setSidebarOpen(!sidebarOpen), keywords: ['panel', 'left'] },
+      { id: 'toggle-properties', label: 'Toggle Properties Panel', category: 'setting', execute: () => setPropertiesPanelOpen(!propertiesPanelOpen), keywords: ['panel', 'right'] },
+      // Navigation
+      { id: 'nav-back', label: 'Navigate Back', category: 'navigation', execute: () => handleNavigateBack(), keywords: ['parent', 'up'] },
+      { id: 'nav-root', label: 'Navigate to Root', category: 'navigation', execute: () => handleNavigateToRoot(), keywords: ['home', 'top'] },
+      // Debug
+      { id: 'toggle-debug', label: 'Toggle Debug Mode', category: 'action', shortcut: 'F9', execute: () => debug.enabled ? disableDebugMode() : enableDebugMode(), keywords: ['breakpoint', 'inspect'] },
+      // Workflows
+      ...workflows.map((w) => ({
+        id: `workflow-${w.path}`,
+        label: w.name,
+        description: w.path,
+        category: 'workflow' as const,
+        execute: () => { useWorkflowStore.getState().selectWorkflow(w.path); },
+        keywords: [w.name.toLowerCase()],
+      })),
+    ];
+    registerCommands(commands);
+  }, [workflows, sidebarOpen, propertiesPanelOpen, breakpoint, debug.enabled]);
 
   // Breakpoint detection on resize
   useEffect(() => {
@@ -353,6 +399,27 @@ export default function App() {
 
       const isMeta = e.metaKey || e.ctrlKey;
 
+      // Cmd/Ctrl + K: Command palette
+      if (isMeta && e.key === 'k') {
+        e.preventDefault();
+        openCommandPalette('commands');
+        return;
+      }
+
+      // Cmd/Ctrl + P: Quick workflow switcher
+      if (isMeta && e.key === 'p') {
+        e.preventDefault();
+        openCommandPalette('workflows');
+        return;
+      }
+
+      // Cmd/Ctrl + Shift + T: Toggle theme
+      if (isMeta && e.shiftKey && e.key === 't') {
+        e.preventDefault();
+        toggleTheme();
+        return;
+      }
+
       // Cmd/Ctrl + S: Save
       if (isMeta && e.key === 's') {
         e.preventDefault();
@@ -421,11 +488,15 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot, debug.enabled, isPaused, enableDebugMode, disableDebugMode, stepOver, stepInto, stepOut, resumeExecution]);
+  }, [handleSave, handleExecute, handleAddStep, handleNavigateBack, handleNavigateToRoot, debug.enabled, isPaused, enableDebugMode, disableDebugMode, stepOver, stepInto, stepOut, resumeExecution, openCommandPalette, toggleTheme]);
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-bg-canvas">
+      <SkipNav />
+      <LiveRegion message={liveMessage} />
+      <CommandPalette />
+      <OnboardingTour />
+      <div className="flex h-screen w-screen overflow-hidden bg-bg-canvas" id="main-content">
         {/* Left Sidebar - Workflow List & Tools */}
         <Sidebar />
 

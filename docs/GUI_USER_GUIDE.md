@@ -12,10 +12,16 @@ A web-based visual workflow editor for creating, editing, and managing automatio
 4. [Using the Canvas](#using-the-canvas)
 5. [Editing Steps](#editing-steps)
 6. [AI Prompt Interface](#ai-prompt-interface)
-7. [Execution and Debugging](#execution-and-debugging)
-8. [Keyboard Shortcuts](#keyboard-shortcuts)
-9. [Themes and Customization](#themes-and-customization)
-10. [Troubleshooting](#troubleshooting)
+7. [Command Palette & Search](#command-palette--search)
+8. [Execution and Debugging](#execution-and-debugging)
+9. [Version Control & History](#version-control--history)
+10. [Collaboration](#collaboration)
+11. [Template Gallery & Onboarding](#template-gallery--onboarding)
+12. [Enterprise Governance](#enterprise-governance)
+13. [Keyboard Shortcuts](#keyboard-shortcuts)
+14. [Themes and Customization](#themes-and-customization)
+15. [Accessibility](#accessibility)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -49,7 +55,7 @@ marktoflow gui --workflow ./path  # Open specific workflow
 
 ## Interface Overview
 
-The GUI consists of five main areas:
+The GUI consists of five main areas, plus overlay features accessible via keyboard shortcuts:
 
 ```
 +------------------+------------------------+------------------+
@@ -62,6 +68,8 @@ The GUI consists of five main areas:
 |                     AI Prompt Input                          |
 +--------------------------------------------------------------+
 ```
+
+**Overlay features:** Command Palette (`Cmd/Ctrl + K`), Quick Workflow Switcher (`Cmd/Ctrl + P`), Template Gallery, and Onboarding Tour.
 
 ### 1. Left Sidebar
 
@@ -82,6 +90,7 @@ The GUI consists of five main areas:
 - **Properties Tab**: View/edit selected step or workflow properties
 - **Variables Tab**: See all variables in scope
 - **History Tab**: Execution history with logs and results
+- **Versions Tab**: Version snapshots, comparison, and restore
 
 ### 4. Toolbar
 
@@ -193,6 +202,13 @@ steps:
 | **Trigger** | Clock/Webhook | Workflow entry point |
 | **Output** | Terminal | Workflow output |
 
+#### Annotation & Organization Nodes
+
+| Node | Icon | Description |
+|------|------|-------------|
+| **Sticky Note** | Note | Freeform annotation with 6 color options, resizable, supports markdown |
+| **Group** | Box | Container node to visually group steps, collapsible with label editing and lock indicator |
+
 #### Control Flow Nodes
 
 | Node | Icon | Color | Description |
@@ -220,6 +236,40 @@ steps:
 - **Failed Branch Tracking** - Red highlighting for failed parallel branches
 - **Max Iterations Alerts** - Warning when While loops reach iteration limit
 - **Execution State Badges** - Contextual icons (LogOut, AlertTriangle) showing exit reasons
+
+### Sticky Notes
+
+Sticky notes let you add annotations anywhere on the canvas:
+
+1. Right-click on empty canvas and select **Add Sticky Note**, or use the Command Palette
+2. Type your note content (supports markdown formatting)
+3. Choose from 6 color options (yellow, blue, green, pink, purple, orange)
+4. Resize by dragging the edges
+
+### Groups
+
+Group nodes let you organize related steps into collapsible containers:
+
+1. Select multiple nodes, then right-click and choose **Group Selection**
+2. The group appears as a labeled container around the selected nodes
+3. Click the group label to edit it
+4. Click the collapse button to collapse/expand the group
+5. Lock a group to prevent accidental edits (lock indicator shown when active)
+
+### Alignment Tools
+
+When multiple nodes are selected, alignment tools appear in the toolbar:
+
+- **Align**: Left, Center, Right, Top, Middle, Bottom
+- **Distribute**: Horizontal (equal spacing), Vertical (equal spacing)
+
+These tools help create clean, organized layouts for complex workflows.
+
+### Data Preview & Inline Editing
+
+- **Data Preview Badge**: After execution, step nodes display a small badge showing a summary of the last input/output data
+- **Node Tooltip**: Hover over any step node to see a Radix tooltip with status, duration, and error information
+- **Inline Editor**: Click directly on editable fields (step name, expression, etc.) to edit them in-place without opening the full editor
 
 ### Context Menus
 
@@ -344,6 +394,10 @@ Convert steps 2-4 into a sub-workflow called validation
 - Click the history icon to see recent prompts
 - Click a previous prompt to re-run it
 
+### Timeline View
+
+The Execution Overlay now includes a **Timeline** tab that displays a waterfall chart of step durations. This provides a visual breakdown of how long each step took, making it easy to identify bottlenecks in your workflow execution.
+
 ### AI Providers
 
 The GUI supports multiple AI backends:
@@ -356,6 +410,35 @@ The GUI supports multiple AI backends:
 | **Demo Mode** | No configuration needed (limited functionality) |
 
 The system auto-detects available providers on startup.
+
+---
+
+## Command Palette & Search
+
+### Command Palette (Cmd/Ctrl + K)
+
+The Command Palette provides instant access to actions, workflows, nodes, and settings through fuzzy search.
+
+1. Press `Cmd/Ctrl + K` to open the Command Palette
+2. Start typing to search across all available commands
+3. Use arrow keys to navigate results, press `Enter` to execute
+4. Press `Escape` to dismiss
+
+**Search categories:**
+- **Actions**: Execute workflow, save, undo/redo, toggle theme, etc.
+- **Workflows**: Jump to any workflow in your project
+- **Nodes**: Find and select any node on the current canvas
+- **Settings**: Quick access to configuration options
+
+The palette uses fuzzy matching (powered by fuse.js), so you can type partial or approximate terms to find what you need.
+
+### Quick Workflow Switcher (Cmd/Ctrl + P)
+
+Press `Cmd/Ctrl + P` to open the Quick Workflow Switcher for fast navigation between workflows:
+
+- Shows your recently opened workflows at the top
+- Type to fuzzy search across all workflows
+- Press `Enter` to open the selected workflow
 
 ---
 
@@ -462,6 +545,146 @@ The History tab shows:
 
 ---
 
+## Version Control & History
+
+The GUI includes built-in version control for workflows, allowing you to track changes over time without requiring Git.
+
+### Creating Snapshots
+
+Workflow versions are created automatically when you save, or you can create a named snapshot manually:
+
+1. Open the **Versions** tab in the Properties Panel
+2. Click **Create Snapshot** to save the current state
+3. Add an optional description for the snapshot
+
+### Comparing Versions
+
+1. In the Versions tab, select two versions to compare
+2. A side-by-side diff view shows what changed between them
+3. Added, removed, and modified steps are highlighted
+
+### Restoring a Version
+
+1. Click **Restore** on any previous version
+2. This creates a new version with the restored content (non-destructive)
+3. Your current state is preserved as a version before the restore
+
+Version data is stored in-memory by the VersionService. See the [API Reference](./GUI_API_REFERENCE.md#version-control-api) for programmatic access.
+
+---
+
+## Collaboration
+
+Collaboration features enable teams to work on workflows together with awareness of each other's activity.
+
+### Workflow Locking
+
+When you begin editing a workflow, a lock is automatically acquired to prevent conflicts:
+
+- Locks are displayed with the editor's name
+- Locks auto-release after 5 minutes of inactivity
+- You can manually release a lock when you are done editing
+- If a workflow is locked by someone else, you will see a read-only indicator
+
+### Node Comments
+
+Add comments to individual nodes for discussion and review:
+
+1. Right-click a node and select **Add Comment**
+2. Type your comment and submit
+3. Reply to existing comments to create a thread
+4. Mark comments as **Resolved** when addressed
+5. Resolved comments are collapsed but still visible
+
+### Activity Feed
+
+The activity feed shows a chronological log of who changed what:
+
+- Step additions, modifications, and deletions
+- Version snapshots
+- Comment activity
+- Lock acquisitions and releases
+
+### Presence
+
+When multiple users have the GUI open, you will see:
+
+- Avatars of connected users in the toolbar
+- Real-time cursor/selection indicators on the canvas
+- Join and leave notifications via WebSocket presence events
+
+---
+
+## Template Gallery & Onboarding
+
+### Template Gallery
+
+The Template Gallery provides pre-built workflows to help you get started quickly:
+
+1. Click **Templates** in the sidebar or use the Command Palette
+2. Browse templates by category or search by keyword
+3. Templates are seeded from the `examples/` directory
+4. Click a template to preview it, then click **Use Template** to create a new workflow from it
+
+### Onboarding Tour
+
+First-time users are guided through a 6-step interactive tour (powered by react-joyride):
+
+1. **Welcome** - Introduction to the workflow designer
+2. **Sidebar** - Navigating workflows and tools
+3. **Canvas** - Using the visual editor
+4. **Properties Panel** - Editing step details
+5. **AI Prompt** - Using AI-assisted editing
+6. **Execution** - Running your workflow
+
+You can restart the tour at any time from the Help menu or Command Palette.
+
+---
+
+## Enterprise Governance
+
+Enterprise governance features provide role-based access control, environment management, and audit capabilities for team deployments.
+
+### RBAC Roles
+
+Four built-in roles control access to GUI features:
+
+| Role | Permissions |
+|------|-------------|
+| **Admin** | Full access, manage roles/environments/secrets, view audit trail |
+| **Editor** | Create/edit/delete workflows, execute workflows |
+| **Viewer** | Read-only access to workflows and execution history |
+| **Operator** | Execute workflows, view logs, no editing |
+
+### Environment Management
+
+Manage deployment environments (dev, staging, prod) from the Admin panel:
+
+- Configure environment-specific variables
+- Promote workflows between environments
+- Set execution policies per environment
+
+### Secrets Management
+
+Store and manage sensitive values (API keys, tokens) securely:
+
+- Values are masked in the UI
+- Secrets are referenced by name in workflows
+- Admin-only access to create/update/delete secrets
+
+### Audit Trail
+
+The audit trail provides a searchable log of all administrative actions:
+
+- Role changes
+- Environment modifications
+- Secret access and changes
+- Workflow deployments
+
+Access the audit trail from the Admin panel. See the [API Reference](./GUI_API_REFERENCE.md#admin--governance-api) for programmatic access.
+
+---
+
 ## Keyboard Shortcuts
 
 ### General
@@ -472,6 +695,9 @@ The History tab shows:
 | `Cmd/Ctrl + Z` | Undo |
 | `Cmd/Ctrl + Shift + Z` | Redo |
 | `Cmd/Ctrl + Enter` | Execute workflow |
+| `Cmd/Ctrl + K` | Open Command Palette |
+| `Cmd/Ctrl + P` | Quick Workflow Switcher |
+| `Cmd/Ctrl + Shift + T` | Toggle theme |
 | `?` | Show keyboard shortcuts |
 
 ### Canvas
@@ -526,6 +752,18 @@ The GUI adapts to different screen sizes:
 - Click the `X` to collapse panels
 - Click the expand arrow to restore
 - Panels remember their state
+
+---
+
+## Accessibility
+
+The GUI targets WCAG 2.1 AA compliance with the following features:
+
+- **Skip Navigation**: A SkipNav component allows keyboard users to jump directly to the main content area, bypassing repetitive navigation
+- **ARIA Live Regions**: A LiveRegion component announces dynamic changes (step status updates, execution progress, errors) to screen readers
+- **Development Auditing**: In development mode, `@axe-core/react` runs automated accessibility checks and reports violations in the browser console
+- **Keyboard Navigation**: All interactive elements are reachable and operable via keyboard (see [Keyboard Shortcuts](#keyboard-shortcuts))
+- **Focus Management**: Focus is managed correctly when modals, dialogs, and the Command Palette open and close
 
 ---
 

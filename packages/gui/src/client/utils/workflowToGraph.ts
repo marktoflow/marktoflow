@@ -470,7 +470,7 @@ export function graphToWorkflow(
   _edges: Edge[],
   metadata: Workflow['metadata']
 ): Workflow {
-  // Filter out trigger and output nodes, sort by vertical position
+  // Filter out trigger, output, sticky, and group nodes, sort by vertical position
   const stepNodes = nodes
     .filter((node) => node.type === 'step' || node.type === 'subworkflow')
     .sort((a, b) => a.position.y - b.position.y);
