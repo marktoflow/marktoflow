@@ -3,6 +3,7 @@ import {
   Settings,
   Variable,
   History,
+  GitBranch,
   X,
   ChevronRight,
   ChevronLeft,
@@ -22,14 +23,16 @@ import {
   formatRelativeTime,
   type ExecutionRun,
 } from '../../stores/executionStore';
+import { VersionHistory } from '../Versions/VersionHistory';
 
-type TabId = 'properties' | 'variables' | 'history';
+type TabId = 'properties' | 'variables' | 'history' | 'versions';
 
 export function PropertiesPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('properties');
   const nodes = useCanvasStore((s) => s.nodes);
   const selectedNodes = useMemo(() => nodes.filter((n) => n.selected), [nodes]);
   const workflow = useWorkflowStore((s) => s.currentWorkflow);
+  const selectedWorkflow = useWorkflowStore((s) => s.selectedWorkflow);
   const { propertiesPanelOpen, setPropertiesPanelOpen, breakpoint } = useLayoutStore();
 
   // On mobile, show as an overlay when open
@@ -50,6 +53,7 @@ export function PropertiesPanel() {
             setActiveTab={setActiveTab}
             selectedNodes={selectedNodes}
             workflow={workflow}
+            selectedWorkflow={selectedWorkflow}
             onClose={() => setPropertiesPanelOpen(false)}
             showClose
           />
@@ -79,6 +83,7 @@ export function PropertiesPanel() {
         setActiveTab={setActiveTab}
         selectedNodes={selectedNodes}
         workflow={workflow}
+        selectedWorkflow={selectedWorkflow}
         onClose={() => setPropertiesPanelOpen(false)}
         showClose={breakpoint === 'tablet'}
       />
@@ -91,6 +96,7 @@ interface PropertiesPanelContentProps {
   setActiveTab: (tab: TabId) => void;
   selectedNodes: any[];
   workflow: any;
+  selectedWorkflow: string | null;
   onClose: () => void;
   showClose?: boolean;
 }
@@ -100,6 +106,7 @@ function PropertiesPanelContent({
   setActiveTab,
   selectedNodes,
   workflow,
+  selectedWorkflow,
   onClose,
   showClose,
 }: PropertiesPanelContentProps) {
@@ -139,6 +146,12 @@ function PropertiesPanelContent({
           icon={<History className="w-4 h-4" />}
           label="History"
         />
+        <TabButton
+          active={activeTab === 'versions'}
+          onClick={() => setActiveTab('versions')}
+          icon={<GitBranch className="w-4 h-4" />}
+          label="Versions"
+        />
       </div>
 
       {/* Content */}
@@ -148,6 +161,7 @@ function PropertiesPanelContent({
         )}
         {activeTab === 'variables' && <VariablesTab workflow={workflow} />}
         {activeTab === 'history' && <HistoryTab />}
+        {activeTab === 'versions' && <VersionHistory workflowPath={selectedWorkflow} />}
       </div>
     </>
   );

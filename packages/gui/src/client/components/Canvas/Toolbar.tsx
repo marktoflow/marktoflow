@@ -22,6 +22,7 @@ import { useReactFlow } from '@xyflow/react';
 import { getModKey } from '../../utils/platform';
 import { useAgentStore } from '../../stores/agentStore';
 import { ProviderSwitcher } from '../Settings/ProviderSwitcher';
+import { AlignmentTools } from './AlignmentTools';
 
 interface ToolbarProps {
   onAddStep: () => void;
@@ -102,6 +103,11 @@ export function Toolbar({
         disabled={!hasSelection}
         shortcut="⌫"
       />
+
+      <ToolbarDivider />
+
+      {/* Alignment Tools */}
+      <AlignmentTools />
 
       <ToolbarDivider />
 

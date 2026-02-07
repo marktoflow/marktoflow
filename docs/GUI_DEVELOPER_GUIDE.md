@@ -38,7 +38,8 @@ The Marktoflow GUI is a full-stack TypeScript application with:
 │                  │  - Drag & drop     │  - Execution history   │
 ├──────────────────┴────────────────────┴────────────────────────┤
 │                     Zustand State Stores                        │
-│  workflowStore | canvasStore | editorStore | promptStore | ...  │
+│  workflowStore | canvasStore | editorStore | promptStore        │
+│  commandStore | versionStore | collaborationStore | ...         │
 ├─────────────────────────────────────────────────────────────────┤
 │              WebSocket (Socket.IO) + REST API                   │
 └───────────────────────────┬─────────────────────────────────────┘
@@ -46,10 +47,12 @@ The Marktoflow GUI is a full-stack TypeScript application with:
 ┌───────────────────────────┴─────────────────────────────────────┐
 │                      Express Server (Backend)                    │
 ├─────────────────────────────────────────────────────────────────┤
-│  /api/workflows  │  /api/ai  │  /api/execute  │  /api/tools    │
+│  /api/workflows │ /api/ai │ /api/execute │ /api/tools │ /api/versions │
+│  /api/collaboration │ /api/admin │ /api/templates                │
 ├─────────────────────────────────────────────────────────────────┤
 │               Services Layer                                     │
-│  WorkflowService | AIService | AgentRegistry | FileWatcher      │
+│  WorkflowService | AIService | VersionService | AgentRegistry   │
+│  FileWatcher                                                     │
 ├─────────────────────────────────────────────────────────────────┤
 │               AI Provider System                                 │
 │  ClaudeProvider | CopilotProvider | OllamaProvider | Demo       │
@@ -71,14 +74,42 @@ packages/gui/
 │   │   │   │   ├── SubWorkflowNode.tsx
 │   │   │   │   ├── TriggerNode.tsx
 │   │   │   │   ├── OutputNode.tsx
+│   │   │   │   ├── StickyNoteNode.tsx
+│   │   │   │   ├── GroupNode.tsx
 │   │   │   │   ├── NodeContextMenu.tsx
 │   │   │   │   ├── Toolbar.tsx
+│   │   │   │   ├── AlignmentTools.tsx
+│   │   │   │   ├── DataPreviewBadge.tsx
+│   │   │   │   ├── NodeTooltip.tsx
+│   │   │   │   ├── InlineEditor.tsx
 │   │   │   │   └── ExecutionOverlay.tsx
+│   │   │   ├── CommandPalette/    # Command palette & search
+│   │   │   │   └── CommandPalette.tsx
 │   │   │   ├── Editor/            # Step editing
 │   │   │   │   ├── StepEditor.tsx
 │   │   │   │   ├── YamlEditor.tsx
 │   │   │   │   ├── InputsEditor.tsx
 │   │   │   │   └── NewStepWizard.tsx
+│   │   │   ├── Execution/         # Execution views
+│   │   │   │   └── TimelineView.tsx
+│   │   │   ├── Versions/          # Version control UI
+│   │   │   │   └── VersionsPanel.tsx
+│   │   │   ├── Collaboration/     # Collaboration features
+│   │   │   │   ├── CommentsPanel.tsx
+│   │   │   │   ├── ActivityFeed.tsx
+│   │   │   │   └── PresenceIndicator.tsx
+│   │   │   ├── Admin/             # Enterprise governance
+│   │   │   │   ├── RolesPanel.tsx
+│   │   │   │   ├── EnvironmentsPanel.tsx
+│   │   │   │   ├── SecretsPanel.tsx
+│   │   │   │   └── AuditTrail.tsx
+│   │   │   ├── Templates/         # Template gallery
+│   │   │   │   └── TemplateGallery.tsx
+│   │   │   ├── Onboarding/        # Interactive tour
+│   │   │   │   └── OnboardingTour.tsx
+│   │   │   ├── Accessibility/     # Accessibility primitives
+│   │   │   │   ├── SkipNav.tsx
+│   │   │   │   └── LiveRegion.tsx
 │   │   │   ├── Panels/            # Information panels
 │   │   │   │   └── PropertiesPanel.tsx
 │   │   │   ├── Prompt/            # AI prompt interface
@@ -104,6 +135,11 @@ packages/gui/
 │   │   │   ├── executionStore.ts
 │   │   │   ├── layoutStore.ts
 │   │   │   ├── themeStore.ts
+│   │   │   ├── commandStore.ts
+│   │   │   ├── versionStore.ts
+│   │   │   ├── collaborationStore.ts
+│   │   │   ├── governanceStore.ts
+│   │   │   ├── onboardingStore.ts
 │   │   │   └── index.ts
 │   │   ├── hooks/                 # Custom React hooks
 │   │   ├── utils/                 # Utility functions
@@ -116,10 +152,15 @@ packages/gui/
 │   │   │   ├── workflows.ts
 │   │   │   ├── ai.ts
 │   │   │   ├── execute.ts
-│   │   │   └── tools.ts
+│   │   │   ├── tools.ts
+│   │   │   ├── versions.ts
+│   │   │   ├── collaboration.ts
+│   │   │   ├── admin.ts
+│   │   │   └── templates.ts
 │   │   ├── services/
 │   │   │   ├── WorkflowService.ts
 │   │   │   ├── AIService.ts
+│   │   │   ├── VersionService.ts
 │   │   │   ├── FileWatcher.ts
 │   │   │   └── agents/            # AI provider system
 │   │   │       ├── types.ts
@@ -170,23 +211,43 @@ packages/gui/
 
 ```
 App
+├── SkipNav
+├── LiveRegion
 ├── MobileHeader (< 1024px)
 ├── Sidebar
 │   ├── WorkflowList
 │   └── ToolsPalette
 ├── Canvas
 │   ├── ReactFlow
-│   │   ├── StepNode
+│   │   ├── StepNode (with DataPreviewBadge, NodeTooltip)
 │   │   ├── SubWorkflowNode
 │   │   ├── TriggerNode
-│   │   └── OutputNode
+│   │   ├── OutputNode
+│   │   ├── StickyNoteNode
+│   │   └── GroupNode
 │   ├── Toolbar
+│   ├── AlignmentTools
+│   ├── InlineEditor
 │   ├── NodeContextMenu
 │   └── ExecutionOverlay
+│       └── TimelineView
 ├── PropertiesPanel
 │   ├── PropertiesTab
 │   ├── VariablesTab
-│   └── HistoryTab
+│   ├── HistoryTab
+│   └── VersionsPanel
+├── CommandPalette (Cmd+K overlay)
+├── TemplateGallery
+├── OnboardingTour
+├── Collaboration
+│   ├── CommentsPanel
+│   ├── ActivityFeed
+│   └── PresenceIndicator
+├── Admin
+│   ├── RolesPanel
+│   ├── EnvironmentsPanel
+│   ├── SecretsPanel
+│   └── AuditTrail
 ├── PromptInput
 ├── StepEditor (Modal)
 ├── NewStepWizard (Modal)
@@ -238,6 +299,10 @@ app.use('/api/workflows', workflowRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/execute', executeRoutes);
 app.use('/api/tools', toolsRoutes);
+app.use('/api/versions', versionRoutes);
+app.use('/api/collaboration', collaborationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/templates', templateRoutes);
 
 // WebSocket
 setupWebSocket(io);
@@ -249,6 +314,7 @@ setupWebSocket(io);
 |---------|----------------|
 | `WorkflowService` | CRUD operations on workflow files |
 | `AIService` | AI prompt processing and provider management |
+| `VersionService` | In-memory version snapshots, comparison, and restore |
 | `FileWatcher` | Watch for file changes and emit updates |
 | `AgentRegistry` | Manage AI provider instances |
 
@@ -381,6 +447,103 @@ interface ThemeState {
   setTheme: (theme: 'light' | 'dark') => void;
 }
 ```
+
+#### commandStore
+
+Manages the Command Palette state and search.
+
+```typescript
+interface CommandState {
+  isOpen: boolean;
+  mode: 'command' | 'workflow';  // Cmd+K vs Cmd+P
+  query: string;
+  results: CommandItem[];
+
+  open: (mode?: 'command' | 'workflow') => void;
+  close: () => void;
+  setQuery: (query: string) => void;
+  executeCommand: (item: CommandItem) => void;
+}
+```
+
+Uses fuse.js for fuzzy matching across actions, workflows, nodes, and settings.
+
+#### versionStore
+
+Manages version control state.
+
+```typescript
+interface VersionState {
+  versions: Version[];
+  isLoading: boolean;
+  comparison: VersionComparison | null;
+
+  loadVersions: (path: string) => Promise<void>;
+  createVersion: (path: string, description?: string) => Promise<void>;
+  restoreVersion: (path: string, versionId: string) => Promise<void>;
+  compareVersions: (path: string, v1: string, v2: string) => Promise<void>;
+}
+```
+
+#### collaborationStore
+
+Manages collaboration features (locking, comments, presence, activity).
+
+```typescript
+interface CollaborationState {
+  lock: LockInfo | null;
+  comments: Comment[];
+  activities: Activity[];
+  presenceUsers: PresenceUser[];
+
+  acquireLock: (path: string) => Promise<void>;
+  releaseLock: (path: string) => Promise<void>;
+  loadComments: (path: string) => Promise<void>;
+  addComment: (path: string, nodeId: string, text: string) => Promise<void>;
+  resolveComment: (commentId: string) => Promise<void>;
+  loadActivity: (path: string) => Promise<void>;
+}
+```
+
+#### governanceStore
+
+Manages enterprise governance features (roles, environments, secrets, audit).
+
+```typescript
+interface GovernanceState {
+  roles: Role[];
+  environments: Environment[];
+  secrets: SecretMeta[];
+  auditEntries: AuditEntry[];
+
+  loadRoles: () => Promise<void>;
+  assignRole: (userId: string, role: string) => Promise<void>;
+  loadEnvironments: () => Promise<void>;
+  saveEnvironment: (env: Environment) => Promise<void>;
+  loadSecrets: () => Promise<void>;
+  saveSecret: (name: string, value: string) => Promise<void>;
+  loadAudit: (filters?: AuditFilters) => Promise<void>;
+}
+```
+
+#### onboardingStore
+
+Manages the interactive onboarding tour state.
+
+```typescript
+interface OnboardingState {
+  isActive: boolean;
+  currentStep: number;
+  completed: boolean;
+
+  startTour: () => void;
+  endTour: () => void;
+  nextStep: () => void;
+  prevStep: () => void;
+}
+```
+
+Uses react-joyride for rendering the 6-step guided tour.
 
 ---
 
@@ -719,7 +882,8 @@ Control flow nodes are registered in `Canvas.tsx`:
 
 ```typescript
 import { IfElseNode, ForEachNode, WhileNode, SwitchNode,
-         ParallelNode, TryCatchNode, TransformNode } from './Canvas';
+         ParallelNode, TryCatchNode, TransformNode,
+         StickyNoteNode, GroupNode } from './Canvas';
 
 const nodeTypes = {
   // Standard nodes
@@ -727,6 +891,10 @@ const nodeTypes = {
   subworkflow: SubWorkflowNode,
   trigger: TriggerNode,
   output: OutputNode,
+
+  // Annotation & organization nodes
+  sticky: StickyNoteNode,
+  group: GroupNode,
 
   // Control flow nodes
   if: IfElseNode,

@@ -2,3 +2,8 @@ export { useCanvasStore } from './canvasStore';
 export { useWorkflowStore } from './workflowStore';
 export { usePromptStore } from './promptStore';
 export { useEditorStore } from './editorStore';
+export { useCommandStore } from './commandStore';
+export { useVersionStore } from './versionStore';
+export { useCollaborationStore } from './collaborationStore';
+export { useGovernanceStore } from './governanceStore';
+export { useOnboardingStore } from './onboardingStore';

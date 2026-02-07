@@ -24,6 +24,9 @@ import { SwitchNode } from './SwitchNode';
 import { ParallelNode } from './ParallelNode';
 import { TryCatchNode } from './TryCatchNode';
 import { TransformNode } from './TransformNode';
+import { StickyNoteNode } from './StickyNoteNode';
+import { GroupNode } from './GroupNode';
+import { AlignmentTools } from './AlignmentTools';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
@@ -54,6 +57,8 @@ const nodeTypes = {
   map: TransformNode,
   filter: TransformNode,
   reduce: TransformNode,
+  sticky: StickyNoteNode,
+  group: GroupNode,
 };
 
 export function Canvas() {

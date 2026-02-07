@@ -53,6 +53,41 @@ export function setupWebSocket(io: SocketIOServer) {
       }
     });
 
+    // Handle presence
+    socket.on('presence:join', (data: { workflowPath: string; userId: string; userName: string; color: string }) => {
+      socket.join(`workflow:${data.workflowPath}`);
+      socket.to(`workflow:${data.workflowPath}`).emit('presence:join', {
+        userId: data.userId,
+        userName: data.userName,
+        color: data.color,
+        lastSeen: new Date().toISOString(),
+      });
+    });
+
+    socket.on('presence:leave', (data: { workflowPath: string; userId: string }) => {
+      socket.to(`workflow:${data.workflowPath}`).emit('presence:leave', {
+        userId: data.userId,
+      });
+    });
+
+    // Handle comments via WebSocket
+    socket.on('comment:added', (data: { workflowPath: string; comment: any }) => {
+      socket.to(`workflow:${data.workflowPath}`).emit('comment:added', data.comment);
+    });
+
+    socket.on('comment:resolved', (data: { workflowPath: string; commentId: string }) => {
+      socket.to(`workflow:${data.workflowPath}`).emit('comment:resolved', { commentId: data.commentId });
+    });
+
+    // Handle lock events via WebSocket
+    socket.on('lock:acquired', (data: { workflowPath: string; lock: any }) => {
+      socket.to(`workflow:${data.workflowPath}`).emit('lock:acquired', data.lock);
+    });
+
+    socket.on('lock:released', (data: { workflowPath: string }) => {
+      socket.to(`workflow:${data.workflowPath}`).emit('lock:released', {});
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
@@ -112,6 +147,23 @@ export function setupWebSocket(io: SocketIOServer) {
     // Broadcast to all clients
     broadcast(event: string, data: any) {
       io.emit(event, data);
+    },
+
+    // Collaboration events
+    emitPresenceUpdate(workflowPath: string, data: any) {
+      io.to(`workflow:${workflowPath}`).emit('presence:update', data);
+    },
+
+    emitCommentAdded(workflowPath: string, comment: any) {
+      io.to(`workflow:${workflowPath}`).emit('comment:added', comment);
+    },
+
+    emitLockChanged(workflowPath: string, lock: any) {
+      io.to(`workflow:${workflowPath}`).emit(lock ? 'lock:acquired' : 'lock:released', lock || {});
+    },
+
+    emitVersionCreated(workflowPath: string, version: any) {
+      io.to(`workflow:${workflowPath}`).emit('version:created', version);
     },
   };
 }

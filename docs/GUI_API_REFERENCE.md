@@ -12,9 +12,13 @@ Complete REST API and WebSocket documentation for the Marktoflow GUI server.
 4. [AI API](#ai-api)
 5. [Execution API](#execution-api)
 6. [Tools API](#tools-api)
-7. [WebSocket Events](#websocket-events)
-8. [Error Handling](#error-handling)
-9. [Rate Limiting](#rate-limiting)
+7. [Version Control API](#version-control-api)
+8. [Collaboration API](#collaboration-api)
+9. [Admin / Governance API](#admin--governance-api)
+10. [Templates API](#templates-api)
+11. [WebSocket Events](#websocket-events)
+12. [Error Handling](#error-handling)
+13. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -682,6 +686,650 @@ Get the schema for a specific tool action.
 
 ---
 
+## Version Control API
+
+### List Versions
+
+```http
+GET /api/versions/:path/versions
+```
+
+Get all version snapshots for a workflow.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+
+**Response:**
+```json
+{
+  "versions": [
+    {
+      "id": "v-1705312200000",
+      "path": "examples/code-review/workflow.md",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "description": "Added error handling",
+      "author": "user@example.com"
+    }
+  ]
+}
+```
+
+---
+
+### Create Version Snapshot
+
+```http
+POST /api/versions/:path/versions
+```
+
+Create a new version snapshot of the current workflow state.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+
+**Request Body:**
+```json
+{
+  "description": "Added Slack notification step"
+}
+```
+
+**Response:**
+```json
+{
+  "version": {
+    "id": "v-1705312200001",
+    "path": "examples/code-review/workflow.md",
+    "timestamp": "2024-01-15T10:35:00Z",
+    "description": "Added Slack notification step"
+  }
+}
+```
+
+---
+
+### Get Version
+
+```http
+GET /api/versions/:path/versions/:id
+```
+
+Get a specific version snapshot.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+| `id` | string | Version ID |
+
+**Response:**
+```json
+{
+  "version": {
+    "id": "v-1705312200000",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "description": "Added error handling",
+    "workflow": { ... }
+  }
+}
+```
+
+---
+
+### Restore Version
+
+```http
+POST /api/versions/:path/versions/:id/restore
+```
+
+Restore a workflow to a previous version. This creates a new version snapshot with the restored content (non-destructive).
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+| `id` | string | Version ID to restore |
+
+**Response:**
+```json
+{
+  "version": {
+    "id": "v-1705312200002",
+    "timestamp": "2024-01-15T10:40:00Z",
+    "description": "Restored from v-1705312200000",
+    "workflow": { ... }
+  }
+}
+```
+
+---
+
+### Compare Versions
+
+```http
+GET /api/versions/:path/versions/compare?v1=VERSION_ID_1&v2=VERSION_ID_2
+```
+
+Compare two version snapshots side-by-side.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+| `v1` | string | First version ID (query parameter) |
+| `v2` | string | Second version ID (query parameter) |
+
+**Response:**
+```json
+{
+  "v1": { "id": "v-1", "workflow": { ... } },
+  "v2": { "id": "v-2", "workflow": { ... } },
+  "diff": {
+    "added": ["step-3"],
+    "removed": [],
+    "modified": ["step-1"]
+  }
+}
+```
+
+---
+
+## Collaboration API
+
+### Acquire Lock
+
+```http
+POST /api/collaboration/lock
+```
+
+Acquire an editing lock on a workflow. Locks auto-release after 5 minutes of inactivity.
+
+**Request Body:**
+```json
+{
+  "path": "examples/code-review/workflow.md",
+  "user": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "lock": {
+    "path": "examples/code-review/workflow.md",
+    "user": "user@example.com",
+    "acquiredAt": "2024-01-15T10:30:00Z",
+    "expiresAt": "2024-01-15T10:35:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `409` - Workflow is already locked by another user
+
+---
+
+### Release Lock
+
+```http
+POST /api/collaboration/unlock
+```
+
+Release an editing lock on a workflow.
+
+**Request Body:**
+```json
+{
+  "path": "examples/code-review/workflow.md",
+  "user": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### Get Lock Status
+
+```http
+GET /api/collaboration/lock/:path
+```
+
+Check if a workflow is currently locked.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+
+**Response:**
+```json
+{
+  "locked": true,
+  "lock": {
+    "user": "user@example.com",
+    "acquiredAt": "2024-01-15T10:30:00Z",
+    "expiresAt": "2024-01-15T10:35:00Z"
+  }
+}
+```
+
+---
+
+### List Comments
+
+```http
+GET /api/collaboration/comments/:path
+```
+
+Get all comments for a workflow.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+
+**Response:**
+```json
+{
+  "comments": [
+    {
+      "id": "comment-1",
+      "nodeId": "step-1",
+      "author": "user@example.com",
+      "text": "Should we add retry logic here?",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "resolved": false,
+      "replies": [
+        {
+          "id": "reply-1",
+          "author": "other@example.com",
+          "text": "Good idea, I will add it.",
+          "timestamp": "2024-01-15T10:32:00Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### Add Comment
+
+```http
+POST /api/collaboration/comments/:path
+```
+
+Add a comment to a workflow node.
+
+**Request Body:**
+```json
+{
+  "nodeId": "step-1",
+  "author": "user@example.com",
+  "text": "Should we add retry logic here?",
+  "parentId": null
+}
+```
+
+Set `parentId` to an existing comment ID to create a threaded reply.
+
+**Response:**
+```json
+{
+  "comment": {
+    "id": "comment-2",
+    "nodeId": "step-1",
+    "author": "user@example.com",
+    "text": "Should we add retry logic here?",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "resolved": false
+  }
+}
+```
+
+---
+
+### Resolve Comment
+
+```http
+POST /api/collaboration/comments/:id/resolve
+```
+
+Mark a comment as resolved.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | string | Comment ID |
+
+**Response:**
+```json
+{
+  "success": true,
+  "comment": {
+    "id": "comment-1",
+    "resolved": true,
+    "resolvedBy": "user@example.com",
+    "resolvedAt": "2024-01-15T10:40:00Z"
+  }
+}
+```
+
+---
+
+### Get Activity Feed
+
+```http
+GET /api/collaboration/activity/:path
+```
+
+Get the activity feed for a workflow.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `path` | string | URL-encoded workflow file path |
+
+**Response:**
+```json
+{
+  "activities": [
+    {
+      "id": "activity-1",
+      "type": "step_modified",
+      "user": "user@example.com",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "details": {
+        "stepId": "step-1",
+        "field": "inputs.channel",
+        "oldValue": "#general",
+        "newValue": "#engineering"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Admin / Governance API
+
+### Roles
+
+#### List Roles
+
+```http
+GET /api/admin/roles
+```
+
+**Response:**
+```json
+{
+  "roles": [
+    {
+      "id": "admin",
+      "name": "Admin",
+      "permissions": ["read", "write", "execute", "admin"]
+    },
+    {
+      "id": "editor",
+      "name": "Editor",
+      "permissions": ["read", "write", "execute"]
+    },
+    {
+      "id": "viewer",
+      "name": "Viewer",
+      "permissions": ["read"]
+    },
+    {
+      "id": "operator",
+      "name": "Operator",
+      "permissions": ["read", "execute"]
+    }
+  ]
+}
+```
+
+#### Assign Role
+
+```http
+POST /api/admin/roles
+```
+
+**Request Body:**
+```json
+{
+  "userId": "user@example.com",
+  "role": "editor"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "assignment": {
+    "userId": "user@example.com",
+    "role": "editor"
+  }
+}
+```
+
+---
+
+### Environments
+
+#### List Environments
+
+```http
+GET /api/admin/environments
+```
+
+**Response:**
+```json
+{
+  "environments": [
+    {
+      "id": "dev",
+      "name": "Development",
+      "variables": { "API_URL": "https://dev.api.example.com" }
+    },
+    {
+      "id": "staging",
+      "name": "Staging",
+      "variables": { "API_URL": "https://staging.api.example.com" }
+    },
+    {
+      "id": "prod",
+      "name": "Production",
+      "variables": { "API_URL": "https://api.example.com" }
+    }
+  ]
+}
+```
+
+#### Create/Update Environment
+
+```http
+POST /api/admin/environments
+```
+
+**Request Body:**
+```json
+{
+  "id": "staging",
+  "name": "Staging",
+  "variables": {
+    "API_URL": "https://staging.api.example.com",
+    "LOG_LEVEL": "debug"
+  }
+}
+```
+
+---
+
+### Secrets
+
+#### List Secrets
+
+```http
+GET /api/admin/secrets
+```
+
+Returns secret names and metadata (values are masked).
+
+**Response:**
+```json
+{
+  "secrets": [
+    {
+      "name": "SLACK_BOT_TOKEN",
+      "createdAt": "2024-01-10T00:00:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z",
+      "maskedValue": "xoxb-****-****"
+    }
+  ]
+}
+```
+
+#### Create/Update Secret
+
+```http
+POST /api/admin/secrets
+```
+
+**Request Body:**
+```json
+{
+  "name": "SLACK_BOT_TOKEN",
+  "value": "xoxb-real-token-value"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "secret": {
+    "name": "SLACK_BOT_TOKEN",
+    "maskedValue": "xoxb-****-****"
+  }
+}
+```
+
+---
+
+### Audit Trail
+
+#### Get Audit Log
+
+```http
+GET /api/admin/audit
+```
+
+**Query Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `limit` | number | Max entries to return (default: 50) |
+| `offset` | number | Pagination offset |
+| `action` | string | Filter by action type |
+| `user` | string | Filter by user |
+
+**Response:**
+```json
+{
+  "entries": [
+    {
+      "id": "audit-1",
+      "action": "role.assigned",
+      "user": "admin@example.com",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "details": {
+        "targetUser": "user@example.com",
+        "role": "editor"
+      }
+    }
+  ],
+  "total": 142
+}
+```
+
+---
+
+## Templates API
+
+### List Templates
+
+```http
+GET /api/templates
+```
+
+Get all available workflow templates. Templates are seeded from the `examples/` directory.
+
+**Query Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `search` | string | Search templates by name or description |
+| `category` | string | Filter by category |
+
+**Response:**
+```json
+{
+  "templates": [
+    {
+      "id": "code-review",
+      "name": "Code Review Workflow",
+      "description": "Automated PR review with AI assistance",
+      "category": "Development",
+      "tags": ["github", "ai", "code-review"],
+      "stepCount": 5
+    }
+  ]
+}
+```
+
+---
+
+### Get Template
+
+```http
+GET /api/templates/:id
+```
+
+Get a specific template with full workflow content.
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | string | Template identifier |
+
+**Response:**
+```json
+{
+  "template": {
+    "id": "code-review",
+    "name": "Code Review Workflow",
+    "description": "Automated PR review with AI assistance",
+    "category": "Development",
+    "workflow": { ... }
+  }
+}
+```
+
+---
+
 ## WebSocket Events
 
 Connect to the WebSocket server at `ws://localhost:3001` using Socket.IO.
@@ -787,6 +1435,62 @@ socket.on('ai:response', (data) => {
   //   workflow: { ... },
   //   diff: '...'
   // }
+});
+```
+
+#### Presence Events
+
+Emitted when users join, leave, or update their presence in the GUI.
+
+```javascript
+socket.on('presence:join', (data) => {
+  // { user: 'user@example.com', timestamp: '...' }
+});
+
+socket.on('presence:leave', (data) => {
+  // { user: 'user@example.com', timestamp: '...' }
+});
+
+socket.on('presence:update', (data) => {
+  // { user: 'user@example.com', cursor: { x, y }, selectedNodes: [...] }
+});
+```
+
+#### Comment Events
+
+Emitted when comments are added or resolved.
+
+```javascript
+socket.on('comment:added', (data) => {
+  // { comment: { id, nodeId, author, text, timestamp } }
+});
+
+socket.on('comment:resolved', (data) => {
+  // { commentId: 'comment-1', resolvedBy: 'user@example.com' }
+});
+```
+
+#### Lock Events
+
+Emitted when workflow locks are acquired or released.
+
+```javascript
+socket.on('lock:acquired', (data) => {
+  // { path: 'workflow.md', user: 'user@example.com', expiresAt: '...' }
+});
+
+socket.on('lock:released', (data) => {
+  // { path: 'workflow.md', user: 'user@example.com' }
+});
+```
+
+#### Version Events
+
+Emitted when a new version snapshot is created.
+
+```javascript
+socket.on('version:created', (data) => {
+  // { version: { id, path, timestamp, description } }
 });
 ```
 
