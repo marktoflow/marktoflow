@@ -400,16 +400,25 @@ The Execution Overlay now includes a **Timeline** tab that displays a waterfall 
 
 ### AI Providers
 
-The GUI supports multiple AI backends:
+The GUI supports multiple AI backends with two authentication styles:
+
+**SDK-based providers** (auto-detected, no config form needed):
+
+| Provider | How to Authenticate |
+|----------|---------------------|
+| **Claude Code** | Run `claude login` in your terminal |
+| **GitHub Copilot** | Run `copilot auth login` in your terminal |
+| **OpenAI Codex** | Set the `OPENAI_API_KEY` environment variable |
+
+**API key / local providers** (configured via the provider switcher form):
 
 | Provider | Configuration |
 |----------|--------------|
-| **Claude** | Set `ANTHROPIC_API_KEY` environment variable |
-| **GitHub Copilot** | Authenticate with `copilot auth` |
-| **Ollama** | Run Ollama locally on port 11434 |
+| **Claude API** | Enter your `ANTHROPIC_API_KEY` |
+| **Ollama** | Run `ollama serve` locally on port 11434 |
 | **Demo Mode** | No configuration needed (limited functionality) |
 
-The system auto-detects available providers on startup.
+The system auto-detects available providers on startup. SDK-based providers display connection status and setup instructions in the provider switcher. Codex auto-activates when `OPENAI_API_KEY` is already set. Copilot dynamically fetches its available model list from the SDK.
 
 ---
 
@@ -834,7 +843,7 @@ The GUI targets WCAG 2.1 AA compliance with the following features:
 For large workflows (50+ nodes):
 1. Close the mini-map
 2. Disable animations in settings
-3. Use the auto-layout to organize nodes
+3. Use auto-layout (Cmd/Ctrl+L) to organize nodes — this also runs automatically when a workflow first loads
 
 ### Getting Help
 

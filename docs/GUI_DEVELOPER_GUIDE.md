@@ -1024,7 +1024,7 @@ import { buildPrompt, generateSuggestions } from './prompts.js';
 export class MyProvider implements AgentProvider {
   readonly id = 'my-provider';
   readonly name = 'My AI Provider';
-  readonly capabilities: AgentCapabilities = {
+  capabilities: AgentCapabilities = {
     streaming: true,
     toolUse: false,
     codeExecution: false,

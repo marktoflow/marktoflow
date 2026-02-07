@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useReactFlow, type Node, type Edge } from '@xyflow/react';
 import { useCanvasStore } from '../stores/canvasStore';
-import dagre from 'dagre';
+import { applyDagreLayout } from '../utils/applyDagreLayout';
 
 export function useCanvas() {
   const {
@@ -123,36 +123,7 @@ export function useCanvas() {
 
   // Auto-layout using dagre
   const autoLayout = useCallback(() => {
-    const dagreGraph = new dagre.graphlib.Graph();
-    dagreGraph.setDefaultEdgeLabel(() => ({}));
-    dagreGraph.setGraph({ rankdir: 'TB', nodesep: 50, ranksep: 80 });
-
-    // Add nodes
-    for (const node of nodes) {
-      dagreGraph.setNode(node.id, { width: 200, height: 100 });
-    }
-
-    // Add edges
-    for (const edge of edges) {
-      dagreGraph.setEdge(edge.source, edge.target);
-    }
-
-    // Run layout
-    dagre.layout(dagreGraph);
-
-    // Update node positions
-    const layoutedNodes = nodes.map((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id);
-      return {
-        ...node,
-        position: {
-          x: nodeWithPosition.x - 100,
-          y: nodeWithPosition.y - 50,
-        },
-      };
-    });
-
-    setNodes(layoutedNodes);
+    setNodes(applyDagreLayout(nodes, edges));
 
     // Fit view after layout
     setTimeout(() => {

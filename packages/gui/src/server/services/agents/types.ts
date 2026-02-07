@@ -75,8 +75,8 @@ export interface AgentProvider {
   readonly id: string;
   /** Human-readable name */
   readonly name: string;
-  /** Provider capabilities */
-  readonly capabilities: AgentCapabilities;
+  /** Provider capabilities (mutable — may be updated after model fetching) */
+  capabilities: AgentCapabilities;
 
   /**
    * Initialize the provider with configuration

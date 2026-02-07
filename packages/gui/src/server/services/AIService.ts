@@ -92,6 +92,9 @@ export class AIService {
         baseUrl?: boolean;
         model?: boolean;
       };
+      authType?: 'sdk' | 'api_key' | 'local' | 'demo';
+      authInstructions?: string;
+      availableModels?: string[];
     }>;
   }> {
     // Initialize providers if not already done
@@ -112,14 +115,59 @@ export class AIService {
           status = 'needs_config';
         }
 
-        // Determine which config options are needed based on provider ID
+        // Per-provider metadata
         let configOptions: { apiKey?: boolean; baseUrl?: boolean; model?: boolean } | undefined;
-        if (provider.id === 'claude') {
-          configOptions = { apiKey: true, model: true };
-        } else if (provider.id === 'ollama') {
-          configOptions = { baseUrl: true, model: true };
-        } else if (provider.id === 'codex') {
-          configOptions = { apiKey: true, model: true };
+        let authType: 'sdk' | 'api_key' | 'local' | 'demo' | undefined;
+        let authInstructions: string | undefined;
+        let availableModels: string[] | undefined;
+
+        // Get available models from provider capabilities
+        const providerInstance = this.registry.getProvider(provider.id);
+        if (providerInstance?.capabilities?.models?.length) {
+          availableModels = providerInstance.capabilities.models;
+        }
+
+        switch (provider.id) {
+          case 'claude-code':
+            authType = 'sdk';
+            authInstructions = 'Authenticate using the Claude CLI: run "claude login" in your terminal.';
+            break;
+          case 'copilot':
+            authType = 'sdk';
+            authInstructions = 'Authenticate using the Copilot CLI: run "copilot auth login" in your terminal.';
+            break;
+          case 'codex':
+            authType = 'sdk';
+            authInstructions = 'Set the OPENAI_API_KEY environment variable, then restart the GUI server.';
+            // Only show config options when Codex is NOT already ready
+            if (!provider.ready) {
+              configOptions = { apiKey: true, model: true };
+            }
+            break;
+          case 'claude':
+            authType = 'api_key';
+            configOptions = { apiKey: true, model: true };
+            break;
+          case 'ollama':
+            authType = 'local';
+            authInstructions = 'Start Ollama locally: run "ollama serve" in your terminal.';
+            configOptions = { baseUrl: true, model: true };
+            break;
+          case 'demo':
+            authType = 'demo';
+            break;
+        }
+
+        // Build description
+        let description: string | undefined;
+        if (provider.model) {
+          description = `Model: ${provider.model}`;
+        } else if (authType === 'sdk') {
+          description = 'SDK-based authentication';
+        } else if (authType === 'local') {
+          description = 'Local inference';
+        } else if (authType === 'demo') {
+          description = 'Simulated responses for testing';
         }
 
         return {
@@ -127,8 +175,11 @@ export class AIService {
           name: provider.name,
           status,
           isActive: provider.id === registryStatus.activeProvider,
-          description: provider.model ? `Model: ${provider.model}` : undefined,
+          description,
           configOptions,
+          authType,
+          authInstructions,
+          availableModels,
         };
       }),
     };
