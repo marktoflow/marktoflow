@@ -173,7 +173,7 @@ marktoflow run examples/oauth-refresh-demo/workflow.md \
 
 ## Example: Long-Running Email Campaign
 
-```yaml
+```text
 ---
 workflow:
   id: email-campaign
@@ -193,7 +193,6 @@ tools:
 
 ## Send 1000 Emails (Takes ~2 hours)
 
-```yaml
 type: for_each
 items: '{{ inputs.recipients }}'  # 1000 recipients
 steps:

@@ -408,7 +408,7 @@ export const HttpInitializer: SDKInitializer = {
 
     return {
       client,
-      actions,
+      ...actions,
       graphql: (endpoint: string) =>
         new GraphQLClient(endpoint, {
           timeout,

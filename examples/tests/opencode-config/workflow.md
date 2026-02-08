@@ -1,8 +1,37 @@
 ---
-name: OpenCode Example Workflow
-description: Demonstrates using OpenCode agent for analysis and generation
-agent: opencode
-version: 1.0.0
+workflow:
+  id: opencode-example
+  name: 'OpenCode Example Workflow'
+  version: '1.0.0'
+  description: 'Demonstrates using OpenCode agent for analysis and generation'
+  author: 'marktoflow'
+  tags:
+    - ai
+    - code-analysis
+    - generation
+
+inputs:
+  code_to_analyze:
+    type: string
+    description: 'Python code to analyze'
+    default: |
+      def process_data(items):
+          results = []
+          for item in items:
+              if item != None:
+                  results.append(item * 2)
+          return results
+
+outputs:
+  code_analysis:
+    type: object
+    description: 'Structured analysis of the code'
+  improved_code:
+    type: string
+    description: 'Improved version of the code'
+  final_report:
+    type: string
+    description: 'Complete markdown report'
 ---
 
 # OpenCode Example Workflow
@@ -14,19 +43,13 @@ This workflow demonstrates the OpenCode adapter capabilities.
 Analyze a code snippet and provide structured feedback.
 
 ```yaml
-id: analyze_code
 action: agent.analyze
 inputs:
   prompt_template: |
     Analyze the following Python code for quality, potential bugs, and improvements:
 
     ```python
-    def process_data(items):
-        results = []
-        for item in items:
-            if item != None:
-                results.append(item * 2)
-        return results
+    {{ inputs.code_to_analyze }}
     ```
 
     Provide analysis in the following categories:
@@ -57,7 +80,7 @@ inputs:
         items:
           type: string
 
-output: code_analysis
+output_variable: code_analysis
 ```
 
 ## Step 2: Generate Improved Version
@@ -65,7 +88,6 @@ output: code_analysis
 Generate an improved version of the code based on the analysis.
 
 ```yaml
-id: generate_improved_code
 action: agent.generate_response
 inputs:
   context: |
@@ -86,7 +108,7 @@ inputs:
     - Handle edge cases
     - Follow PEP 8
 
-output: improved_code
+output_variable: improved_code
 ```
 
 ## Step 3: Generate Report
@@ -94,7 +116,6 @@ output: improved_code
 Create a summary report of the code review.
 
 ```yaml
-id: create_report
 action: agent.generate_report
 inputs:
   include:
@@ -103,7 +124,17 @@ inputs:
     - Summary of changes made
     - Recommendations for further improvement
 
-output: final_report
+output_variable: final_report
+```
+
+## Step 4: Set Outputs
+
+```yaml
+action: workflow.set_outputs
+inputs:
+  code_analysis: '{{ code_analysis }}'
+  improved_code: '{{ improved_code }}'
+  final_report: '{{ final_report }}'
 ```
 
 ## Results

@@ -168,7 +168,8 @@ The filter takes a regex pattern and optional capture group index.
 ```yaml
 action: core.set
 inputs:
-  analysis_json: "{{ analysis_results.choices | first | path('message.content') | match('/```json\\s*([\\s\\S]*?)\\s*```/', 1) }}"
+  analysis_json: >-
+    {{ analysis_results.choices | first | path('message.content') | match('/```json\s*([\s\S]*?)\s*```/', 1) }}
 output_variable: extracted
 ```
 
