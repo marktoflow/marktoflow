@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   FileText,
-  FolderTree,
   ChevronRight,
   ChevronLeft,
   Plus,
@@ -49,7 +48,7 @@ export function Sidebar() {
         aria-label="Expand sidebar"
       >
         <ChevronRight className="w-4 h-4 text-text-secondary" />
-        <FolderTree className="w-5 h-5 text-accent" />
+        <img src="/marktoflow-logo.png" alt="Marktoflow" className="w-6 h-6 rounded-full object-cover" />
       </button>
     );
   }
@@ -83,7 +82,7 @@ export function Sidebar() {
 
   // Desktop/Tablet sidebar
   return (
-    <div className="w-64 bg-bg-panel border-r border-border-default flex flex-col">
+    <div className="w-64 bg-bg-panel border-r border-border-default flex flex-col transition-all duration-300">
       <SidebarContent
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -166,7 +165,7 @@ function SidebarContent({
       {/* Logo/Title */}
       <div className="p-4 border-b border-border-default flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-          <FolderTree className="w-5 h-5 text-accent" />
+          <img src="/marktoflow-logo.png" alt="Marktoflow" className="w-8 h-8 rounded-full object-cover" />
           Marktoflow
         </h1>
         {showClose && (
