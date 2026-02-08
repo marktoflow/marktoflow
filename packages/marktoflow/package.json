@@ -3,6 +3,9 @@
   "version": "2.0.1",
   "description": "Complete marktoflow installation - agent automation framework with native MCP support",
   "type": "module",
+  "bin": {
+    "marktoflow": "./bin/marktoflow.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marktoflow/marktoflow.git",
@@ -20,7 +23,8 @@
     "@marktoflow/integrations": "workspace:*"
   },
   "files": [
-    "README.md"
+    "README.md",
+    "bin"
   ],
   "keywords": [
     "marktoflow",
