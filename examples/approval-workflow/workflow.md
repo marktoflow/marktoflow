@@ -79,36 +79,36 @@ output_variable: approval_response
 
 ```yaml
 type: if
-condition: "{{ approval_response_response.decision == 'Approved' }}"
+condition: "{{ approval_response.decision == 'Approved' }}"
 then:
   - type: action
     action: core.log
     inputs:
       level: 'info'
-      message: 'Expense APPROVED by {{ approval_response_response.reviewer_name }}: ${{ inputs.amount }} for {{ inputs.employee_name }}'
+      message: 'Expense APPROVED by {{ approval_response.reviewer_name }}: ${{ inputs.amount }} for {{ inputs.employee_name }}'
     output_variable: approval_log
 
   - type: action
     action: workflow.set_outputs
     inputs:
       approval_status: 'approved'
-      reviewer_comments: '{{ approval_response_response.comments }}'
-      reviewer_name: '{{ approval_response_response.reviewer_name }}'
+      reviewer_comments: '{{ approval_response.comments }}'
+      reviewer_name: '{{ approval_response.reviewer_name }}'
 
 else:
   - type: action
     action: core.log
     inputs:
       level: 'warn'
-      message: 'Expense REJECTED by {{ approval_response_response.reviewer_name }}: ${{ inputs.amount }} for {{ inputs.employee_name }}'
+      message: 'Expense REJECTED by {{ approval_response.reviewer_name }}: ${{ inputs.amount }} for {{ inputs.employee_name }}'
     output_variable: rejection_log
 
   - type: action
     action: workflow.set_outputs
     inputs:
       approval_status: 'rejected'
-      reviewer_comments: '{{ approval_response_response.comments }}'
-      reviewer_name: '{{ approval_response_response.reviewer_name }}'
+      reviewer_comments: '{{ approval_response.comments }}'
+      reviewer_name: '{{ approval_response.reviewer_name }}'
 ```
 
 ## Step 4: Send notification

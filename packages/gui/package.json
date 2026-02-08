@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/gui",
-  "version": "2.0.0-alpha.16",
+  "version": "2.0.1",
   "description": "Visual workflow designer for marktoflow - web UI",
   "type": "module",
   "main": "./dist/server/index.js",
@@ -86,16 +86,14 @@
     "concurrently": "^9.1.2",
     "jsdom": "^27.4.0",
     "postcss": "^8.4.49",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "supertest": "^7.2.2",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.6",
     "vitest": "^2.1.8"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
   },
   "engines": {
     "node": ">=18"
