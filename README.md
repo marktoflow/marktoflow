@@ -20,6 +20,14 @@
   <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/dm/@marktoflow/marktoflow" alt="Downloads" /></a>
 </p>
 
+<p align="center">
+  <img src="assets/gui-screenshot.png" alt="marktoflow visual workflow designer" width="900" />
+</p>
+
+<p align="center">
+  <em>Visual workflow designer — drag-and-drop nodes, AI-assisted editing, one-click execution</em>
+</p>
+
 ---
 
 ## Quick Start
