@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import { Menu, PanelRight, X } from 'lucide-react';
+import { Menu, PanelRight, PanelLeft, X, Wrench } from 'lucide-react';
 import { Canvas } from './components/Canvas/Canvas';
 import { Toolbar } from './components/Canvas/Toolbar';
 import { ExecutionOverlay } from './components/Canvas/ExecutionOverlay';
@@ -156,6 +156,8 @@ export default function App() {
     setSidebarOpen,
     propertiesPanelOpen,
     setPropertiesPanelOpen,
+    toolbarVisible,
+    setToolbarVisible,
   } = useLayoutStore();
 
   // Command palette
@@ -527,7 +529,10 @@ export default function App() {
               >
                 <Menu className="w-5 h-5 text-text-secondary" />
               </button>
-              <h1 className="text-sm font-medium text-text-primary">Marktoflow</h1>
+              <h1 className="text-sm font-medium text-text-primary flex items-center gap-1.5">
+                <img src="/marktoflow-logo.png" alt="Marktoflow" className="w-6 h-6 rounded-full object-cover" />
+                Marktoflow
+              </h1>
               <button
                 onClick={() => setPropertiesPanelOpen(true)}
                 className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
@@ -578,6 +583,41 @@ export default function App() {
           {/* Canvas */}
           <div className="flex-1 relative">
             <Canvas />
+
+            {/* Show Toolbar button (when hidden) */}
+            {!toolbarVisible && breakpoint !== 'mobile' && (
+              <button
+                onClick={() => setToolbarVisible(true)}
+                className="absolute top-4 left-1/2 -translate-x-1/2 z-10 p-2 bg-bg-panel/90 backdrop-blur border border-border-default rounded-lg shadow-md hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
+                title="Show toolbar"
+              >
+                <Wrench className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Left edge: toggle sidebar */}
+            {breakpoint !== 'mobile' && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-bg-panel/90 backdrop-blur border border-l-0 border-border-default rounded-r-lg shadow-sm hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
+                title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              >
+                <PanelLeft className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Right edge: toggle properties panel */}
+            {breakpoint !== 'mobile' && (
+              <button
+                onClick={() => setPropertiesPanelOpen(!propertiesPanelOpen)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-bg-panel/90 backdrop-blur border border-r-0 border-border-default rounded-l-lg shadow-sm hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
+                title={propertiesPanelOpen ? 'Collapse properties' : 'Expand properties'}
+                aria-label={propertiesPanelOpen ? 'Collapse properties' : 'Expand properties'}
+              >
+                <PanelRight className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Execution Overlay */}
             <ExecutionOverlay

@@ -77,7 +77,7 @@ export function PropertiesPanel() {
   }
 
   return (
-    <div className="w-80 bg-bg-panel border-l border-border-default flex flex-col">
+    <div className="w-80 bg-bg-panel border-l border-border-default flex flex-col transition-all duration-300">
       <PropertiesPanelContent
         activeTab={activeTab}
         setActiveTab={setActiveTab}
