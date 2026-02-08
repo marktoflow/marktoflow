@@ -114,6 +114,13 @@ steps:
 | [`@marktoflow/cli`](packages/cli) | Command-line interface and workflow runner |
 | [`@marktoflow/gui`](packages/gui) | Visual workflow designer (web UI) |
 | [`@marktoflow/integrations`](packages/integrations) | 38 service integrations and AI adapters |
+| [`@marktoflow/i18n`](packages/i18n) | Internationalization — 8 languages with RTL support |
+
+### Supported Languages
+
+English, 中文 (Chinese), हिन्दी (Hindi), Español (Spanish), Français (French), العربية (Arabic/RTL), 日本語 (Japanese), Português (Portuguese)
+
+Set your language via `--locale` flag, `MARKTOFLOW_LOCALE` env var, or the GUI settings panel.
 
 ## Examples
 

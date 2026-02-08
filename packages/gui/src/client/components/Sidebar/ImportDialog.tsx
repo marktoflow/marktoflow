@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Upload, FileText, Archive, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
@@ -21,6 +22,7 @@ interface ImportResult {
 }
 
 export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDialogProps) {
+  const { t } = useTranslation('gui');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [results, setResults] = useState<ImportResult[]>([]);
@@ -132,8 +134,8 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Import Workflow"
-      description="Upload workflow files from your computer"
+      title={t('gui:importDialog.title')}
+      description={t('gui:importDialog.description')}
       size="md"
     >
       <div className="p-4 space-y-4">
@@ -154,10 +156,10 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
           >
             <Upload className="w-12 h-12 mx-auto mb-4 text-gray-500" />
             <p className="text-sm text-gray-300 mb-2">
-              Drag and drop a file here, or click to browse
+              {t('gui:importDialog.dragDrop')}
             </p>
             <p className="text-xs text-gray-500">
-              Supported formats: .md, .yaml, .yml, .zip
+              {t('gui:importDialog.supportedFormats')}
             </p>
 
             <input
@@ -190,7 +192,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
 
             {!isValidFile(selectedFile) && (
               <p className="text-xs text-error mt-2">
-                Invalid file type. Please select a .md, .yaml, .yml, or .zip file.
+                {t('gui:importDialog.invalidFileType')}
               </p>
             )}
           </div>
@@ -199,7 +201,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
         {/* Upload Results */}
         {results.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-white">Import Results:</h4>
+            <h4 className="text-sm font-medium text-white">{t('gui:importDialog.importResults')}</h4>
             {results.map((result, index) => (
               <div
                 key={index}
@@ -235,19 +237,19 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
       <ModalFooter>
         {results.length > 0 ? (
           <Button variant="secondary" onClick={handleClose}>
-            Close
+            {t('gui:importDialog.close')}
           </Button>
         ) : (
           <>
             <Button variant="secondary" onClick={handleClose} disabled={isUploading}>
-              Cancel
+              {t('gui:importDialog.cancel')}
             </Button>
             <Button
               variant="primary"
               onClick={handleUpload}
               disabled={!selectedFile || !isValidFile(selectedFile) || isUploading}
             >
-              {isUploading ? 'Uploading...' : 'Import'}
+              {isUploading ? t('gui:importDialog.uploading') : t('gui:importDialog.import')}
             </Button>
           </>
         )}

@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -15,12 +16,14 @@ interface InlineEditorProps {
 function InlineEditorComponent({
   value,
   onSave,
-  placeholder = 'Click to edit...',
+  placeholder: placeholderProp,
   className,
   inputClassName,
   multiline = false,
   disabled = false,
 }: InlineEditorProps) {
+  const { t } = useTranslation('gui');
+  const placeholder = placeholderProp ?? t('gui:inlineEditor.clickToEdit');
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -80,7 +83,7 @@ function InlineEditorComponent({
           !value && 'text-text-muted italic',
           className
         )}
-        title="Click to edit"
+        title={t('gui:inlineEditor.clickToEditTooltip')}
       >
         {value || placeholder}
       </button>
@@ -110,14 +113,14 @@ function InlineEditorComponent({
         <button
           onClick={(e) => { e.stopPropagation(); handleSave(); }}
           className="p-1 rounded hover:bg-success/20 text-success"
-          title="Save"
+          title={t('gui:inlineEditor.save')}
         >
           <Check className="w-3 h-3" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); handleCancel(); }}
           className="p-1 rounded hover:bg-error/20 text-error"
-          title="Cancel"
+          title={t('gui:inlineEditor.cancel')}
         >
           <X className="w-3 h-3" />
         </button>

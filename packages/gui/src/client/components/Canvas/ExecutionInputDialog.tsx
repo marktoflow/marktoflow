@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Play, AlertCircle } from 'lucide-react';
 import type { WorkflowInput } from '@shared/types';
 
@@ -17,6 +18,7 @@ export function ExecutionInputDialog({
   onExecute,
   workflowName = 'Workflow',
 }: ExecutionInputDialogProps) {
+  const { t } = useTranslation('gui');
   const [values, setValues] = useState<Record<string, any>>(() => {
     // Initialize with default values
     const initial: Record<string, any> = {};
@@ -45,12 +47,12 @@ export function ExecutionInputDialog({
         switch (config.type) {
           case 'number':
             if (isNaN(Number(value))) {
-              newErrors[key] = 'Must be a valid number';
+              newErrors[key] = t('gui:executionInput.mustBeNumber');
             }
             break;
           case 'boolean':
             if (typeof value !== 'boolean' && value !== 'true' && value !== 'false') {
-              newErrors[key] = 'Must be true or false';
+              newErrors[key] = t('gui:executionInput.mustBeBoolean');
             }
             break;
         }
@@ -133,7 +135,7 @@ export function ExecutionInputDialog({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border-subtle">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Execute Workflow</h2>
+              <h2 className="text-lg font-semibold text-text-primary">{t('gui:executionInput.title')}</h2>
               <p className="text-sm text-text-secondary mt-1">{workflowName}</p>
             </div>
             <button
@@ -149,7 +151,7 @@ export function ExecutionInputDialog({
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {Object.keys(inputs).length === 0 ? (
               <div className="text-center py-8 text-text-muted">
-                This workflow has no input parameters
+                {t('gui:executionInput.noInputParams')}
               </div>
             ) : (
               Object.entries(inputs).map(([key, config]) => (
@@ -168,7 +170,7 @@ export function ExecutionInputDialog({
                         className="w-4 h-4 rounded border-border-default bg-bg-surface text-accent focus:ring-2 focus:ring-accent/50"
                       />
                       <span className="text-sm text-text-secondary">
-                        {config.description || 'Enable this option'}
+                        {config.description || t('gui:executionInput.enableOption')}
                       </span>
                     </label>
                   ) : (
@@ -203,21 +205,21 @@ export function ExecutionInputDialog({
           {/* Footer */}
           <div className="flex items-center justify-between p-6 border-t border-border-subtle">
             <div className="text-xs text-text-muted">
-              {hasRequiredInputs && <span>* Required field</span>}
+              {hasRequiredInputs && <span>{t('gui:executionInput.requiredField')}</span>}
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => onOpenChange(false)}
                 className="px-4 py-2 bg-bg-surface border border-border-default hover:bg-bg-hover text-text-primary rounded-lg text-sm font-medium transition-colors"
               >
-                Cancel
+                {t('gui:executionInput.cancel')}
               </button>
               <button
                 onClick={handleExecute}
                 className="px-4 py-2 bg-accent hover:bg-accent-hover text-text-inverse rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
               >
                 <Play className="w-4 h-4" />
-                Execute
+                {t('gui:executionInput.execute')}
               </button>
             </div>
           </div>

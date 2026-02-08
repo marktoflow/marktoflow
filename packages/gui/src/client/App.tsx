@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Menu, PanelRight, PanelLeft, X, Wrench } from 'lucide-react';
 import { Canvas } from './components/Canvas/Canvas';
@@ -37,6 +38,8 @@ import { useSettingsStore } from './stores/settingsStore';
 import type { WorkflowStep, StepStatus, WorkflowStatus } from '@shared/types';
 
 export default function App() {
+  const { t } = useTranslation('gui');
+
   // Workflow management
   const {
     currentWorkflow,
@@ -102,8 +105,8 @@ export default function App() {
       setExecutionLogs((prev) => [
         ...prev,
         event.status === 'completed'
-          ? 'Workflow completed successfully!'
-          : event.error || 'Workflow execution failed',
+          ? t('gui:execution.completedSuccess')
+          : event.error || t('gui:execution.failedMessage'),
       ]);
 
       // Update execution store
@@ -178,21 +181,21 @@ export default function App() {
   useEffect(() => {
     const commands: Command[] = [
       // Actions
-      { id: 'save', label: 'Save Workflow', category: 'action', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + S`, execute: () => handleSave(), keywords: ['save', 'persist'] },
-      { id: 'execute', label: 'Execute Workflow', category: 'action', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Enter`, execute: () => handleExecute(), keywords: ['run', 'start'] },
-      { id: 'validate', label: 'Validate Workflow', category: 'action', execute: () => handleValidate(), keywords: ['check', 'lint'] },
-      { id: 'add-step', label: 'Add New Step', category: 'action', shortcut: 'N', execute: () => handleAddStep(), keywords: ['create', 'new'] },
+      { id: 'save', label: t('gui:commands.saveWorkflow'), category: 'action', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + S`, execute: () => handleSave(), keywords: ['save', 'persist'] },
+      { id: 'execute', label: t('gui:commands.executeWorkflow'), category: 'action', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Enter`, execute: () => handleExecute(), keywords: ['run', 'start'] },
+      { id: 'validate', label: t('gui:commands.validateWorkflow'), category: 'action', execute: () => handleValidate(), keywords: ['check', 'lint'] },
+      { id: 'add-step', label: t('gui:commands.addNewStep'), category: 'action', shortcut: 'N', execute: () => handleAddStep(), keywords: ['create', 'new'] },
       // Settings
-      { id: 'open-settings', label: 'Open Settings', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + ,`, execute: () => openSettings(), keywords: ['preferences', 'config'] },
-      { id: 'toggle-theme', label: 'Toggle Theme', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Shift + T`, execute: () => toggleTheme(), keywords: ['dark', 'light', 'mode'] },
-      { id: 'show-shortcuts', label: 'Show Keyboard Shortcuts', category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + /`, execute: () => setShortcutsOpen(true), keywords: ['keys', 'hotkeys'] },
-      { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'setting', execute: () => setSidebarOpen(!sidebarOpen), keywords: ['panel', 'left'] },
-      { id: 'toggle-properties', label: 'Toggle Properties Panel', category: 'setting', execute: () => setPropertiesPanelOpen(!propertiesPanelOpen), keywords: ['panel', 'right'] },
+      { id: 'open-settings', label: t('gui:commands.openSettings'), category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + ,`, execute: () => openSettings(), keywords: ['preferences', 'config'] },
+      { id: 'toggle-theme', label: t('gui:commands.toggleTheme'), category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + Shift + T`, execute: () => toggleTheme(), keywords: ['dark', 'light', 'mode'] },
+      { id: 'show-shortcuts', label: t('gui:commands.showKeyboardShortcuts'), category: 'setting', shortcut: `${breakpoint === 'mobile' ? 'Ctrl' : '⌘'} + /`, execute: () => setShortcutsOpen(true), keywords: ['keys', 'hotkeys'] },
+      { id: 'toggle-sidebar', label: t('gui:commands.toggleSidebar'), category: 'setting', execute: () => setSidebarOpen(!sidebarOpen), keywords: ['panel', 'left'] },
+      { id: 'toggle-properties', label: t('gui:commands.togglePropertiesPanel'), category: 'setting', execute: () => setPropertiesPanelOpen(!propertiesPanelOpen), keywords: ['panel', 'right'] },
       // Navigation
-      { id: 'nav-back', label: 'Navigate Back', category: 'navigation', execute: () => handleNavigateBack(), keywords: ['parent', 'up'] },
-      { id: 'nav-root', label: 'Navigate to Root', category: 'navigation', execute: () => handleNavigateToRoot(), keywords: ['home', 'top'] },
+      { id: 'nav-back', label: t('gui:commands.navigateBack'), category: 'navigation', execute: () => handleNavigateBack(), keywords: ['parent', 'up'] },
+      { id: 'nav-root', label: t('gui:commands.navigateToRoot'), category: 'navigation', execute: () => handleNavigateToRoot(), keywords: ['home', 'top'] },
       // Debug
-      { id: 'toggle-debug', label: 'Toggle Debug Mode', category: 'action', shortcut: 'F9', execute: () => debug.enabled ? disableDebugMode() : enableDebugMode(), keywords: ['breakpoint', 'inspect'] },
+      { id: 'toggle-debug', label: t('gui:commands.toggleDebugMode'), category: 'action', shortcut: 'F9', execute: () => debug.enabled ? disableDebugMode() : enableDebugMode(), keywords: ['breakpoint', 'inspect'] },
       // Workflows
       ...workflows.map((w) => ({
         id: `workflow-${w.path}`,
@@ -276,12 +279,12 @@ export default function App() {
           if (response.ok) {
             cancelExecution(runIdRef.current);
             setWorkflowStatus('cancelled');
-            setExecutionLogs((prev) => [...prev, 'Execution cancelled by user']);
+            setExecutionLogs((prev) => [...prev, t('gui:execution.cancelledByUser')]);
             runIdRef.current = null;
           }
         } catch (error) {
           console.error('Failed to cancel execution:', error);
-          setExecutionLogs((prev) => [...prev, 'Failed to cancel execution']);
+          setExecutionLogs((prev) => [...prev, t('gui:execution.failedToCancel')]);
         }
       }
       return;
@@ -299,7 +302,7 @@ export default function App() {
       // Update local state for overlay
       setWorkflowStatus('running');
       setCurrentStepId(null);
-      setExecutionLogs(['Starting workflow execution...']);
+      setExecutionLogs([t('gui:execution.startingExecution')]);
 
       // Initialize steps
       setExecutionSteps(
@@ -339,7 +342,7 @@ export default function App() {
       // Subscribe to WebSocket for real-time updates with the correct runId
       subscribeToExecution(runId);
 
-      setExecutionLogs((prev) => [...prev, `Execution started: ${runId}`]);
+      setExecutionLogs((prev) => [...prev, `${t('gui:execution.executionStarted')} ${runId}`]);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to execute workflow:', error);
@@ -525,18 +528,18 @@ export default function App() {
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
-                aria-label="Open menu"
+                aria-label={t('gui:app.openMenu')}
               >
                 <Menu className="w-5 h-5 text-text-secondary" />
               </button>
               <h1 className="text-sm font-medium text-text-primary flex items-center gap-1.5">
                 <img src="/marktoflow-logo.png" alt="Marktoflow" className="w-6 h-6 rounded-full object-cover" />
-                Marktoflow
+                {t('gui:app.title')}
               </h1>
               <button
                 onClick={() => setPropertiesPanelOpen(true)}
                 className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
-                aria-label="Open properties"
+                aria-label={t('gui:app.openProperties')}
               >
                 <PanelRight className="w-5 h-5 text-text-secondary" />
               </button>
@@ -560,7 +563,7 @@ export default function App() {
                     connected ? 'bg-success' : 'bg-error'
                   }`}
                 />
-                {connected ? 'Connected' : 'Disconnected'}
+                {connected ? t('common:status.connected') : t('common:status.disconnected')}
               </div>
             </div>
           )}
@@ -589,7 +592,7 @@ export default function App() {
               <button
                 onClick={() => setToolbarVisible(true)}
                 className="absolute top-4 left-1/2 -translate-x-1/2 z-10 p-2 bg-bg-panel/90 backdrop-blur border border-border-default rounded-lg shadow-md hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
-                title="Show toolbar"
+                title={t('gui:toolbar.showToolbar')}
               >
                 <Wrench className="w-4 h-4" />
               </button>
@@ -600,8 +603,8 @@ export default function App() {
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-bg-panel/90 backdrop-blur border border-l-0 border-border-default rounded-r-lg shadow-sm hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
-                title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-                aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                title={sidebarOpen ? t('gui:sidebar.collapseSidebar') : t('gui:sidebar.expandSidebar')}
+                aria-label={sidebarOpen ? t('gui:sidebar.collapseSidebar') : t('gui:sidebar.expandSidebar')}
               >
                 <PanelLeft className="w-4 h-4" />
               </button>
@@ -612,8 +615,8 @@ export default function App() {
               <button
                 onClick={() => setPropertiesPanelOpen(!propertiesPanelOpen)}
                 className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-bg-panel/90 backdrop-blur border border-r-0 border-border-default rounded-l-lg shadow-sm hover:bg-bg-hover transition-colors text-text-muted hover:text-text-primary"
-                title={propertiesPanelOpen ? 'Collapse properties' : 'Expand properties'}
-                aria-label={propertiesPanelOpen ? 'Collapse properties' : 'Expand properties'}
+                title={propertiesPanelOpen ? t('gui:app.collapseProperties') : t('gui:app.expandProperties')}
+                aria-label={propertiesPanelOpen ? t('gui:app.collapseProperties') : t('gui:app.expandProperties')}
               >
                 <PanelRight className="w-4 h-4" />
               </button>
@@ -684,7 +687,7 @@ export default function App() {
             onOpenChange={() => rejectChanges()}
             originalWorkflow={currentWorkflow}
             modifiedWorkflow={pendingChanges}
-            explanation="AI has suggested the following changes to your workflow."
+            explanation={t('gui:app.aiSuggestedChanges')}
             onAccept={acceptChanges}
             onReject={rejectChanges}
           />

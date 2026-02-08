@@ -22,6 +22,10 @@ jobs:
         run: pnpm -C packages/core build
       - name: Test core
         run: pnpm -C packages/core test
+      - name: Build i18n
+        run: pnpm -C packages/i18n build
+      - name: Test i18n
+        run: pnpm -C packages/i18n test
       - name: Build integrations
         run: pnpm -C packages/integrations build
       - name: Test integrations

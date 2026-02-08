@@ -8,6 +8,7 @@
 import chalk from 'chalk';
 import type { Workflow, ExecutionContext } from '@marktoflow/core';
 import { WorkflowStatus, renderTemplate } from '@marktoflow/core';
+import { t } from '../i18n.js';
 
 // ============================================================================
 // Mock Response Generator
@@ -39,7 +40,7 @@ export function generateMockResponse(action: string, inputs: Record<string, unkn
     case 'ollama':
       return generateOllamaMock(method, inputs);
     default:
-      return { success: true, message: `Mock response for ${action}` };
+      return { success: true, message: t('cli:commands.dryRun.mock.genericResponse', { action }) };
   }
 }
 
@@ -192,7 +193,7 @@ function generateClaudeMock(_method: string, inputs: Record<string, unknown>): u
     content: [
       {
         type: 'text',
-        text: 'This is a mock response from Claude. In a real execution, this would contain the actual AI-generated content based on your prompt.',
+        text: t('cli:commands.dryRun.mock.claudeResponse'),
       },
     ],
     model: inputs.model || 'claude-3-5-sonnet-20241022',
@@ -207,8 +208,7 @@ function generateClaudeMock(_method: string, inputs: Record<string, unknown>): u
 function generateOllamaMock(_method: string, inputs: Record<string, unknown>): unknown {
   return {
     model: inputs.model || 'llama2',
-    response:
-      'This is a mock response from Ollama. In a real execution, this would contain the actual AI-generated content.',
+    response: t('cli:commands.dryRun.mock.ollamaResponse'),
     done: true,
   };
 }
@@ -293,9 +293,9 @@ export async function executeDryRun(
     stepMetadata: {},
   };
 
-  console.log(chalk.bold.cyan('\n🧪 Dry Run Mode\n'));
-  console.log(chalk.gray(`Simulating workflow: ${workflow.metadata.name}`));
-  console.log(chalk.gray(`Steps: ${workflow.steps.length}\n`));
+  console.log(chalk.bold.cyan(`\n🧪 ${t('cli:commands.dryRun.title')}\n`));
+  console.log(chalk.gray(t('cli:commands.dryRun.simulating', { name: workflow.metadata.name })));
+  console.log(chalk.gray(t('cli:commands.dryRun.stepCount', { count: workflow.steps.length })) + '\n');
 
   // Simulate each step
   for (let i = 0; i < workflow.steps.length; i++) {
@@ -480,46 +480,46 @@ function displayStepResult(result: DryRunStepResult, options: DryRunOptions): vo
   let stepDesc = '';
   switch (result.stepType) {
     case 'action':
-      stepDesc = result.action || 'unknown action';
+      stepDesc = result.action || t('cli:commands.dryRun.stepType.unknownAction');
       break;
     case 'workflow':
-      stepDesc = `sub-workflow: ${result.workflow}`;
+      stepDesc = t('cli:commands.dryRun.stepType.subWorkflow', { workflow: result.workflow });
       break;
     case 'wait':
-      stepDesc = 'wait (human-in-the-loop)';
+      stepDesc = t('cli:commands.dryRun.stepType.wait');
       break;
     case 'if':
-      stepDesc = 'if/else condition';
+      stepDesc = t('cli:commands.dryRun.stepType.if');
       break;
     case 'switch':
-      stepDesc = 'switch/case';
+      stepDesc = t('cli:commands.dryRun.stepType.switch');
       break;
     case 'parallel':
-      stepDesc = 'parallel execution';
+      stepDesc = t('cli:commands.dryRun.stepType.parallel');
       break;
     case 'for_each':
-      stepDesc = 'for-each loop';
+      stepDesc = t('cli:commands.dryRun.stepType.forEach');
       break;
     case 'while':
-      stepDesc = 'while loop';
+      stepDesc = t('cli:commands.dryRun.stepType.while');
       break;
     case 'try':
-      stepDesc = 'try/catch';
+      stepDesc = t('cli:commands.dryRun.stepType.try');
       break;
     case 'map':
-      stepDesc = 'map transform';
+      stepDesc = t('cli:commands.dryRun.stepType.map');
       break;
     case 'filter':
-      stepDesc = 'filter transform';
+      stepDesc = t('cli:commands.dryRun.stepType.filter');
       break;
     case 'reduce':
-      stepDesc = 'reduce transform';
+      stepDesc = t('cli:commands.dryRun.stepType.reduce');
       break;
     case 'script':
-      stepDesc = 'script execution';
+      stepDesc = t('cli:commands.dryRun.stepType.script');
       break;
     case 'merge':
-      stepDesc = 'merge data';
+      stepDesc = t('cli:commands.dryRun.stepType.merge');
       break;
     default:
       stepDesc = result.stepType;
@@ -532,7 +532,7 @@ function displayStepResult(result: DryRunStepResult, options: DryRunOptions): vo
   if (options.verbose) {
     if (result.status !== 'skipped' && options.showMockData) {
       console.log(
-        chalk.gray('  Mock output:'),
+        chalk.gray(`  ${t('cli:commands.dryRun.mockOutput')}:`),
         JSON.stringify(result.mockOutput, null, 2)
           .split('\n')
           .map((line) => `  ${chalk.dim(line)}`)
@@ -546,19 +546,19 @@ function displayStepResult(result: DryRunStepResult, options: DryRunOptions): vo
  * Display final summary
  */
 export function displayDryRunSummary(result: DryRunResult, options: DryRunOptions): void {
-  console.log(chalk.bold.cyan('\n📊 Dry Run Summary\n'));
+  console.log(chalk.bold.cyan(`\n📊 ${t('cli:commands.dryRun.summary.title')}\n`));
 
   const completed = result.steps.filter((s) => s.status === 'completed').length;
   const skipped = result.steps.filter((s) => s.status === 'skipped').length;
   const failed = result.steps.filter((s) => s.status === 'would-fail').length;
 
-  console.log(`  ${chalk.green('✓')} Completed: ${completed}`);
-  if (skipped > 0) console.log(`  ${chalk.yellow('○')} Skipped: ${skipped}`);
-  if (failed > 0) console.log(`  ${chalk.red('✗')} Would fail: ${failed}`);
-  console.log(`  ${chalk.gray('⏱')}  Duration: ${result.duration.toFixed(0)}ms (simulated)`);
+  console.log(`  ${chalk.green('✓')} ${t('cli:commands.dryRun.summary.completed', { count: completed })}`);
+  if (skipped > 0) console.log(`  ${chalk.yellow('○')} ${t('cli:commands.dryRun.summary.skipped', { count: skipped })}`);
+  if (failed > 0) console.log(`  ${chalk.red('✗')} ${t('cli:commands.dryRun.summary.wouldFail', { count: failed })}`);
+  console.log(`  ${chalk.gray('⏱')}  ${t('cli:commands.dryRun.summary.duration', { duration: result.duration.toFixed(0) })}`);
 
   if (options.showVariables && Object.keys(result.variables).length > 0) {
-    console.log(chalk.bold.cyan('\n📝 Final Variables\n'));
+    console.log(chalk.bold.cyan(`\n📝 ${t('cli:commands.dryRun.summary.finalVariables')}\n`));
     for (const [key, value] of Object.entries(result.variables)) {
       console.log(
         `  ${chalk.cyan(key)}: ${chalk.gray(typeof value === 'object' ? JSON.stringify(value) : String(value))}`
@@ -566,9 +566,9 @@ export function displayDryRunSummary(result: DryRunResult, options: DryRunOption
     }
   }
 
-  console.log(chalk.bold.green('\n✅ Dry run completed successfully\n'));
-  console.log(chalk.gray('Note: No external services were called. All responses are mocked.'));
-  console.log(chalk.gray('To execute for real, run without --dry-run flag.\n'));
+  console.log(chalk.bold.green(`\n✅ ${t('cli:commands.dryRun.summary.success')}\n`));
+  console.log(chalk.gray(t('cli:commands.dryRun.summary.noExternalServices')));
+  console.log(chalk.gray(t('cli:commands.dryRun.summary.runWithoutDryRun')) + '\n');
 }
 
 // ============================================================================

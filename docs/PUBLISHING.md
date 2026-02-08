@@ -20,12 +20,13 @@ pnpm publish
 
 ## Package Structure
 
-marktoflow is a monorepo with four published packages:
+marktoflow is a monorepo with five published packages:
 
 1. **@marktoflow/core** - Core engine (parser, executor, state management)
-2. **@marktoflow/integrations** - Service integrations (Slack, GitHub, Jira, etc.)
-3. **@marktoflow/gui** - Visual workflow designer (web UI with AI assistance)
-4. **@marktoflow/cli** - CLI package (main package users install)
+2. **@marktoflow/i18n** - Internationalization (8 languages, locale files, RTL support)
+3. **@marktoflow/integrations** - Service integrations (Slack, GitHub, Jira, etc.)
+4. **@marktoflow/gui** - Visual workflow designer (web UI with AI assistance)
+5. **@marktoflow/cli** - CLI package (main package users install)
 
 All packages are published under the `@marktoflow` npm organization.
 
@@ -34,14 +35,19 @@ All packages are published under the `@marktoflow` npm organization.
 ```
 @marktoflow/cli
 ├── @marktoflow/core
+├── @marktoflow/i18n
 ├── @marktoflow/integrations
 └── @marktoflow/gui (optional)
 
 @marktoflow/gui
-└── @marktoflow/core
+├── @marktoflow/core
+└── @marktoflow/i18n
 
 @marktoflow/integrations
 └── @marktoflow/core
+
+@marktoflow/i18n
+└── (no internal dependencies)
 ```
 
 ---
@@ -117,7 +123,7 @@ The automated system provides:
 
 ✅ **Automatic workspace:* replacement** (dependencies, devDependencies, optionalDependencies) with backup
 ✅ **Pre-publish testing** (imports, CLI, GUI integration)
-✅ **Correct dependency order** (core → integrations → cli/gui)
+✅ **Correct dependency order** (core → i18n → integrations → gui/cli)
 ✅ **Automatic rollback** on errors
 ✅ **Post-publish verification**
 ✅ **Dry-run mode** for safe testing
@@ -142,6 +148,7 @@ Update `version` in the package.json files that changed:
 # Example: Updating to 2.0.0-alpha.10
 # Edit the relevant files:
 vi packages/core/package.json        # If core changed
+vi packages/i18n/package.json        # If i18n changed
 vi packages/integrations/package.json  # If integrations changed
 vi packages/cli/package.json         # If CLI changed
 vi packages/gui/package.json         # If GUI changed
@@ -201,9 +208,10 @@ pnpm publish
 📋 Publish Plan
 
   1. @marktoflow/core@2.0.0-alpha.14
-  2. @marktoflow/integrations@2.0.0-alpha.14
-  3. @marktoflow/cli@2.0.0-alpha.14
+  2. @marktoflow/i18n@2.0.1
+  3. @marktoflow/integrations@2.0.0-alpha.14
   4. @marktoflow/gui@2.0.0-alpha.14
+  5. @marktoflow/cli@2.0.0-alpha.14
 
 📝 Process:
   1. Replace workspace:* with actual versions
@@ -259,6 +267,9 @@ The automated testing ensures:
 ```javascript
 // Core
 import { parseFile, WorkflowEngine } from '@marktoflow/core';
+
+// i18n
+import { LANGUAGES, SUPPORTED_LANGUAGE_CODES, isRTL } from '@marktoflow/i18n';
 
 // Integrations
 import { SlackInitializer, GitHubInitializer } from '@marktoflow/integrations';
@@ -395,16 +406,19 @@ pnpm build
 ### Publish in Order
 
 ```bash
-# Core
+# Core (no internal dependencies)
 cd packages/core && npm publish --access public --tag alpha && cd ../..
 
-# Integrations
+# i18n (no internal dependencies)
+cd packages/i18n && npm publish --access public --tag alpha && cd ../..
+
+# Integrations (depends on core)
 cd packages/integrations && npm publish --access public --tag alpha && cd ../..
 
-# GUI
+# GUI (depends on core, i18n)
 cd packages/gui && npm publish --access public --tag alpha && cd ../..
 
-# CLI
+# CLI (depends on core, i18n, integrations, gui)
 cd packages/cli && npm publish --access public --tag alpha && cd ../..
 ```
 
@@ -510,6 +524,7 @@ For complete details on the publishing system:
 **Latest Published Versions**:
 
 - @marktoflow/core@2.0.0-alpha.14
+- @marktoflow/i18n@2.0.1
 - @marktoflow/integrations@2.0.0-alpha.14
 - @marktoflow/cli@2.0.0-alpha.14
 - @marktoflow/gui@2.0.0-alpha.14

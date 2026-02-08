@@ -2,6 +2,7 @@
 
 export interface GeneralSettings {
   theme: 'dark' | 'light' | 'system';
+  language: string;
 }
 
 export interface CanvasSettings {
@@ -51,6 +52,7 @@ export type SettingsCategory = keyof UserSettings;
 export const DEFAULT_SETTINGS: UserSettings = {
   general: {
     theme: 'dark',
+    language: 'en',
   },
   canvas: {
     showGrid: true,

@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef, type DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ReactFlow,
   Background,
@@ -62,6 +63,7 @@ const nodeTypes = {
 };
 
 export function Canvas() {
+  const { t } = useTranslation('gui');
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setNodes } =
     useCanvasStore();
   const { autoLayout, deleteSelected, duplicateSelected } = useCanvas();
@@ -425,28 +427,28 @@ export function Canvas() {
       <ContextMenuContent>
         <ContextMenuItem onClick={handleContextEdit}>
           <Edit className="w-4 h-4 mr-2" />
-          Edit Step
+          {t('gui:canvas.editStep')}
           <ContextMenuShortcut>E</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem onClick={handleContextViewYaml}>
           <Code className="w-4 h-4 mr-2" />
-          View YAML
+          {t('gui:canvas.viewYaml')}
           <ContextMenuShortcut>Y</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleContextExecute}>
           <Play className="w-4 h-4 mr-2" />
-          Execute Step
+          {t('gui:canvas.executeStep')}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleContextDuplicate}>
           <Copy className="w-4 h-4 mr-2" />
-          Duplicate
+          {t('gui:canvas.duplicate')}
           <ContextMenuShortcut>{modKey}D</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem onClick={handleContextDelete} destructive>
           <Trash2 className="w-4 h-4 mr-2" />
-          Delete
+          {t('gui:canvas.delete')}
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
@@ -464,7 +466,7 @@ export function Canvas() {
       <Modal
         open={isYamlViewOpen}
         onOpenChange={setIsYamlViewOpen}
-        title={`YAML: ${yamlViewStep?.name || yamlViewStep?.id}`}
+        title={t('gui:canvas.yamlTitle', { name: yamlViewStep?.name || yamlViewStep?.id })}
         size="lg"
       >
         <div className="p-4">

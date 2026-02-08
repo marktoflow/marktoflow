@@ -10,6 +10,7 @@ import {
   Upload,
   Settings2,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useLayoutStore } from '../../stores/layoutStore';
@@ -19,6 +20,7 @@ import { SettingsPanel } from '../Settings/SettingsPanel';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 export function Sidebar() {
+  const { t } = useTranslation('gui');
   const [activeTab, setActiveTab] = useState<'workflows' | 'tools'>(
     'workflows'
   );
@@ -45,7 +47,7 @@ export function Sidebar() {
       <button
         onClick={() => setSidebarOpen(true)}
         className="w-12 bg-bg-panel border-r border-border-default flex flex-col items-center py-4 gap-4 hover:bg-bg-hover transition-colors"
-        aria-label="Expand sidebar"
+        aria-label={t('gui:sidebar.expandSidebar')}
       >
         <ChevronRight className="w-4 h-4 text-text-secondary" />
         <img src="/marktoflow-logo.png" alt="Marktoflow" className="w-6 h-6 rounded-full object-cover" />
@@ -115,6 +117,7 @@ function SidebarContent({
   onClose,
   showClose,
 }: SidebarContentProps) {
+  const { t } = useTranslation('gui');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,13 +169,13 @@ function SidebarContent({
       <div className="p-4 border-b border-border-default flex items-center justify-between">
         <h1 className="text-lg font-semibold text-text-primary flex items-center gap-2">
           <img src="/marktoflow-logo.png" alt="Marktoflow" className="w-8 h-8 rounded-full object-cover" />
-          Marktoflow
+          {t('gui:sidebar.title')}
         </h1>
         {showClose && (
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
-            aria-label="Close sidebar"
+            aria-label={t('gui:sidebar.closeSidebar')}
           >
             <X className="w-4 h-4 text-text-secondary" />
           </button>
@@ -189,7 +192,7 @@ function SidebarContent({
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Workflows
+          {t('gui:sidebar.workflows')}
         </button>
         <button
           onClick={() => setActiveTab('tools')}
@@ -199,7 +202,7 @@ function SidebarContent({
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Tools
+          {t('gui:sidebar.tools')}
         </button>
       </div>
 
@@ -211,14 +214,14 @@ function SidebarContent({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${activeTab}...`}
+            placeholder={t('gui:sidebar.searchPlaceholder', { tab: activeTab })}
             className="w-full pl-9 pr-3 py-2 bg-bg-surface border border-border-default rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
-              aria-label="Clear search"
+              aria-label={t('gui:sidebar.clearSearch')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -248,14 +251,14 @@ function SidebarContent({
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover text-text-inverse rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            New Workflow
+            {t('gui:sidebar.newWorkflow')}
           </button>
           <button
             onClick={() => setShowImportDialog(true)}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-surface border border-border-default hover:bg-bg-hover text-text-primary rounded-lg text-sm font-medium transition-colors"
           >
             <Upload className="w-4 h-4" />
-            Import
+            {t('gui:sidebar.import')}
           </button>
         </div>
       )}
@@ -265,10 +268,10 @@ function SidebarContent({
         <button
           onClick={() => useSettingsStore.getState().openSettings()}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
-          title="Settings (⌘,)"
+          title={t('gui:sidebar.settingsTooltip')}
         >
           <Settings2 className="w-4 h-4" />
-          Settings
+          {t('gui:sidebar.settings')}
         </button>
       </div>
 
@@ -305,19 +308,20 @@ function WorkflowList({
   onSelect,
   searchQuery = '',
 }: WorkflowListProps) {
+  const { t } = useTranslation('gui');
   if (workflows.length === 0) {
     return (
       <div className="text-center py-8 text-text-muted text-sm">
         {searchQuery ? (
           <>
             <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No workflows match "{searchQuery}"</p>
+            <p>{t('gui:sidebar.noWorkflowsMatch', { query: searchQuery })}</p>
           </>
         ) : (
           <>
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No workflows found</p>
-            <p className="text-xs mt-1 text-text-muted">Create your first workflow to get started</p>
+            <p>{t('gui:sidebar.noWorkflowsFound')}</p>
+            <p className="text-xs mt-1 text-text-muted">{t('gui:sidebar.createFirstWorkflow')}</p>
           </>
         )}
       </div>
@@ -367,7 +371,16 @@ const fallbackTools: ToolDefinition[] = [
   { id: 'claude', name: 'Claude', icon: '🤖', category: 'AI' },
 ];
 
+const categoryKeyMap: Record<string, string> = {
+  'Communication': 'gui:sidebar.categories.communication',
+  'Development': 'gui:sidebar.categories.development',
+  'Project Management': 'gui:sidebar.categories.projectManagement',
+  'AI': 'gui:sidebar.categories.ai',
+  'Network': 'gui:sidebar.categories.network',
+};
+
 function ToolsPalette() {
+  const { t } = useTranslation('gui');
   const [tools, setTools] = useState<ToolDefinition[]>(fallbackTools);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -421,7 +434,7 @@ function ToolsPalette() {
       {categories.map((category) => (
         <div key={category}>
           <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-2 mb-2">
-            {category}
+            {categoryKeyMap[category] ? t(categoryKeyMap[category]) : category}
           </h3>
           <div className="space-y-1">
             {filteredTools
@@ -449,7 +462,7 @@ function ToolsPalette() {
 
       {filteredTools.length === 0 && (
         <div className="text-center py-8 text-gray-500 text-sm">
-          No tools found
+          {t('gui:sidebar.noToolsFound')}
         </div>
       )}
     </div>

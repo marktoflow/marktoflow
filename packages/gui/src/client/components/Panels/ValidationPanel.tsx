@@ -1,5 +1,6 @@
 import { CheckCircle, XCircle, AlertTriangle, Loader2, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ValidationResult {
   valid: boolean;
@@ -26,6 +27,7 @@ interface ValidationPanelProps {
 }
 
 export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps) {
+  const { t } = useTranslation('gui');
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
 
@@ -86,13 +88,13 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border-subtle">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Workflow Validation</h2>
-              <p className="text-sm text-text-secondary mt-1">Dry-run analysis results</p>
+              <h2 className="text-lg font-semibold text-text-primary">{t('gui:validation.title')}</h2>
+              <p className="text-sm text-text-secondary mt-1">{t('gui:validation.subtitle')}</p>
             </div>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors text-text-secondary"
-              aria-label="Close validation panel"
+              aria-label={t('gui:validation.closePanel')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -103,7 +105,7 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
             {validating ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
-                <p className="text-sm text-text-secondary">Validating workflow...</p>
+                <p className="text-sm text-text-secondary">{t('gui:validation.validating')}</p>
               </div>
             ) : result ? (
               <div className="space-y-6">
@@ -126,7 +128,7 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
                         result.valid ? 'text-success' : 'text-error'
                       }`}
                     >
-                      {result.valid ? 'Workflow is valid' : 'Validation failed'}
+                      {result.valid ? t('gui:validation.valid') : t('gui:validation.invalid')}
                     </h3>
                     {result.error && (
                       <p className="text-sm text-text-secondary mt-1">{result.error}</p>
@@ -137,23 +139,23 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
                 {/* Workflow Info */}
                 {result.workflow && (
                   <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-text-primary">Workflow Details</h3>
+                    <h3 className="text-sm font-medium text-text-primary">{t('gui:validation.workflowDetails')}</h3>
                     <div className="bg-bg-surface border border-border-default rounded-lg p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-text-secondary">Name:</span>
+                        <span className="text-text-secondary">{t('gui:validation.nameLabel')}</span>
                         <span className="text-text-primary font-medium">
                           {result.workflow.name}
                         </span>
                       </div>
                       {result.workflow.version && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-text-secondary">Version:</span>
+                          <span className="text-text-secondary">{t('gui:validation.versionLabel')}</span>
                           <span className="text-text-primary">{result.workflow.version}</span>
                         </div>
                       )}
                       {result.workflow.description && (
                         <div className="text-sm">
-                          <span className="text-text-secondary">Description:</span>
+                          <span className="text-text-secondary">{t('gui:validation.descriptionLabel')}</span>
                           <p className="text-text-primary mt-1">
                             {result.workflow.description}
                           </p>
@@ -167,7 +169,7 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
                 {result.steps && result.steps.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-medium text-text-primary">
-                      Steps ({result.steps.length})
+                      {t('gui:validation.stepsCount', { count: result.steps.length })}
                     </h3>
                     <div className="space-y-2">
                       {result.steps.map((step, index) => (
@@ -201,7 +203,7 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
                   <div className="space-y-3">
                     <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-warning" />
-                      Warnings ({result.warnings.length})
+                      {t('gui:validation.warningsCount', { count: result.warnings.length })}
                     </h3>
                     <div className="space-y-2">
                       {result.warnings.map((warning, index) => (
@@ -220,7 +222,7 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
                 {result.inputs && Object.keys(result.inputs).length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-medium text-text-primary">
-                      Required Inputs ({Object.keys(result.inputs).length})
+                      {t('gui:validation.requiredInputsCount', { count: Object.keys(result.inputs).length })}
                     </h3>
                     <div className="bg-bg-surface border border-border-default rounded-lg p-4 space-y-2">
                       {Object.entries(result.inputs).map(([key, config]: [string, any]) => (
@@ -247,7 +249,7 @@ export function ValidationPanel({ workflowPath, onClose }: ValidationPanelProps)
               onClick={onClose}
               className="px-4 py-2 bg-accent hover:bg-accent-hover text-text-inverse rounded-lg text-sm font-medium transition-colors"
             >
-              Close
+              {t('gui:validation.close')}
             </button>
           </div>
         </div>

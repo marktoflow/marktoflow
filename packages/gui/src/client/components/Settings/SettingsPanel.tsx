@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Settings2,
   LayoutGrid,
@@ -20,23 +21,24 @@ import type { SettingsCategory } from '@shared/settings';
 
 interface CategoryDef {
   key: SettingsCategory;
-  label: string;
+  labelKey: string;
   icon: typeof Settings2;
   component: React.ComponentType;
 }
 
 const CATEGORIES: CategoryDef[] = [
-  { key: 'general', label: 'General', icon: Settings2, component: GeneralSettings },
-  { key: 'canvas', label: 'Canvas', icon: LayoutGrid, component: CanvasSettings },
-  { key: 'editor', label: 'Editor', icon: Code2, component: EditorSettings },
-  { key: 'execution', label: 'Execution', icon: Play, component: ExecutionSettings },
-  { key: 'ai', label: 'AI', icon: Bot, component: AISettings },
-  { key: 'notifications', label: 'Notifications', icon: Bell, component: NotificationSettings },
+  { key: 'general', labelKey: 'settings.categories.general', icon: Settings2, component: GeneralSettings },
+  { key: 'canvas', labelKey: 'settings.categories.canvas', icon: LayoutGrid, component: CanvasSettings },
+  { key: 'editor', labelKey: 'settings.categories.editor', icon: Code2, component: EditorSettings },
+  { key: 'execution', labelKey: 'settings.categories.execution', icon: Play, component: ExecutionSettings },
+  { key: 'ai', labelKey: 'settings.categories.ai', icon: Bot, component: AISettings },
+  { key: 'notifications', labelKey: 'settings.categories.notifications', icon: Bell, component: NotificationSettings },
 ];
 
 export function SettingsPanel() {
   const { settingsOpen, closeSettings, resetCategory } = useSettingsStore();
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
+  const { t } = useTranslation('gui');
 
   const activeDef = CATEGORIES.find((c) => c.key === activeCategory)!;
   const ActiveComponent = activeDef.component;
@@ -47,13 +49,13 @@ export function SettingsPanel() {
       onOpenChange={(open) => {
         if (!open) closeSettings();
       }}
-      title="Settings"
+      title={t('gui:settings.title')}
       size="xl"
     >
       <div className="flex min-h-[400px]">
         {/* Left nav */}
         <nav className="w-48 border-r border-border-default p-2 flex-shrink-0">
-          {CATEGORIES.map(({ key, label, icon: Icon }) => (
+          {CATEGORIES.map(({ key, labelKey, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setActiveCategory(key)}
@@ -64,7 +66,7 @@ export function SettingsPanel() {
               }`}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              {t(`gui:${labelKey}`)}
             </button>
           ))}
         </nav>
@@ -72,14 +74,14 @@ export function SettingsPanel() {
         {/* Right content */}
         <div className="flex-1 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-text-primary">{activeDef.label}</h3>
+            <h3 className="text-base font-semibold text-text-primary">{t(`gui:${activeDef.labelKey}`)}</h3>
             <button
               onClick={() => resetCategory(activeCategory)}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-text-muted hover:text-text-secondary hover:bg-bg-hover transition-colors"
-              title="Reset to defaults"
+              title={t('gui:settings.resetToDefaults')}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Reset
+              {t('gui:settings.reset')}
             </button>
           </div>
           <ActiveComponent />

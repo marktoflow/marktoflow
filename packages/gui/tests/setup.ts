@@ -1,5 +1,34 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import FsBackend from 'i18next-fs-backend';
+import { dirname, join } from 'path';
+import { createRequire } from 'module';
+
+// Initialize i18n for tests
+const require = createRequire(import.meta.url);
+const i18nPkgPath = dirname(require.resolve('@marktoflow/i18n/package.json'));
+const localesPath = join(i18nPkgPath, 'locales');
+
+i18n
+  .use(FsBackend)
+  .use(initReactI18next)
+  .init({
+    lng: 'en',
+    fallbackLng: 'en',
+    defaultNS: 'common',
+    ns: ['common', 'gui'],
+    interpolation: {
+      escapeValue: false,
+    },
+    backend: {
+      loadPath: join(localesPath, '{{lng}}', '{{ns}}.json'),
+    },
+    react: {
+      useSuspense: false, // Disable suspense for tests
+    },
+  });
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

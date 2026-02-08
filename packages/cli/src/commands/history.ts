@@ -8,6 +8,7 @@ import chalk from 'chalk';
 import { StateStore, WorkflowStatus } from '@marktoflow/core';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { t } from '../i18n.js';
 
 // ============================================================================
 // State Store Helpers
@@ -16,8 +17,8 @@ import { existsSync } from 'node:fs';
 function getStateStore(): StateStore | null {
   const dbPath = join(process.cwd(), '.marktoflow', 'state.db');
   if (!existsSync(dbPath)) {
-    console.log(chalk.yellow('  No execution history found.'));
-    console.log(chalk.dim('  Run a workflow first: marktoflow run <workflow.md>'));
+    console.log(chalk.yellow(`  ${t('cli:commands.history.noHistory')}`));
+    console.log(chalk.dim(`  ${t('cli:commands.history.runFirst')}`));
     return null;
   }
   return new StateStore(dbPath);
@@ -78,27 +79,27 @@ export function executeHistory(options: {
   });
 
   if (executions.length === 0) {
-    console.log(chalk.dim('  No executions found matching filters.'));
+    console.log(chalk.dim(`  ${t('cli:commands.history.noExecutions')}`));
     return;
   }
 
-  console.log(chalk.bold('\n  Execution History\n'));
+  console.log(chalk.bold(`\n  ${t('cli:commands.history.title')}\n`));
 
   // Table header
   console.log(
     chalk.dim('  ') +
-    chalk.bold('Status'.padEnd(12)) +
-    chalk.bold('Run ID'.padEnd(40)) +
-    chalk.bold('Workflow'.padEnd(25)) +
-    chalk.bold('Duration'.padEnd(12)) +
-    chalk.bold('Started')
+    chalk.bold(t('cli:commands.history.columns.status').padEnd(12)) +
+    chalk.bold(t('cli:commands.history.columns.runId').padEnd(40)) +
+    chalk.bold(t('cli:commands.history.columns.workflow').padEnd(25)) +
+    chalk.bold(t('cli:commands.history.columns.duration').padEnd(12)) +
+    chalk.bold(t('cli:commands.history.columns.started'))
   );
   console.log(chalk.dim('  ' + '─'.repeat(100)));
 
   for (const exec of executions) {
     const duration = exec.completedAt
       ? formatDuration(exec.completedAt.getTime() - exec.startedAt.getTime())
-      : 'running...';
+      : t('cli:commands.history.running');
 
     const icon = statusIcon(exec.status);
     const colorFn = statusColor(exec.status);
@@ -106,7 +107,7 @@ export function executeHistory(options: {
     console.log(
       `  ${icon} ${colorFn(exec.status.padEnd(10))} ` +
       chalk.cyan(exec.runId.substring(0, 36).padEnd(40)) +
-      (exec.workflowId || 'unknown').substring(0, 23).padEnd(25) +
+      (exec.workflowId || t('cli:commands.history.unknown')).substring(0, 23).padEnd(25) +
       duration.padEnd(12) +
       chalk.dim(formatDate(exec.startedAt))
     );
@@ -117,12 +118,12 @@ export function executeHistory(options: {
   console.log(chalk.dim('\n  ' + '─'.repeat(100)));
   console.log(
     chalk.dim('  ') +
-    `Total: ${stats.totalExecutions}  ` +
-    chalk.green(`${stats.completed} passed  `) +
-    chalk.red(`${stats.failed} failed  `) +
-    chalk.blue(`${stats.running} running  `) +
-    chalk.dim(`Success rate: ${(stats.successRate * 100).toFixed(0)}%  `) +
-    chalk.dim(`Avg: ${stats.averageDuration ? formatDuration(stats.averageDuration) : 'N/A'}`)
+    `${t('cli:commands.history.stats.total')}: ${stats.totalExecutions}  ` +
+    chalk.green(`${stats.completed} ${t('cli:commands.history.stats.passed')}  `) +
+    chalk.red(`${stats.failed} ${t('cli:commands.history.stats.failed')}  `) +
+    chalk.blue(`${stats.running} ${t('cli:commands.history.stats.running')}  `) +
+    chalk.dim(`${t('cli:commands.history.stats.successRate')}: ${(stats.successRate * 100).toFixed(0)}%  `) +
+    chalk.dim(`${t('cli:commands.history.stats.avg')}: ${stats.averageDuration ? formatDuration(stats.averageDuration) : t('cli:commands.history.stats.na')}`)
   );
   console.log('');
 }
@@ -143,7 +144,7 @@ export function executeHistoryDetail(runId: string, options: { step?: string }):
     if (match) {
       return executeHistoryDetail(match.runId, options);
     }
-    console.log(chalk.red(`  Execution not found: ${runId}`));
+    console.log(chalk.red(`  ${t('cli:commands.history.details.notFound', { runId })}`));
     return;
   }
 
@@ -155,30 +156,30 @@ export function executeHistoryDetail(runId: string, options: { step?: string }):
       (c) => c.stepName === options.step || c.stepIndex === Number(options.step)
     );
     if (!checkpoint) {
-      console.log(chalk.red(`  Step not found: ${options.step}`));
-      console.log(chalk.dim('  Available steps:'));
+      console.log(chalk.red(`  ${t('cli:commands.history.details.stepNotFound', { step: options.step })}`));
+      console.log(chalk.dim(`  ${t('cli:commands.history.details.availableSteps')}:`));
       for (const cp of checkpoints) {
         console.log(chalk.dim(`    ${cp.stepIndex}: ${cp.stepName}`));
       }
       return;
     }
 
-    console.log(chalk.bold(`\n  Step: ${checkpoint.stepName}`));
-    console.log(`  Status: ${statusIcon(checkpoint.status)} ${statusColor(checkpoint.status)(checkpoint.status)}`);
-    console.log(`  Retries: ${checkpoint.retryCount}`);
+    console.log(chalk.bold(`\n  ${t('cli:commands.history.details.step')}: ${checkpoint.stepName}`));
+    console.log(`  ${t('cli:commands.history.columns.status')}: ${statusIcon(checkpoint.status)} ${statusColor(checkpoint.status)(checkpoint.status)}`);
+    console.log(`  ${t('cli:commands.history.details.retries')}: ${checkpoint.retryCount}`);
 
     if (checkpoint.inputs) {
-      console.log(chalk.bold('\n  Inputs:'));
+      console.log(chalk.bold(`\n  ${t('cli:commands.history.details.inputs')}:`));
       console.log(chalk.dim(JSON.stringify(checkpoint.inputs, null, 2).split('\n').map((l) => '    ' + l).join('\n')));
     }
 
     if (checkpoint.outputs) {
-      console.log(chalk.bold('\n  Outputs:'));
+      console.log(chalk.bold(`\n  ${t('cli:commands.history.details.outputs')}:`));
       console.log(chalk.dim(JSON.stringify(checkpoint.outputs, null, 2).split('\n').map((l) => '    ' + l).join('\n')));
     }
 
     if (checkpoint.error) {
-      console.log(chalk.bold('\n  Error:'));
+      console.log(chalk.bold(`\n  ${t('cli:commands.history.details.error')}:`));
       console.log(chalk.red('    ' + checkpoint.error));
     }
     console.log('');
@@ -188,32 +189,32 @@ export function executeHistoryDetail(runId: string, options: { step?: string }):
   // Show execution overview
   const duration = exec.completedAt
     ? formatDuration(exec.completedAt.getTime() - exec.startedAt.getTime())
-    : 'still running';
+    : t('cli:commands.history.details.stillRunning');
 
-  console.log(chalk.bold('\n  Execution Details\n'));
-  console.log(`  Run ID:    ${chalk.cyan(exec.runId)}`);
-  console.log(`  Workflow:  ${exec.workflowId}`);
-  console.log(`  Status:    ${statusIcon(exec.status)} ${statusColor(exec.status)(exec.status)}`);
-  console.log(`  Started:   ${formatDate(exec.startedAt)}`);
+  console.log(chalk.bold(`\n  ${t('cli:commands.history.details.title')}\n`));
+  console.log(`  ${t('cli:commands.history.details.runId')}:    ${chalk.cyan(exec.runId)}`);
+  console.log(`  ${t('cli:commands.history.details.workflow')}:  ${exec.workflowId}`);
+  console.log(`  ${t('cli:commands.history.columns.status')}:    ${statusIcon(exec.status)} ${statusColor(exec.status)(exec.status)}`);
+  console.log(`  ${t('cli:commands.history.details.started')}:   ${formatDate(exec.startedAt)}`);
   if (exec.completedAt) {
-    console.log(`  Completed: ${formatDate(exec.completedAt)}`);
+    console.log(`  ${t('cli:commands.history.details.completed')}: ${formatDate(exec.completedAt)}`);
   }
-  console.log(`  Duration:  ${duration}`);
-  console.log(`  Steps:     ${exec.currentStep}/${exec.totalSteps}`);
+  console.log(`  ${t('cli:commands.history.columns.duration')}:  ${duration}`);
+  console.log(`  ${t('cli:commands.history.details.steps')}:     ${exec.currentStep}/${exec.totalSteps}`);
 
   if (exec.inputs) {
-    console.log(chalk.bold('\n  Inputs:'));
+    console.log(chalk.bold(`\n  ${t('cli:commands.history.details.inputs')}:`));
     console.log(chalk.dim(JSON.stringify(exec.inputs, null, 2).split('\n').map((l) => '    ' + l).join('\n')));
   }
 
   if (exec.error) {
-    console.log(chalk.bold('\n  Error:'));
+    console.log(chalk.bold(`\n  ${t('cli:commands.history.details.error')}:`));
     console.log(chalk.red('    ' + exec.error));
   }
 
   // Show step timeline
   if (checkpoints.length > 0) {
-    console.log(chalk.bold('\n  Step Timeline'));
+    console.log(chalk.bold(`\n  ${t('cli:commands.history.details.stepTimeline')}`));
     console.log(chalk.dim('  ' + '─'.repeat(70)));
 
     for (const cp of checkpoints) {
@@ -231,15 +232,15 @@ export function executeHistoryDetail(runId: string, options: { step?: string }):
   }
 
   if (exec.outputs) {
-    console.log(chalk.bold('\n  Outputs:'));
+    console.log(chalk.bold(`\n  ${t('cli:commands.history.details.outputs')}:`));
     console.log(chalk.dim(JSON.stringify(exec.outputs, null, 2).split('\n').map((l) => '    ' + l).join('\n')));
   }
 
   console.log(
-    chalk.dim('\n  View step details: marktoflow history ' + exec.runId.substring(0, 8) + ' --step <step-name>')
+    chalk.dim(`\n  ${t('cli:commands.history.details.viewStepHint', { runId: exec.runId.substring(0, 8) })}`)
   );
   console.log(
-    chalk.dim('  Replay execution:  marktoflow replay ' + exec.runId.substring(0, 8))
+    chalk.dim(`  ${t('cli:commands.history.replay.hint', { runId: exec.runId.substring(0, 8) })}`)
   );
   console.log('');
 }
@@ -263,34 +264,34 @@ export async function executeReplay(
     if (match) {
       return executeReplay(match.runId, options);
     }
-    console.log(chalk.red(`  Execution not found: ${runId}`));
+    console.log(chalk.red(`  ${t('cli:commands.history.details.notFound', { runId })}`));
     return;
   }
 
   if (!exec.workflowPath) {
-    console.log(chalk.red('  Cannot replay: workflow path not stored in execution record.'));
-    console.log(chalk.dim('  Workflow ID: ' + exec.workflowId));
+    console.log(chalk.red(`  ${t('cli:commands.history.replay.noWorkflowPath')}`));
+    console.log(chalk.dim(`  ${t('cli:commands.history.details.workflow')} ID: ${exec.workflowId}`));
     return;
   }
 
   if (!existsSync(exec.workflowPath)) {
-    console.log(chalk.red(`  Cannot replay: workflow file not found at ${exec.workflowPath}`));
+    console.log(chalk.red(`  ${t('cli:commands.history.replay.fileNotFound', { path: exec.workflowPath })}`));
     return;
   }
 
   const mode = options.dryRun ? 'dry-run' : 'run';
   const fromStep = options.from ? ` --from ${options.from}` : '';
 
-  console.log(chalk.bold('\n  Replaying Execution\n'));
-  console.log(`  Original Run:  ${chalk.cyan(exec.runId)}`);
-  console.log(`  Workflow:      ${exec.workflowPath}`);
-  console.log(`  Mode:          ${mode}`);
+  console.log(chalk.bold(`\n  ${t('cli:commands.history.replay.title')}\n`));
+  console.log(`  ${t('cli:commands.history.replay.originalRun')}:  ${chalk.cyan(exec.runId)}`);
+  console.log(`  ${t('cli:commands.history.details.workflow')}:      ${exec.workflowPath}`);
+  console.log(`  ${t('cli:commands.history.replay.mode')}:          ${mode}`);
   if (options.from) {
-    console.log(`  Starting from: ${options.from}`);
+    console.log(`  ${t('cli:commands.history.replay.startingFrom')}: ${options.from}`);
   }
 
   const inputs = exec.inputs ? Object.entries(exec.inputs).map(([k, v]) => `${k}=${v}`).join(' ') : '';
-  console.log(chalk.dim(`\n  Equivalent command:`));
+  console.log(chalk.dim(`\n  ${t('cli:commands.history.replay.equivalentCommand')}:`));
   console.log(chalk.dim(`    marktoflow ${mode} ${exec.workflowPath}${inputs ? ' --input ' + inputs : ''}${fromStep}`));
   console.log('');
 
@@ -311,13 +312,13 @@ export async function executeReplay(
 
   const replayInputs = exec.inputs ?? {};
 
-  console.log(chalk.blue('  Starting execution...\n'));
+  console.log(chalk.blue(`  ${t('cli:commands.history.replay.starting')}\n`));
   const result = await engine.execute(workflow, replayInputs, registry, executor);
 
   if (result.status === 'completed') {
-    console.log(chalk.green(`  ✓ Replay completed successfully in ${formatDuration(result.duration)}`));
+    console.log(chalk.green(`  ✓ ${t('cli:commands.history.replay.completed', { duration: formatDuration(result.duration) })}`));
   } else {
-    console.log(chalk.red(`  ✗ Replay failed: ${result.error}`));
+    console.log(chalk.red(`  ✗ ${t('cli:commands.history.replay.failed', { error: result.error })}`));
   }
   console.log('');
 }

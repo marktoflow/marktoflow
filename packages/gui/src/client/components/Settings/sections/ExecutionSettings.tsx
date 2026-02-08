@@ -1,26 +1,28 @@
+import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../../stores/settingsStore';
 import { SettingToggle } from '../controls/SettingToggle';
 
 export function ExecutionSettings() {
   const { settings, updateSetting } = useSettingsStore();
+  const { t } = useTranslation('gui');
 
   return (
     <div className="divide-y divide-border-default">
       <SettingToggle
-        label="Confirm Before Execute"
-        description="Show confirmation dialog before running workflows"
+        label={t('gui:settings.execution.confirmExecute')}
+        description={t('gui:settings.execution.confirmExecuteDescription')}
         checked={settings.execution.confirmBeforeExecute}
         onChange={(v) => updateSetting('execution', 'confirmBeforeExecute', v)}
       />
       <SettingToggle
-        label="Auto-Scroll Logs"
-        description="Automatically scroll to the latest log entry during execution"
+        label={t('gui:settings.execution.autoScrollLogs')}
+        description={t('gui:settings.execution.autoScrollLogsDescription')}
         checked={settings.execution.autoScrollLogs}
         onChange={(v) => updateSetting('execution', 'autoScrollLogs', v)}
       />
       <SettingToggle
-        label="Show Execution Notifications"
-        description="Display toast notifications when execution completes or fails"
+        label={t('gui:settings.execution.showNotifications')}
+        description={t('gui:settings.execution.showNotificationsDescription')}
         checked={settings.execution.showExecutionNotifications}
         onChange={(v) => updateSetting('execution', 'showExecutionNotifications', v)}
       />

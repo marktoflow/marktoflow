@@ -1,4 +1,37 @@
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
+
+const rtlPlugin = plugin(function ({ addUtilities }) {
+  addUtilities({
+    '.rtl\\:flip': {
+      '[dir="rtl"] &': {
+        transform: 'scaleX(-1)',
+      },
+    },
+    '.rtl\\:mr-auto': {
+      '[dir="rtl"] &': {
+        'margin-right': 'auto',
+        'margin-left': '0',
+      },
+    },
+    '.rtl\\:ml-auto': {
+      '[dir="rtl"] &': {
+        'margin-left': 'auto',
+        'margin-right': '0',
+      },
+    },
+    '.rtl\\:text-right': {
+      '[dir="rtl"] &': {
+        'text-align': 'right',
+      },
+    },
+    '.rtl\\:text-left': {
+      '[dir="rtl"] &': {
+        'text-align': 'left',
+      },
+    },
+  });
+});
 
 const config: Config = {
   darkMode: 'class',
@@ -166,7 +199,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [rtlPlugin],
 };
 
 export default config;

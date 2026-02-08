@@ -6,7 +6,8 @@ import { createServer, type Server } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
+import { createRequire } from 'module';
 import { StateStore } from '@marktoflow/core';
 import { workflowRoutes } from './routes/workflows.js';
 import { aiRoutes } from './routes/ai.js';
@@ -90,6 +91,25 @@ export async function startServer(options: ServerOptions = {}): Promise<Server> 
   app.use('/api/admin', adminRoutes);
   app.use('/api/templates', templateRoutes);
   app.use('/api/settings', settingsRoutes);
+
+  // Serve locale files from @marktoflow/i18n package
+  app.get('/locales/:lng/:ns.json', (req, res) => {
+    try {
+      const require = createRequire(import.meta.url);
+      const i18nPath = dirname(require.resolve('@marktoflow/i18n/package.json'));
+      const filePath = join(i18nPath, 'locales', req.params.lng, `${req.params.ns}.json`);
+      if (existsSync(filePath)) {
+        const content = readFileSync(filePath, 'utf-8');
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.send(content);
+      } else {
+        res.status(404).json({ error: 'Locale not found' });
+      }
+    } catch {
+      res.status(404).json({ error: 'Locale not found' });
+    }
+  });
 
   // Health check
   app.get('/api/health', (_req, res) => {

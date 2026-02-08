@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { t } from '../i18n.js';
 
 // ============================================================================
 // Workflow Templates
@@ -26,8 +27,8 @@ interface WorkflowTemplate {
 const templates: WorkflowTemplate[] = [
   {
     id: 'slack-notification',
-    name: 'Slack Notification',
-    description: 'Send notifications to Slack channels',
+    name: t('cli:commands.new.templates.slackNotification'),
+    description: t('cli:commands.new.templates.slackNotificationDesc'),
     category: 'communication',
     services: ['slack'],
     generate: (answers) => `---
@@ -84,8 +85,8 @@ inputs:
   },
   {
     id: 'github-pr-notification',
-    name: 'GitHub PR to Slack',
-    description: 'Notify Slack when PR is opened/updated',
+    name: t('cli:commands.new.templates.githubPrSlack'),
+    description: t('cli:commands.new.templates.githubPrSlackDesc'),
     category: 'development',
     services: ['github', 'slack'],
     generate: (answers) => `---
@@ -175,8 +176,8 @@ inputs:
   },
   {
     id: 'jira-issue-tracker',
-    name: 'Jira Issue Tracker',
-    description: 'Create and track Jira issues from various sources',
+    name: t('cli:commands.new.templates.jiraIssueTracker'),
+    description: t('cli:commands.new.templates.jiraIssueTrackerDesc'),
     category: 'operations',
     services: ['jira', 'slack'],
     generate: (answers) => `---
@@ -273,8 +274,8 @@ inputs:
   },
   {
     id: 'custom',
-    name: 'Custom Workflow (from scratch)',
-    description: 'Build a workflow from scratch with step-by-step guidance',
+    name: t('cli:commands.new.templates.customWorkflow'),
+    description: t('cli:commands.new.templates.customWorkflowDesc'),
     category: 'custom',
     services: [],
     generate: (answers) => `---
@@ -317,7 +318,7 @@ output_variable: step1_result
 // ============================================================================
 
 export async function runWorkflowWizard(options: { output?: string; template?: string }) {
-  console.log(chalk.bold.cyan('\n📝 marktoflow Workflow Wizard\n'));
+  console.log(chalk.bold.cyan(`\n📝 ${t('cli:commands.new.wizardTitle')}\n`));
 
   try {
     // Step 1: Choose template or custom
@@ -326,16 +327,16 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
     if (options.template) {
       const template = templates.find((t) => t.id === options.template);
       if (!template) {
-        console.error(chalk.red(`Template "${options.template}" not found`));
+        console.error(chalk.red(t('cli:commands.new.templateNotFound', { template: options.template })));
         process.exit(1);
       }
       selectedTemplate = template;
     } else {
       const templateChoice = await select({
-        message: 'Choose a workflow template:',
+        message: t('cli:commands.new.chooseTemplate'),
         choices: [
           {
-            name: `${chalk.blue('Communication')}`,
+            name: `${chalk.blue(t('cli:commands.new.categories.communication'))}`,
             value: 'category-communication',
             disabled: true,
           },
@@ -346,7 +347,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
               value: t.id,
             })),
           {
-            name: `${chalk.green('Development')}`,
+            name: `${chalk.green(t('cli:commands.new.categories.development'))}`,
             value: 'category-development',
             disabled: true,
           },
@@ -357,7 +358,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
               value: t.id,
             })),
           {
-            name: `${chalk.yellow('Operations')}`,
+            name: `${chalk.yellow(t('cli:commands.new.categories.operations'))}`,
             value: 'category-operations',
             disabled: true,
           },
@@ -368,7 +369,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
               value: t.id,
             })),
           {
-            name: `${chalk.magenta('Custom')}`,
+            name: `${chalk.magenta(t('cli:commands.new.categories.custom'))}`,
             value: 'category-custom',
             disabled: true,
           },
@@ -384,32 +385,32 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
       selectedTemplate = templates.find((t) => t.id === templateChoice)!;
     }
 
-    console.log(chalk.cyan(`\n✨ Selected: ${selectedTemplate.name}\n`));
+    console.log(chalk.cyan(`\n✨ ${t('cli:commands.new.selected', { name: selectedTemplate.name })}\n`));
 
     // Step 2: Gather workflow information
     const workflowId = await input({
-      message: 'Workflow ID (lowercase, hyphens):',
+      message: t('cli:commands.new.workflowId'),
       default: selectedTemplate.id,
       validate: (value) => {
         if (!/^[a-z0-9-]+$/.test(value)) {
-          return 'ID must be lowercase letters, numbers, and hyphens only';
+          return t('cli:commands.new.workflowIdValidation');
         }
         return true;
       },
     });
 
     const workflowName = await input({
-      message: 'Workflow name:',
+      message: t('cli:commands.new.workflowName'),
       default: selectedTemplate.name,
     });
 
     const workflowDescription = await input({
-      message: 'Description (optional):',
+      message: t('cli:commands.new.workflowDescription'),
       default: selectedTemplate.description,
     });
 
     // Step 3: Generate workflow content
-    const spinner = ora('Generating workflow...').start();
+    const spinner = ora(t('cli:commands.new.generating')).start();
 
     const workflowContent = selectedTemplate.generate({
       id: workflowId,
@@ -417,7 +418,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
       description: workflowDescription,
     });
 
-    spinner.succeed('Workflow generated');
+    spinner.succeed(t('cli:commands.new.generated'));
 
     // Step 4: Determine output path
     let outputPath: string;
@@ -426,7 +427,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
     } else {
       const defaultPath = `.marktoflow/workflows/${workflowId}.md`;
       const customPath = await input({
-        message: 'Output path:',
+        message: t('cli:commands.new.outputPath'),
         default: defaultPath,
       });
       outputPath = resolve(customPath);
@@ -440,11 +441,11 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
 
     if (existsSync(outputPath)) {
       const overwrite = await confirm({
-        message: `File ${outputPath} already exists. Overwrite?`,
+        message: t('cli:commands.new.overwriteConfirm', { path: outputPath }),
         default: false,
       });
       if (!overwrite) {
-        console.log(chalk.yellow('\nWorkflow creation cancelled'));
+        console.log(chalk.yellow(`\n${t('cli:commands.new.creationCancelled')}`));
         return;
       }
     }
@@ -452,24 +453,24 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
     writeFileSync(outputPath, workflowContent, 'utf-8');
 
     // Step 6: Show success message
-    console.log(chalk.green.bold('\n✅ Workflow created successfully!\n'));
-    console.log(chalk.gray(`   Path: ${outputPath}`));
+    console.log(chalk.green.bold(`\n✅ ${t('cli:commands.new.success')}\n`));
+    console.log(chalk.gray(`   ${t('cli:commands.new.pathLabel')}: ${outputPath}`));
 
     if (selectedTemplate.services.length > 0) {
-      console.log(chalk.gray(`\n   Required services: ${selectedTemplate.services.join(', ')}`));
-      console.log(chalk.gray(`   Make sure to set up the required environment variables\n`));
+      console.log(chalk.gray(`\n   ${t('cli:commands.new.requiredServices')}: ${selectedTemplate.services.join(', ')}`));
+      console.log(chalk.gray(`   ${t('cli:commands.new.setupEnvVars')}\n`));
     }
 
     // Step 7: Show next steps
-    console.log(chalk.cyan('\n📋 Next steps:\n'));
-    console.log(chalk.white(`   1. Configure environment variables for required services`));
+    console.log(chalk.cyan(`\n📋 ${t('cli:commands.new.nextSteps')}:\n`));
+    console.log(chalk.white(`   1. ${t('cli:commands.new.nextStep1')}`));
     console.log(
-      chalk.white(`   2. Validate: ${chalk.cyan(`marktoflow workflow validate ${outputPath}`)}`)
+      chalk.white(`   2. ${t('cli:commands.new.nextStep2')}: ${chalk.cyan(`marktoflow workflow validate ${outputPath}`)}`)
     );
-    console.log(chalk.white(`   3. Run: ${chalk.cyan(`marktoflow run ${outputPath}`)}\n`));
+    console.log(chalk.white(`   3. ${t('cli:commands.new.nextStep3')}: ${chalk.cyan(`marktoflow run ${outputPath}`)}\n`));
   } catch (error) {
     if (error instanceof Error && error.message.includes('User force closed')) {
-      console.log(chalk.yellow('\nWorkflow creation cancelled'));
+      console.log(chalk.yellow(`\n${t('cli:commands.new.creationCancelled')}`));
       return;
     }
     throw error;
@@ -480,7 +481,7 @@ export async function runWorkflowWizard(options: { output?: string; template?: s
  * List available workflow templates
  */
 export function listTemplates() {
-  console.log(chalk.bold.cyan('\n📚 Available Workflow Templates\n'));
+  console.log(chalk.bold.cyan(`\n📚 ${t('cli:commands.new.availableTemplates')}\n`));
 
   const byCategory = templates.reduce(
     (acc, template) => {
@@ -501,10 +502,10 @@ export function listTemplates() {
   };
 
   const categoryNames = {
-    communication: 'Communication',
-    development: 'Development',
-    operations: 'Operations',
-    custom: 'Custom',
+    communication: t('cli:commands.new.categories.communication'),
+    development: t('cli:commands.new.categories.development'),
+    operations: t('cli:commands.new.categories.operations'),
+    custom: t('cli:commands.new.categories.custom'),
   };
 
   for (const [category, templates] of Object.entries(byCategory)) {
@@ -515,11 +516,11 @@ export function listTemplates() {
     for (const template of templates) {
       console.log(`  ${chalk.cyan(template.id.padEnd(25))} ${chalk.gray(template.description)}`);
       if (template.services.length > 0) {
-        console.log(`    ${chalk.dim('Services:')} ${template.services.join(', ')}`);
+        console.log(`    ${chalk.dim(t('cli:commands.new.servicesLabel') + ':')} ${template.services.join(', ')}`);
       }
     }
     console.log();
   }
 
-  console.log(chalk.gray('Use: marktoflow new --template <id>\n'));
+  console.log(chalk.gray(t('cli:commands.new.useTemplate') + '\n'));
 }

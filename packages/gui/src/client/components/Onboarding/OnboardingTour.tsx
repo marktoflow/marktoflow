@@ -1,23 +1,25 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 import { cn } from '../../utils/cn';
 
-const tourSteps = [
-  { title: 'Welcome to Marktoflow!', description: 'A visual workflow designer for building automation pipelines. Let us show you around.', target: 'body' },
-  { title: 'Sidebar', description: 'Browse your workflows and drag tools onto the canvas to build steps.', target: '[data-tour="sidebar"]' },
-  { title: 'Canvas', description: 'This is where you design your workflow. Connect nodes to define the flow of execution.', target: '[data-tour="canvas"]' },
-  { title: 'Toolbar', description: 'Use the toolbar to add steps, undo/redo, auto-layout, and execute your workflow.', target: '[data-tour="toolbar"]' },
-  { title: 'AI Assistant', description: 'Type natural language prompts to generate or modify workflows using AI.', target: '[data-tour="prompt"]' },
-  { title: 'You\'re Ready!', description: 'Start building your first workflow or explore the template gallery for inspiration.', target: 'body' },
+const tourStepKeys = [
+  { titleKey: 'onboarding.welcome.title', descKey: 'onboarding.welcome.description', target: 'body' },
+  { titleKey: 'onboarding.sidebar.title', descKey: 'onboarding.sidebar.description', target: '[data-tour="sidebar"]' },
+  { titleKey: 'onboarding.canvas.title', descKey: 'onboarding.canvas.description', target: '[data-tour="canvas"]' },
+  { titleKey: 'onboarding.toolbar.title', descKey: 'onboarding.toolbar.description', target: '[data-tour="toolbar"]' },
+  { titleKey: 'onboarding.aiAssistant.title', descKey: 'onboarding.aiAssistant.description', target: '[data-tour="prompt"]' },
+  { titleKey: 'onboarding.ready.title', descKey: 'onboarding.ready.description', target: 'body' },
 ];
 
 function OnboardingTourComponent() {
+  const { t } = useTranslation('gui');
   const { tourActive, currentStep, totalSteps, nextStep, prevStep, skipTour, completeTour } = useOnboardingStore();
 
   if (!tourActive) return null;
 
-  const step = tourSteps[currentStep];
+  const stepConfig = tourStepKeys[currentStep];
   const isLast = currentStep === totalSteps - 1;
   const isFirst = currentStep === 0;
 
@@ -29,11 +31,11 @@ function OnboardingTourComponent() {
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <h3 className="text-base font-medium text-text-primary">{step.title}</h3>
+              <h3 className="text-base font-medium text-text-primary">{t(stepConfig.titleKey)}</h3>
             </div>
             <button onClick={skipTour} className="p-1 rounded hover:bg-bg-hover text-text-muted"><X className="w-4 h-4" /></button>
           </div>
-          <p className="text-sm text-text-secondary mb-4">{step.description}</p>
+          <p className="text-sm text-text-secondary mb-4">{t(stepConfig.descKey)}</p>
           <div className="flex items-center justify-between">
             <div className="flex gap-1">
               {Array.from({ length: totalSteps }).map((_, i) => (
@@ -43,11 +45,11 @@ function OnboardingTourComponent() {
             <div className="flex items-center gap-2">
               {!isFirst && (
                 <button onClick={prevStep} className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary rounded hover:bg-bg-hover">
-                  <ChevronLeft className="w-4 h-4" /> Back
+                  <ChevronLeft className="w-4 h-4" /> {t('gui:onboarding.back')}
                 </button>
               )}
               <button onClick={isLast ? completeTour : nextStep} className="flex items-center gap-1 px-4 py-1.5 text-sm bg-primary text-white rounded hover:bg-primary/90">
-                {isLast ? 'Get Started' : 'Next'} {!isLast && <ChevronRight className="w-4 h-4" />}
+                {isLast ? t('gui:onboarding.getStarted') : t('gui:onboarding.next')} {!isLast && <ChevronRight className="w-4 h-4" />}
               </button>
             </div>
           </div>

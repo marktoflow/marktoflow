@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
 import { SERVICES } from '@shared/constants';
@@ -21,6 +22,7 @@ export function NewStepWizard({
   onCreateStep,
   position,
 }: NewStepWizardProps) {
+  const { t } = useTranslation('gui');
   const [wizardStep, setWizardStep] = useState<WizardStep>('select-type');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<'action' | 'subworkflow'>('action');
@@ -103,8 +105,8 @@ export function NewStepWizard({
     <Modal
       open={open}
       onOpenChange={handleClose}
-      title="Add New Step"
-      description={getStepDescription(wizardStep)}
+      title={t('gui:newStep.title')}
+      description={getStepDescription(wizardStep, t)}
       size="lg"
     >
       <div className="p-4">
@@ -114,7 +116,7 @@ export function NewStepWizard({
             onClick={() => setWizardStep('select-type')}
             className={`${wizardStep === 'select-type' ? 'text-primary' : 'text-gray-400 hover:text-white'}`}
           >
-            Type
+            {t('gui:newStep.breadcrumbs.type')}
           </button>
           {selectedType === 'action' && (
             <>
@@ -124,7 +126,7 @@ export function NewStepWizard({
                 className={`${wizardStep === 'select-service' ? 'text-primary' : selectedService ? 'text-gray-400 hover:text-white' : 'text-gray-600'}`}
                 disabled={!selectedService}
               >
-                Service
+                {t('gui:newStep.breadcrumbs.service')}
               </button>
               <ChevronRight className="w-4 h-4 text-gray-600" />
               <button
@@ -132,7 +134,7 @@ export function NewStepWizard({
                 className={`${wizardStep === 'select-method' ? 'text-primary' : selectedMethod ? 'text-gray-400 hover:text-white' : 'text-gray-600'}`}
                 disabled={!selectedMethod}
               >
-                Method
+                {t('gui:newStep.breadcrumbs.method')}
               </button>
             </>
           )}
@@ -140,7 +142,7 @@ export function NewStepWizard({
           <span
             className={`${wizardStep === 'configure' ? 'text-primary' : 'text-gray-600'}`}
           >
-            Configure
+            {t('gui:newStep.breadcrumbs.configure')}
           </span>
         </div>
 
@@ -152,9 +154,9 @@ export function NewStepWizard({
               className="p-6 bg-node-bg border border-node-border rounded-lg hover:border-primary transition-colors text-left"
             >
               <Zap className="w-8 h-8 text-primary mb-3" />
-              <h3 className="text-lg font-medium text-white mb-1">Action Step</h3>
+              <h3 className="text-lg font-medium text-white mb-1">{t('gui:newStep.actionStep')}</h3>
               <p className="text-sm text-gray-400">
-                Execute an action using a service SDK (Slack, GitHub, etc.)
+                {t('gui:newStep.actionStepDescription')}
               </p>
             </button>
             <button
@@ -162,9 +164,9 @@ export function NewStepWizard({
               className="p-6 bg-node-bg border border-node-border rounded-lg hover:border-info transition-colors text-left"
             >
               <FolderOpen className="w-8 h-8 text-info mb-3" />
-              <h3 className="text-lg font-medium text-white mb-1">Sub-workflow</h3>
+              <h3 className="text-lg font-medium text-white mb-1">{t('gui:newStep.subWorkflow')}</h3>
               <p className="text-sm text-gray-400">
-                Reference another workflow file for modular composition
+                {t('gui:newStep.subWorkflowDescription')}
               </p>
             </button>
           </div>
@@ -179,7 +181,7 @@ export function NewStepWizard({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search services..."
+                placeholder={t('gui:newStep.searchServices')}
                 className="w-full pl-10 pr-4 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
                 autoFocus
               />
@@ -214,7 +216,7 @@ export function NewStepWizard({
                 <div className="text-sm font-medium text-white">
                   {SERVICES[selectedService as keyof typeof SERVICES]?.name}
                 </div>
-                <div className="text-xs text-gray-400">Select a method</div>
+                <div className="text-xs text-gray-400">{t('gui:newStep.selectMethod')}</div>
               </div>
             </div>
             <div className="relative mb-4">
@@ -223,7 +225,7 @@ export function NewStepWizard({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search methods..."
+                placeholder={t('gui:newStep.searchMethods')}
                 className="w-full pl-10 pr-4 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
                 autoFocus
               />
@@ -248,7 +250,7 @@ export function NewStepWizard({
           <div className="space-y-4">
             {selectedType === 'action' && selectedService && selectedMethod && (
               <div className="p-3 bg-node-bg rounded-lg border border-node-border">
-                <div className="text-xs text-gray-400 mb-1">Action</div>
+                <div className="text-xs text-gray-400 mb-1">{t('gui:newStep.actionLabel')}</div>
                 <div className="text-sm font-mono text-primary">
                   {selectedService}.{selectedMethod}
                 </div>
@@ -257,7 +259,7 @@ export function NewStepWizard({
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                Step ID
+                {t('gui:newStep.stepIdLabel')}
               </label>
               <input
                 type="text"
@@ -266,13 +268,13 @@ export function NewStepWizard({
                   setStepConfig((prev) => ({ ...prev, id: e.target.value }))
                 }
                 className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm font-mono focus:outline-none focus:border-primary"
-                placeholder="unique-step-id"
+                placeholder={t('gui:newStep.stepIdPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                Step Name (optional)
+                {t('gui:newStep.stepNameLabel')}
               </label>
               <input
                 type="text"
@@ -281,17 +283,17 @@ export function NewStepWizard({
                   setStepConfig((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
-                placeholder="Human-readable name"
+                placeholder={t('gui:newStep.stepNamePlaceholder')}
               />
             </div>
 
             {position && (
               <div className="text-xs text-gray-500">
                 {position.afterStepId
-                  ? `Will be inserted after "${position.afterStepId}"`
+                  ? t('gui:newStep.insertAfter', { stepId: position.afterStepId })
                   : position.beforeStepId
-                    ? `Will be inserted before "${position.beforeStepId}"`
-                    : 'Will be added at the end'}
+                    ? t('gui:newStep.insertBefore', { stepId: position.beforeStepId })
+                    : t('gui:newStep.insertAtEnd')}
               </div>
             )}
           </div>
@@ -312,15 +314,15 @@ export function NewStepWizard({
               setSearchQuery('');
             }}
           >
-            Back
+            {t('gui:newStep.back')}
           </Button>
         )}
         <Button variant="secondary" onClick={handleClose}>
-          Cancel
+          {t('gui:newStep.cancel')}
         </Button>
         {wizardStep === 'configure' && (
           <Button onClick={handleCreate} disabled={!stepConfig.id}>
-            Create Step
+            {t('gui:newStep.createStep')}
           </Button>
         )}
       </ModalFooter>
@@ -328,16 +330,16 @@ export function NewStepWizard({
   );
 }
 
-function getStepDescription(step: WizardStep): string {
+function getStepDescription(step: WizardStep, t: (key: string) => string): string {
   switch (step) {
     case 'select-type':
-      return 'Choose what type of step to add';
+      return t('gui:newStep.descriptions.chooseType');
     case 'select-service':
-      return 'Select a service to use';
+      return t('gui:newStep.descriptions.selectService');
     case 'select-method':
-      return 'Choose the method to call';
+      return t('gui:newStep.descriptions.chooseMethod');
     case 'configure':
-      return 'Configure your new step';
+      return t('gui:newStep.descriptions.configure');
     default:
       return '';
   }

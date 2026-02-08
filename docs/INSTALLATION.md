@@ -130,6 +130,22 @@ marktoflow v2.0.0-alpha.14
 
 If you see `command not found: marktoflow`, proceed to [PATH Configuration](#path-configuration).
 
+### Setting Your Language
+
+marktoflow supports 8 languages. Set your preferred language:
+
+```bash
+# Via CLI flag
+marktoflow run workflow.md --locale es
+
+# Via environment variable
+export MARKTOFLOW_LOCALE=fr
+
+# Or set it in the GUI via Settings > General > Language
+```
+
+Supported: `en` (English), `zh` (Chinese), `hi` (Hindi), `es` (Spanish), `fr` (French), `ar` (Arabic), `ja` (Japanese), `pt` (Portuguese)
+
 ---
 
 ## PATH Configuration

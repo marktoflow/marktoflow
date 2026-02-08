@@ -315,6 +315,16 @@ marktoflow worker                  # Start a workflow worker
 marktoflow trigger                 # Start trigger service (Scheduler)
 ```
 
+### Language / Localization
+
+```bash
+marktoflow run workflow.md --locale es   # Run with Spanish output
+marktoflow --help --locale ja            # Japanese help text
+MARKTOFLOW_LOCALE=fr marktoflow doctor   # French via environment variable
+```
+
+Supported: `en`, `zh`, `hi`, `es`, `fr`, `ar`, `ja`, `pt`. Set via `--locale` flag, `MARKTOFLOW_LOCALE` env var, or GUI Settings > General > Language.
+
 ### Developer Tools
 
 ```bash

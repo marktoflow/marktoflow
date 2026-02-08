@@ -18,6 +18,7 @@ import {
   GripVertical,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCanvas } from '../../hooks/useCanvas';
 import { useEditorStore } from '../../stores/editorStore';
 import { useReactFlow } from '@xyflow/react';
@@ -42,6 +43,7 @@ export function Toolbar({
   onValidate,
   isExecuting = false,
 }: ToolbarProps) {
+  const { t } = useTranslation('gui');
   const { autoLayout, fitView, selectedNodes, deleteSelected, duplicateSelected } =
     useCanvas();
   const { undo, redo, undoStack, redoStack } = useEditorStore();
@@ -109,7 +111,7 @@ export function Toolbar({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-bg-hover text-text-muted"
-        title="Drag to reposition"
+        title={t('gui:toolbar.dragToReposition')}
       >
         <GripVertical className="w-4 h-4" />
       </div>
@@ -119,7 +121,7 @@ export function Toolbar({
       {/* Add Step */}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
-        label="Add Step"
+        label={t('gui:toolbar.addStep')}
         onClick={onAddStep}
         shortcut="N"
       />
@@ -129,14 +131,14 @@ export function Toolbar({
       {/* Undo/Redo */}
       <ToolbarButton
         icon={<Undo className="w-4 h-4" />}
-        label="Undo"
+        label={t('gui:toolbar.undo')}
         onClick={() => undo()}
         disabled={!canUndo}
         shortcut={`${modKey}Z`}
       />
       <ToolbarButton
         icon={<Redo className="w-4 h-4" />}
-        label="Redo"
+        label={t('gui:toolbar.redo')}
         onClick={() => redo()}
         disabled={!canRedo}
         shortcut={`${modKey}⇧Z`}
@@ -147,14 +149,14 @@ export function Toolbar({
       {/* Selection actions */}
       <ToolbarButton
         icon={<Copy className="w-4 h-4" />}
-        label="Duplicate"
+        label={t('gui:toolbar.duplicate')}
         onClick={duplicateSelected}
         disabled={!hasSelection}
         shortcut={`${modKey}D`}
       />
       <ToolbarButton
         icon={<Trash2 className="w-4 h-4" />}
-        label="Delete"
+        label={t('gui:toolbar.delete')}
         onClick={deleteSelected}
         disabled={!hasSelection}
         shortcut="⌫"
@@ -170,25 +172,25 @@ export function Toolbar({
       {/* Layout & Zoom */}
       <ToolbarButton
         icon={<Layout className="w-4 h-4" />}
-        label="Auto Layout"
+        label={t('gui:toolbar.autoLayout')}
         onClick={autoLayout}
         shortcut={`${modKey}L`}
       />
       <ToolbarButton
         icon={<ZoomIn className="w-4 h-4" />}
-        label="Zoom In"
+        label={t('gui:toolbar.zoomIn')}
         onClick={() => zoomIn()}
         shortcut={`${modKey}+`}
       />
       <ToolbarButton
         icon={<ZoomOut className="w-4 h-4" />}
-        label="Zoom Out"
+        label={t('gui:toolbar.zoomOut')}
         onClick={() => zoomOut()}
         shortcut={`${modKey}-`}
       />
       <ToolbarButton
         icon={<Maximize className="w-4 h-4" />}
-        label="Fit View"
+        label={t('gui:toolbar.fitView')}
         onClick={fitView}
         shortcut={`${modKey}0`}
       />
@@ -199,11 +201,11 @@ export function Toolbar({
       <button
         onClick={() => setShowProviderSwitcher(true)}
         className="flex items-center gap-1.5 px-2 py-1.5 rounded text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
-        title="Select AI Provider"
+        title={t('gui:toolbar.selectAIProvider')}
       >
         <Bot className="w-4 h-4" />
         <span className="hidden sm:inline text-xs">
-          {activeProvider?.name || 'No Provider'}
+          {activeProvider?.name || t('gui:toolbar.noProvider')}
         </span>
         <ChevronDown className="w-3 h-3" />
       </button>
@@ -214,7 +216,7 @@ export function Toolbar({
       {onValidate && (
         <ToolbarButton
           icon={<CheckCircle className="w-4 h-4" />}
-          label="Validate"
+          label={t('gui:toolbar.validate')}
           onClick={onValidate}
           shortcut={`${modKey}T`}
         />
@@ -229,14 +231,14 @@ export function Toolbar({
               ? 'bg-error hover:bg-error/90 text-text-inverse'
               : 'bg-accent hover:bg-accent-hover text-text-inverse'
           }`}
-          title={`${isExecuting ? 'Stop' : 'Execute'} (${modKey}⏎)`}
+          title={`${isExecuting ? t('gui:toolbar.stop') : t('gui:toolbar.execute')} (${modKey}⏎)`}
         >
           {isExecuting ? (
             <Pause className="w-4 h-4" />
           ) : (
             <Play className="w-4 h-4" />
           )}
-          <span className="hidden sm:inline">{isExecuting ? 'Stop' : 'Execute'}</span>
+          <span className="hidden sm:inline">{isExecuting ? t('gui:toolbar.stop') : t('gui:toolbar.execute')}</span>
         </button>
       )}
 
@@ -256,7 +258,7 @@ export function Toolbar({
       <button
         onClick={() => setToolbarVisible(false)}
         className="p-1.5 rounded hover:bg-bg-hover text-text-muted hover:text-text-secondary transition-colors"
-        title="Hide toolbar"
+        title={t('gui:toolbar.hideToolbar')}
       >
         <X className="w-3.5 h-3.5" />
       </button>

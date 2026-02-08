@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import type { StepStatus } from '@shared/types';
@@ -23,14 +24,16 @@ function NodeTooltipComponent({
   error,
   disabled = false,
 }: NodeTooltipProps) {
+  const { t } = useTranslation('gui');
+
   if (disabled) return <>{children}</>;
 
   const statusConfig: Record<StepStatus, { icon: typeof Clock; color: string; label: string }> = {
-    pending: { icon: Clock, color: 'text-gray-400', label: 'Pending' },
-    running: { icon: Clock, color: 'text-warning', label: 'Running' },
-    completed: { icon: CheckCircle, color: 'text-success', label: 'Completed' },
-    failed: { icon: XCircle, color: 'text-error', label: 'Failed' },
-    skipped: { icon: AlertCircle, color: 'text-gray-500', label: 'Skipped' },
+    pending: { icon: Clock, color: 'text-gray-400', label: t('gui:nodeTooltip.pending') },
+    running: { icon: Clock, color: 'text-warning', label: t('gui:nodeTooltip.running') },
+    completed: { icon: CheckCircle, color: 'text-success', label: t('gui:nodeTooltip.completed') },
+    failed: { icon: XCircle, color: 'text-error', label: t('gui:nodeTooltip.failed') },
+    skipped: { icon: AlertCircle, color: 'text-gray-500', label: t('gui:nodeTooltip.skipped') },
   };
 
   const config = statusConfig[status];

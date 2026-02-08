@@ -1,0 +1,35 @@
+{
+  "name": "@marktoflow/i18n",
+  "version": "2.0.1",
+  "description": "Internationalization support for marktoflow",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./locales/*": "./locales/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "locales"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate": "tsx src/generate.ts"
+  },
+  "dependencies": {
+    "i18next": "^24.2.2"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}

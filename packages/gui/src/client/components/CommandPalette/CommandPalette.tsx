@@ -1,9 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Command as CommandIcon, FileText, LayoutGrid } from 'lucide-react';
 import { useCommandStore } from '../../stores/commandStore';
 import { CommandItem } from './CommandItem';
 
 export function CommandPalette() {
+  const { t } = useTranslation('gui');
   const {
     isOpen,
     mode,
@@ -76,9 +78,9 @@ export function CommandPalette() {
   if (!isOpen) return null;
 
   const modeConfig = {
-    commands: { icon: CommandIcon, placeholder: 'Type a command...', label: 'Commands' },
-    workflows: { icon: FileText, placeholder: 'Search workflows...', label: 'Workflows' },
-    nodes: { icon: LayoutGrid, placeholder: 'Search nodes...', label: 'Nodes' },
+    commands: { icon: CommandIcon, placeholder: t('gui:commandPalette.commandPlaceholder'), label: t('gui:commandPalette.commandsMode') },
+    workflows: { icon: FileText, placeholder: t('gui:commandPalette.workflowPlaceholder'), label: t('gui:commandPalette.workflowsMode') },
+    nodes: { icon: LayoutGrid, placeholder: t('gui:commandPalette.nodePlaceholder'), label: t('gui:commandPalette.nodesMode') },
   };
 
   const config = modeConfig[mode];
@@ -152,7 +154,7 @@ export function CommandPalette() {
         >
           {filteredCommands.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-text-muted">
-              {query ? 'No matching commands found' : 'No commands available'}
+              {query ? t('gui:commandPalette.noMatchingCommands') : t('gui:commandPalette.noCommands')}
             </div>
           ) : (
             filteredCommands.map((command, index) => (
@@ -177,22 +179,22 @@ export function CommandPalette() {
               <kbd className="px-1 py-0.5 bg-bg-surface border border-border-default rounded font-mono">
                 &uarr;&darr;
               </kbd>
-              Navigate
+              {t('gui:commandPalette.navigate')}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.5 bg-bg-surface border border-border-default rounded font-mono">
                 &crarr;
               </kbd>
-              Execute
+              {t('gui:commandPalette.executeHint')}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.5 bg-bg-surface border border-border-default rounded font-mono">
                 Tab
               </kbd>
-              Switch mode
+              {t('gui:commandPalette.switchMode')}
             </span>
           </div>
-          <span>{filteredCommands.length} results</span>
+          <span>{filteredCommands.length} {t('gui:commandPalette.results')}</span>
         </div>
       </div>
     </>

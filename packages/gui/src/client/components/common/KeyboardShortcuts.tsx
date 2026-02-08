@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter } from './Modal';
 import { Button } from './Button';
 import { Keyboard } from 'lucide-react';
@@ -56,6 +57,7 @@ interface KeyboardShortcutsProps {
 }
 
 export function KeyboardShortcuts({ open, onOpenChange }: KeyboardShortcutsProps) {
+  const { t } = useTranslation('gui');
   // Group shortcuts by category
   const categories = [...new Set(shortcuts.map((s) => s.category))];
 
@@ -66,7 +68,7 @@ export function KeyboardShortcuts({ open, onOpenChange }: KeyboardShortcutsProps
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Keyboard Shortcuts"
+      title={t('gui:shortcuts.title')}
       description="Quick reference for all keyboard shortcuts"
       size="md"
     >

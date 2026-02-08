@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Play,
   Pause,
@@ -81,6 +82,7 @@ export function ExecutionOverlay({
   onAddWatchExpression,
   onRemoveWatchExpression,
 }: ExecutionOverlayProps) {
+  const { t } = useTranslation('gui');
   const [activeTab, setActiveTab] = useState<'steps' | 'variables' | 'logs' | 'timeline' | 'debug'>('steps');
   const isDebugEnabled = debug?.enabled ?? false;
 
@@ -100,11 +102,11 @@ export function ExecutionOverlay({
           <StatusIcon status={workflowStatus} />
           <div>
             <div className="text-sm font-medium text-text-primary">
-              {getStatusText(workflowStatus)}
+              {getStatusText(workflowStatus, t)}
             </div>
             <div className="text-xs text-text-secondary">
-              {completedSteps}/{steps.length} steps completed
-              {failedSteps > 0 && ` • ${failedSteps} failed`}
+              {completedSteps}/{steps.length} {t('gui:execution.stepsCompleted')}
+              {failedSteps > 0 && ` • ${failedSteps} ${t('gui:execution.failedCount')}`}
             </div>
           </div>
         </div>
@@ -120,7 +122,7 @@ export function ExecutionOverlay({
               icon={<Bug className="w-4 h-4" />}
               title={isDebugEnabled ? 'Disable debug mode' : 'Enable debug mode'}
             >
-              Debug
+              {t('gui:execution.debug')}
             </Button>
           )}
 
@@ -133,7 +135,7 @@ export function ExecutionOverlay({
                   onClick={onResume}
                   icon={<Play className="w-4 h-4" />}
                 >
-                  Resume
+                  {t('gui:execution.resume')}
                 </Button>
               ) : (
                 <Button
@@ -142,7 +144,7 @@ export function ExecutionOverlay({
                   onClick={onPause}
                   icon={<Pause className="w-4 h-4" />}
                 >
-                  Pause
+                  {t('gui:execution.pause')}
                 </Button>
               )}
 
@@ -154,9 +156,9 @@ export function ExecutionOverlay({
                     size="sm"
                     onClick={onStepOver}
                     icon={<ArrowRight className="w-4 h-4" />}
-                    title="Step Over (F10)"
+                    title={t('gui:execution.stepOverTooltip')}
                   >
-                    Over
+                    {t('gui:execution.over')}
                   </Button>
                   {onStepInto && (
                     <Button
@@ -164,9 +166,9 @@ export function ExecutionOverlay({
                       size="sm"
                       onClick={onStepInto}
                       icon={<ArrowDown className="w-4 h-4" />}
-                      title="Step Into (F11)"
+                      title={t('gui:execution.stepIntoTooltip')}
                     >
-                      Into
+                      {t('gui:execution.into')}
                     </Button>
                   )}
                   {onStepOut && (
@@ -175,9 +177,9 @@ export function ExecutionOverlay({
                       size="sm"
                       onClick={onStepOut}
                       icon={<ArrowUp className="w-4 h-4" />}
-                      title="Step Out (Shift+F11)"
+                      title={t('gui:execution.stepOutTooltip')}
                     >
-                      Out
+                      {t('gui:execution.out')}
                     </Button>
                   )}
                 </>
@@ -192,7 +194,7 @@ export function ExecutionOverlay({
                   icon={<SkipForward className="w-4 h-4" />}
                   disabled={!isPaused}
                 >
-                  Step
+                  {t('gui:execution.step')}
                 </Button>
               )}
 
@@ -202,13 +204,13 @@ export function ExecutionOverlay({
                 onClick={onStop}
                 icon={<Square className="w-4 h-4" />}
               >
-                Stop
+                {t('gui:execution.stop')}
               </Button>
             </>
           )}
           {!isExecuting && (
             <Button variant="secondary" size="sm" onClick={onClose}>
-              Close
+              {t('gui:execution.close')}
             </Button>
           )}
         </div>
@@ -238,7 +240,7 @@ export function ExecutionOverlay({
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Steps
+          {t('gui:execution.tabs.steps')}
         </button>
         <button
           onClick={() => setActiveTab('variables')}
@@ -248,7 +250,7 @@ export function ExecutionOverlay({
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Variables
+          {t('gui:execution.tabs.variables')}
         </button>
         <button
           onClick={() => setActiveTab('logs')}
@@ -258,7 +260,7 @@ export function ExecutionOverlay({
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Logs
+          {t('gui:execution.tabs.logs')}
         </button>
         <button
           onClick={() => setActiveTab('timeline')}
@@ -268,7 +270,7 @@ export function ExecutionOverlay({
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Timeline
+          {t('gui:execution.tabs.timeline')}
         </button>
         {isDebugEnabled && (
           <button
@@ -280,7 +282,7 @@ export function ExecutionOverlay({
             }`}
           >
             <Bug className="w-3 h-3" />
-            Debug
+            {t('gui:execution.debug')}
           </button>
         )}
       </div>
@@ -331,6 +333,7 @@ function StepsList({
   breakpoints?: Set<string>;
   onToggleBreakpoint?: (stepId: string) => void;
 }) {
+  const { t } = useTranslation('gui');
   return (
     <div className="space-y-2">
       {steps.map((step) => {
@@ -356,7 +359,7 @@ function StepsList({
                     ? 'bg-error'
                     : 'bg-transparent border border-gray-500 hover:border-error hover:bg-error/20'
                 }`}
-                title={hasBreakpoint ? 'Remove breakpoint' : 'Add breakpoint'}
+                title={hasBreakpoint ? t('gui:execution.removeBreakpoint') : t('gui:execution.addBreakpoint')}
               >
                 {hasBreakpoint && <Circle className="w-2 h-2 fill-current text-text-primary" />}
               </button>
@@ -384,10 +387,11 @@ function StepsList({
 }
 
 function LogsViewer({ logs }: { logs: string[] }) {
+  const { t } = useTranslation('gui');
   return (
     <div className="font-mono text-xs space-y-1">
       {logs.length === 0 ? (
-        <div className="text-text-muted">No logs yet...</div>
+        <div className="text-text-muted">{t('gui:execution.noLogsYet')}</div>
       ) : (
         logs.map((log, index) => (
           <div key={index} className="text-text-primary">
@@ -400,6 +404,7 @@ function LogsViewer({ logs }: { logs: string[] }) {
 }
 
 function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
+  const { t } = useTranslation('gui');
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [expandedSection, setExpandedSection] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -447,9 +452,9 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
   if (stepsWithData.length === 0) {
     return (
       <div className="text-center py-8 text-text-muted text-sm">
-        No data available yet.
+        {t('gui:execution.noDataYet')}
         <br />
-        <span className="text-xs">Step inputs and outputs will appear as steps execute.</span>
+        <span className="text-xs">{t('gui:execution.dataHelp')}</span>
       </div>
     );
   }
@@ -502,7 +507,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                         <ChevronRight className="w-3 h-3 text-text-secondary" />
                       )}
                       <span className="text-xs font-medium text-text-secondary">
-                        Inputs ({Object.keys(step.inputs!).length})
+                        {t('gui:execution.inputs')} ({Object.keys(step.inputs!).length})
                       </span>
                     </button>
                     {expandedSection.has(`${step.stepId}-inputs`) && (
@@ -519,7 +524,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                           <button
                             onClick={() => copyValue(`${step.stepId}-inputs`, step.inputs)}
                             className="p-1.5 hover:bg-white/10 rounded transition-colors"
-                            title="Copy inputs"
+                            title={t('gui:execution.copyInputs')}
                           >
                             {copiedKey === `${step.stepId}-inputs` ? (
                               <Check className="w-4 h-4 text-success" />
@@ -546,7 +551,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                         <ChevronRight className="w-3 h-3 text-text-secondary" />
                       )}
                       <span className="text-xs font-medium text-text-secondary">
-                        Output
+                        {t('gui:execution.outputLabel')}
                       </span>
                       <code className="text-xs text-primary font-mono ml-auto">
                         {step.outputVariable}
@@ -566,7 +571,7 @@ function VariableInspector({ steps }: { steps: ExecutionStep[] }) {
                           <button
                             onClick={() => copyValue(step.outputVariable || '', step.output)}
                             className="p-1.5 hover:bg-white/10 rounded transition-colors"
-                            title="Copy output"
+                            title={t('gui:execution.copyOutput')}
                           >
                             {copiedKey === step.outputVariable ? (
                               <Check className="w-4 h-4 text-success" />
@@ -601,6 +606,7 @@ function ValueRenderer({
   path: string;
   depth?: number;
 }) {
+  const { t } = useTranslation('gui');
   const [expanded, setExpanded] = useState(depth < 2);
 
   if (value === null) {
@@ -649,7 +655,7 @@ function ValueRenderer({
           ) : (
             <ChevronRight className="w-3 h-3" />
           )}
-          <span className="text-xs font-mono">Array({value.length})</span>
+          <span className="text-xs font-mono">{t('gui:execution.array')}({value.length})</span>
         </button>
         {expanded && (
           <div className="ml-4 pl-2 border-l border-border-default space-y-1">
@@ -667,7 +673,7 @@ function ValueRenderer({
             ))}
             {value.length > 20 && (
               <div className="text-text-muted text-xs">
-                ... and {value.length - 20} more items
+                {t('gui:execution.andMore', { count: value.length - 20 })}
               </div>
             )}
           </div>
@@ -693,7 +699,7 @@ function ValueRenderer({
           ) : (
             <ChevronRight className="w-3 h-3" />
           )}
-          <span className="text-xs font-mono">Object({entries.length} keys)</span>
+          <span className="text-xs font-mono">{t('gui:execution.object')}({entries.length} keys)</span>
         </button>
         {expanded && (
           <div className="ml-4 pl-2 border-l border-border-default space-y-1">
@@ -711,7 +717,7 @@ function ValueRenderer({
             ))}
             {entries.length > 30 && (
               <div className="text-text-muted text-xs">
-                ... and {entries.length - 30} more keys
+                {t('gui:execution.andMore', { count: entries.length - 30 })}
               </div>
             )}
           </div>
@@ -761,20 +767,20 @@ function StepStatusIcon({ status }: { status: StepStatus }) {
   }
 }
 
-function getStatusText(status: WorkflowStatus): string {
+function getStatusText(status: WorkflowStatus, t: (key: string) => string): string {
   switch (status) {
     case 'pending':
-      return 'Pending';
+      return t('common:status.pending');
     case 'running':
-      return 'Executing Workflow...';
+      return t('gui:execution.executing');
     case 'completed':
-      return 'Workflow Completed';
+      return t('gui:execution.completed');
     case 'failed':
-      return 'Workflow Failed';
+      return t('gui:execution.failed');
     case 'cancelled':
-      return 'Workflow Cancelled';
+      return t('gui:execution.cancelled');
     default:
-      return 'Unknown';
+      return t('common:status.unknown');
   }
 }
 
@@ -790,6 +796,7 @@ function DebugPanel({
   onAddWatchExpression?: (expression: string) => void;
   onRemoveWatchExpression?: (expression: string) => void;
 }) {
+  const { t } = useTranslation('gui');
   const [newWatchExpr, setNewWatchExpr] = useState('');
 
   const handleAddWatch = () => {
@@ -821,7 +828,7 @@ function DebugPanel({
         <div className="bg-bg-surface rounded-lg p-3">
           {debug.breakpoints.size === 0 ? (
             <div className="text-xs text-text-muted">
-              No breakpoints set. Click the dot next to a step to add one.
+              {t('gui:execution.noBreakpointsHelp')}
             </div>
           ) : (
             <div className="space-y-1">
@@ -841,10 +848,10 @@ function DebugPanel({
 
       {/* Call Stack Section */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-text-primary">Call Stack</h4>
+        <h4 className="text-sm font-medium text-text-primary">{t('gui:execution.callStack')}</h4>
         <div className="bg-bg-surface rounded-lg p-3">
           {debug.callStack.length === 0 ? (
-            <div className="text-xs text-text-muted">No active call stack</div>
+            <div className="text-xs text-text-muted">{t('gui:execution.noCallStack')}</div>
           ) : (
             <div className="space-y-1">
               {debug.callStack.map((frame, index) => (
@@ -865,7 +872,7 @@ function DebugPanel({
 
       {/* Watch Expressions Section */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-text-primary">Watch Expressions</h4>
+        <h4 className="text-sm font-medium text-text-primary">{t('gui:execution.watchExpressions')}</h4>
         <div className="bg-bg-surface rounded-lg p-3 space-y-2">
           {/* Add new watch expression */}
           {onAddWatchExpression && (
@@ -875,7 +882,7 @@ function DebugPanel({
                 value={newWatchExpr}
                 onChange={(e) => setNewWatchExpr(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddWatch()}
-                placeholder="Add expression..."
+                placeholder={t('gui:execution.addExpression')}
                 className="flex-1 bg-transparent border border-border-default rounded px-2 py-1 text-xs text-text-primary placeholder-gray-500 focus:outline-none focus:border-primary"
               />
               <button
@@ -891,7 +898,7 @@ function DebugPanel({
           {/* Watch list */}
           {debug.watchExpressions.length === 0 ? (
             <div className="text-xs text-text-muted">
-              No watch expressions. Add an expression to monitor its value.
+              {t('gui:execution.noWatchHelp')}
             </div>
           ) : (
             <div className="space-y-1">
@@ -904,7 +911,7 @@ function DebugPanel({
                     <span className="text-primary font-mono truncate">{expr}</span>
                     <span className="text-text-muted">=</span>
                     <span className="text-text-primary font-mono truncate">
-                      (not evaluated)
+                      {t('gui:execution.notEvaluated')}
                     </span>
                   </div>
                   {onRemoveWatchExpression && (
@@ -924,24 +931,24 @@ function DebugPanel({
 
       {/* Debug State Info */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-text-primary">Debug State</h4>
+        <h4 className="text-sm font-medium text-text-primary">{t('gui:execution.debugState')}</h4>
         <div className="bg-bg-surface rounded-lg p-3 text-xs space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-text-secondary">Current Step:</span>
+            <span className="text-text-secondary">{t('gui:execution.currentStep')}</span>
             <span className="text-text-primary font-mono">
-              {debug.currentStepId || '(none)'}
+              {debug.currentStepId || t('gui:execution.noneStep')}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-text-secondary">Paused at Breakpoint:</span>
+            <span className="text-text-secondary">{t('gui:execution.pausedAtBreakpoint')}</span>
             <span className={debug.pausedAtBreakpoint ? 'text-error' : 'text-text-muted'}>
-              {debug.pausedAtBreakpoint ? 'Yes' : 'No'}
+              {debug.pausedAtBreakpoint ? t('common:common.yes') : t('common:common.no')}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-text-secondary">Step Over Pending:</span>
+            <span className="text-text-secondary">{t('gui:execution.stepOverPending')}</span>
             <span className={debug.stepOverPending ? 'text-warning' : 'text-text-muted'}>
-              {debug.stepOverPending ? 'Yes' : 'No'}
+              {debug.stepOverPending ? t('common:common.yes') : t('common:common.no')}
             </span>
           </div>
         </div>

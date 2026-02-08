@@ -206,6 +206,8 @@ packages/gui/
 | Radix UI | Accessible UI primitives |
 | Monaco Editor | Code editing |
 | Socket.IO Client | Real-time updates |
+| react-i18next | Internationalization (8 languages) |
+| i18next-http-backend | Lazy-loading locale files |
 
 ### Component Hierarchy
 

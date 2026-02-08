@@ -57,6 +57,9 @@ marktoflow/
 │   │       └── plugins.ts    # Plugin system (17 hook types)
 │   ├── cli/                  # CLI commands, OAuth flows
 │   ├── gui/                  # Visual workflow designer
+│   ├── i18n/                 # Internationalization (8 languages, RTL support)
+│   │   ├── src/languages.ts  # Language metadata
+│   │   └── locales/          # Translation files (en, zh, hi, es, fr, ar, ja, pt)
 │   └── integrations/         # Service integrations + AI adapters
 │       ├── services/         # 38 native integrations
 │       └── adapters/         # AI agents (Copilot, Claude, OpenCode, Ollama)
@@ -159,6 +162,72 @@ output_variable: result
 - `docs/PUBLISHING.md` - Publishing packages to npm
 - `docs/REST-API-GUIDE.md` - HTTP integration guide
 - `examples/` - Production workflow examples
+
+---
+
+## Internationalization (i18n)
+
+marktoflow supports **8 languages**: English, Chinese, Hindi, Spanish, French, Arabic (RTL), Japanese, Portuguese.
+
+### Architecture
+
+- **`@marktoflow/i18n`** package: Shared locale files and language metadata
+- **GUI**: `react-i18next` with `i18next-http-backend` (lazy-loads from `/locales/{lng}/{ns}.json`)
+- **CLI**: `i18next` with `i18next-fs-backend` (loads from `@marktoflow/i18n/locales/`)
+- **Namespaces**: `common` (shared), `gui` (GUI-specific), `cli` (CLI-specific)
+
+### Adding New Strings
+
+1. Add the English string to the appropriate locale file in `packages/i18n/locales/en/`:
+   - `common.json` for strings shared between GUI and CLI
+   - `gui.json` for GUI-only strings
+   - `cli.json` for CLI-only strings
+
+2. Use the translation key in code:
+   ```typescript
+   // GUI (React component)
+   const { t } = useTranslation('gui');
+   <span>{t('gui:toolbar.myNewButton')}</span>
+
+   // CLI
+   import { t } from '../i18n.js';
+   console.log(t('cli:commands.run.myNewMessage'));
+   ```
+
+3. Run the translation generator to update other languages:
+   ```bash
+   cd packages/i18n && npx tsx src/generate.ts
+   ```
+
+### Key Conventions
+
+- **Key naming**: `namespace:area.component.key` (e.g., `gui:toolbar.button.save`)
+- **Interpolation**: `{{variable}}` syntax (e.g., `t('cli:key', { name: value })`)
+- **Count must be number**: `{ count: 5 }` not `{ count: "5" }` (i18next typing)
+- **RTL support**: Arabic uses `dir="rtl"` on `<html>`, custom Tailwind RTL utilities available
+- **Never hardcode English strings** in GUI components or CLI user-facing output
+
+### File Structure
+
+```
+packages/i18n/
+├── src/
+│   ├── languages.ts      # Language metadata (codes, names, RTL flags)
+│   ├── index.ts           # Re-exports
+│   └── generate.ts        # Claude API translation generator
+└── locales/
+    ├── en/                # English (source of truth)
+    │   ├── common.json
+    │   ├── gui.json
+    │   └── cli.json
+    ├── zh/                # Chinese
+    ├── hi/                # Hindi
+    ├── es/                # Spanish
+    ├── fr/                # French
+    ├── ar/                # Arabic (RTL)
+    ├── ja/                # Japanese
+    └── pt/                # Portuguese
+```
 
 ---
 

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -49,6 +50,7 @@ export function NodeContextMenu({
   onConvertToSubworkflow,
   onExecuteFrom,
 }: NodeContextMenuProps) {
+  const { t } = useTranslation('gui');
   const isSubworkflow = node.type === 'subworkflow';
   const hasError = node.data?.status === 'failed';
   const modKey = getModKey();
@@ -59,40 +61,40 @@ export function NodeContextMenu({
       <ContextMenuContent>
         <ContextMenuItem onClick={onEdit}>
           <Edit className="w-4 h-4 mr-2" />
-          Edit Step
+          {t('gui:canvas.editStep')}
           <ContextMenuShortcut>E</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuItem onClick={onViewYaml}>
           <Code className="w-4 h-4 mr-2" />
-          View YAML
+          {t('gui:canvas.viewYaml')}
           <ContextMenuShortcut>Y</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuItem onClick={onViewDocs}>
           <FileText className="w-4 h-4 mr-2" />
-          View Documentation
+          {t('gui:canvas.viewDocumentation')}
         </ContextMenuItem>
 
         <ContextMenuSeparator />
 
         <ContextMenuItem onClick={onDuplicate}>
           <Copy className="w-4 h-4 mr-2" />
-          Duplicate
+          {t('gui:canvas.duplicate')}
           <ContextMenuShortcut>{modKey}D</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuSub>
           <ContextMenuSubTrigger>
             <Plus className="w-4 h-4 mr-2" />
-            Add Step
+            {t('gui:canvas.addStep')}
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             <ContextMenuItem onClick={onAddStepBefore}>
-              Before this step
+              {t('gui:canvas.beforeThisStep')}
             </ContextMenuItem>
             <ContextMenuItem onClick={onAddStepAfter}>
-              After this step
+              {t('gui:canvas.afterThisStep')}
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
@@ -100,7 +102,7 @@ export function NodeContextMenu({
         {!isSubworkflow && (
           <ContextMenuItem onClick={onConvertToSubworkflow}>
             <FolderOpen className="w-4 h-4 mr-2" />
-            Convert to Sub-workflow
+            {t('gui:canvas.convertToSubWorkflow')}
           </ContextMenuItem>
         )}
 
@@ -108,13 +110,13 @@ export function NodeContextMenu({
 
         <ContextMenuItem onClick={onExecuteFrom}>
           <Play className="w-4 h-4 mr-2" />
-          Execute from here
+          {t('gui:canvas.executeFromHere')}
         </ContextMenuItem>
 
         {hasError && (
           <ContextMenuItem className="text-error">
             <AlertTriangle className="w-4 h-4 mr-2" />
-            View Error Details
+            {t('gui:canvas.viewErrorDetails')}
           </ContextMenuItem>
         )}
 
@@ -122,7 +124,7 @@ export function NodeContextMenu({
 
         <ContextMenuItem destructive onClick={onDelete}>
           <Trash2 className="w-4 h-4 mr-2" />
-          Delete
+          {t('gui:canvas.delete')}
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
@@ -150,6 +152,7 @@ export function CanvasContextMenu({
   onFitView,
   canPaste,
 }: CanvasContextMenuProps) {
+  const { t } = useTranslation('gui');
   const modKey = getModKey();
 
   return (
@@ -158,32 +161,32 @@ export function CanvasContextMenu({
       <ContextMenuContent>
         <ContextMenuItem onClick={onAddStep}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Step
+          {t('gui:canvas.addStep')}
           <ContextMenuShortcut>N</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuItem onClick={onAddSubworkflow}>
           <FolderOpen className="w-4 h-4 mr-2" />
-          Add Sub-workflow
+          {t('gui:canvas.addSubWorkflow')}
         </ContextMenuItem>
 
         <ContextMenuSeparator />
 
         <ContextMenuItem onClick={onPaste} disabled={!canPaste}>
           <Copy className="w-4 h-4 mr-2" />
-          Paste
+          {t('common:actions.paste')}
           <ContextMenuShortcut>{modKey}V</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuSeparator />
 
         <ContextMenuItem onClick={onAutoLayout}>
-          Auto-layout
+          {t('gui:canvas.autoLayout')}
           <ContextMenuShortcut>{modKey}L</ContextMenuShortcut>
         </ContextMenuItem>
 
         <ContextMenuItem onClick={onFitView}>
-          Fit to View
+          {t('gui:canvas.fitToView')}
           <ContextMenuShortcut>{modKey}0</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>

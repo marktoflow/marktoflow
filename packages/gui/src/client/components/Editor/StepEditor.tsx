@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../common/Tabs';
@@ -31,6 +32,7 @@ export function StepEditor({
   onSave,
   availableVariables,
 }: StepEditorProps) {
+  const { t } = useTranslation('gui');
   const [editedStep, setEditedStep] = useState<WorkflowStep | null>(null);
   const [activeTab, setActiveTab] = useState('properties');
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
@@ -93,35 +95,35 @@ export function StepEditor({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={`Edit Step: ${editedStep.name || editedStep.id}`}
-      description={editedStep.action || editedStep.workflow || 'Configure step settings'}
+      title={t('gui:stepEditor.title', { name: editedStep.name || editedStep.id })}
+      description={editedStep.action || editedStep.workflow || t('gui:stepEditor.configureSettings')}
       size="xl"
     >
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="properties">
             <Settings className="w-4 h-4 mr-1.5" />
-            Properties
+            {t('gui:stepEditor.tabs.properties')}
           </TabsTrigger>
           <TabsTrigger value="inputs">
             <FileInput className="w-4 h-4 mr-1.5" />
-            Inputs
+            {t('gui:stepEditor.tabs.inputs')}
           </TabsTrigger>
           <TabsTrigger value="output">
             <FileOutput className="w-4 h-4 mr-1.5" />
-            Output
+            {t('gui:stepEditor.tabs.output')}
           </TabsTrigger>
           <TabsTrigger value="errors">
             <AlertTriangle className="w-4 h-4 mr-1.5" />
-            Errors
+            {t('gui:stepEditor.tabs.errors')}
           </TabsTrigger>
           <TabsTrigger value="conditions">
             <Filter className="w-4 h-4 mr-1.5" />
-            Conditions
+            {t('gui:stepEditor.tabs.conditions')}
           </TabsTrigger>
           <TabsTrigger value="yaml">
             <Code className="w-4 h-4 mr-1.5" />
-            YAML
+            {t('gui:stepEditor.tabs.yaml')}
           </TabsTrigger>
         </TabsList>
 
@@ -167,13 +169,13 @@ export function StepEditor({
         {showErrors && validationErrors.length > 0 && (
           <div className="flex-1 flex items-center gap-2 text-error text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{validationErrors.length} validation error{validationErrors.length > 1 ? 's' : ''}</span>
+            <span>{validationErrors.length} {validationErrors.length > 1 ? t('gui:stepEditor.validationErrors') : t('gui:stepEditor.validationError')}</span>
           </div>
         )}
         <Button variant="secondary" onClick={() => onOpenChange(false)}>
-          Cancel
+          {t('gui:stepEditor.cancel')}
         </Button>
-        <Button onClick={handleSave}>Save Changes</Button>
+        <Button onClick={handleSave}>{t('gui:stepEditor.saveChanges')}</Button>
       </ModalFooter>
     </Modal>
   );
@@ -189,6 +191,7 @@ function PropertiesTab({
   onChange: (updates: Partial<WorkflowStep>) => void;
   getError: (field: string) => string | undefined;
 }) {
+  const { t } = useTranslation('gui');
   const idError = getError('id');
   const actionError = getError('action');
   const workflowError = getError('workflow');
@@ -198,7 +201,7 @@ function PropertiesTab({
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Step ID <span className="text-error">*</span>
+          {t('gui:stepEditor.stepIdLabel')} <span className="text-error">*</span>
         </label>
         <input
           type="text"
@@ -207,33 +210,33 @@ function PropertiesTab({
           className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm focus:outline-none ${
             idError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
           }`}
-          placeholder="unique-step-id"
+          placeholder={t('gui:stepEditor.stepIdPlaceholder')}
         />
         {idError ? (
           <p className="mt-1 text-xs text-error">{idError}</p>
         ) : (
           <p className="mt-1 text-xs text-gray-500">
-            Unique identifier for this step
+            {t('gui:stepEditor.stepIdHelp')}
           </p>
         )}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Step Name
+          {t('gui:stepEditor.stepNameLabel')}
         </label>
         <input
           type="text"
           value={step.name || ''}
           onChange={(e) => onChange({ name: e.target.value || undefined })}
           className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
-          placeholder="Human-readable name"
+          placeholder={t('gui:stepEditor.stepNamePlaceholder')}
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Action {!step.workflow && <span className="text-error">*</span>}
+          {t('gui:stepEditor.actionLabel')} {!step.workflow && <span className="text-error">*</span>}
         </label>
         <input
           type="text"
@@ -242,13 +245,13 @@ function PropertiesTab({
           className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm font-mono focus:outline-none ${
             actionError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
           }`}
-          placeholder="service.method (e.g., slack.chat.postMessage)"
+          placeholder={t('gui:stepEditor.actionPlaceholder')}
         />
         {actionError ? (
           <p className="mt-1 text-xs text-error">{actionError}</p>
         ) : (
           <p className="mt-1 text-xs text-gray-500">
-            Format: service.method or service.namespace.method
+            {t('gui:stepEditor.actionHelp')}
           </p>
         )}
       </div>
@@ -256,7 +259,7 @@ function PropertiesTab({
       {step.workflow && (
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1.5">
-            Sub-workflow Path
+            {t('gui:stepEditor.subWorkflowPathLabel')}
           </label>
           <input
             type="text"
@@ -265,7 +268,7 @@ function PropertiesTab({
             className={`w-full px-3 py-2 bg-node-bg border rounded-lg text-white text-sm font-mono focus:outline-none ${
               workflowError ? 'border-error focus:border-error' : 'border-node-border focus:border-primary'
             }`}
-            placeholder="./path/to/workflow.md"
+            placeholder={t('gui:stepEditor.subWorkflowPathPlaceholder')}
           />
           {workflowError && (
             <p className="mt-1 text-xs text-error">{workflowError}</p>
@@ -275,7 +278,7 @@ function PropertiesTab({
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Timeout (seconds)
+          {t('gui:stepEditor.timeoutLabel')}
         </label>
         <input
           type="number"
@@ -307,11 +310,12 @@ function OutputTab({
   step: WorkflowStep;
   onChange: (updates: Partial<WorkflowStep>) => void;
 }) {
+  const { t } = useTranslation('gui');
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Output Variable
+          {t('gui:stepEditor.outputVariableLabel')}
         </label>
         <input
           type="text"
@@ -320,20 +324,20 @@ function OutputTab({
             onChange({ outputVariable: e.target.value || undefined })
           }
           className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm font-mono focus:outline-none focus:border-primary"
-          placeholder="result_variable"
+          placeholder={t('gui:stepEditor.outputVariablePlaceholder')}
         />
         <p className="mt-1 text-xs text-gray-500">
-          Store the step output in this variable for use in subsequent steps
+          {t('gui:stepEditor.outputVariableHelp')}
         </p>
       </div>
 
       <div className="p-4 bg-node-bg rounded-lg border border-node-border">
-        <h4 className="text-sm font-medium text-gray-300 mb-2">Usage Example</h4>
+        <h4 className="text-sm font-medium text-gray-300 mb-2">{t('gui:stepEditor.usageExample')}</h4>
         <code className="text-xs text-primary font-mono">
           {'{{ ' + (step.outputVariable || 'variable_name') + ' }}'}
         </code>
         <p className="mt-2 text-xs text-gray-500">
-          Use this syntax in subsequent steps to reference the output
+          {t('gui:stepEditor.usageExampleHelp')}
         </p>
       </div>
     </div>
@@ -348,6 +352,7 @@ function ErrorHandlingTab({
   step: WorkflowStep;
   onChange: (updates: Partial<WorkflowStep>) => void;
 }) {
+  const { t } = useTranslation('gui');
   const errorHandling = step.errorHandling || { action: 'stop' };
 
   const updateErrorHandling = (updates: Partial<typeof errorHandling>) => {
@@ -360,7 +365,7 @@ function ErrorHandlingTab({
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Error Action
+          {t('gui:stepEditor.errorActionLabel')}
         </label>
         <select
           value={errorHandling.action}
@@ -371,9 +376,9 @@ function ErrorHandlingTab({
           }
           className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
         >
-          <option value="stop">Stop workflow on error</option>
-          <option value="continue">Continue to next step</option>
-          <option value="retry">Retry with backoff</option>
+          <option value="stop">{t('gui:stepEditor.errorActionOptions.stop')}</option>
+          <option value="continue">{t('gui:stepEditor.errorActionOptions.continue')}</option>
+          <option value="retry">{t('gui:stepEditor.errorActionOptions.retry')}</option>
         </select>
       </div>
 
@@ -381,7 +386,7 @@ function ErrorHandlingTab({
         <>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Max Retries
+              {t('gui:stepEditor.maxRetriesLabel')}
             </label>
             <input
               type="number"
@@ -399,7 +404,7 @@ function ErrorHandlingTab({
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Retry Delay (ms)
+              {t('gui:stepEditor.retryDelayLabel')}
             </label>
             <input
               type="number"
@@ -419,7 +424,7 @@ function ErrorHandlingTab({
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1.5">
-          Fallback Step (optional)
+          {t('gui:stepEditor.fallbackStepLabel')}
         </label>
         <input
           type="text"
@@ -430,10 +435,10 @@ function ErrorHandlingTab({
             })
           }
           className="w-full px-3 py-2 bg-node-bg border border-node-border rounded-lg text-white text-sm font-mono focus:outline-none focus:border-primary"
-          placeholder="fallback-step-id"
+          placeholder={t('gui:stepEditor.fallbackStepPlaceholder')}
         />
         <p className="mt-1 text-xs text-gray-500">
-          Jump to this step if the error action fails
+          {t('gui:stepEditor.fallbackStepHelp')}
         </p>
       </div>
     </div>
@@ -450,6 +455,7 @@ function ConditionsTab({
   onChange: (updates: Partial<WorkflowStep>) => void;
   availableVariables: string[];
 }) {
+  const { t } = useTranslation('gui');
   const conditions = step.conditions || [];
 
   const addCondition = () => {
@@ -470,14 +476,14 @@ function ConditionsTab({
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-400">
-        This step will only execute if all conditions evaluate to true.
+        {t('gui:stepEditor.conditionsDescription')}
       </p>
 
       {conditions.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-gray-500 mb-3">No conditions defined</p>
+          <p className="text-sm text-gray-500 mb-3">{t('gui:stepEditor.noConditions')}</p>
           <Button variant="secondary" size="sm" onClick={addCondition}>
-            Add Condition
+            {t('gui:stepEditor.addCondition')}
           </Button>
         </div>
       ) : (
@@ -501,7 +507,7 @@ function ConditionsTab({
             </div>
           ))}
           <Button variant="secondary" size="sm" onClick={addCondition}>
-            Add Condition
+            {t('gui:stepEditor.addCondition')}
           </Button>
         </div>
       )}
@@ -509,7 +515,7 @@ function ConditionsTab({
       {availableVariables.length > 0 && (
         <div className="mt-4 p-3 bg-node-bg rounded-lg border border-node-border">
           <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
-            Available Variables
+            {t('gui:stepEditor.availableVariables')}
           </h4>
           <div className="flex flex-wrap gap-1.5">
             {availableVariables.map((variable) => (

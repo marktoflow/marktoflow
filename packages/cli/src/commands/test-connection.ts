@@ -7,6 +7,7 @@
 
 import chalk from 'chalk';
 import ora from 'ora';
+import { t } from '../i18n.js';
 
 // ============================================================================
 // Types
@@ -58,7 +59,7 @@ function validateCredentialFormat(value: string, def: EnvVarDef): { valid: boole
   if (!value.startsWith(def.prefix)) {
     return {
       valid: false,
-      issue: `Expected value to start with "${def.prefix}" but got "${value.substring(0, Math.min(8, value.length))}..."`,
+      issue: t('cli:commands.testConnection.credentials.invalidPrefix', { expected: def.prefix, got: `${value.substring(0, Math.min(8, value.length))}...` }),
     };
   }
 
@@ -98,12 +99,12 @@ const SERVICES: Record<string, ServiceDefinition> = {
       if (data.ok) {
         return {
           success: true,
-          message: `Authenticated as ${data.user} in workspace ${data.team}`,
+          message: t('cli:commands.testConnection.service.authenticatedAsWorkspace', { user: data.user, team: data.team }),
         };
       }
       return {
         success: false,
-        message: `Auth failed: ${data.error}`,
+        message: t('cli:commands.testConnection.service.authFailed', { error: data.error }),
         details: getSlackErrorHelp(data.error ?? 'unknown'),
       };
     },
@@ -133,19 +134,19 @@ const SERVICES: Record<string, ServiceDefinition> = {
         const data = (await response.json()) as { login: string; name?: string };
         return {
           success: true,
-          message: `Authenticated as ${data.login}${data.name ? ` (${data.name})` : ''}`,
+          message: t('cli:commands.testConnection.service.authenticatedAs', { identity: `${data.login}${data.name ? ` (${data.name})` : ''}` }),
         };
       }
       if (response.status === 401) {
         return {
           success: false,
-          message: 'Invalid or expired token',
-          details: 'Create a new token at https://github.com/settings/tokens',
+          message: t('cli:commands.testConnection.service.invalidOrExpiredToken'),
+          details: t('cli:commands.testConnection.service.createNewTokenGitHub'),
         };
       }
       return {
         success: false,
-        message: `API returned ${response.status} ${response.statusText}`,
+        message: t('cli:commands.testConnection.service.apiReturnedError', { status: response.status, statusText: response.statusText }),
       };
     },
   },
@@ -187,8 +188,8 @@ const SERVICES: Record<string, ServiceDefinition> = {
         const error = (await tokenResponse.json()) as { error_description?: string };
         return {
           success: false,
-          message: `Token refresh failed: ${error.error_description ?? 'unknown error'}`,
-          details: 'Run "marktoflow connect gmail" to re-authenticate',
+          message: t('cli:commands.testConnection.service.tokenRefreshFailed', { error: error.error_description ?? t('cli:commands.testConnection.error.unknownError') }),
+          details: t('cli:commands.testConnection.service.reAuthenticate', { service: 'gmail' }),
         };
       }
 
@@ -206,15 +207,15 @@ const SERVICES: Record<string, ServiceDefinition> = {
         const profile = (await profileResponse.json()) as { emailAddress: string; messagesTotal?: number };
         return {
           success: true,
-          message: `Authenticated as ${profile.emailAddress}`,
-          details: profile.messagesTotal ? `${profile.messagesTotal} total messages` : undefined,
+          message: t('cli:commands.testConnection.service.authenticatedAs', { identity: profile.emailAddress }),
+          details: profile.messagesTotal ? t('cli:commands.testConnection.service.totalMessages', { count: profile.messagesTotal }) : undefined,
         };
       }
 
       return {
         success: false,
-        message: `Profile request failed: ${profileResponse.status}`,
-        details: 'Ensure Gmail API is enabled in Google Cloud Console',
+        message: t('cli:commands.testConnection.service.profileRequestFailed', { status: profileResponse.status }),
+        details: t('cli:commands.testConnection.service.ensureGmailApiEnabled'),
       };
     },
   },
@@ -246,22 +247,22 @@ const SERVICES: Record<string, ServiceDefinition> = {
         const data = (await response.json()) as { results: unknown[] };
         return {
           success: true,
-          message: `Connected to Notion`,
-          details: `Found ${data.results.length} accessible page(s) in test query`,
+          message: t('cli:commands.testConnection.service.connectedTo', { service: 'Notion' }),
+          details: t('cli:commands.testConnection.service.foundPages', { count: data.results.length }),
         };
       }
 
       if (response.status === 401) {
         return {
           success: false,
-          message: 'Invalid integration token',
-          details: 'Create a new integration at https://www.notion.so/my-integrations',
+          message: t('cli:commands.testConnection.service.invalidIntegrationToken'),
+          details: t('cli:commands.testConnection.service.createNewIntegrationNotion'),
         };
       }
 
       return {
         success: false,
-        message: `API returned ${response.status} ${response.statusText}`,
+        message: t('cli:commands.testConnection.service.apiReturnedError', { status: response.status, statusText: response.statusText }),
       };
     },
   },
@@ -303,28 +304,28 @@ const SERVICES: Record<string, ServiceDefinition> = {
         const data = (await response.json()) as { displayName: string; emailAddress: string };
         return {
           success: true,
-          message: `Authenticated as ${data.displayName} (${data.emailAddress})`,
+          message: t('cli:commands.testConnection.service.authenticatedAs', { identity: `${data.displayName} (${data.emailAddress})` }),
         };
       }
 
       if (response.status === 401) {
         return {
           success: false,
-          message: 'Invalid email or API token',
-          details: 'Create a new API token at https://id.atlassian.com/manage-profile/security/api-tokens',
+          message: t('cli:commands.testConnection.service.invalidEmailOrApiToken'),
+          details: t('cli:commands.testConnection.service.createNewApiTokenJira'),
         };
       }
 
       if (response.status === 403) {
         return {
           success: false,
-          message: 'Access denied - check that your API token has sufficient permissions',
+          message: t('cli:commands.testConnection.service.accessDenied'),
         };
       }
 
       return {
         success: false,
-        message: `API returned ${response.status} ${response.statusText}`,
+        message: t('cli:commands.testConnection.service.apiReturnedError', { status: response.status, statusText: response.statusText }),
       };
     },
   },
@@ -361,13 +362,13 @@ const SERVICES: Record<string, ServiceDefinition> = {
         if (data.data?.viewer) {
           return {
             success: true,
-            message: `Authenticated as ${data.data.viewer.name} (${data.data.viewer.email})`,
+            message: t('cli:commands.testConnection.service.authenticatedAs', { identity: `${data.data.viewer.name} (${data.data.viewer.email})` }),
           };
         }
         if (data.errors && data.errors.length > 0) {
           return {
             success: false,
-            message: `GraphQL error: ${data.errors[0].message}`,
+            message: t('cli:commands.testConnection.service.graphqlError', { error: data.errors[0].message }),
           };
         }
       }
@@ -375,14 +376,14 @@ const SERVICES: Record<string, ServiceDefinition> = {
       if (response.status === 401) {
         return {
           success: false,
-          message: 'Invalid API key',
-          details: 'Create a new API key at https://linear.app/settings/api',
+          message: t('cli:commands.testConnection.service.invalidApiKey'),
+          details: t('cli:commands.testConnection.service.createNewApiKeyLinear'),
         };
       }
 
       return {
         success: false,
-        message: `API returned ${response.status} ${response.statusText}`,
+        message: t('cli:commands.testConnection.service.apiReturnedError', { status: response.status, statusText: response.statusText }),
       };
     },
   },
@@ -409,21 +410,21 @@ const SERVICES: Record<string, ServiceDefinition> = {
         const data = (await response.json()) as { username: string; discriminator: string; id: string };
         return {
           success: true,
-          message: `Authenticated as ${data.username}#${data.discriminator} (ID: ${data.id})`,
+          message: t('cli:commands.testConnection.service.authenticatedAs', { identity: `${data.username}#${data.discriminator} (ID: ${data.id})` }),
         };
       }
 
       if (response.status === 401) {
         return {
           success: false,
-          message: 'Invalid bot token',
-          details: 'Get your bot token from https://discord.com/developers/applications',
+          message: t('cli:commands.testConnection.service.invalidBotToken'),
+          details: t('cli:commands.testConnection.service.getBotTokenDiscord'),
         };
       }
 
       return {
         success: false,
-        message: `API returned ${response.status} ${response.statusText}`,
+        message: t('cli:commands.testConnection.service.apiReturnedError', { status: response.status, statusText: response.statusText }),
       };
     },
   },
@@ -450,7 +451,7 @@ const SERVICES: Record<string, ServiceDefinition> = {
         if (data.ok && data.result) {
           return {
             success: true,
-            message: `Authenticated as @${data.result.username} (${data.result.first_name})`,
+            message: t('cli:commands.testConnection.service.authenticatedAs', { identity: `@${data.result.username} (${data.result.first_name})` }),
           };
         }
       }
@@ -458,14 +459,14 @@ const SERVICES: Record<string, ServiceDefinition> = {
       if (response.status === 401) {
         return {
           success: false,
-          message: 'Invalid bot token',
-          details: 'Get a bot token from @BotFather on Telegram: https://core.telegram.org/bots#botfather',
+          message: t('cli:commands.testConnection.service.invalidBotToken'),
+          details: t('cli:commands.testConnection.service.getBotTokenTelegram'),
         };
       }
 
       return {
         success: false,
-        message: `API returned ${response.status} ${response.statusText}`,
+        message: t('cli:commands.testConnection.service.apiReturnedError', { status: response.status, statusText: response.statusText }),
       };
     },
   },
@@ -479,15 +480,15 @@ function getSlackErrorHelp(error: string): string {
   switch (error) {
     case 'invalid_auth':
     case 'not_authed':
-      return 'The token is invalid or has been revoked. Get a new token at https://api.slack.com/apps';
+      return t('cli:commands.testConnection.service.slackInvalidAuth');
     case 'account_inactive':
-      return 'The token belongs to a deactivated user or workspace.';
+      return t('cli:commands.testConnection.service.slackAccountInactive');
     case 'token_revoked':
-      return 'The token has been revoked. Generate a new token at https://api.slack.com/apps';
+      return t('cli:commands.testConnection.service.slackTokenRevoked');
     case 'token_expired':
-      return 'The token has expired. If using OAuth, refresh the token.';
+      return t('cli:commands.testConnection.service.slackTokenExpired');
     default:
-      return `See Slack API docs: https://api.slack.com/methods/auth.test`;
+      return t('cli:commands.testConnection.service.slackSeeApiDocs');
   }
 }
 
@@ -503,8 +504,8 @@ async function testService(serviceKey: string): Promise<ServiceTestResult> {
       name: serviceKey,
       result: {
         success: false,
-        message: `Unknown service: ${serviceKey}`,
-        details: `Available services: ${Object.keys(SERVICES).join(', ')}`,
+        message: t('cli:commands.testConnection.error.unknownService', { service: serviceKey }),
+        details: t('cli:commands.testConnection.error.availableServices', { services: Object.keys(SERVICES).join(', ') }),
       },
       credentialStatus: 'missing',
       duration: 0,
@@ -525,7 +526,7 @@ async function testService(serviceKey: string): Promise<ServiceTestResult> {
     } else {
       const formatCheck = validateCredentialFormat(value, envDef);
       if (!formatCheck.valid) {
-        malformedVars.push({ def: envDef, issue: formatCheck.issue ?? 'Invalid format' });
+        malformedVars.push({ def: envDef, issue: formatCheck.issue ?? t('cli:commands.testConnection.credentials.invalidFormat') });
       }
       creds[envDef.name] = value;
     }
@@ -537,15 +538,15 @@ async function testService(serviceKey: string): Promise<ServiceTestResult> {
     const helpUrls = missingVars
       .filter((v) => v.helpUrl)
       .map((v) => v.helpUrl);
-    const helpText = helpUrls.length > 0 ? `\nGet credentials: ${helpUrls[0]}` : '';
+    const helpText = helpUrls.length > 0 ? `\n${t('cli:commands.testConnection.credentials.getCredentials', { url: helpUrls[0] })}` : '';
 
     return {
       service: serviceKey,
       name: definition.name,
       result: {
         success: false,
-        message: `Missing required environment variable(s): ${missingNames.join(', ')}`,
-        details: `Set these in your .env file or environment.${helpText}\nRun "marktoflow connect ${serviceKey}" for setup instructions.`,
+        message: t('cli:commands.testConnection.credentials.missingEnvVars', { vars: missingNames.join(', ') }),
+        details: `${t('cli:commands.testConnection.credentials.setInEnvFile')}${helpText}\n${t('cli:commands.testConnection.credentials.runConnect', { service: serviceKey })}`,
       },
       credentialStatus: 'missing',
       duration: 0,
@@ -560,8 +561,8 @@ async function testService(serviceKey: string): Promise<ServiceTestResult> {
       name: definition.name,
       result: {
         success: false,
-        message: `Credential format issue(s):\n  ${issues.join('\n  ')}`,
-        details: 'Check that your credentials are correctly copied.',
+        message: `${t('cli:commands.testConnection.credentials.formatIssues')}:\n  ${issues.join('\n  ')}`,
+        details: t('cli:commands.testConnection.credentials.checkCredentialsCopied'),
       },
       credentialStatus: 'malformed',
       duration: 0,
@@ -587,13 +588,13 @@ async function testService(serviceKey: string): Promise<ServiceTestResult> {
     // Provide actionable messages for common network errors
     let details: string | undefined;
     if (errorMessage.includes('ENOTFOUND')) {
-      details = 'DNS resolution failed. Check your network connection and the service URL.';
+      details = t('cli:commands.testConnection.network.dnsResolutionFailed');
     } else if (errorMessage.includes('ECONNREFUSED')) {
-      details = 'Connection refused. The service may be down or the URL may be incorrect.';
+      details = t('cli:commands.testConnection.network.connectionRefused');
     } else if (errorMessage.includes('ETIMEDOUT') || errorMessage.includes('timeout')) {
-      details = 'Connection timed out. Check your network connection or try again later.';
+      details = t('cli:commands.testConnection.network.connectionTimedOut');
     } else if (errorMessage.includes('CERT') || errorMessage.includes('certificate')) {
-      details = 'SSL/TLS certificate error. Check your system clock and network configuration.';
+      details = t('cli:commands.testConnection.network.certificateError');
     }
 
     return {
@@ -601,7 +602,7 @@ async function testService(serviceKey: string): Promise<ServiceTestResult> {
       name: definition.name,
       result: {
         success: false,
-        message: `Connection error: ${errorMessage}`,
+        message: t('cli:commands.testConnection.network.connectionError', { error: errorMessage }),
         details,
       },
       credentialStatus: 'present',
@@ -634,12 +635,12 @@ function displaySummary(results: ServiceTestResult[]): void {
   const passed = results.filter((r) => r.result.success).length;
   const failed = results.filter((r) => !r.result.success).length;
 
-  console.log('\n' + chalk.bold('  Summary'));
-  console.log(`  ${chalk.green(`${passed} passed`)}, ${chalk.red(`${failed} failed`)}, ${results.length} total`);
+  console.log('\n' + chalk.bold(`  ${t('cli:commands.testConnection.summary.title')}`));
+  console.log(`  ${chalk.green(t('cli:commands.testConnection.summary.passed', { count: passed }))}, ${chalk.red(t('cli:commands.testConnection.summary.failed', { count: failed }))}, ${t('cli:commands.testConnection.summary.total', { count: results.length })}`);
 
   if (failed > 0) {
     console.log(
-      chalk.dim('\n  Run "marktoflow connect <service>" to configure missing services.')
+      chalk.dim(`\n  ${t('cli:commands.testConnection.summary.runConnectHint')}`)
     );
   }
 
@@ -674,10 +675,10 @@ export async function executeTestConnection(
   service: string | undefined,
   options: { all?: boolean }
 ): Promise<void> {
-  console.log(chalk.bold('\n  marktoflow Connection Test\n'));
+  console.log(chalk.bold(`\n  ${t('cli:commands.testConnection.title')}\n`));
 
   if (options.all) {
-    const spinner = ora('Testing all service connections...').start();
+    const spinner = ora(t('cli:commands.testConnection.testingAll')).start();
     spinner.stop();
 
     const results = await runTestAllConnections();
@@ -691,11 +692,11 @@ export async function executeTestConnection(
   }
 
   if (!service) {
-    console.log(chalk.red('  Error: specify a service name or use --all\n'));
-    console.log('  Usage:');
+    console.log(chalk.red(`  ${t('cli:commands.testConnection.error.specifyService')}\n`));
+    console.log(`  ${t('cli:commands.testConnection.usage')}:`);
     console.log('    marktoflow test-connection <service>');
     console.log('    marktoflow test-connection --all\n');
-    console.log('  Available services:');
+    console.log(`  ${t('cli:commands.testConnection.availableServices')}:`);
     for (const [key, def] of Object.entries(SERVICES)) {
       console.log(`    ${chalk.cyan(key.padEnd(12))} ${def.name}`);
     }
@@ -704,7 +705,7 @@ export async function executeTestConnection(
   }
 
   const serviceLower = service.toLowerCase();
-  const spinner = ora(`Testing ${SERVICES[serviceLower]?.name ?? service} connection...`).start();
+  const spinner = ora(t('cli:commands.testConnection.testingService', { service: SERVICES[serviceLower]?.name ?? service })).start();
 
   const result = await testService(serviceLower);
   spinner.stop();

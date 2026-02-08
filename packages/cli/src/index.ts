@@ -11,6 +11,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { existsSync, mkdirSync, writeFileSync, readdirSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
 import {
   parseFile,
   WorkflowEngine,
@@ -30,6 +31,7 @@ import {
   StateStore,
 } from '@marktoflow/core';
 import { registerIntegrations } from '@marktoflow/integrations';
+import { initI18n, t } from './i18n.js';
 import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
 import { serveCommand } from './serve.js';
@@ -50,7 +52,10 @@ import {
   overrideModelInWorkflow,
 } from './utils/index.js';
 
-const VERSION = '2.0.0-alpha.15';
+// Read version from package.json
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json');
+const VERSION = packageJson.version;
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
@@ -129,8 +134,9 @@ const program = new Command();
 
 program
   .name('marktoflow')
-  .description('Agent automation framework with native MCP support')
-  .version(VERSION);
+  .description(t('cli:program.description'))
+  .version(VERSION)
+  .option('--locale <locale>', t('cli:program.localeOption'));
 
 program.addCommand(workerCommand);
 program.addCommand(triggerCommand);
@@ -143,10 +149,10 @@ program.addCommand(serveCommand);
 // --- init ---
 program
   .command('init')
-  .description('Initialize a new marktoflow project')
-  .option('-f, --force', 'Overwrite existing configuration')
+  .description(t('cli:commands.init.description'))
+  .option('-f, --force', t('cli:commands.init.forceOption'))
   .action(async (options) => {
-    const spinner = ora('Initializing marktoflow project...').start();
+    const spinner = ora(t('cli:commands.init.spinning')).start();
 
     try {
       const configDir = '.marktoflow';
@@ -154,7 +160,7 @@ program
       const credentialsDir = join(configDir, 'credentials');
 
       if (existsSync(configDir) && !options.force) {
-        spinner.fail('Project already initialized. Use --force to reinitialize.');
+        spinner.fail(t('cli:commands.init.alreadyInitialized'));
         return;
       }
 
@@ -201,14 +207,14 @@ Outputs a greeting message.
         '# Ignore all credentials\n*\n!.gitignore\n'
       );
 
-      spinner.succeed('Project initialized successfully!');
+      spinner.succeed(t('cli:commands.init.success'));
 
-      console.log('\n' + chalk.bold('Next steps:'));
-      console.log(`  1. Edit ${chalk.cyan('.marktoflow/workflows/hello-world.md')}`);
-      console.log(`  2. Run ${chalk.cyan('marktoflow run hello-world.md')}`);
-      console.log(`  3. Connect services: ${chalk.cyan('marktoflow connect slack')}`);
+      console.log('\n' + chalk.bold(t('cli:commands.init.nextSteps')));
+      console.log(`  1. ${t('cli:commands.init.nextStep1', { path: chalk.cyan('.marktoflow/workflows/hello-world.md') })}`);
+      console.log(`  2. ${t('cli:commands.init.nextStep2', { cmd: chalk.cyan('marktoflow run hello-world.md') })}`);
+      console.log(`  3. ${t('cli:commands.init.nextStep3', { cmd: chalk.cyan('marktoflow connect slack') })}`);
     } catch (error) {
-      spinner.fail(`Initialization failed: ${error}`);
+      spinner.fail(t('cli:commands.init.failed', { error: String(error) }));
       process.exit(1);
     }
   });
@@ -216,10 +222,10 @@ Outputs a greeting message.
 // --- new ---
 program
   .command('new')
-  .description('Create a new workflow from template')
-  .option('-o, --output <path>', 'Output file path')
-  .option('-t, --template <id>', 'Template ID to use')
-  .option('--list-templates', 'List available templates')
+  .description(t('cli:commands.new.description'))
+  .option('-o, --output <path>', t('cli:commands.new.outputOption'))
+  .option('-t, --template <id>', t('cli:commands.new.templateOption'))
+  .option('--list-templates', t('cli:commands.new.listTemplatesOption'))
   .action(async (options) => {
     if (options.listTemplates) {
       listTemplates();
@@ -231,22 +237,22 @@ program
 // --- update ---
 program
   .command('update [workflow]')
-  .description('Update a workflow using AI coding agents')
-  .option('-a, --agent <id>', 'Coding agent to use (opencode, claude-code, cursor, aider)')
-  .option('-p, --prompt <text>', 'Update description')
-  .option('--list-agents', 'List available coding agents')
+  .description(t('cli:commands.update.description'))
+  .option('-a, --agent <id>', t('cli:commands.update.agentOption'))
+  .option('-p, --prompt <text>', t('cli:commands.update.promptOption'))
+  .option('--list-agents', t('cli:commands.update.listAgentsOption'))
   .action(async (workflow, options) => {
     if (options.listAgents) {
       await listAgents();
       return;
     }
     if (!workflow) {
-      console.log(chalk.red('\n❌ Error: workflow argument is required\n'));
-      console.log('Usage: marktoflow update <workflow> [options]');
-      console.log('\nOptions:');
-      console.log('  -a, --agent <id>     Coding agent to use');
-      console.log('  -p, --prompt <text>  Update description');
-      console.log('  --list-agents        List available coding agents');
+      console.log(chalk.red('\n' + t('cli:commands.update.workflowRequired') + '\n'));
+      console.log(t('cli:commands.update.usage'));
+      console.log('\n' + t('cli:common.options') + ':');
+      console.log('  -a, --agent <id>     ' + t('cli:commands.update.agentOption'));
+      console.log('  -p, --prompt <text>  ' + t('cli:commands.update.promptOption'));
+      console.log('  --list-agents        ' + t('cli:commands.update.listAgentsOption'));
       process.exit(1);
     }
     await runUpdateWizard({ workflow, ...options });
@@ -255,15 +261,15 @@ program
 // --- run ---
 program
   .command('run <workflow>')
-  .description('Run a workflow')
-  .option('-i, --input <key=value...>', 'Input parameters')
-  .option('-v, --verbose', 'Verbose output')
-  .option('-d, --debug', 'Debug mode with detailed output (includes stack traces)')
-  .option('-a, --agent <provider>', 'AI agent provider (claude-code, claude-agent, github-copilot, opencode, ollama, codex)')
-  .option('-m, --model <name>', 'Model name to use (e.g., claude-sonnet-4, gpt-4, etc.)')
-  .option('--dry-run', 'Parse workflow without executing')
+  .description(t('cli:commands.run.description'))
+  .option('-i, --input <key=value...>', t('cli:commands.run.inputOption'))
+  .option('-v, --verbose', t('cli:commands.run.verboseOption'))
+  .option('-d, --debug', t('cli:commands.run.debugOption'))
+  .option('-a, --agent <provider>', t('cli:commands.run.agentOption'))
+  .option('-m, --model <name>', t('cli:commands.run.modelOption'))
+  .option('--dry-run', t('cli:commands.run.dryRunOption'))
   .action(async (workflowPath, options) => {
-    const spinner = ora('Loading workflow...').start();
+    const spinner = ora(t('cli:commands.run.loadingWorkflow')).start();
     let stateStore: StateStore | undefined;
 
     try {
@@ -275,7 +281,7 @@ program
         resolvedPath = join(workflowsDir, workflowPath);
       }
       if (!existsSync(resolvedPath)) {
-        spinner.fail(`Workflow not found: ${workflowPath}`);
+        spinner.fail(t('cli:commands.run.workflowNotFound', { path: workflowPath }));
         process.exit(1);
       }
 
@@ -283,10 +289,10 @@ program
       const { workflow, warnings } = await parseFile(resolvedPath);
 
       if (warnings.length > 0) {
-        spinner.warn('Workflow parsed with warnings:');
+        spinner.warn(t('cli:commands.run.parsedWithWarnings'));
         warnings.forEach((w) => console.log(chalk.yellow(`  - ${w}`)));
       } else {
-        spinner.succeed(`Loaded: ${workflow.metadata.name}`);
+        spinner.succeed(t('cli:commands.run.loaded', { name: workflow.metadata.name }));
       }
 
       // Debug: Show workflow details
@@ -310,7 +316,7 @@ program
       // Validate required inputs and apply defaults
       const validation = validateAndApplyDefaults(workflow, parsedInputs, { debug: options.debug });
       if (!validation.valid) {
-        spinner.fail('Missing required inputs');
+        spinner.fail(t('cli:commands.run.missingInputs'));
         printMissingInputsError(workflow, validation.missingInputs, 'run', workflowPath);
         process.exit(1);
       }
@@ -367,7 +373,7 @@ program
       }
 
       // Execute workflow
-      spinner.start('Executing workflow...');
+      spinner.start(t('cli:commands.run.executing'));
 
       // Debug: Show execution start
       if (options.debug) {
@@ -464,9 +470,9 @@ program
       const result = await engine.execute(workflow, inputs, registry, createSDKStepExecutor());
 
       if (result.status === WorkflowStatus.COMPLETED) {
-        spinner.succeed(`Workflow completed in ${result.duration}ms`);
+        spinner.succeed(t('cli:commands.run.completed', { duration: String(result.duration) }));
       } else {
-        spinner.fail(`Workflow failed: ${result.error}`);
+        spinner.fail(t('cli:commands.run.failed', { error: String(result.error) }));
 
         // Debug: Show detailed error information
         if (options.debug) {
@@ -562,22 +568,22 @@ program
       }
 
       // Show summary
-      console.log('\n' + chalk.bold('Summary:'));
-      console.log(`  Status: ${result.status}`);
-      console.log(`  Duration: ${result.duration}ms`);
-      console.log(`  Steps: ${result.stepResults.length}`);
+      console.log('\n' + chalk.bold(t('cli:commands.run.summary')));
+      console.log(`  ${t('cli:common.status')}: ${result.status}`);
+      console.log(`  ${t('cli:common.duration')}: ${result.duration}ms`);
+      console.log(`  ${t('cli:common.steps')}: ${result.stepResults.length}`);
 
       const completed = result.stepResults.filter((s) => s.status === StepStatus.COMPLETED).length;
       const failed = result.stepResults.filter((s) => s.status === StepStatus.FAILED).length;
       const skipped = result.stepResults.filter((s) => s.status === StepStatus.SKIPPED).length;
 
-      console.log(`  Completed: ${completed}, Failed: ${failed}, Skipped: ${skipped}`);
+      console.log(`  ${t('cli:common.completed')}: ${completed}, ${t('cli:common.failed')}: ${failed}, ${t('cli:common.skipped')}: ${skipped}`);
 
       // Close StateStore and exit successfully to avoid hanging due to open SDK connections
       stateStore.close();
       process.exit(0);
     } catch (error) {
-      spinner.fail(`Execution failed: ${error}`);
+      spinner.fail(t('cli:commands.run.executionFailed', { error: String(error) }));
 
       // Debug: Show full error details with stack trace
       if (options.debug) {
@@ -618,14 +624,14 @@ program
 // --- debug ---
 program
   .command('debug <workflow>')
-  .description('Debug a workflow with step-by-step execution')
-  .option('-i, --input <key=value...>', 'Input parameters')
-  .option('-b, --breakpoint <stepId...>', 'Set breakpoints at step IDs')
-  .option('-a, --agent <provider>', 'AI agent provider (claude-code, claude-agent, github-copilot, opencode, ollama, codex)')
-  .option('-m, --model <name>', 'Model name to use (e.g., claude-sonnet-4, gpt-4, etc.)')
-  .option('--auto-start', 'Start without initial prompt')
+  .description(t('cli:commands.debug.description'))
+  .option('-i, --input <key=value...>', t('cli:commands.run.inputOption'))
+  .option('-b, --breakpoint <stepId...>', t('cli:commands.debug.breakpointOption'))
+  .option('-a, --agent <provider>', t('cli:commands.run.agentOption'))
+  .option('-m, --model <name>', t('cli:commands.run.modelOption'))
+  .option('--auto-start', t('cli:commands.debug.autoStartOption'))
   .action(async (workflowPath, options) => {
-    const spinner = ora('Loading workflow for debugging...').start();
+    const spinner = ora(t('cli:commands.debug.loading')).start();
 
     try {
       const config = getConfig();
@@ -637,7 +643,7 @@ program
         resolvedPath = join(workflowsDir, workflowPath);
       }
       if (!existsSync(resolvedPath)) {
-        spinner.fail(`Workflow not found: ${workflowPath}`);
+        spinner.fail(t('cli:commands.run.workflowNotFound', { path: workflowPath }));
         process.exit(1);
       }
 
@@ -645,17 +651,17 @@ program
       const { workflow, warnings } = await parseFile(resolvedPath);
 
       if (warnings.length > 0) {
-        spinner.warn('Workflow parsed with warnings:');
+        spinner.warn(t('cli:commands.run.parsedWithWarnings'));
         warnings.forEach((w) => console.log(chalk.yellow(`  - ${w}`)));
       } else {
-        spinner.succeed(`Loaded: ${workflow.metadata.name}`);
+        spinner.succeed(t('cli:commands.run.loaded', { name: workflow.metadata.name }));
       }
 
       // Parse and validate inputs
       const parsedInputs = parseInputPairs(options.input);
       const validation = validateAndApplyDefaults(workflow, parsedInputs);
       if (!validation.valid) {
-        spinner.fail('Missing required inputs');
+        spinner.fail(t('cli:commands.run.missingInputs'));
         printMissingInputsError(workflow, validation.missingInputs, 'debug', workflowPath);
         process.exit(1);
       }
@@ -696,7 +702,7 @@ program
       // Start debugging session
       await workflowDebugger.debug();
     } catch (error) {
-      spinner.fail(`Debug session failed: ${error}`);
+      spinner.fail(t('cli:commands.debug.failed', { error: String(error) }));
       process.exit(1);
     }
   });
@@ -704,14 +710,14 @@ program
 // --- workflow list ---
 program
   .command('workflow')
-  .description('Workflow management')
+  .description(t('cli:commands.workflow.description'))
   .command('list')
-  .description('List available workflows')
+  .description(t('cli:commands.workflow.listDescription'))
   .action(async () => {
     const workflowsDir = getConfig().workflows?.path ?? '.marktoflow/workflows';
 
     if (!existsSync(workflowsDir)) {
-      console.log(chalk.yellow('No workflows found. Run `marktoflow init` first.'));
+      console.log(chalk.yellow(t('cli:commands.workflow.noWorkflowsInit')));
       return;
     }
 
@@ -719,11 +725,11 @@ program
     const files = readdirSync(workflowsDir).filter((f) => f.endsWith('.md'));
 
     if (files.length === 0) {
-      console.log(chalk.yellow('No workflows found.'));
+      console.log(chalk.yellow(t('cli:commands.workflow.noWorkflows')));
       return;
     }
 
-    console.log(chalk.bold('Available Workflows:'));
+    console.log(chalk.bold(t('cli:commands.workflow.available')));
     for (const file of files) {
       try {
         const { workflow } = await parseFile(join(workflowsDir, file));
@@ -735,11 +741,11 @@ program
   });
 
 // --- agent ---
-const agentCmd = program.command('agent').description('Agent management');
+const agentCmd = program.command('agent').description(t('cli:commands.agent.description'));
 
 agentCmd
   .command('list')
-  .description('List available agents')
+  .description(t('cli:commands.agent.listDescription'))
   .action(() => {
     const capabilitiesPath = join('.marktoflow', 'agents', 'capabilities.yaml');
     const agentsFromFile: string[] = [];
@@ -752,29 +758,29 @@ agentCmd
     const knownAgents = ['claude-code', 'opencode', 'ollama', 'codex', 'gemini-cli'];
     const allAgents = Array.from(new Set([...agentsFromFile, ...knownAgents]));
 
-    console.log(chalk.bold('Available Agents:'));
+    console.log(chalk.bold(t('cli:commands.agent.available')));
     for (const agent of allAgents) {
       const status = agentsFromFile.includes(agent)
-        ? chalk.green('Registered')
-        : chalk.yellow('Not configured');
+        ? chalk.green(t('cli:commands.agent.registered'))
+        : chalk.yellow(t('cli:commands.agent.notConfigured'));
       console.log(`  ${chalk.cyan(agent)}: ${status}`);
     }
   });
 
 agentCmd
   .command('info <agent>')
-  .description('Show agent information')
+  .description(t('cli:commands.agent.infoDescription'))
   .action((agent) => {
     const capabilitiesPath = join('.marktoflow', 'agents', 'capabilities.yaml');
     if (!existsSync(capabilitiesPath)) {
-      console.log(chalk.yellow('No capabilities file found. Run `marktoflow init` first.'));
+      console.log(chalk.yellow(t('cli:commands.agent.noCapabilities')));
       process.exit(1);
     }
     const content = readFileSync(capabilitiesPath, 'utf8');
     const data = parseYaml(content) as { agents?: Record<string, any> };
     const info = data?.agents?.[agent];
     if (!info) {
-      console.log(chalk.red(`Agent not found: ${agent}`));
+      console.log(chalk.red(t('cli:commands.agent.notFound', { agent })));
       process.exit(1);
     }
     console.log(chalk.bold(agent));
@@ -793,24 +799,24 @@ agentCmd
   });
 
 // --- tools ---
-const toolsCmd = program.command('tools').description('Tool management');
+const toolsCmd = program.command('tools').description(t('cli:commands.tools.description'));
 toolsCmd
   .command('list')
-  .description('List available tools')
+  .description(t('cli:commands.tools.listDescription'))
   .action(() => {
     const registryPath =
       getConfig().tools?.registryPath ?? join('.marktoflow', 'tools', 'registry.yaml');
     if (!existsSync(registryPath)) {
-      console.log(chalk.yellow("No tool registry found. Run 'marktoflow init' first."));
+      console.log(chalk.yellow(t('cli:commands.tools.noRegistry')));
       return;
     }
     const registry = new ToolRegistry(registryPath);
     const tools = registry.listTools();
     if (tools.length === 0) {
-      console.log(chalk.yellow('No tools registered.'));
+      console.log(chalk.yellow(t('cli:commands.tools.noTools')));
       return;
     }
-    console.log(chalk.bold('Registered Tools:'));
+    console.log(chalk.bold(t('cli:commands.tools.registered')));
     for (const toolName of tools) {
       const definition = registry.getDefinition(toolName);
       const types = definition?.implementations.map((impl) => impl.type).join(', ') ?? '';
@@ -819,15 +825,15 @@ toolsCmd
   });
 
 // --- credentials ---
-const credentialsCmd = program.command('credentials').description('Credential management');
+const credentialsCmd = program.command('credentials').description(t('cli:commands.credentials.description'));
 
 credentialsCmd
   .command('list')
-  .description('List stored credentials')
-  .option('--state-dir <path>', 'State directory', join('.marktoflow', 'credentials'))
-  .option('--backend <backend>', 'Encryption backend (aes-256-gcm, fernet, age, gpg)')
-  .option('--tag <tag>', 'Filter by tag')
-  .option('--show-expired', 'Include expired credentials')
+  .description(t('cli:commands.credentials.listDescription'))
+  .option('--state-dir <path>', t('cli:commands.credentials.stateDirOption'), join('.marktoflow', 'credentials'))
+  .option('--backend <backend>', t('cli:commands.credentials.backendOption'))
+  .option('--tag <tag>', t('cli:commands.credentials.tagOption'))
+  .option('--show-expired', t('cli:commands.credentials.showExpiredOption'))
   .action((options) => {
     try {
       const stateDir = options.stateDir;
@@ -836,11 +842,11 @@ credentialsCmd
       const credentials = manager.list(options.tag, options.showExpired);
 
       if (credentials.length === 0) {
-        console.log(chalk.yellow('No credentials found.'));
+        console.log(chalk.yellow(t('cli:commands.credentials.noCredentials')));
         return;
       }
 
-      console.log(chalk.bold(`Credentials (${credentials.length}):\n`));
+      console.log(chalk.bold(t('cli:commands.credentials.count', { count: credentials.length }) + '\n'));
       for (const cred of credentials) {
         const expired = cred.expiresAt && cred.expiresAt < new Date();
         const status = expired ? chalk.red(' [EXPIRED]') : '';
@@ -860,26 +866,26 @@ credentialsCmd
         console.log();
       }
     } catch (error) {
-      console.log(chalk.red(`Failed to list credentials: ${error}`));
+      console.log(chalk.red(t('cli:commands.credentials.listFailed', { error: String(error) })));
       process.exit(1);
     }
   });
 
 credentialsCmd
   .command('verify')
-  .description('Verify credential encryption is working')
-  .option('--state-dir <path>', 'State directory', join('.marktoflow', 'credentials'))
-  .option('--backend <backend>', 'Encryption backend (aes-256-gcm, fernet, age, gpg)')
+  .description(t('cli:commands.credentials.verifyDescription'))
+  .option('--state-dir <path>', t('cli:commands.credentials.stateDirOption'), join('.marktoflow', 'credentials'))
+  .option('--backend <backend>', t('cli:commands.credentials.backendOption'))
   .action((options) => {
     try {
       const stateDir = options.stateDir;
       const backend = (options.backend as EncryptionBackend) ?? undefined;
 
-      console.log(chalk.bold('Credential Encryption Verification\n'));
+      console.log(chalk.bold(t('cli:commands.credentials.verifyTitle') + '\n'));
 
       // Show available backends
       const backends = getAvailableBackends();
-      console.log(chalk.bold('Available backends:'));
+      console.log(chalk.bold(t('cli:commands.credentials.availableBackends')));
       for (const b of backends) {
         const isDefault = b === EncryptionBackend.AES_256_GCM;
         const marker = isDefault ? chalk.green(' (default)') : '';
@@ -893,14 +899,14 @@ credentialsCmd
       const testValue = `verify-test-${Date.now()}`;
       const testName = `__verify_test_${Date.now()}`;
 
-      console.log('Testing encrypt/decrypt round-trip...');
+      console.log(t('cli:commands.credentials.testingRoundTrip'));
       manager.set({ name: testName, value: testValue, tags: ['__test'] });
       const decrypted = manager.get(testName);
 
       if (decrypted === testValue) {
-        console.log(chalk.green('  Round-trip: PASS'));
+        console.log(chalk.green('  ' + t('cli:commands.credentials.roundTripPass')));
       } else {
-        console.log(chalk.red('  Round-trip: FAIL'));
+        console.log(chalk.red('  ' + t('cli:commands.credentials.roundTripFail')));
         console.log(chalk.red(`    Expected: ${testValue}`));
         console.log(chalk.red(`    Got: ${decrypted}`));
         process.exit(1);
@@ -909,52 +915,52 @@ credentialsCmd
       // Verify stored value is encrypted (not plain text)
       const raw = manager.get(testName, false);
       if (raw !== testValue) {
-        console.log(chalk.green('  Encryption: PASS (stored value is encrypted)'));
+        console.log(chalk.green('  ' + t('cli:commands.credentials.encryptionPass')));
       } else {
-        console.log(chalk.red('  Encryption: FAIL (stored value is plain text)'));
+        console.log(chalk.red('  ' + t('cli:commands.credentials.encryptionFail')));
         process.exit(1);
       }
 
       // Cleanup test credential
       manager.delete(testName);
-      console.log(chalk.green('\n  All checks passed.'));
+      console.log(chalk.green('\n  ' + t('cli:commands.credentials.allChecksPassed')));
 
       // Show credential count
       const credentials = manager.list();
       console.log(`\n  Stored credentials: ${credentials.length}`);
     } catch (error) {
-      console.log(chalk.red(`Verification failed: ${error}`));
+      console.log(chalk.red(t('cli:commands.credentials.verifyFailed', { error: String(error) })));
       process.exit(1);
     }
   });
 
 // --- schedule ---
-const scheduleCmd = program.command('schedule').description('Scheduler management');
+const scheduleCmd = program.command('schedule').description(t('cli:commands.schedule.description'));
 scheduleCmd
   .command('list')
-  .description('List scheduled workflows')
+  .description(t('cli:commands.schedule.listDescription'))
   .action(() => {
     const scheduler = new Scheduler();
     const jobs = scheduler.listJobs();
     if (jobs.length === 0) {
-      console.log(chalk.yellow('No scheduled workflows found.'));
-      console.log('Add schedule triggers to your workflows to enable scheduling.');
+      console.log(chalk.yellow(t('cli:commands.schedule.noScheduled')));
+      console.log(t('cli:commands.schedule.addTriggerHint'));
       return;
     }
-    console.log(chalk.bold('Scheduled Workflows:'));
+    console.log(chalk.bold(t('cli:commands.schedule.scheduled')));
     for (const job of jobs) {
       console.log(`  ${chalk.cyan(job.id)} ${job.workflowPath} (${job.schedule})`);
     }
   });
 
 // --- bundle ---
-const bundleCmd = program.command('bundle').description('Workflow bundle commands');
+const bundleCmd = program.command('bundle').description(t('cli:commands.bundle.description'));
 bundleCmd
   .command('list [path]')
-  .description('List workflow bundles in a directory')
+  .description(t('cli:commands.bundle.listDescription'))
   .action((path = '.') => {
     if (!existsSync(path)) {
-      console.log(chalk.red(`Path not found: ${path}`));
+      console.log(chalk.red(t('cli:commands.bundle.pathNotFound', { path })));
       process.exit(1);
     }
     const entries = readdirSync(path, { withFileTypes: true });
@@ -965,10 +971,10 @@ bundleCmd
       if (isBundle(fullPath)) bundles.push(fullPath);
     }
     if (bundles.length === 0) {
-      console.log(chalk.yellow(`No bundles found in ${path}`));
+      console.log(chalk.yellow(t('cli:commands.bundle.noBundles', { path })));
       return;
     }
-    console.log(chalk.bold('Bundles:'));
+    console.log(chalk.bold(t('cli:commands.bundle.bundles')));
     for (const bundlePath of bundles) {
       console.log(`  ${chalk.cyan(bundlePath)}`);
     }
@@ -976,10 +982,10 @@ bundleCmd
 
 bundleCmd
   .command('info <path>')
-  .description('Show information about a workflow bundle')
+  .description(t('cli:commands.bundle.infoDescription'))
   .action(async (path) => {
     if (!isBundle(path)) {
-      console.log(chalk.red(`Not a valid bundle: ${path}`));
+      console.log(chalk.red(t('cli:commands.bundle.notValid', { path })));
       process.exit(1);
     }
     const bundle = new WorkflowBundle(path);
@@ -993,29 +999,29 @@ bundleCmd
 
 bundleCmd
   .command('validate <path>')
-  .description('Validate a workflow bundle')
+  .description(t('cli:commands.bundle.validateDescription'))
   .action(async (path) => {
     if (!isBundle(path)) {
-      console.log(chalk.red(`Not a valid bundle: ${path}`));
+      console.log(chalk.red(t('cli:commands.bundle.notValid', { path })));
       process.exit(1);
     }
     try {
       const bundle = new WorkflowBundle(path);
       await bundle.loadWorkflow();
-      console.log(chalk.green(`Bundle '${bundle.name}' is valid.`));
+      console.log(chalk.green(t('cli:commands.bundle.valid', { name: bundle.name })));
     } catch (error) {
-      console.log(chalk.red(`Bundle validation failed: ${error}`));
+      console.log(chalk.red(t('cli:commands.bundle.validationFailed', { error: String(error) })));
       process.exit(1);
     }
   });
 
 bundleCmd
   .command('run <path>')
-  .description('Run a workflow bundle')
-  .option('-i, --input <key=value...>', 'Input parameters')
+  .description(t('cli:commands.bundle.runDescription'))
+  .option('-i, --input <key=value...>', t('cli:commands.run.inputOption'))
   .action(async (path, options) => {
     if (!isBundle(path)) {
-      console.log(chalk.red(`Not a valid bundle: ${path}`));
+      console.log(chalk.red(t('cli:commands.bundle.notValid', { path })));
       process.exit(1);
     }
     const bundle = new WorkflowBundle(path);
@@ -1036,22 +1042,22 @@ bundleCmd
     registry.registerTools(workflow.tools);
 
     const result = await engine.execute(workflow, inputs, registry, createSDKStepExecutor());
-    console.log(chalk.bold(`Bundle completed: ${result.status}`));
+    console.log(chalk.bold(t('cli:commands.bundle.completed', { status: result.status })));
   });
 
 // --- template ---
-const templateCmd = program.command('template').description('Workflow template commands');
+const templateCmd = program.command('template').description(t('cli:commands.template.description'));
 templateCmd
   .command('list')
-  .description('List workflow templates')
+  .description(t('cli:commands.template.listDescription'))
   .action(() => {
     const registry = new TemplateRegistry();
     const templates = registry.list();
     if (!templates.length) {
-      console.log(chalk.yellow('No templates found.'));
+      console.log(chalk.yellow(t('cli:commands.template.noTemplates')));
       return;
     }
-    console.log(chalk.bold('Templates:'));
+    console.log(chalk.bold(t('cli:commands.template.templates')));
     for (const template of templates) {
       console.log(`  ${chalk.cyan(template.id)}: ${template.name}`);
     }
@@ -1060,11 +1066,11 @@ templateCmd
 // --- connect ---
 program
   .command('connect <service>')
-  .description('Connect a service (OAuth flow)')
-  .option('--client-id <id>', 'OAuth client ID')
-  .option('--client-secret <secret>', 'OAuth client secret')
-  .option('--tenant-id <tenant>', 'Microsoft tenant ID (for Outlook)')
-  .option('--port <port>', 'Port for OAuth callback server (default: 8484)', '8484')
+  .description(t('cli:commands.connect.description'))
+  .option('--client-id <id>', t('cli:commands.connect.clientIdOption'))
+  .option('--client-secret <secret>', t('cli:commands.connect.clientSecretOption'))
+  .option('--tenant-id <tenant>', t('cli:commands.connect.tenantIdOption'))
+  .option('--port <port>', t('cli:commands.connect.portOption'), '8484')
   .action(async (service, options) => {
     const serviceLower = service.toLowerCase();
     console.log(chalk.bold(`Connecting ${service}...`));
@@ -1485,4 +1491,13 @@ program
 // Parse and Execute
 // ============================================================================
 
-program.parse();
+// Initialize i18n before parsing commands
+(async () => {
+  try {
+    await initI18n();
+  } catch (error) {
+    // Silently continue if i18n initialization fails
+    // The fallback translations will be used
+  }
+  program.parse();
+})();

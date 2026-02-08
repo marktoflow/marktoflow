@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlignStartVertical,
   AlignCenterVertical,
@@ -18,6 +19,7 @@ interface AlignmentToolsProps {
 }
 
 function AlignmentToolsComponent({ className }: AlignmentToolsProps) {
+  const { t } = useTranslation('gui');
   const { nodes, setNodes, saveCheckpoint } = useCanvasStore();
   const selectedNodes = nodes.filter((n) => n.selected);
   const hasSelection = selectedNodes.length >= 2;
@@ -112,51 +114,51 @@ function AlignmentToolsComponent({ className }: AlignmentToolsProps) {
     <div className={cn('flex items-center gap-0.5', className)}>
       <AlignButton
         icon={<AlignStartVertical className="w-4 h-4" />}
-        label="Align Left"
+        label={t('gui:alignment.alignLeft')}
         onClick={() => alignNodes('left')}
         disabled={!hasSelection}
       />
       <AlignButton
         icon={<AlignCenterVertical className="w-4 h-4" />}
-        label="Align Center Horizontally"
+        label={t('gui:alignment.alignCenterH')}
         onClick={() => alignNodes('center-h')}
         disabled={!hasSelection}
       />
       <AlignButton
         icon={<AlignEndVertical className="w-4 h-4" />}
-        label="Align Right"
+        label={t('gui:alignment.alignRight')}
         onClick={() => alignNodes('right')}
         disabled={!hasSelection}
       />
       <div className="w-px h-5 bg-border-default mx-0.5" />
       <AlignButton
         icon={<AlignStartHorizontal className="w-4 h-4" />}
-        label="Align Top"
+        label={t('gui:alignment.alignTop')}
         onClick={() => alignNodes('top')}
         disabled={!hasSelection}
       />
       <AlignButton
         icon={<AlignCenterHorizontal className="w-4 h-4" />}
-        label="Align Center Vertically"
+        label={t('gui:alignment.alignCenterV')}
         onClick={() => alignNodes('center-v')}
         disabled={!hasSelection}
       />
       <AlignButton
         icon={<AlignEndHorizontal className="w-4 h-4" />}
-        label="Align Bottom"
+        label={t('gui:alignment.alignBottom')}
         onClick={() => alignNodes('bottom')}
         disabled={!hasSelection}
       />
       <div className="w-px h-5 bg-border-default mx-0.5" />
       <AlignButton
         icon={<GripHorizontal className="w-4 h-4" />}
-        label="Distribute Horizontally"
+        label={t('gui:alignment.distributeH')}
         onClick={() => distributeNodes('horizontal')}
         disabled={selectedNodes.length < 3}
       />
       <AlignButton
         icon={<GripVertical className="w-4 h-4" />}
-        label="Distribute Vertically"
+        label={t('gui:alignment.distributeV')}
         onClick={() => distributeNodes('vertical')}
         disabled={selectedNodes.length < 3}
       />

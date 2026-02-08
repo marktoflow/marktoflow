@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Settings,
   Variable,
@@ -28,6 +29,7 @@ import { VersionHistory } from '../Versions/VersionHistory';
 type TabId = 'properties' | 'variables' | 'history' | 'versions';
 
 export function PropertiesPanel() {
+  const { t } = useTranslation('gui');
   const [activeTab, setActiveTab] = useState<TabId>('properties');
   const nodes = useCanvasStore((s) => s.nodes);
   const selectedNodes = useMemo(() => nodes.filter((n) => n.selected), [nodes]);
@@ -68,7 +70,7 @@ export function PropertiesPanel() {
       <button
         onClick={() => setPropertiesPanelOpen(true)}
         className="w-10 bg-bg-panel border-l border-border-default flex flex-col items-center py-4 gap-4 hover:bg-bg-hover transition-colors"
-        aria-label="Expand properties panel"
+        aria-label={t('gui:properties.expandPanel')}
       >
         <ChevronLeft className="w-4 h-4 text-text-secondary" />
         <Settings className="w-5 h-5 text-text-secondary" />
@@ -110,16 +112,18 @@ function PropertiesPanelContent({
   onClose,
   showClose,
 }: PropertiesPanelContentProps) {
+  const { t } = useTranslation('gui');
+
   return (
     <>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border-default">
-        <h2 className="text-sm font-medium text-text-primary">Properties</h2>
+        <h2 className="text-sm font-medium text-text-primary">{t('gui:properties.title')}</h2>
         {showClose && (
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-bg-hover transition-colors"
-            aria-label="Close properties panel"
+            aria-label={t('gui:properties.closePanel')}
           >
             <X className="w-4 h-4 text-text-secondary" />
           </button>
@@ -132,25 +136,25 @@ function PropertiesPanelContent({
           active={activeTab === 'properties'}
           onClick={() => setActiveTab('properties')}
           icon={<Settings className="w-4 h-4" />}
-          label="Properties"
+          label={t('gui:properties.tabs.properties')}
         />
         <TabButton
           active={activeTab === 'variables'}
           onClick={() => setActiveTab('variables')}
           icon={<Variable className="w-4 h-4" />}
-          label="Variables"
+          label={t('gui:properties.tabs.variables')}
         />
         <TabButton
           active={activeTab === 'history'}
           onClick={() => setActiveTab('history')}
           icon={<History className="w-4 h-4" />}
-          label="History"
+          label={t('gui:properties.tabs.history')}
         />
         <TabButton
           active={activeTab === 'versions'}
           onClick={() => setActiveTab('versions')}
           icon={<GitBranch className="w-4 h-4" />}
-          label="Versions"
+          label={t('gui:properties.tabs.versions')}
         />
       </div>
 
@@ -196,23 +200,25 @@ interface PropertiesTabProps {
 }
 
 function PropertiesTab({ selectedNodes, workflow }: PropertiesTabProps) {
+  const { t } = useTranslation('gui');
+
   if (selectedNodes.length === 0) {
     // Show workflow properties
     return (
       <div className="p-4 space-y-4">
-        <Section title="Workflow">
+        <Section title={t('gui:properties.workflow.title')}>
           {workflow ? (
             <div className="space-y-3">
-              <Property label="Name" value={workflow.metadata?.name || 'Untitled'} />
-              <Property label="Version" value={workflow.metadata?.version || '1.0.0'} />
-              <Property label="Author" value={workflow.metadata?.author || 'Unknown'} />
+              <Property label={t('gui:properties.workflow.name')} value={workflow.metadata?.name || 'Untitled'} />
+              <Property label={t('gui:properties.workflow.version')} value={workflow.metadata?.version || '1.0.0'} />
+              <Property label={t('gui:properties.workflow.author')} value={workflow.metadata?.author || 'Unknown'} />
               <Property
-                label="Steps"
+                label={t('gui:properties.workflow.steps')}
                 value={`${workflow.steps?.length || 0} steps`}
               />
             </div>
           ) : (
-            <div className="text-sm text-text-muted">No workflow loaded</div>
+            <div className="text-sm text-text-muted">{t('gui:properties.noWorkflowLoaded')}</div>
           )}
         </Section>
 
@@ -294,7 +300,7 @@ function PropertiesTab({ selectedNodes, workflow }: PropertiesTabProps) {
   return (
     <div className="p-4">
       <div className="text-sm text-text-secondary">
-        {selectedNodes.length} nodes selected
+        {selectedNodes.length} {t('gui:properties.nodesSelected')}
       </div>
     </div>
   );
@@ -305,6 +311,7 @@ interface VariablesTabProps {
 }
 
 function VariablesTab({ workflow }: VariablesTabProps) {
+  const { t } = useTranslation('gui');
   // Collect variables from workflow inputs and step outputs
   const variables = useMemo(() => {
     const vars: Array<{ name: string; value: string; type: string; source: 'input' | 'output' }> = [];
@@ -342,7 +349,7 @@ function VariablesTab({ workflow }: VariablesTabProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
         <Variable className="w-12 h-12 text-text-muted mb-3" />
-        <p className="text-sm text-text-secondary mb-1">No variables yet</p>
+        <p className="text-sm text-text-secondary mb-1">{t('gui:properties.noVariablesYet')}</p>
         <p className="text-xs text-text-muted">
           Define workflow inputs or add output variables to steps
         </p>
@@ -378,6 +385,7 @@ function VariablesTab({ workflow }: VariablesTabProps) {
 }
 
 function HistoryTab() {
+  const { t } = useTranslation('gui');
   const { runs, clearHistory } = useExecutionStore();
   const [selectedRun, setSelectedRun] = useState<ExecutionRun | null>(null);
 
@@ -391,7 +399,7 @@ function HistoryTab() {
         <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-bg-surface flex items-center justify-center">
           <History className="w-6 h-6 text-text-muted" />
         </div>
-        <p className="text-sm text-text-secondary mb-1">No execution history</p>
+        <p className="text-sm text-text-secondary mb-1">{t('gui:properties.noExecutionHistory')}</p>
         <p className="text-xs text-text-muted">
           Run a workflow to see execution history here
         </p>
@@ -438,7 +446,7 @@ function HistoryTab() {
             className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-error transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Clear History
+            {t('gui:properties.clearHistory')}
           </button>
         </div>
       )}
@@ -452,6 +460,7 @@ interface RunDetailViewProps {
 }
 
 function RunDetailView({ run, onBack }: RunDetailViewProps) {
+  const { t } = useTranslation('gui');
   const [showLogs, setShowLogs] = useState(false);
 
   return (
@@ -463,7 +472,7 @@ function RunDetailView({ run, onBack }: RunDetailViewProps) {
           className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary mb-2"
         >
           <ChevronRight className="w-3 h-3 rotate-180" />
-          Back to history
+          {t('gui:properties.backToHistory')}
         </button>
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-white truncate max-w-[180px]">
@@ -472,7 +481,7 @@ function RunDetailView({ run, onBack }: RunDetailViewProps) {
           <RunStatusBadge status={run.status} />
         </div>
         <div className="flex items-center justify-between mt-1 text-xs text-text-secondary">
-          <span>{run.duration ? formatDuration(run.duration) : 'Running...'}</span>
+          <span>{run.duration ? formatDuration(run.duration) : t('gui:properties.runningStatus')}</span>
           <span>{new Date(run.startTime).toLocaleString()}</span>
         </div>
       </div>
@@ -487,7 +496,7 @@ function RunDetailView({ run, onBack }: RunDetailViewProps) {
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Steps ({run.steps.length})
+          {t('gui:properties.stepsTab', { count: run.steps.length })}
         </button>
         <button
           onClick={() => setShowLogs(true)}
@@ -497,7 +506,7 @@ function RunDetailView({ run, onBack }: RunDetailViewProps) {
               : 'text-text-secondary hover:text-text-primary'
           }`}
         >
-          Logs ({run.logs.length})
+          {t('gui:properties.logsTab', { count: run.logs.length })}
         </button>
       </div>
 

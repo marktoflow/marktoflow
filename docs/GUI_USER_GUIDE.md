@@ -755,7 +755,7 @@ Settings are organized into six categories:
 
 | Category | Settings |
 |----------|----------|
-| **General** | Theme (dark / light / system) |
+| **General** | Theme (dark / light / system), Language (8 languages with RTL support) |
 | **Canvas** | Show grid, snap to grid, grid size, minimap, edge animation |
 | **Editor** | Auto-save toggle + interval, auto-validate, confirm before delete |
 | **Execution** | Confirm before execute, auto-scroll logs, execution notifications |
@@ -779,6 +779,14 @@ Click the theme button in the top-right corner to quickly switch between:
 - **Light Mode** - Better in bright environments
 
 For a three-option picker (Light / Dark / System), use the Settings panel's General section.
+
+### Language / Localization
+
+The GUI supports 8 languages. Change the language in **Settings > General > Language**:
+
+- English, 中文 (Chinese), हिन्दी (Hindi), Español (Spanish), Français (French), العربية (Arabic), 日本語 (Japanese), Português (Portuguese)
+
+Selecting Arabic automatically switches the entire UI to right-to-left (RTL) layout. All toolbar, sidebar, and panel positions adapt accordingly. Language preference is persisted to your settings file and applies on next load.
 
 ### Responsive Design
 

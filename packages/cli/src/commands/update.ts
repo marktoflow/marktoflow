@@ -11,6 +11,7 @@ import ora from 'ora';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
+import { t } from '../i18n.js';
 
 // ============================================================================
 // Available Coding Agents
@@ -94,7 +95,7 @@ async function executeUpdate(
   agent: CodingAgent
 ): Promise<boolean> {
   return new Promise((resolve) => {
-    const spinner = ora(`Running ${agent.name} to update workflow...`).start();
+    const spinner = ora(t('cli:commands.update.running', { agent: agent.name })).start();
 
     // Build the command based on the agent
     let args: string[];
@@ -125,7 +126,7 @@ async function executeUpdate(
         break;
 
       default:
-        spinner.fail(`Unknown agent: ${agent.id}`);
+        spinner.fail(t('cli:commands.update.unknownAgent', { agent: agent.id }));
         resolve(false);
         return;
     }
@@ -138,16 +139,16 @@ async function executeUpdate(
 
     process.on('close', (code) => {
       if (code === 0) {
-        spinner.succeed(`${agent.name} completed successfully`);
+        spinner.succeed(t('cli:commands.update.agentSuccess', { agent: agent.name }));
         resolve(true);
       } else {
-        spinner.fail(`${agent.name} failed with code ${code}`);
+        spinner.fail(t('cli:commands.update.agentFailed', { agent: agent.name, code: String(code) }));
         resolve(false);
       }
     });
 
     process.on('error', (error) => {
-      spinner.fail(`Failed to run ${agent.name}: ${error.message}`);
+      spinner.fail(t('cli:commands.update.agentError', { agent: agent.name, error: error.message }));
       resolve(false);
     });
   });
@@ -157,30 +158,30 @@ async function executeUpdate(
  * Main workflow update wizard
  */
 export async function runUpdateWizard(options: UpdateOptions) {
-  console.log(chalk.bold.cyan('\n🔄 marktoflow Workflow Updater\n'));
+  console.log(chalk.bold.cyan(`\n🔄 ${t('cli:commands.update.wizardTitle')}\n`));
 
   try {
     // Step 1: Validate workflow path
     const workflowPath = resolve(options.workflow);
     if (!existsSync(workflowPath)) {
-      console.error(chalk.red(`\n❌ Workflow not found: ${workflowPath}\n`));
+      console.error(chalk.red(`\n❌ ${t('cli:commands.update.notFound', { path: workflowPath })}\n`));
       process.exit(1);
     }
 
-    console.log(chalk.gray(`   Workflow: ${workflowPath}\n`));
+    console.log(chalk.gray(`   ${t('cli:commands.update.workflow', { path: workflowPath })}\n`));
 
     // Step 2: Read current workflow content
     const currentContent = readFileSync(workflowPath, 'utf-8');
     const lines = currentContent.split('\n');
     const previewLines = Math.min(10, lines.length);
 
-    console.log(chalk.cyan('Current workflow preview:'));
+    console.log(chalk.cyan(t('cli:commands.update.currentPreview')));
     console.log(chalk.gray('─'.repeat(60)));
     for (let i = 0; i < previewLines; i++) {
       console.log(chalk.gray(`${String(i + 1).padStart(3)}│ ${lines[i]}`));
     }
     if (lines.length > previewLines) {
-      console.log(chalk.gray(`   │ ... (${lines.length - previewLines} more lines)`));
+      console.log(chalk.gray(`   │ ... (${t('cli:commands.update.moreLines', { count: lines.length - previewLines })})`));
     }
     console.log(chalk.gray('─'.repeat(60) + '\n'));
 
@@ -188,14 +189,14 @@ export async function runUpdateWizard(options: UpdateOptions) {
     let updatePrompt: string;
     if (options.prompt) {
       updatePrompt = options.prompt;
-      console.log(chalk.cyan('Update request:'));
+      console.log(chalk.cyan(t('cli:commands.update.updateRequest')));
       console.log(chalk.white(`   ${updatePrompt}\n`));
     } else {
       updatePrompt = await input({
-        message: 'Describe how you want to update this workflow:',
+        message: t('cli:commands.update.describeUpdate'),
         validate: (value) => {
           if (!value || value.trim().length < 10) {
-            return 'Please provide a more detailed description (at least 10 characters)';
+            return t('cli:commands.update.descriptionValidation');
           }
           return true;
         },
@@ -203,24 +204,24 @@ export async function runUpdateWizard(options: UpdateOptions) {
     }
 
     // Step 4: Detect available coding agents
-    const spinner = ora('Detecting available coding agents...').start();
+    const spinner = ora(t('cli:commands.update.detectingAgents')).start();
     const availableAgents = await detectAvailableAgents();
     const usableAgents = availableAgents.filter((a) => a.available);
 
     if (usableAgents.length === 0) {
-      spinner.fail('No coding agents found');
-      console.log(chalk.yellow('\n⚠️  No supported coding agents detected on your system.\n'));
-      console.log(chalk.white('Supported agents:'));
+      spinner.fail(t('cli:commands.update.noAgentsFound'));
+      console.log(chalk.yellow(`\n⚠️  ${t('cli:commands.update.noAgentsDetected')}\n`));
+      console.log(chalk.white(t('cli:commands.update.supportedAgents')));
       console.log(chalk.gray('  • OpenCode  (https://opencode.ai)'));
       console.log(chalk.gray('  • Claude Code'));
       console.log(chalk.gray('  • Cursor    (https://cursor.sh)'));
       console.log(chalk.gray('  • Aider     (https://aider.chat)\n'));
-      console.log(chalk.white('Please install one of these agents and try again.\n'));
+      console.log(chalk.white(t('cli:commands.update.installAgent') + '\n'));
       process.exit(1);
     }
 
     spinner.succeed(
-      `Found ${usableAgents.length} available agent${usableAgents.length > 1 ? 's' : ''}`
+      t('cli:commands.update.foundAgents', { count: usableAgents.length })
     );
 
     // Step 5: Select coding agent
@@ -228,17 +229,17 @@ export async function runUpdateWizard(options: UpdateOptions) {
     if (options.agent) {
       const agent = usableAgents.find((a) => a.id === options.agent);
       if (!agent) {
-        console.error(chalk.red(`\n❌ Agent "${options.agent}" not found or not available\n`));
-        console.log(chalk.white('Available agents:'));
+        console.error(chalk.red(`\n❌ ${t('cli:commands.update.agentNotFound', { agent: options.agent })}\n`));
+        console.log(chalk.white(t('cli:commands.update.availableAgents')));
         usableAgents.forEach((a) => console.log(chalk.gray(`  • ${a.id} (${a.name})`)));
         console.log();
         process.exit(1);
       }
       selectedAgent = agent;
-      console.log(chalk.cyan(`\n✨ Using agent: ${selectedAgent.name}\n`));
+      console.log(chalk.cyan(`\n✨ ${t('cli:commands.update.usingAgent', { agent: selectedAgent.name })}\n`));
     } else {
       const agentChoice = await select({
-        message: 'Select a coding agent to perform the update:',
+        message: t('cli:commands.update.selectAgent'),
         choices: usableAgents.map((agent) => ({
           name: `${agent.name} (${agent.command})`,
           value: agent.id,
@@ -249,45 +250,45 @@ export async function runUpdateWizard(options: UpdateOptions) {
 
     // Step 6: Confirm before execution
     const confirmed = await confirm({
-      message: `Proceed with updating ${workflowPath} using ${selectedAgent.name}?`,
+      message: t('cli:commands.update.confirmUpdate', { path: workflowPath, agent: selectedAgent.name }),
       default: true,
     });
 
     if (!confirmed) {
-      console.log(chalk.yellow('\n❌ Update cancelled\n'));
+      console.log(chalk.yellow(`\n❌ ${t('cli:commands.update.cancelled')}\n`));
       return;
     }
 
     // Step 7: Backup the original file
     const backupPath = `${workflowPath}.backup`;
     writeFileSync(backupPath, currentContent, 'utf-8');
-    console.log(chalk.gray(`\n   Backup created: ${backupPath}`));
+    console.log(chalk.gray(`\n   ${t('cli:commands.update.backupCreated', { path: backupPath })}`));
 
     // Step 8: Execute the update
     console.log();
     const success = await executeUpdate(workflowPath, updatePrompt, selectedAgent);
 
     if (success) {
-      console.log(chalk.green.bold('\n✅ Workflow updated successfully!\n'));
-      console.log(chalk.gray(`   Updated: ${workflowPath}`));
-      console.log(chalk.gray(`   Backup:  ${backupPath}\n`));
+      console.log(chalk.green.bold(`\n✅ ${t('cli:commands.update.success')}\n`));
+      console.log(chalk.gray(`   ${t('cli:commands.update.updatedLabel')}: ${workflowPath}`));
+      console.log(chalk.gray(`   ${t('cli:commands.update.backupLabel')}:  ${backupPath}\n`));
 
       // Show next steps
-      console.log(chalk.cyan('📋 Next steps:\n'));
+      console.log(chalk.cyan(`📋 ${t('cli:commands.update.nextSteps')}:\n`));
       console.log(
-        chalk.white(`   1. Review changes: ${chalk.cyan(`diff ${backupPath} ${workflowPath}`)}`)
+        chalk.white(`   1. ${t('cli:commands.update.reviewChanges')}: ${chalk.cyan(`diff ${backupPath} ${workflowPath}`)}`)
       );
       console.log(
-        chalk.white(`   2. Test workflow: ${chalk.cyan(`marktoflow run ${workflowPath}`)}`)
+        chalk.white(`   2. ${t('cli:commands.update.testWorkflow')}: ${chalk.cyan(`marktoflow run ${workflowPath}`)}`)
       );
-      console.log(chalk.white(`   3. Remove backup: ${chalk.cyan(`rm ${backupPath}`)}\n`));
+      console.log(chalk.white(`   3. ${t('cli:commands.update.removeBackup')}: ${chalk.cyan(`rm ${backupPath}`)}\n`));
     } else {
-      console.log(chalk.red.bold('\n❌ Workflow update failed\n'));
-      console.log(chalk.white(`   Original preserved at: ${backupPath}\n`));
+      console.log(chalk.red.bold(`\n❌ ${t('cli:commands.update.failed')}\n`));
+      console.log(chalk.white(`   ${t('cli:commands.update.originalPreserved', { path: backupPath })}\n`));
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes('User force closed')) {
-      console.log(chalk.yellow('\n❌ Update cancelled\n'));
+      console.log(chalk.yellow(`\n❌ ${t('cli:commands.update.cancelled')}\n`));
       return;
     }
     throw error;
@@ -298,9 +299,9 @@ export async function runUpdateWizard(options: UpdateOptions) {
  * List available coding agents
  */
 export async function listAgents() {
-  console.log(chalk.bold.cyan('\n🤖 Coding Agents\n'));
+  console.log(chalk.bold.cyan(`\n🤖 ${t('cli:commands.update.agentsTitle')}\n`));
 
-  const spinner = ora('Detecting agents...').start();
+  const spinner = ora(t('cli:commands.update.detectingAgents')).start();
   const agents = await detectAvailableAgents();
   spinner.stop();
 

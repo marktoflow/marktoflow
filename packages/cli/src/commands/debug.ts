@@ -20,6 +20,7 @@ import {
   createExecutionContext,
   createStepResult,
 } from '@marktoflow/core';
+import { t } from '../i18n.js';
 
 // Re-export SDKRegistryLike type from engine
 export interface SDKRegistryLike {
@@ -96,11 +97,11 @@ export class WorkflowDebugger {
    * Start interactive debugging session
    */
   async debug(): Promise<void> {
-    console.log(chalk.bold.cyan('\n🐛 Debug Mode\n'));
-    console.log(`Workflow: ${chalk.cyan(this.workflow.metadata.name)}`);
-    console.log(`Steps: ${this.workflow.steps.length}`);
+    console.log(chalk.bold.cyan(`\n${t('cli:commands.debug.title')}\n`));
+    console.log(`${t('cli:commands.debug.workflowLabel')} ${chalk.cyan(this.workflow.metadata.name)}`);
+    console.log(`${t('cli:commands.debug.stepsLabel')} ${this.workflow.steps.length}`);
     console.log(
-      `Breakpoints: ${this.state.breakpoints.size ? Array.from(this.state.breakpoints).join(', ') : 'none'}\n`
+      `${t('cli:commands.debug.breakpointsLabel')} ${this.state.breakpoints.size ? Array.from(this.state.breakpoints).join(', ') : t('cli:commands.debug.none')}\n`
     );
 
     // Show initial state
@@ -115,7 +116,7 @@ export class WorkflowDebugger {
       if (shouldPause) {
         console.log(
           chalk.yellow(
-            `\n⏸  Paused at step ${this.state.currentStepIndex + 1}/${this.workflow.steps.length}`
+            `\n${t('cli:commands.debug.pausedAtStep', { current: this.state.currentStepIndex + 1, total: this.workflow.steps.length })}`
           )
         );
         this.displayStep(currentStep);
@@ -136,7 +137,7 @@ export class WorkflowDebugger {
             break;
 
           case 'skip':
-            console.log(chalk.dim(`Skipped: ${currentStep.id}`));
+            console.log(chalk.dim(`${t('cli:commands.debug.skipped', { stepId: currentStep.id })}`));
             const skipResult = createStepResult(
               currentStep.id,
               StepStatus.SKIPPED,
@@ -164,7 +165,7 @@ export class WorkflowDebugger {
             break;
 
           case 'quit':
-            console.log(chalk.yellow('\n🛑 Debug session terminated by user'));
+            console.log(chalk.yellow(`\n${t('cli:commands.debug.terminated')}`));
             return;
         }
       } else {
@@ -183,7 +184,7 @@ export class WorkflowDebugger {
    */
   private async executeStep(step: WorkflowStep): Promise<void> {
     const startTime = Date.now();
-    console.log(chalk.cyan(`\n▶ Executing: ${step.id}`));
+    console.log(chalk.cyan(`\n${t('cli:commands.debug.executing', { stepId: step.id })}`));
 
     try {
       // Update context
@@ -211,14 +212,14 @@ export class WorkflowDebugger {
         retryCount: 0,
       };
 
-      console.log(chalk.green(`✓ ${step.id} completed in ${result.duration}ms`));
+      console.log(chalk.green(`${t('cli:commands.debug.stepCompleted', { stepId: step.id, duration: result.duration })}`));
 
       if (step.outputVariable) {
         console.log(chalk.dim(`  → ${step.outputVariable} = ${JSON.stringify(output, null, 2)}`));
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.log(chalk.red(`✗ ${step.id} failed: ${errorMsg}`));
+      console.log(chalk.red(`${t('cli:commands.debug.stepFailed', { stepId: step.id, error: errorMsg })}`));
 
       const failedStepStartedAt = new Date(startTime);
       const result = createStepResult(
@@ -242,11 +243,11 @@ export class WorkflowDebugger {
 
       // Ask if user wants to retry, skip, or abort
       const retryAction = await select({
-        message: 'Step failed. What would you like to do?',
+        message: t('cli:commands.debug.stepFailedPrompt'),
         choices: [
-          { name: 'Retry this step', value: 'retry' },
-          { name: 'Skip and continue', value: 'skip' },
-          { name: 'Abort debugging', value: 'abort' },
+          { name: t('cli:commands.debug.action.retry'), value: 'retry' },
+          { name: t('cli:commands.debug.action.skipAndContinue'), value: 'skip' },
+          { name: t('cli:commands.debug.action.abortDebugging'), value: 'abort' },
         ],
       });
 
@@ -254,7 +255,7 @@ export class WorkflowDebugger {
         // Retry - don't advance step index
         this.state.currentStepIndex--;
       } else if (retryAction === 'abort') {
-        throw new Error('Debug session aborted due to step failure');
+        throw new Error(t('cli:commands.debug.abortedDueToFailure'));
       }
       // Skip - step index will advance naturally
     }
@@ -265,15 +266,15 @@ export class WorkflowDebugger {
    */
   private async promptAction(): Promise<DebugAction> {
     const action = await select({
-      message: 'Debug action:',
+      message: t('cli:commands.debug.action.prompt'),
       choices: [
-        { name: 'Next - Execute current step', value: 'next' },
-        { name: 'Continue - Run until next breakpoint', value: 'continue' },
-        { name: 'Skip - Skip current step', value: 'skip' },
-        { name: 'Inspect - View variables', value: 'inspect' },
-        { name: 'Modify - Change input variables', value: 'modify' },
-        { name: 'Breakpoint - Manage breakpoints', value: 'breakpoint' },
-        { name: 'Quit - Stop debugging', value: 'quit' },
+        { name: t('cli:commands.debug.action.next'), value: 'next' },
+        { name: t('cli:commands.debug.action.continue'), value: 'continue' },
+        { name: t('cli:commands.debug.action.skip'), value: 'skip' },
+        { name: t('cli:commands.debug.action.inspect'), value: 'inspect' },
+        { name: t('cli:commands.debug.action.modify'), value: 'modify' },
+        { name: t('cli:commands.debug.action.breakpoint'), value: 'breakpoint' },
+        { name: t('cli:commands.debug.action.quit'), value: 'quit' },
       ],
     });
 
@@ -284,14 +285,14 @@ export class WorkflowDebugger {
    * Display current debugger state
    */
   private displayState(): void {
-    console.log(chalk.bold('Current State:'));
-    console.log(`  Step: ${this.state.currentStepIndex + 1}/${this.workflow.steps.length}`);
-    console.log(`  Variables: ${Object.keys(this.state.context.variables).length}`);
+    console.log(chalk.bold(t('cli:commands.debug.currentState')));
+    console.log(`  ${t('cli:commands.debug.stateStep', { current: this.state.currentStepIndex + 1, total: this.workflow.steps.length })}`);
+    console.log(`  ${t('cli:commands.debug.stateVariables', { count: Object.keys(this.state.context.variables).length })}`);
     console.log(
-      `  Completed: ${this.state.stepResults.filter((r) => r.status === StepStatus.COMPLETED).length}`
+      `  ${t('cli:commands.debug.stateCompleted', { count: this.state.stepResults.filter((r) => r.status === StepStatus.COMPLETED).length })}`
     );
     console.log(
-      `  Failed: ${this.state.stepResults.filter((r) => r.status === StepStatus.FAILED).length}`
+      `  ${t('cli:commands.debug.stateFailed', { count: this.state.stepResults.filter((r) => r.status === StepStatus.FAILED).length })}`
     );
   }
 
@@ -299,20 +300,20 @@ export class WorkflowDebugger {
    * Display current step details
    */
   private displayStep(step: WorkflowStep): void {
-    console.log(chalk.bold('\nCurrent Step:'));
-    console.log(`  ID: ${chalk.cyan(step.id)}`);
-    console.log(`  Action: ${chalk.cyan(step.action)}`);
+    console.log(chalk.bold(`\n${t('cli:commands.debug.currentStep')}`));
+    console.log(`  ${t('cli:commands.debug.stepId')} ${chalk.cyan(step.id)}`);
+    console.log(`  ${t('cli:commands.debug.stepAction')} ${chalk.cyan(step.action)}`);
     if (step.name) {
-      console.log(`  Name: ${step.name}`);
+      console.log(`  ${t('cli:commands.debug.stepName')} ${step.name}`);
     }
     if (Object.keys(step.inputs).length > 0) {
-      console.log(`  Inputs: ${JSON.stringify(step.inputs, null, 2)}`);
+      console.log(`  ${t('cli:commands.debug.stepInputs')} ${JSON.stringify(step.inputs, null, 2)}`);
     }
     if (step.outputVariable) {
-      console.log(`  Output Variable: ${chalk.cyan(step.outputVariable)}`);
+      console.log(`  ${t('cli:commands.debug.stepOutputVariable')} ${chalk.cyan(step.outputVariable)}`);
     }
     if (step.conditions && step.conditions.length > 0) {
-      console.log(`  Conditions: ${step.conditions.join(' && ')}`);
+      console.log(`  ${t('cli:commands.debug.stepConditions')} ${step.conditions.join(' && ')}`);
     }
   }
 
@@ -320,29 +321,29 @@ export class WorkflowDebugger {
    * Inspect current variables
    */
   private async inspectVariables(): Promise<void> {
-    console.log(chalk.bold('\n📊 Variables:\n'));
+    console.log(chalk.bold(`\n${t('cli:commands.debug.inspect.title')}\n`));
 
-    console.log(chalk.bold('Inputs:'));
+    console.log(chalk.bold(t('cli:commands.debug.inspect.inputs')));
     if (Object.keys(this.state.context.inputs).length === 0) {
-      console.log(chalk.dim('  (none)'));
+      console.log(chalk.dim(`  ${t('cli:commands.debug.none')}`));
     } else {
       for (const [key, value] of Object.entries(this.state.context.inputs)) {
         console.log(`  ${chalk.cyan(key)}: ${JSON.stringify(value, null, 2)}`);
       }
     }
 
-    console.log(chalk.bold('\nVariables:'));
+    console.log(chalk.bold(`\n${t('cli:commands.debug.inspect.variables')}`));
     if (Object.keys(this.state.context.variables).length === 0) {
-      console.log(chalk.dim('  (none)'));
+      console.log(chalk.dim(`  ${t('cli:commands.debug.none')}`));
     } else {
       for (const [key, value] of Object.entries(this.state.context.variables)) {
         console.log(`  ${chalk.cyan(key)}: ${JSON.stringify(value, null, 2)}`);
       }
     }
 
-    console.log(chalk.bold('\nStep Metadata:'));
+    console.log(chalk.bold(`\n${t('cli:commands.debug.inspect.stepMetadata')}`));
     if (Object.keys(this.state.context.stepMetadata).length === 0) {
-      console.log(chalk.dim('  (none)'));
+      console.log(chalk.dim(`  ${t('cli:commands.debug.none')}`));
     } else {
       for (const [stepId, metadata] of Object.entries(this.state.context.stepMetadata)) {
         const statusColor =
@@ -357,21 +358,21 @@ export class WorkflowDebugger {
       }
     }
 
-    await input({ message: '\nPress Enter to continue...' });
+    await input({ message: `\n${t('cli:commands.debug.pressEnter')}` });
   }
 
   /**
    * Modify input variables
    */
   private async modifyVariables(): Promise<void> {
-    console.log(chalk.bold('\n✏️  Modify Variables\n'));
+    console.log(chalk.bold(`\n${t('cli:commands.debug.modify.title')}\n`));
 
     const variableType = await select({
-      message: 'Which variable type to modify?',
+      message: t('cli:commands.debug.modify.whichType'),
       choices: [
-        { name: 'Input variables', value: 'inputs' },
-        { name: 'Workflow variables', value: 'variables' },
-        { name: 'Cancel', value: 'cancel' },
+        { name: t('cli:commands.debug.modify.inputVariables'), value: 'inputs' },
+        { name: t('cli:commands.debug.modify.workflowVariables'), value: 'variables' },
+        { name: t('cli:commands.debug.modify.cancel'), value: 'cancel' },
       ],
     });
 
@@ -382,12 +383,12 @@ export class WorkflowDebugger {
     const keys = Object.keys(targetObject);
 
     if (keys.length === 0) {
-      console.log(chalk.yellow('No variables to modify'));
+      console.log(chalk.yellow(t('cli:commands.debug.modify.noVariables')));
       return;
     }
 
     const key = await select({
-      message: 'Select variable to modify:',
+      message: t('cli:commands.debug.modify.selectVariable'),
       choices: keys.map((k) => ({
         name: `${k} = ${JSON.stringify(targetObject[k])}`,
         value: k,
@@ -396,15 +397,15 @@ export class WorkflowDebugger {
 
     const currentValue = targetObject[key];
     const newValue = await input({
-      message: `New value for ${key}:`,
+      message: t('cli:commands.debug.modify.newValue', { key }),
       default: JSON.stringify(currentValue),
     });
 
     try {
       targetObject[key] = JSON.parse(newValue);
-      console.log(chalk.green(`✓ Updated ${key}`));
+      console.log(chalk.green(t('cli:commands.debug.modify.updated', { key })));
     } catch (error) {
-      console.log(chalk.red('Invalid JSON. Treating as string.'));
+      console.log(chalk.red(t('cli:commands.debug.modify.invalidJson')));
       targetObject[key] = newValue;
     }
   }
@@ -413,15 +414,15 @@ export class WorkflowDebugger {
    * Manage breakpoints
    */
   private async manageBreakpoints(): Promise<void> {
-    console.log(chalk.bold('\n🔴 Manage Breakpoints\n'));
+    console.log(chalk.bold(`\n${t('cli:commands.debug.breakpoint.title')}\n`));
 
     const action = await select({
-      message: 'Breakpoint action:',
+      message: t('cli:commands.debug.breakpoint.prompt'),
       choices: [
-        { name: 'Add breakpoint', value: 'add' },
-        { name: 'Remove breakpoint', value: 'remove' },
-        { name: 'List breakpoints', value: 'list' },
-        { name: 'Cancel', value: 'cancel' },
+        { name: t('cli:commands.debug.breakpoint.add'), value: 'add' },
+        { name: t('cli:commands.debug.breakpoint.remove'), value: 'remove' },
+        { name: t('cli:commands.debug.breakpoint.list'), value: 'list' },
+        { name: t('cli:commands.debug.breakpoint.cancel'), value: 'cancel' },
       ],
     });
 
@@ -429,41 +430,41 @@ export class WorkflowDebugger {
 
     if (action === 'list') {
       if (this.state.breakpoints.size === 0) {
-        console.log(chalk.yellow('No breakpoints set'));
+        console.log(chalk.yellow(t('cli:commands.debug.breakpoint.noneSet')));
       } else {
-        console.log(chalk.bold('Breakpoints:'));
+        console.log(chalk.bold(t('cli:commands.debug.breakpoint.listTitle')));
         for (const bp of this.state.breakpoints) {
           console.log(`  • ${chalk.cyan(bp)}`);
         }
       }
-      await input({ message: '\nPress Enter to continue...' });
+      await input({ message: `\n${t('cli:commands.debug.pressEnter')}` });
       return;
     }
 
     if (action === 'add') {
       const stepId = await select({
-        message: 'Add breakpoint at step:',
+        message: t('cli:commands.debug.breakpoint.addAt'),
         choices: this.workflow.steps.map((s) => ({
           name: `${s.id} (${s.action})`,
           value: s.id,
         })),
       });
       this.state.breakpoints.add(stepId);
-      console.log(chalk.green(`✓ Breakpoint added at ${stepId}`));
+      console.log(chalk.green(t('cli:commands.debug.breakpoint.added', { stepId })));
     } else if (action === 'remove') {
       if (this.state.breakpoints.size === 0) {
-        console.log(chalk.yellow('No breakpoints to remove'));
+        console.log(chalk.yellow(t('cli:commands.debug.breakpoint.noneToRemove')));
         return;
       }
       const stepId = await select({
-        message: 'Remove breakpoint:',
+        message: t('cli:commands.debug.breakpoint.removePrompt'),
         choices: Array.from(this.state.breakpoints).map((bp) => ({
           name: bp,
           value: bp,
         })),
       });
       this.state.breakpoints.delete(stepId);
-      console.log(chalk.green(`✓ Breakpoint removed from ${stepId}`));
+      console.log(chalk.green(t('cli:commands.debug.breakpoint.removed', { stepId })));
     }
   }
 
@@ -471,7 +472,7 @@ export class WorkflowDebugger {
    * Display final summary
    */
   private displaySummary(): void {
-    console.log(chalk.bold.green('\n✓ Debug session complete\n'));
+    console.log(chalk.bold.green(`\n${t('cli:commands.debug.summary.complete')}\n`));
 
     const completed = this.state.stepResults.filter(
       (r) => r.status === StepStatus.COMPLETED
@@ -479,13 +480,13 @@ export class WorkflowDebugger {
     const failed = this.state.stepResults.filter((r) => r.status === StepStatus.FAILED).length;
     const skipped = this.state.stepResults.filter((r) => r.status === StepStatus.SKIPPED).length;
 
-    console.log(chalk.bold('Summary:'));
-    console.log(`  Total steps: ${this.workflow.steps.length}`);
-    console.log(`  ${chalk.green('✓')} Completed: ${completed}`);
-    console.log(`  ${chalk.red('✗')} Failed: ${failed}`);
-    console.log(`  ${chalk.yellow('⊘')} Skipped: ${skipped}`);
+    console.log(chalk.bold(t('cli:commands.debug.summary.title')));
+    console.log(`  ${t('cli:commands.debug.summary.totalSteps', { count: this.workflow.steps.length })}`);
+    console.log(`  ${chalk.green('✓')} ${t('cli:commands.debug.summary.completed', { count: completed })}`);
+    console.log(`  ${chalk.red('✗')} ${t('cli:commands.debug.summary.failed', { count: failed })}`);
+    console.log(`  ${chalk.yellow('⊘')} ${t('cli:commands.debug.summary.skipped', { count: skipped })}`);
 
-    console.log(chalk.bold('\nFinal Variables:'));
+    console.log(chalk.bold(`\n${t('cli:commands.debug.summary.finalVariables')}`));
     for (const [key, value] of Object.entries(this.state.context.variables)) {
       console.log(`  ${chalk.cyan(key)}: ${JSON.stringify(value)}`);
     }
