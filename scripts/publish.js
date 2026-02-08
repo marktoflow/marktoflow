@@ -120,7 +120,7 @@ function publishPackage(pkg, dryRun = false) {
   console.log(`\n📤 Publishing ${name}@${version}...`);
 
   const dryRunFlag = dryRun ? '--dry-run' : '';
-  const command = `npm publish --access public --tag alpha ${dryRunFlag}`;
+  const command = `npm publish --access public ${dryRunFlag}`;
 
   try {
     exec(command, pkgPath);
