@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Plus,
   Play,
@@ -15,6 +15,8 @@ import {
   Bot,
   ChevronDown,
   CheckCircle,
+  GripVertical,
+  X,
 } from 'lucide-react';
 import { useCanvas } from '../../hooks/useCanvas';
 import { useEditorStore } from '../../stores/editorStore';
@@ -23,6 +25,7 @@ import { getModKey } from '../../utils/platform';
 import { useAgentStore } from '../../stores/agentStore';
 import { ProviderSwitcher } from '../Settings/ProviderSwitcher';
 import { AlignmentTools } from './AlignmentTools';
+import { useLayoutStore } from '../../stores/layoutStore';
 
 interface ToolbarProps {
   onAddStep: () => void;
@@ -46,10 +49,35 @@ export function Toolbar({
   const modKey = getModKey();
   const { providers, activeProviderId, loadProviders } = useAgentStore();
   const [showProviderSwitcher, setShowProviderSwitcher] = useState(false);
+  const { toolbarVisible, toolbarPosition, setToolbarPosition, setToolbarVisible } = useLayoutStore();
 
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
   const hasSelection = selectedNodes.length > 0;
+
+  // Drag state
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (!toolbarRef.current) return;
+    isDragging.current = true;
+    const rect = toolbarRef.current.getBoundingClientRect();
+    dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    const x = e.clientX - dragOffset.current.x;
+    const y = e.clientY - dragOffset.current.y;
+    setToolbarPosition({ x, y });
+  }, [setToolbarPosition]);
+
+  const handlePointerUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
 
   // Load providers on mount
   useEffect(() => {
@@ -58,8 +86,36 @@ export function Toolbar({
 
   const activeProvider = providers.find((p) => p.id === activeProviderId);
 
+  if (!toolbarVisible) return null;
+
+  // Determine positioning style
+  const isDefaultPosition = toolbarPosition.x === 0 && toolbarPosition.y === 0;
+  const positionStyle: React.CSSProperties = isDefaultPosition
+    ? {}
+    : { left: toolbarPosition.x, top: toolbarPosition.y, transform: 'none' };
+  const positionClass = isDefaultPosition
+    ? 'absolute top-4 left-1/2 -translate-x-1/2'
+    : 'fixed';
+
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-1.5 bg-bg-panel/95 backdrop-blur border border-border-default rounded-lg shadow-lg">
+    <div
+      ref={toolbarRef}
+      className={`${positionClass} z-10 flex items-center gap-1 px-2 py-1.5 bg-bg-panel/95 backdrop-blur border border-border-default rounded-lg shadow-lg`}
+      style={positionStyle}
+    >
+      {/* Drag Handle */}
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-bg-hover text-text-muted"
+        title="Drag to reposition"
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+
+      <ToolbarDivider />
+
       {/* Add Step */}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
@@ -193,6 +249,17 @@ export function Toolbar({
           shortcut={`${modKey}S`}
         />
       )}
+
+      <ToolbarDivider />
+
+      {/* Hide Toolbar */}
+      <button
+        onClick={() => setToolbarVisible(false)}
+        className="p-1.5 rounded hover:bg-bg-hover text-text-muted hover:text-text-secondary transition-colors"
+        title="Hide toolbar"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
 
       {/* Provider Switcher Modal */}
       <ProviderSwitcher

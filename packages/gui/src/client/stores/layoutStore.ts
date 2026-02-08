@@ -14,6 +14,10 @@ interface LayoutState {
   // Current breakpoint (computed from window width)
   breakpoint: Breakpoint;
 
+  // Toolbar
+  toolbarVisible: boolean;
+  toolbarPosition: { x: number; y: number };
+
   // Actions
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
@@ -22,6 +26,9 @@ interface LayoutState {
   toggleMobileMenu: () => void;
   setMobileMenuOpen: (open: boolean) => void;
   setBreakpoint: (breakpoint: Breakpoint) => void;
+  setToolbarVisible: (visible: boolean) => void;
+  setToolbarPosition: (pos: { x: number; y: number }) => void;
+  toggleToolbar: () => void;
 
   // Close all panels (useful for mobile)
   closeAllPanels: () => void;
@@ -48,6 +55,8 @@ export const useLayoutStore = create<LayoutState>()(
       propertiesPanelOpen: true,
       mobileMenuOpen: false,
       breakpoint: 'desktop',
+      toolbarVisible: true,
+      toolbarPosition: { x: 0, y: 0 },
 
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -84,6 +93,10 @@ export const useLayoutStore = create<LayoutState>()(
         }
       },
 
+      setToolbarVisible: (visible) => set({ toolbarVisible: visible }),
+      setToolbarPosition: (pos) => set({ toolbarPosition: pos }),
+      toggleToolbar: () => set((state) => ({ toolbarVisible: !state.toolbarVisible })),
+
       closeAllPanels: () =>
         set({
           sidebarOpen: false,
@@ -97,6 +110,8 @@ export const useLayoutStore = create<LayoutState>()(
         // Don't persist breakpoint - it's computed from window
         sidebarOpen: state.sidebarOpen,
         propertiesPanelOpen: state.propertiesPanelOpen,
+        toolbarVisible: state.toolbarVisible,
+        toolbarPosition: state.toolbarPosition,
       }),
     }
   )
