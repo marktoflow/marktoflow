@@ -139,8 +139,8 @@ marktoflow run workflow.md --agent anthropic
 ```
 
 Supported providers:
-- `claude` or `claude-code`
-- `claude-agent`
+- `claude` or `claude-agent`
+- `openai`, `vllm`, or `openai-compatible`
 - `copilot` or `github-copilot`
 - `opencode`
 - `ollama`

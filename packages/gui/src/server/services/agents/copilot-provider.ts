@@ -70,11 +70,28 @@ export class CopilotProvider implements AgentProvider {
   private client: unknown = null;
   private model: string = 'gpt-4.1';
   private ready: boolean = false;
+  private available: boolean = false; // Track if SDK is available
   private error: string | undefined;
   private cliPath?: string;
   private cliUrl?: string;
   private cachedModels: string[] | null = null;
   private modelsFetchedAt: number = 0;
+
+  constructor() {
+    // Check SDK availability on construction (lightweight check)
+    this.checkAvailability();
+  }
+
+  private async checkAvailability(): Promise<void> {
+    try {
+      const sdkModule = await import(/* webpackIgnore: true */ '@github/copilot-sdk').catch(
+        () => null
+      );
+      this.available = !!(sdkModule && sdkModule.CopilotClient);
+    } catch {
+      this.available = false;
+    }
+  }
 
   async initialize(config: AgentConfig): Promise<void> {
     try {
@@ -112,23 +129,34 @@ export class CopilotProvider implements AgentProvider {
       // Start the client and test connectivity
       try {
         if (this.client) {
-          // Some SDK versions have start(), some don't (auto-start)
-          const client = this.client as { start?: () => Promise<void>; ping?: () => Promise<unknown> };
+          const client = this.client as {
+            start?: () => Promise<void>;
+            ping?: () => Promise<unknown>;
+            getState?: () => string;
+          };
+
+          // Call start() - this is required even with autoStart: true
           if (typeof client.start === 'function') {
             await client.start();
           }
+
+          // Wait a moment for connection to stabilize
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Test connectivity with ping
           if (typeof client.ping === 'function') {
             await client.ping();
           }
+
           this.ready = true;
           this.error = undefined;
 
           // Fetch available models asynchronously after successful init
           this.fetchAndCacheModels().catch(() => {});
         }
-      } catch (pingError) {
+      } catch (error) {
         this.ready = false;
-        this.error = `Cannot connect to GitHub Copilot CLI: ${pingError instanceof Error ? pingError.message : 'Unknown error'}`;
+        this.error = `Cannot connect to GitHub Copilot CLI: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
     } catch (err) {
       this.ready = false;
@@ -170,9 +198,10 @@ export class CopilotProvider implements AgentProvider {
     return this.ready;
   }
 
-  getStatus(): { ready: boolean; model?: string; error?: string } {
+  getStatus(): { ready: boolean; available?: boolean; model?: string; error?: string } {
     return {
       ready: this.ready,
+      available: this.available,
       model: this.model,
       error: this.error,
     };

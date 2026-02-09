@@ -947,12 +947,12 @@ steps:
 
 marktoflow supports AI-powered browser automation using either:
 
-1. **Custom AI Backend** - Use your existing GitHub Copilot or Claude Code SDK (no additional API costs)
+1. **Custom AI Backend** - Use your existing GitHub Copilot or Claude Agent SDK (no additional API costs)
 2. **Stagehand** - External AI automation service (requires separate API keys)
 
 ### Option 1: Custom AI Backend (Recommended)
 
-Use your existing GitHub Copilot or Claude Code integrations without additional API costs.
+Use your existing GitHub Copilot or Claude Agent integrations without additional API costs.
 
 **Advantages:**
 - No additional API costs beyond your existing Copilot/Claude subscription
@@ -981,30 +981,32 @@ tools:
     options:
       headless: true
       enableAI: true
-      aiBackend: 'copilot'  # or 'claude-code'
+      aiBackend: 'copilot'  # or 'openai'
       aiClient: '{{ tools.copilot }}'  # Reference to initialized AI client
       aiDebug: false
 ---
 ```
 
-**With Claude Code:**
+**With OpenAI:**
 
 ```yaml
 tools:
-  claude:
-    sdk: 'claude-code'
+  ai:
+    sdk: 'openai'
+    auth:
+      api_key: '${OPENAI_API_KEY}'
     options:
-      model: 'claude-sonnet-4'
+      model: 'gpt-4o'
 
   browser:
     sdk: 'playwright'
     options:
       enableAI: true
-      aiBackend: 'claude-code'
-      aiClient: '{{ tools.claude }}'
+      aiBackend: 'openai'
+      aiClient: '{{ tools.ai }}'
 ```
 
-**No Additional Setup Required** - Uses your existing GitHub Copilot subscription or Claude Code CLI.
+**No Additional Setup Required** - Uses your existing GitHub Copilot subscription or OpenAI API key.
 
 ### Option 2: Stagehand (Legacy)
 
@@ -1237,18 +1239,20 @@ workflow:
   name: 'AI-Powered Web Scraper'
 
 tools:
-  claude:
-    sdk: 'claude-code'
+  ai:
+    sdk: 'openai'
+    auth:
+      api_key: '${OPENAI_API_KEY}'
     options:
-      model: 'claude-sonnet-4'
+      model: 'gpt-4o'
 
   browser:
     sdk: 'playwright'
     options:
       headless: true
       enableAI: true
-      aiBackend: 'claude-code'
-      aiClient: '{{ tools.claude }}'
+      aiBackend: 'openai'
+      aiClient: '{{ tools.ai }}'
 ---
 
 ## Navigate to Page
@@ -1291,8 +1295,8 @@ action: browser.close
 
 ### Choosing Between Custom Backend and Stagehand
 
-**Use Custom AI Backend (Copilot/Claude Code) when:**
-- You already have GitHub Copilot or Claude Code subscriptions
+**Use Custom AI Backend (Copilot/Claude Agent) when:**
+- You already have GitHub Copilot or Claude Agent subscriptions
 - You want to minimize API costs (no additional charges)
 - You prefer native TypeScript integration
 - You want faster response times (direct SDK communication)

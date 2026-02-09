@@ -83,7 +83,13 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
   const handleActivate = async () => {
     if (!selectedProviderId) return;
     const provider = providers.find((p) => p.id === selectedProviderId);
-    if (!provider || provider.status !== 'ready') return;
+    if (!provider) return;
+
+    // Allow SDK providers and 'available' status to be activated
+    const canActivate = provider.status === 'ready' ||
+                        provider.status === 'available' ||
+                        (provider.authType === 'sdk' && provider.status === 'needs_config');
+    if (!canActivate) return;
 
     const config = configData.model ? { model: configData.model } : undefined;
     const success = await setProvider(selectedProviderId, config);
@@ -98,6 +104,8 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     switch (status) {
       case 'ready':
         return <div className="w-2 h-2 rounded-full bg-green-500" />;
+      case 'available':
+        return <div className="w-2 h-2 rounded-full bg-blue-500" />;
       case 'needs_config':
         return <div className="w-2 h-2 rounded-full bg-yellow-500" />;
       case 'unavailable':
@@ -111,6 +119,8 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     switch (status) {
       case 'ready':
         return 'Ready';
+      case 'available':
+        return 'Available';
       case 'needs_config':
         return 'Needs Configuration';
       case 'unavailable':
@@ -194,9 +204,11 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
             <Button
               variant="primary"
               onClick={handleActivate}
-              disabled={isLoading || provider.status !== 'ready'}
+              disabled={isLoading || (provider.status !== 'ready' && provider.status !== 'available' && provider.authType !== 'sdk')}
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Activate'}
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> :
+               provider.status === 'ready' ? 'Activate' :
+               provider.status === 'available' ? 'Connect & Activate' : 'Connect & Activate'}
             </Button>
           ) : (
             <Button variant="primary" onClick={handleConfigSave} disabled={isLoading}>
@@ -231,8 +243,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
         ) : (
           <div className="space-y-2">
             {providers.map((provider) => {
-              const isDisabled = provider.status === 'unavailable' ||
-                (provider.status !== 'ready' && provider.status !== 'needs_config');
+              const isDisabled = provider.status === 'unavailable';
               return (
               <button
                 key={provider.id}
@@ -361,6 +372,7 @@ function SDKProviderConfig({
   setConfigData: (data: { apiKey: string; baseUrl: string; model: string }) => void;
 }) {
   const isConnected = provider.status === 'ready';
+  const isAvailable = provider.status === 'available';
 
   return (
     <>
@@ -368,11 +380,13 @@ function SDKProviderConfig({
       <div className={`flex items-center gap-2 p-3 rounded border ${
         isConnected
           ? 'bg-green-500/10 border-green-500/30'
+          : isAvailable
+          ? 'bg-blue-500/10 border-blue-500/30'
           : 'bg-yellow-500/10 border-yellow-500/30'
       }`}>
-        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'}`} />
-        <span className={`text-sm ${isConnected ? 'text-green-400' : 'text-yellow-400'}`}>
-          {isConnected ? 'Connected and ready' : 'Not connected'}
+        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : isAvailable ? 'bg-blue-500' : 'bg-yellow-500'}`} />
+        <span className={`text-sm ${isConnected ? 'text-green-400' : isAvailable ? 'text-blue-400' : 'text-yellow-400'}`}>
+          {isConnected ? 'Connected and ready' : isAvailable ? 'Available - Click Connect below' : 'Not connected'}
         </span>
       </div>
 

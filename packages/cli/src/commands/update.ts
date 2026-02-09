@@ -46,9 +46,9 @@ async function detectAvailableAgents(): Promise<CodingAgent[]> {
       available: false,
     },
     {
-      id: 'claude-code',
-      name: 'Claude Code',
-      command: 'claude-code',
+      id: 'claude-agent',
+      name: 'Claude Agent',
+      command: 'claude',
       available: false,
     },
     {
@@ -109,9 +109,9 @@ async function executeUpdate(
         ];
         break;
 
-      case 'claude-code':
-        // Claude Code: Pass prompt with file context
-        args = ['--file', workflowPath, '--prompt', `Update this workflow: ${updatePrompt}`];
+      case 'claude-agent':
+        // Claude Agent: Pass prompt with file context
+        args = ['-p', `Update this workflow file ${workflowPath}: ${updatePrompt}`];
         break;
 
       case 'cursor':

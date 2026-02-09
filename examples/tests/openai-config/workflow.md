@@ -1,9 +1,9 @@
 ---
 workflow:
-  id: claude-code-example
-  name: 'Claude Code Example Workflow'
+  id: openai-example
+  name: 'OpenAI Example Workflow'
   version: '2.0.0'
-  description: 'Demonstrates using Claude Code for code analysis and generation'
+  description: 'Demonstrates using OpenAI-compatible APIs for code analysis and generation'
   author: 'marktoflow'
   tags:
     - ai
@@ -11,7 +11,7 @@ workflow:
     - generation
 
 # Agent is selected via --agent flag or GUI
-# Supported agents: claude-code, copilot, opencode, ollama
+# Supported agents: openai, vllm, claude-agent, copilot, opencode, ollama
 # No explicit tool configuration needed - use agent.* actions
 
 inputs:
@@ -38,13 +38,13 @@ outputs:
     description: 'Generated documentation'
 ---
 
-# Claude Code Example Workflow
+# OpenAI Example Workflow
 
-This workflow demonstrates the Claude Code adapter's capabilities.
+This workflow demonstrates the OpenAI adapter's capabilities.
 
 ## Step 1: Analyze Code Quality
 
-Use Claude's advanced reasoning to analyze code.
+Use the AI model to analyze code.
 
 ```yaml
 action: agent.analyze
@@ -173,35 +173,17 @@ The workflow produces:
 3. **documentation** - Complete documentation
 4. **final_report** - Summary report in markdown
 
-All generated using Claude's advanced reasoning!
-
 ## Usage
 
 ```bash
-# Run the workflow
-marktoflow run examples/claude-code-config/workflow.md
+# Run with OpenAI
+marktoflow run examples/tests/openai-config/workflow.md --agent openai
+
+# Run with VLLM (local endpoint)
+marktoflow run examples/tests/openai-config/workflow.md --agent vllm
 
 # With custom code to analyze
-marktoflow run examples/claude-code-config/workflow.md \
+marktoflow run examples/tests/openai-config/workflow.md \
+  --agent openai \
   --input code_to_analyze="def add(a, b): return a + b"
 ```
-
-## Expected Output
-
-The workflow will:
-1. Identify issues like:
-   - Using `range(len())` instead of enumerate
-   - Checking `!= None` instead of `is not None`
-   - Not handling empty lists
-   - Missing type hints and docstrings
-
-2. Generate improved code with:
-   - List comprehension for better performance
-   - Proper None checking
-   - Type hints
-   - Comprehensive docstring
-   - Edge case handling
-
-3. Create professional documentation
-
-4. Provide a complete summary report

@@ -393,16 +393,16 @@ Get the status of all available AI providers.
 **Response:**
 ```json
 {
-  "activeProvider": "claude-code",
+  "activeProvider": "claude-agent",
   "providers": [
     {
-      "id": "claude-code",
-      "name": "Claude Code (SDK)",
+      "id": "claude-agent",
+      "name": "Claude Agent (SDK)",
       "status": "ready",
       "isActive": true,
       "description": "Model: claude-sonnet-4-20250514",
       "authType": "sdk",
-      "authInstructions": "Authenticate using the Claude CLI: run \"claude login\" in your terminal.",
+      "authInstructions": "Set ANTHROPIC_API_KEY environment variable or authenticate using the Claude CLI.",
       "availableModels": ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"]
     },
     {
@@ -484,7 +484,7 @@ Set and configure the active AI provider.
 **Parameters:**
 | Name | Type | Description |
 |------|------|-------------|
-| `providerId` | string | Provider ID: `claude-code`, `copilot`, `codex`, `claude`, `ollama`, `demo` |
+| `providerId` | string | Provider ID: `claude-agent`, `openai`, `copilot`, `codex`, `ollama`, `demo` |
 
 **Request Body:**
 ```json

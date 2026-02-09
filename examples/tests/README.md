@@ -7,14 +7,20 @@ This directory contains workflow examples that demonstrate specific features, te
 ### Claude Agent SDK (`claude-agent-sdk/`)
 Demonstrates the full Claude Agent SDK with agentic capabilities, specialized subagents, and built-in tools.
 
-### Claude Code (`claude-code-config/`)
-Shows how to use Claude Code for code analysis, generation, and documentation.
+### OpenAI (`openai-config/`)
+Shows how to use OpenAI-compatible APIs (OpenAI, VLLM, local endpoints) for code analysis, generation, and documentation.
 
 ### Codex (`codex-config/`)
 Demonstrates OpenAI Codex SDK integration for automated code review.
 
 ### OpenCode (`opencode-config/`)
 Shows OpenCode AI integration for code analysis tasks.
+
+### OpenCode Agentic (`opencode-agentic/`)
+Demonstrates full agentic capabilities with OpenCode SDK v1.1.53 in server mode using glm-4.7-flash.
+
+### VLLM + OpenAI (`vllm-openai/`)
+Tests the OpenAI-compatible adapter with local VLLM inference serving glm-4.7-flash. Validates model discovery, text generation, chat completions, and long context processing.
 
 ## Feature Tests
 
@@ -53,7 +59,7 @@ For production-ready workflow examples, see the parent `/examples` directory.
 Run any test workflow:
 ```bash
 marktoflow run examples/tests/control-flow/data-pipeline.md
-marktoflow run examples/tests/claude-code-config/workflow.md --agent claude-code
+marktoflow run examples/tests/openai-config/workflow.md --agent openai
 ```
 
 Validate syntax:

@@ -8,7 +8,7 @@ import { create } from 'zustand';
 export interface Provider {
   id: string;
   name: string;
-  status: 'ready' | 'needs_config' | 'unavailable';
+  status: 'ready' | 'available' | 'needs_config' | 'unavailable';
   isActive: boolean;
   description?: string;
   configOptions?: {

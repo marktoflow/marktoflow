@@ -112,7 +112,7 @@ marktoflow v2.0 includes 38 native service integrations, 6 AI agent adapters, an
 | Adapter | SDK Key(s) | Description |
 |---------|-----------|-------------|
 | Ollama | `ollama` | Local LLM inference |
-| Claude Code | `claude-code` | Anthropic Claude Code CLI |
+| OpenAI | `openai`, `openai-compatible`, `vllm` | OpenAI-compatible APIs (OpenAI, VLLM, local endpoints) |
 | Claude Agent | `claude-agent`, `@anthropic-ai/claude-agent-sdk` | Anthropic Claude Agent SDK |
 | OpenCode | `opencode` | OpenCode CLI agent |
 | GitHub Copilot | `github-copilot`, `@github/copilot-sdk` | GitHub Copilot SDK |

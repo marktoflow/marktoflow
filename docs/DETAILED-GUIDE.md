@@ -344,7 +344,7 @@ marktoflow update --list-agents
 **Supported Coding Agents:**
 
 - **OpenCode** - Best for general-purpose updates and refactoring (75+ AI backends)
-- **Claude Code** - Great for complex logic changes (uses existing Claude subscription)
+- **Claude Agent** - Great for complex logic changes (uses existing Claude subscription)
 - **OpenAI Codex** - Powerful code generation and refactoring (uses existing Codex access)
 - **Cursor** - IDE integration for visual updates
 - **Aider** - Specialized for code transformations
@@ -389,7 +389,7 @@ marktoflow gui --open         # Open browser automatically
 
 - **Drag-and-Drop Editor** - Visual node-based workflow canvas
 - **AI Assistance** - Natural language commands to modify workflows
-- **Multiple AI Backends** - Claude Code, GitHub Copilot, Claude API, Ollama (beta)
+- **Multiple AI Backends** - Claude Agent, GitHub Copilot, Claude API, Ollama (beta)
 - **Real-time Execution** - Run and debug workflows from the UI
 - **Live File Sync** - Changes sync automatically with workflow files
 
@@ -401,12 +401,12 @@ The GUI supports multiple AI backends. **Use existing subscriptions without extr
 |----------|----------------|------|
 | GitHub Copilot | `copilot auth` (CLI) | Uses existing subscription |
 | OpenAI Codex | Codex CLI authentication | Uses existing Codex access |
-| Claude Code | Claude CLI (automatic) | Uses existing subscription |
+| Claude Agent | Claude CLI (automatic) | Uses existing subscription |
 | OpenCode | CLI configuration | Supports 75+ backends |
 | Claude API | `ANTHROPIC_API_KEY` | Direct API usage (pay per use) |
 | Ollama (beta) | Local server | Free (runs locally) |
 
-**Recommended**: Use CLI-authenticated providers (Copilot, Codex, Claude Code) to avoid additional API costs if you already subscribe to these services.
+**Recommended**: Use CLI-authenticated providers (Copilot, Codex, Claude Agent) to avoid additional API costs if you already subscribe to these services.
 
 ### Interface
 
@@ -808,7 +808,7 @@ marktoflow serve --port 3000           # Custom port
 marktoflow serve --host 0.0.0.0        # Custom host
 marktoflow serve -d /path/to/workflows # Workflow directory
 marktoflow serve -w workflow.md        # Serve specific workflow
-marktoflow serve --agent claude-code   # Default agent for workflows
+marktoflow serve --agent claude-agent  # Default agent for workflows
 ```
 
 **Workflow with Webhook Trigger:**

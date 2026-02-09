@@ -8,8 +8,10 @@ import type { Workflow } from '@marktoflow/core';
 /** List of known AI agent SDK names */
 export const AI_AGENT_SDKS = [
   'claude',
-  'claude-code',
   'claude-agent',
+  'openai',
+  'openai-compatible',
+  'vllm',
   'github-copilot',
   'copilot',
   'opencode',

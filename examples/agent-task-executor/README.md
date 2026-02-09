@@ -74,7 +74,7 @@ export TELEGRAM_BOT_TOKEN="your-bot-token"
 ```bash
 # Run the Slack workflow manually
 marktoflow run examples/agent-task-executor/workflow-slack.md \
-  --agent claude-code \
+  --agent claude-agent \
   --input channel="C0123456789" \
   --input instructions="Create a new file called hello.txt with 'Hello World' content" \
   --input working_directory="/path/to/project"
@@ -85,7 +85,7 @@ marktoflow run examples/agent-task-executor/workflow-slack.md \
 ```bash
 # Run the Telegram workflow manually
 marktoflow run examples/agent-task-executor/workflow-telegram.md \
-  --agent claude-code \
+  --agent claude-agent \
   --input chat_id=123456789 \
   --input instructions="List all Python files and check for syntax errors" \
   --input working_directory="/path/to/project"

@@ -11,12 +11,13 @@ import type {
   PromptHistoryItem,
   Workflow,
 } from './types.js';
-import { createClaudeProvider } from './claude-provider.js';
-import { createClaudeCodeProvider } from './claude-code-provider.js';
+import { createClaudeAgentProvider } from './claude-agent-provider.js';
 import { createCopilotProvider } from './copilot-provider.js';
 import { createCodexProvider } from './codex-provider.js';
 import { createDemoProvider } from './demo-provider.js';
 import { createOllamaProvider } from './ollama-provider.js';
+import { createOpenAIProvider } from './openai-provider.js';
+import { createOpenCodeProvider } from './opencode-provider.js';
 
 /**
  * Registry of all available agent providers
@@ -30,9 +31,9 @@ export class AgentRegistry {
     // Register built-in providers
     // SDK-based providers with automatic CLI authentication (recommended)
     this.registerProvider({
-      id: 'claude-code',
-      name: 'Claude Code (SDK)',
-      factory: createClaudeCodeProvider,
+      id: 'claude-agent',
+      name: 'Claude Agent (SDK)',
+      factory: createClaudeAgentProvider,
     });
     this.registerProvider({
       id: 'copilot',
@@ -44,11 +45,16 @@ export class AgentRegistry {
       name: 'OpenAI Codex (SDK)',
       factory: createCodexProvider,
     });
+    this.registerProvider({
+      id: 'opencode',
+      name: 'OpenCode',
+      factory: createOpenCodeProvider,
+    });
     // API key-based providers
     this.registerProvider({
-      id: 'claude',
-      name: 'Claude (API Key)',
-      factory: createClaudeProvider,
+      id: 'openai',
+      name: 'OpenAI',
+      factory: createOpenAIProvider,
     });
     // Local providers
     this.registerProvider({
@@ -131,7 +137,7 @@ export class AgentRegistry {
    */
   async autoDetectProvider(): Promise<string> {
     // Try Claude Code SDK first (uses automatic CLI authentication)
-    const claudeCodeProvider = this.providers.get('claude-code');
+    const claudeCodeProvider = this.providers.get('claude-agent');
     if (claudeCodeProvider) {
       await claudeCodeProvider.initialize({
         options: {
@@ -139,8 +145,8 @@ export class AgentRegistry {
         },
       });
       if (claudeCodeProvider.isReady()) {
-        this.activeProviderId = 'claude-code';
-        return 'claude-code';
+        this.activeProviderId = 'claude-agent';
+        return 'claude-agent';
       }
     }
 
@@ -171,18 +177,6 @@ export class AgentRegistry {
       if (codexProvider.isReady()) {
         this.activeProviderId = 'codex';
         return 'codex';
-      }
-    }
-
-    // Try Claude with API key (requires ANTHROPIC_API_KEY)
-    const claudeProvider = this.providers.get('claude');
-    if (claudeProvider) {
-      await claudeProvider.initialize({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      });
-      if (claudeProvider.isReady()) {
-        this.activeProviderId = 'claude';
-        return 'claude';
       }
     }
 

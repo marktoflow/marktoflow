@@ -2306,7 +2306,7 @@ inputs:
 
 ### AI-Powered Actions
 
-When configured with an AI backend (Copilot or Claude Code):
+When configured with an AI backend (Copilot or Claude Agent):
 
 #### `browser.act`
 

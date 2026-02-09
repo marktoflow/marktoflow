@@ -16,7 +16,7 @@ All examples have been updated to use **native SDK integrations** instead of Pyt
 - **googleapis** - Official Google APIs
 - **confluence** - Confluence REST API client
 - **playwright** - Browser automation
-- **claude-code** / **opencode** - AI agent integrations
+- **openai** / **claude-agent** / **opencode** / **ollama** - AI agent integrations
 
 No more subprocess bridging or wrapper scripts! Workflows now call SDK methods directly with full type safety.
 
@@ -40,7 +40,7 @@ These examples are designed to be used in real-world scenarios and can be deploy
 
 Automated code review using GitHub API and Claude AI.
 
-**Integrations:** GitHub, Claude Code
+**Integrations:** GitHub, Claude Agent
 
 **Features:**
 
@@ -82,7 +82,7 @@ marktoflow run examples/copilot-code-review \
 
 Aggregates team updates from Jira and Slack into an AI-generated standup summary.
 
-**Integrations:** Jira, Slack, Claude Code
+**Integrations:** Jira, Slack, Claude Agent
 
 **Features:**
 
@@ -103,7 +103,7 @@ marktoflow run examples/daily-standup \
 
 Automated dependency updates with AI-powered changelog generation.
 
-**Integrations:** GitHub, Claude Code, Slack
+**Integrations:** GitHub, Claude Agent, Slack
 
 **Features:**
 
@@ -149,7 +149,7 @@ marktoflow run examples/incident-response \
 
 Automates sprint planning with velocity analysis and story selection.
 
-**Integrations:** Jira, Confluence, Slack, Claude Code
+**Integrations:** Jira, Confluence, Slack, Claude Agent
 
 **Features:**
 
@@ -311,12 +311,17 @@ export CONFLUENCE_EMAIL="your-email@company.com"
 export CONFLUENCE_API_TOKEN="..."
 ```
 
-### Claude / OpenCode
+### AI Agents (Claude, OpenAI, OpenCode, Ollama)
 
 ```bash
+# Claude Agent
 export ANTHROPIC_API_KEY="sk-ant-..."
-# or
-export OPENCODE_API_KEY="..."
+
+# OpenAI / VLLM
+export OPENAI_API_KEY="sk-..."
+
+# Ollama (local, no key needed)
+# Runs on http://localhost:11434 by default
 ```
 
 ### PagerDuty (for incident-response)

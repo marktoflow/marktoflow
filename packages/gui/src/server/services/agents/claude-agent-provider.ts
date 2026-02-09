@@ -1,5 +1,5 @@
 /**
- * Claude Code AI agent provider
+ * Claude Agent AI provider
  * Uses the @anthropic-ai/claude-agent-sdk for AI capabilities
  * Authentication is handled automatically by the SDK (via Claude CLI auth)
  */
@@ -44,9 +44,9 @@ interface AgentQuery extends AsyncGenerator<SDKMessage, void, unknown> {
 // The SDK exports a query function directly
 type QueryFunction = (params: { prompt: string; options?: Record<string, unknown> }) => AgentQuery;
 
-export class ClaudeCodeProvider implements AgentProvider {
-  readonly id = 'claude-code';
-  readonly name = 'Claude Code (SDK)';
+export class ClaudeAgentProvider implements AgentProvider {
+  readonly id = 'claude-agent';
+  readonly name = 'Claude Agent (SDK)';
   readonly capabilities: AgentCapabilities = {
     streaming: true,
     toolUse: true,
@@ -93,7 +93,7 @@ export class ClaudeCodeProvider implements AgentProvider {
       this.error = undefined;
     } catch (err) {
       this.ready = false;
-      this.error = err instanceof Error ? err.message : 'Unknown error initializing Claude Code';
+      this.error = err instanceof Error ? err.message : 'Unknown error initializing Claude Agent';
     }
   }
 
@@ -116,7 +116,7 @@ export class ClaudeCodeProvider implements AgentProvider {
   ): Promise<PromptResult> {
     if (!this.queryFn || !this.ready) {
       return {
-        explanation: 'Claude Code SDK not available.',
+        explanation: 'Claude Agent SDK not available.',
         error: this.error || 'Provider not initialized',
       };
     }
@@ -311,8 +311,8 @@ export class ClaudeCodeProvider implements AgentProvider {
   }
 }
 
-export function createClaudeCodeProvider(config?: AgentConfig): ClaudeCodeProvider {
-  const provider = new ClaudeCodeProvider();
+export function createClaudeAgentProvider(config?: AgentConfig): ClaudeAgentProvider {
+  const provider = new ClaudeAgentProvider();
   if (config) {
     provider.initialize(config);
   }

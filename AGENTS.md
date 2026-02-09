@@ -68,7 +68,7 @@ marktoflow/
 
 **Services (38):** Slack, GitHub, GitLab, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP, Google Sheets, Google Calendar, Google Drive, Google Docs, Telegram, WhatsApp, Supabase, PostgreSQL, MySQL, HubSpot, Salesforce, PagerDuty, Sentry, Calendly, Intercom, Monday.com, Stripe, Twilio, SendGrid, Shopify, Zendesk, Mailchimp, Asana, Trello, Dropbox, AWS S3
 
-**AI Agents:** GitHub Copilot, Claude Code, OpenCode, Ollama
+**AI Agents:** GitHub Copilot, Claude Agent, OpenAI (+ VLLM), OpenCode, Ollama
 
 ---
 
