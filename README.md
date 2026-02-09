@@ -62,6 +62,26 @@ steps:
 ---
 ```
 
+## Talk to AI agents through Slack or Telegram
+
+Control AI agents (Claude, Copilot, OpenCode, Ollama) directly from your messaging apps. Send task instructions, get structured results with pass/fail status.
+
+```
+You → Slack: "Create a React component called UserProfile with email validation"
+
+marktoflow → Agent: Executes tasks with safe permissions
+
+Agent → Slack:
+🎉 Task Execution Complete
+Results: 3/3 tasks passed
+
+✅ Create UserProfile component - PASSED
+✅ Add email validation logic - PASSED
+✅ Add unit tests - PASSED
+```
+
+**Example:** [`agent-task-executor`](examples/agent-task-executor/) — Production-ready webhooks for Slack and Telegram
+
 ## Why marktoflow?
 
 | | What you get |
@@ -103,7 +123,7 @@ steps:
 | **Storage** | Dropbox, AWS S3 |
 | **Databases** | Supabase, PostgreSQL, MySQL |
 | **Universal** | HTTP client (any REST API) |
-| **AI Agents** | GitHub Copilot, Claude Code, OpenAI Codex, OpenCode, Ollama |
+| **AI Agents** | GitHub Copilot, Claude Code, OpenAI Codex, OpenCode, Ollama — [control via Slack/Telegram](examples/agent-task-executor/) |
 
 ## Packages
 
@@ -119,16 +139,20 @@ steps:
 
 Production-ready workflow templates in [`examples/`](examples/):
 
+- **[agent-task-executor](examples/agent-task-executor/)** — Control AI agents via Slack/Telegram messages
+  ```bash
+  # Run the Slack version
+  marktoflow run examples/agent-task-executor/workflow-slack.md
+
+  # Or use Telegram
+  marktoflow run examples/agent-task-executor/workflow-telegram.md
+  ```
 - **[codebase-qa](examples/codebase-qa/)** — AI-powered Q&A via Slack/Telegram
 - **[copilot-code-review](examples/copilot-code-review/)** — PR review with GitHub Copilot
 - **[daily-standup](examples/daily-standup/)** — Jira + Slack standup automation
 - **[incident-response](examples/incident-response/)** — Multi-service incident coordination
 - **[approval-workflow](examples/approval-workflow/)** — Human-in-the-loop with web forms
 - **[sprint-planning](examples/sprint-planning/)** — AI-assisted sprint planning
-
-```bash
-marktoflow run examples/daily-standup/workflow.md
-```
 
 ## Documentation
 
