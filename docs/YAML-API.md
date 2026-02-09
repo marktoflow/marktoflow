@@ -1672,7 +1672,7 @@ failover_config:
   failover_on_step_failure: true
   fallback_agents:
     - copilot
-    - claude-code
+    - claude-agent
     - opencode
   max_failover_attempts: 2
 ```

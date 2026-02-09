@@ -123,7 +123,7 @@ Results: 3/3 tasks passed
 | **Storage** | Dropbox, AWS S3 |
 | **Databases** | Supabase, PostgreSQL, MySQL |
 | **Universal** | HTTP client (any REST API) |
-| **AI Agents** | GitHub Copilot, Claude Code, OpenAI Codex, OpenCode, Ollama — [control via Slack/Telegram](examples/agent-task-executor/) |
+| **AI Agents** | GitHub Copilot, Claude Agent, OpenAI (+ VLLM), OpenCode, Ollama — [control via Slack/Telegram](examples/agent-task-executor/) |
 
 ## Packages
 

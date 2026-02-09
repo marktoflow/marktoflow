@@ -828,7 +828,7 @@ describe('Playwright AI Automation', () => {
 });
 
 // ============================================================================
-// Custom AI Backend Tests (Copilot/Claude Code)
+// Custom AI Backend Tests (Copilot/OpenAI)
 // ============================================================================
 
 describe('Playwright Custom AI Backend', () => {
@@ -837,7 +837,7 @@ describe('Playwright Custom AI Backend', () => {
     send: vi.fn().mockResolvedValue('{ "action": "click", "inputs": { "selector": "#button" } }'),
   };
 
-  const mockClaudeCodeClient = {
+  const mockOpenAIClient = {
     generate: vi.fn().mockResolvedValue('{ "action": "fill", "inputs": { "selector": "#email", "value": "test@example.com" } }'),
   };
 
@@ -852,11 +852,11 @@ describe('Playwright Custom AI Backend', () => {
     expect(client.isAIEnabled()).toBe(true);
   });
 
-  it('should create client with Claude Code AI backend', () => {
+  it('should create client with OpenAI AI backend', () => {
     const client = new PlaywrightClient({
       enableAI: true,
-      aiBackend: 'claude-code',
-      aiClient: mockClaudeCodeClient,
+      aiBackend: 'openai',
+      aiClient: mockOpenAIClient,
     });
 
     expect(client).toBeInstanceOf(PlaywrightClient);
@@ -879,13 +879,13 @@ describe('Playwright Custom AI Backend', () => {
     expect(client.isAIEnabled()).toBe(true);
   });
 
-  it('should support Claude Code backend in initializer', async () => {
+  it('should support OpenAI backend in initializer', async () => {
     const config = {
       sdk: 'playwright',
       options: {
         enable_ai: true,
-        ai_backend: 'claude-code',
-        ai_client: mockClaudeCodeClient,
+        ai_backend: 'openai',
+        ai_client: mockOpenAIClient,
       },
     };
 
@@ -912,11 +912,11 @@ describe('Playwright Custom AI Backend', () => {
     await client.close();
   });
 
-  it('should perform act() with Claude Code backend', async () => {
+  it('should perform act() with OpenAI backend', async () => {
     const client = new PlaywrightClient({
       enableAI: true,
-      aiBackend: 'claude-code',
-      aiClient: mockClaudeCodeClient,
+      aiBackend: 'openai',
+      aiClient: mockOpenAIClient,
     });
 
     await client.launch();
@@ -925,7 +925,7 @@ describe('Playwright Custom AI Backend', () => {
 
     expect(result.success).toBe(true);
     expect(result.action).toBe('Fill in email field');
-    expect(mockClaudeCodeClient.generate).toHaveBeenCalled();
+    expect(mockOpenAIClient.generate).toHaveBeenCalled();
 
     await client.close();
   });
@@ -966,7 +966,7 @@ describe('Playwright Custom AI Backend', () => {
   });
 
   it('should perform aiExtract() with custom AI backend', async () => {
-    mockClaudeCodeClient.generate.mockResolvedValueOnce(
+    mockOpenAIClient.generate.mockResolvedValueOnce(
       JSON.stringify({
         products: [
           { name: 'Widget A', price: 29.99 },
@@ -977,8 +977,8 @@ describe('Playwright Custom AI Backend', () => {
 
     const client = new PlaywrightClient({
       enableAI: true,
-      aiBackend: 'claude-code',
-      aiClient: mockClaudeCodeClient,
+      aiBackend: 'openai',
+      aiClient: mockOpenAIClient,
     });
 
     await client.launch();
@@ -1003,7 +1003,7 @@ describe('Playwright Custom AI Backend', () => {
     });
 
     expect(result).toBeDefined();
-    expect(mockClaudeCodeClient.generate).toHaveBeenCalled();
+    expect(mockOpenAIClient.generate).toHaveBeenCalled();
 
     await client.close();
   });

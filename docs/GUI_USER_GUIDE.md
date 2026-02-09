@@ -406,7 +406,7 @@ The GUI supports multiple AI backends with two authentication styles:
 
 | Provider | How to Authenticate |
 |----------|---------------------|
-| **Claude Code** | Run `claude login` in your terminal |
+| **Claude Agent** | Run `claude login` in your terminal |
 | **GitHub Copilot** | Run `copilot auth login` in your terminal |
 | **OpenAI Codex** | Set the `OPENAI_API_KEY` environment variable |
 

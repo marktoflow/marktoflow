@@ -4,7 +4,7 @@ framework: marktoflow
 
 # Active Agent Selection
 agent:
-  primary: claude-code           # Primary agent to use
+  primary: claude-agent           # Primary agent to use
   fallback: opencode            # Fallback if primary unavailable
   
   # Agent selection strategy: manual | auto | load_balanced
@@ -13,12 +13,12 @@ agent:
   # Auto-selection rules (when strategy = auto)
   auto_selection:
     - condition: workflow.requires.reasoning == true
-      agent: claude-code
+      agent: claude-agent
     - condition: deployment.type == self_hosted
       agent: opencode
     - condition: workflow.estimated_cost < 0.10
       agent: opencode
-    - default: claude-code
+    - default: claude-agent
 
 # Execution Runtime
 runtime:
@@ -32,7 +32,7 @@ security:
   
   # Per-agent auth strategies
   auth_strategies:
-    claude-code: anthropic_managed
+    claude-agent: anthropic_managed
     opencode: local_vault
     aider: local_vault
 

@@ -475,8 +475,8 @@ export class AgentRouter {
 }
 
 export const PREDEFINED_PROFILES: Record<string, AgentProfile> = {
-  'claude-code': {
-    name: 'claude-code',
+  'claude-agent': {
+    name: 'claude-agent',
     provider: 'anthropic',
     model: 'claude-3-5-sonnet',
     capabilities: new Set([

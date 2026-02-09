@@ -10,19 +10,19 @@
 
 import type { PlaywrightClient } from './playwright.js';
 import type { GitHubCopilotClient } from '../adapters/github-copilot.js';
-import type { ClaudeCodeClient } from '../adapters/claude-code.js';
+import type { OpenAIClient } from '../adapters/openai.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type AIBackend = 'copilot' | 'claude-code';
+export type AIBackend = 'copilot' | 'openai';
 
 export interface AIBrowserConfig {
   /** AI backend to use */
   backend: AIBackend;
   /** AI client instance */
-  aiClient: GitHubCopilotClient | ClaudeCodeClient;
+  aiClient: GitHubCopilotClient | OpenAIClient;
   /** Playwright client instance */
   playwrightClient: PlaywrightClient;
   /** Enable debug logging */
@@ -72,7 +72,7 @@ export interface AIExtractOptions {
  */
 export class AIBrowserClient {
   private backend: AIBackend;
-  private aiClient: GitHubCopilotClient | ClaudeCodeClient;
+  private aiClient: GitHubCopilotClient | OpenAIClient;
   private playwrightClient: PlaywrightClient;
   private debug: boolean;
 
@@ -230,8 +230,8 @@ export class AIBrowserClient {
       const client = this.aiClient as GitHubCopilotClient;
       return await client.send({ prompt });
     } else {
-      const client = this.aiClient as ClaudeCodeClient;
-      return await client.generate({ prompt });
+      const client = this.aiClient as OpenAIClient;
+      return await client.generate(prompt);
     }
   }
 

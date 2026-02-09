@@ -84,7 +84,7 @@ export class AIService {
     providers: Array<{
       id: string;
       name: string;
-      status: 'ready' | 'needs_config' | 'unavailable';
+      status: 'ready' | 'available' | 'needs_config' | 'unavailable';
       isActive: boolean;
       description?: string;
       configOptions?: {
@@ -105,18 +105,21 @@ export class AIService {
     return {
       activeProvider: registryStatus.activeProvider,
       providers: registryStatus.providers.map((provider) => {
-        // Determine status based on ready state and error
-        let status: 'ready' | 'needs_config' | 'unavailable';
+        // Determine status based on ready state, availability, and error
+        let status: 'ready' | 'needs_config' | 'unavailable' | 'available';
         if (provider.ready) {
           status = 'ready';
         } else if (provider.error) {
           status = 'unavailable';
+        } else if ((provider as any).available) {
+          // SDK is available - ready to connect
+          status = 'available';
         } else {
           status = 'needs_config';
         }
 
         // Per-provider metadata
-        let configOptions: { apiKey?: boolean; baseUrl?: boolean; model?: boolean } | undefined;
+        let configOptions: { apiKey?: boolean; baseUrl?: boolean; model?: boolean; port?: boolean } | undefined;
         let authType: 'sdk' | 'api_key' | 'local' | 'demo' | undefined;
         let authInstructions: string | undefined;
         let availableModels: string[] | undefined;
@@ -128,13 +131,13 @@ export class AIService {
         }
 
         switch (provider.id) {
-          case 'claude-code':
+          case 'claude-agent':
             authType = 'sdk';
-            authInstructions = 'Authenticate using the Claude CLI: run "claude login" in your terminal.';
+            authInstructions = 'Set ANTHROPIC_API_KEY environment variable or authenticate using the Claude CLI.';
             break;
           case 'copilot':
             authType = 'sdk';
-            authInstructions = 'Authenticate using the Copilot CLI: run "copilot auth login" in your terminal.';
+            authInstructions = 'Uses GitHub Copilot CLI. Ensure you are authenticated: copilot login';
             break;
           case 'codex':
             authType = 'sdk';
@@ -144,9 +147,15 @@ export class AIService {
               configOptions = { apiKey: true, model: true };
             }
             break;
-          case 'claude':
+          case 'opencode':
+            authType = 'sdk';
+            authInstructions = 'Install OpenCode CLI from https://opencode.ai or start server mode with: opencode serve --port 4096';
+            configOptions = { port: true, model: true };
+            break;
+          case 'openai':
             authType = 'api_key';
-            configOptions = { apiKey: true, model: true };
+            authInstructions = 'Set OPENAI_API_KEY environment variable or provide API key in configuration.';
+            configOptions = { apiKey: true, baseUrl: true, model: true };
             break;
           case 'ollama':
             authType = 'local';

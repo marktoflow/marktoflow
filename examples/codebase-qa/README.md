@@ -81,7 +81,7 @@ export TELEGRAM_BOT_TOKEN="your-bot-token"
 ```bash
 # Run the Slack workflow manually
 marktoflow run examples/codebase-qa/workflow-slack.md \
-  --agent claude-code \
+  --agent claude-agent \
   --input codebase_path="/path/to/your/project" \
   --input channel="C0123456789" \
   --input question="How does the authentication system work?"
@@ -92,7 +92,7 @@ marktoflow run examples/codebase-qa/workflow-slack.md \
 ```bash
 # Run the Telegram workflow manually
 marktoflow run examples/codebase-qa/workflow-telegram.md \
-  --agent claude-code \
+  --agent claude-agent \
   --input codebase_path="/path/to/your/project" \
   --input chat_id=123456789 \
   --input question="What is this project about?"

@@ -143,6 +143,8 @@ export interface OutputFormat {
  * Full configuration options for the Claude Agent SDK
  */
 export interface ClaudeAgentOptions {
+  /** API key for authentication (falls back to ANTHROPIC_API_KEY env var) */
+  apiKey?: string;
   /** Model to use */
   model?: string;
   /** Working directory for file operations */

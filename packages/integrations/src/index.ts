@@ -44,7 +44,7 @@ import { MondayInitializer } from './services/monday.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
-import { ClaudeCodeInitializer } from './adapters/claude-code.js';
+import { OpenAIInitializer } from './adapters/openai.js';
 import { ClaudeAgentInitializer } from './adapters/claude-agent.js';
 import { OpenCodeInitializer } from './adapters/opencode.js';
 import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
@@ -130,7 +130,9 @@ export function registerIntegrations(registry: SDKRegistry) {
 
   // AI Adapters
   registry.registerInitializer('ollama', OllamaInitializer);
-  registry.registerInitializer('claude-code', ClaudeCodeInitializer);
+  registry.registerInitializer('openai', OpenAIInitializer);
+  registry.registerInitializer('openai-compatible', OpenAIInitializer);
+  registry.registerInitializer('vllm', OpenAIInitializer);
   registry.registerInitializer('claude-agent', ClaudeAgentInitializer);
   registry.registerInitializer('@anthropic-ai/claude-agent-sdk', ClaudeAgentInitializer);
   registry.registerInitializer('opencode', OpenCodeInitializer);
@@ -408,7 +410,8 @@ export { SlackSocketTrigger } from './services/slack-socket.js';
 
 // Export AI adapters
 export * from './adapters/ollama.js';
-export * from './adapters/claude-code.js';
+export * from './adapters/openai.js';
+export * from './adapters/openai-types.js';
 export * from './adapters/claude-agent.js';
 export * from './adapters/claude-agent-types.js';
 export * from './adapters/claude-agent-workflow.js';

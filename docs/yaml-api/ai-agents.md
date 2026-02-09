@@ -13,7 +13,7 @@ Complete API reference for AI agent integrations in marktoflow workflows.
 5. [Claude Agent](#claude-agent)
 6. [OpenAI Codex](#openai-codex)
 7. [OpenCode](#opencode)
-8. [Claude Code](#claude-code)
+8. [OpenAI](#openai)
 9. [Ollama](#ollama)
 10. [AI-Powered Browser Automation](#ai-powered-browser-automation)
 
@@ -1119,57 +1119,75 @@ output_variable: component_code
 
 ---
 
-## Claude Code
+## OpenAI
 
-Claude CLI wrapper for command-line usage.
+Generic OpenAI-compatible adapter for OpenAI, VLLM, and other local/remote endpoints.
 
 ### Configuration
 
 ```yaml
 tools:
-  claude_cli:
-    sdk: claude-code
+  ai:
+    sdk: openai              # Also: openai-compatible, vllm
+    auth:
+      api_key: '${OPENAI_API_KEY}'
+      base_url: '${OPENAI_BASE_URL:-https://api.openai.com/v1}'
     options:
-      cli_path: string     # Optional: Path to Claude CLI (default: "claude")
-      model: string        # Optional: Model name
-      cwd: string          # Optional: Working directory
-      timeout: number      # Optional: Timeout in ms (default: 300000)
+      model: string          # Optional: Model name (default: "gpt-4o")
+      organization: string   # Optional: OpenAI organization ID
+      timeout: number        # Optional: Timeout in ms (default: 60000)
 ```
 
-**Example:**
+**Example (OpenAI):**
 
 ```yaml
 tools:
-  claude_cli:
-    sdk: claude-code
+  ai:
+    sdk: openai
+    auth:
+      api_key: '${OPENAI_API_KEY}'
     options:
-      cli_path: /usr/local/bin/claude
-      model: claude-sonnet-4-5
-      cwd: /path/to/project
+      model: gpt-4o
+```
+
+**Example (VLLM / local endpoint):**
+
+```yaml
+tools:
+  ai:
+    sdk: vllm
+    auth:
+      base_url: 'http://localhost:8000/v1'
+      api_key: 'dummy-key'
+    options:
+      model: glm-4.7-flash
 ```
 
 ### Actions
 
-#### `claude_cli.generate`
+#### `ai.generate`
 
-Execute Claude CLI command.
+Generate text from a prompt.
 
 ```yaml
-action: claude_cli.generate
+action: ai.generate
 inputs:
   prompt: string           # Required: User prompt
-  files: string[]          # Optional: Files to include
 ```
 
-**Example:**
+#### `ai.chat.completions`
+
+OpenAI-compatible chat completion.
 
 ```yaml
-action: claude_cli.generate
+action: ai.chat.completions
 inputs:
-  prompt: "Refactor this module to use async/await instead of callbacks"
-  files:
-    - "src/api/client.js"
-output_variable: refactored_code
+  messages:
+    - role: system
+      content: "You are a helpful assistant."
+    - role: user
+      content: "Explain async/await in JavaScript"
+output_variable: response
 ```
 
 ---
@@ -1297,7 +1315,7 @@ tools:
   ai_browser:
     sdk: ai-browser
     options:
-      backend: string      # Required: "copilot" or "claude-code"
+      backend: string      # Required: "copilot" or "openai"
       ai_client: object    # Optional: Pre-initialized AI client
       playwright_client: object # Optional: Pre-initialized Playwright client
       debug: boolean       # Optional: Enable debug logging

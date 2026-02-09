@@ -539,7 +539,7 @@ ollama pull llama3.2:1b
 
 ## Contributors
 
-- Implementation: Claude Code (Anthropic)
+- Implementation: Claude Agent (Anthropic)
 - Testing: Automated test suite
 - Documentation: Comprehensive guides
 

@@ -56,14 +56,20 @@ const server = await startServer({
 
 | Provider | Auth Type | Authentication |
 |----------|-----------|----------------|
-| Claude Code | SDK | Claude CLI — `claude login` |
-| GitHub Copilot | SDK | Copilot CLI — `copilot auth login` |
+| Claude Agent | SDK | Claude CLI — `claude login` |
+| GitHub Copilot | SDK | Copilot CLI — `copilot login` |
 | OpenAI Codex | SDK | `OPENAI_API_KEY` env var (auto-detected) |
 | Claude API | API Key | `ANTHROPIC_API_KEY` env var |
 | Ollama | Local | `ollama serve` on `localhost:11434` |
 | Demo Mode | — | Always available |
 
-SDK-based providers show connection status and auth instructions in the provider switcher instead of empty config forms. Codex auto-activates when `OPENAI_API_KEY` is set. Copilot dynamically fetches available models from the SDK.
+**SDK Provider Status:**
+- 🟢 **Ready** (green) — Connected and active
+- 🔵 **Available** (blue) — SDK installed, click to connect
+- 🟡 **Needs Config** (yellow) — Configuration required
+- 🔴 **Unavailable** (red) — SDK not installed
+
+SDK-based providers detect availability automatically and show "Available" status when ready to connect. Codex auto-activates when `OPENAI_API_KEY` is set. Copilot dynamically fetches available models from the SDK.
 
 ## Keyboard Shortcuts
 

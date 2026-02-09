@@ -5,8 +5,8 @@
  * enabling agentic workflows with built-in tools, MCP support,
  * session management, and streaming capabilities.
  *
- * Unlike the CLI-based claude-code adapter, this uses the SDK directly
- * for lower latency and richer functionality.
+ * Uses the SDK directly for lower latency and richer functionality
+ * than CLI-based approaches.
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
@@ -78,6 +78,11 @@ export class ClaudeAgentClient {
   private async getSDK(): Promise<AgentSDK> {
     if (!this.sdk) {
       try {
+        // Set ANTHROPIC_API_KEY if provided in options
+        if (this.options.apiKey && !process.env.ANTHROPIC_API_KEY) {
+          process.env.ANTHROPIC_API_KEY = this.options.apiKey;
+        }
+
         // Dynamic import of the Agent SDK (optional dependency)
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const module = await import(/* webpackIgnore: true */ '@anthropic-ai/claude-agent-sdk').catch(
@@ -604,9 +609,11 @@ export async function createMcpServer(
  */
 export const ClaudeAgentInitializer: SDKInitializer = {
   async initialize(_module: unknown, config: ToolConfig): Promise<ClaudeAgentClient> {
+    const auth = config.auth || {};
     const options = config.options || {};
 
     return new ClaudeAgentClient({
+      apiKey: (auth['api_key'] as string) || process.env.ANTHROPIC_API_KEY,
       model: options['model'] as string,
       cwd: options['cwd'] as string,
       additionalDirectories: options['additionalDirectories'] as string[],

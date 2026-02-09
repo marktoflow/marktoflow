@@ -90,7 +90,7 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 | Agent | Setup | Notes |
 |-------|-------|-------|
 | **GitHub Copilot** | `copilot auth login` | Use existing subscription |
-| **Claude Code** | Claude CLI | Use existing subscription |
+| **Claude Agent** | Claude CLI | Use existing subscription |
 | **Claude Agent** | `ANTHROPIC_API_KEY` | Direct API with tool calling |
 | **OpenAI Codex** | Codex CLI | Use existing subscription |
 | **OpenCode** | `opencode /connect` | 75+ AI backends |

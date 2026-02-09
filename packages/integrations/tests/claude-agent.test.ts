@@ -146,6 +146,56 @@ describe('Claude Agent SDK Integration', () => {
     });
   });
 
+  describe('API Key Configuration', () => {
+    it('should use ANTHROPIC_API_KEY from environment when no auth provided', async () => {
+      const originalKey = process.env.ANTHROPIC_API_KEY;
+      process.env.ANTHROPIC_API_KEY = 'test-api-key-123';
+
+      const config = {
+        sdk: 'claude-agent',
+        options: { model: 'claude-sonnet-4-20250514' },
+      };
+
+      const client = await ClaudeAgentInitializer.initialize({}, config);
+      expect(client).toBeInstanceOf(ClaudeAgentClient);
+
+      if (originalKey) process.env.ANTHROPIC_API_KEY = originalKey;
+      else delete process.env.ANTHROPIC_API_KEY;
+    });
+
+    it('should prefer explicit api_key over environment variable', async () => {
+      const originalKey = process.env.ANTHROPIC_API_KEY;
+      process.env.ANTHROPIC_API_KEY = 'env-key';
+
+      const config = {
+        sdk: 'claude-agent',
+        auth: { api_key: 'explicit-key' },
+        options: { model: 'claude-sonnet-4-20250514' },
+      };
+
+      const client = await ClaudeAgentInitializer.initialize({}, config);
+      expect(client).toBeInstanceOf(ClaudeAgentClient);
+
+      if (originalKey) process.env.ANTHROPIC_API_KEY = originalKey;
+      else delete process.env.ANTHROPIC_API_KEY;
+    });
+
+    it('should work without any API key (for OAuth users)', async () => {
+      const originalKey = process.env.ANTHROPIC_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
+
+      const config = {
+        sdk: 'claude-agent',
+        options: { model: 'claude-sonnet-4-20250514' },
+      };
+
+      const client = await ClaudeAgentInitializer.initialize({}, config);
+      expect(client).toBeInstanceOf(ClaudeAgentClient);
+
+      if (originalKey) process.env.ANTHROPIC_API_KEY = originalKey;
+    });
+  });
+
   describe('SDK Registry Integration', () => {
     it('should register both claude-agent and @anthropic-ai/claude-agent-sdk', () => {
       const registry = new SDKRegistry();

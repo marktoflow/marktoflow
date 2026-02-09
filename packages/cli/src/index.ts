@@ -75,14 +75,16 @@ function isBundle(path: string): boolean {
  */
 function getAgentSDKName(provider: string): string {
   const providerMap: Record<string, string> = {
-    'claude': 'claude-code',
-    'claude-code': 'claude-code',
+    'claude': 'claude-agent',
     'claude-agent': 'claude-agent',
     'copilot': 'github-copilot',
     'github-copilot': 'github-copilot',
     'opencode': 'opencode',
     'ollama': 'ollama',
     'codex': 'codex',
+    'openai': 'openai',
+    'vllm': 'openai',
+    'openai-compatible': 'openai',
   };
 
   const normalized = provider.toLowerCase();
@@ -100,9 +102,6 @@ function getAgentSDKName(provider: string): string {
  */
 function getAgentAuthConfig(sdkName: string): Record<string, string> {
   const authConfigs: Record<string, Record<string, string>> = {
-    'claude-code': {
-      api_key: '${ANTHROPIC_API_KEY}',
-    },
     'claude-agent': {
       api_key: '${ANTHROPIC_API_KEY}',
     },
@@ -115,6 +114,10 @@ function getAgentAuthConfig(sdkName: string): Record<string, string> {
     },
     'codex': {
       api_key: '${OPENAI_API_KEY}',
+    },
+    'openai': {
+      api_key: '${OPENAI_API_KEY}',
+      base_url: '${OPENAI_BASE_URL:-https://api.openai.com/v1}',
     },
   };
 
@@ -232,7 +235,7 @@ program
 program
   .command('update [workflow]')
   .description('Update a workflow using AI coding agents')
-  .option('-a, --agent <id>', 'Coding agent to use (opencode, claude-code, cursor, aider)')
+  .option('-a, --agent <id>', 'Coding agent to use (opencode, claude-agent, openai, ollama)')
   .option('-p, --prompt <text>', 'Update description')
   .option('--list-agents', 'List available coding agents')
   .action(async (workflow, options) => {
@@ -259,7 +262,7 @@ program
   .option('-i, --input <key=value...>', 'Input parameters')
   .option('-v, --verbose', 'Verbose output')
   .option('-d, --debug', 'Debug mode with detailed output (includes stack traces)')
-  .option('-a, --agent <provider>', 'AI agent provider (claude-code, claude-agent, github-copilot, opencode, ollama, codex)')
+  .option('-a, --agent <provider>', 'AI agent provider (claude-agent, openai, github-copilot, opencode, ollama, codex)')
   .option('-m, --model <name>', 'Model name to use (e.g., claude-sonnet-4, gpt-4, etc.)')
   .option('--dry-run', 'Parse workflow without executing')
   .action(async (workflowPath, options) => {
@@ -621,7 +624,7 @@ program
   .description('Debug a workflow with step-by-step execution')
   .option('-i, --input <key=value...>', 'Input parameters')
   .option('-b, --breakpoint <stepId...>', 'Set breakpoints at step IDs')
-  .option('-a, --agent <provider>', 'AI agent provider (claude-code, claude-agent, github-copilot, opencode, ollama, codex)')
+  .option('-a, --agent <provider>', 'AI agent provider (claude-agent, openai, github-copilot, opencode, ollama, codex)')
   .option('-m, --model <name>', 'Model name to use (e.g., claude-sonnet-4, gpt-4, etc.)')
   .option('--auto-start', 'Start without initial prompt')
   .action(async (workflowPath, options) => {
@@ -749,7 +752,7 @@ agentCmd
       agentsFromFile.push(...Object.keys(data?.agents ?? {}));
     }
 
-    const knownAgents = ['claude-code', 'opencode', 'ollama', 'codex', 'gemini-cli'];
+    const knownAgents = ['claude-agent', 'openai', 'opencode', 'ollama', 'codex', 'gemini-cli'];
     const allAgents = Array.from(new Set([...agentsFromFile, ...knownAgents]));
 
     console.log(chalk.bold('Available Agents:'));

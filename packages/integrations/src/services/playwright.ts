@@ -8,7 +8,7 @@
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import type { AIBrowserClient } from './ai-browser.js';
 import type { GitHubCopilotClient } from '../adapters/github-copilot.js';
-import type { ClaudeCodeClient } from '../adapters/claude-code.js';
+import type { OpenAIClient } from '../adapters/openai.js';
 
 // Stagehand types (optional dependency for AI features)
 interface StagehandClass {
@@ -91,9 +91,9 @@ export interface PlaywrightConfig {
   enableAI?: boolean;
 
   // Custom AI Backend (Copilot/Claude Code)
-  /** AI backend to use: 'copilot' | 'claude-code' | 'stagehand' */
-  aiBackend?: 'copilot' | 'claude-code' | 'stagehand';
-  /** Pre-initialized AI client (for copilot/claude-code backends) */
+  /** AI backend to use: 'copilot' | 'openai' | 'stagehand' */
+  aiBackend?: 'copilot' | 'openai' | 'stagehand';
+  /** Pre-initialized AI client (for copilot/openai backends) */
   aiClient?: unknown;
 
   // Stagehand-specific (legacy support)
@@ -1377,7 +1377,7 @@ export class PlaywrightClient {
     }
 
     if (!this.config.aiBackend || this.config.aiBackend === 'stagehand') {
-      throw new Error('Custom AI backend not configured. Set aiBackend to "copilot" or "claude-code"');
+      throw new Error('Custom AI backend not configured. Set aiBackend to "copilot" or "openai"');
     }
 
     if (!this.config.aiClient) {
@@ -1388,8 +1388,8 @@ export class PlaywrightClient {
       const { AIBrowserClient } = await import('./ai-browser.js');
 
       this.aiBrowser = new AIBrowserClient({
-        backend: this.config.aiBackend as 'copilot' | 'claude-code',
-        aiClient: this.config.aiClient as GitHubCopilotClient | ClaudeCodeClient,
+        backend: this.config.aiBackend as 'copilot' | 'openai',
+        aiClient: this.config.aiClient as GitHubCopilotClient | OpenAIClient,
         playwrightClient: this,
         debug: this.config.aiDebug,
       });
@@ -1662,7 +1662,7 @@ export const PlaywrightInitializer: SDKInitializer = {
 
       // AI automation
       enableAI: getOption<boolean>('enable_ai', 'enableAI'),
-      aiBackend: getOption<'copilot' | 'claude-code' | 'stagehand'>('ai_backend', 'aiBackend'),
+      aiBackend: getOption<'copilot' | 'openai' | 'stagehand'>('ai_backend', 'aiBackend'),
       aiClient: getOption<unknown>('ai_client', 'aiClient'),
       aiProvider: getOption<'openai' | 'anthropic'>('ai_provider', 'aiProvider'),
       aiModel: getOption<string>('ai_model', 'aiModel'),
