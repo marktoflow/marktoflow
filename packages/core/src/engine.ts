@@ -445,10 +445,10 @@ export class WorkflowEngine {
 
   constructor(config: EngineConfig = {}, events: EngineEvents = {}, stateStore?: StateStore) {
     this.config = {
-      defaultTimeout: config.defaultTimeout ?? 60000,
-      maxRetries: config.maxRetries ?? 3,
-      retryBaseDelay: config.retryBaseDelay ?? 1000,
-      retryMaxDelay: config.retryMaxDelay ?? 30000,
+      defaultTimeout: config.defaultTimeout ?? (process.env.MARKTOFLOW_TIMEOUT ? parseInt(process.env.MARKTOFLOW_TIMEOUT, 10) : 60000),
+      maxRetries: config.maxRetries ?? (process.env.MARKTOFLOW_MAX_RETRIES ? parseInt(process.env.MARKTOFLOW_MAX_RETRIES, 10) : 3),
+      retryBaseDelay: config.retryBaseDelay ?? (process.env.MARKTOFLOW_RETRY_BASE_DELAY ? parseInt(process.env.MARKTOFLOW_RETRY_BASE_DELAY, 10) : 1000),
+      retryMaxDelay: config.retryMaxDelay ?? (process.env.MARKTOFLOW_RETRY_MAX_DELAY ? parseInt(process.env.MARKTOFLOW_RETRY_MAX_DELAY, 10) : 30000),
       defaultAgent: config.defaultAgent,
       defaultModel: config.defaultModel,
     };

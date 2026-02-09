@@ -7,11 +7,11 @@
  * 3. Response handling is correct
  * 4. The integration behaves correctly without hitting real APIs
  *
- * TODO: Stripe SDK uses a custom HTTP client that MSW doesn't intercept.
- * These tests are currently skipped. To fix:
- * - Use Stripe test mode with mock data, or
- * - Mock the SDK methods directly instead of HTTP, or
- * - Configure Stripe SDK to use an HTTP client MSW can intercept
+ * Known limitation: Stripe SDK uses a custom HTTP client that MSW doesn't intercept.
+ * These tests are currently skipped. Possible approaches to enable them:
+ * - Use Stripe test mode with mock data
+ * - Mock the SDK methods directly instead of HTTP
+ * - Configure Stripe SDK to use a fetch-based HTTP client that MSW can intercept
  */
 
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';

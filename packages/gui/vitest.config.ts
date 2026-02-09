@@ -21,6 +21,12 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/server/**'],
+      thresholds: {
+        lines: 25,
+        functions: 65,
+        branches: 65,
+        statements: 25,
+      },
     },
   },
 });
