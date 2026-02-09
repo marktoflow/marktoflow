@@ -225,42 +225,66 @@ async function convertPdfToMarkdown(buffer: Buffer): Promise<string> {
 }
 
 /**
- * Convert XLSX to CSV using xlsx
+ * Convert XLSX to CSV using exceljs
  */
 async function convertXlsxToCsv(buffer: Buffer): Promise<string> {
   try {
     // Dynamic import with type casting to avoid TypeScript errors for optional dependency
-    const XLSX = await Function('return import("xlsx")')() as {
-      read: (buffer: Buffer, options: { type: string }) => {
-        SheetNames: string[];
-        Sheets: Record<string, unknown>;
-      };
-      utils: {
-        sheet_to_csv: (sheet: unknown) => string;
+    const ExcelJSModule = await Function('return import("exceljs")')() as {
+      default: {
+        Workbook: new () => {
+          xlsx: {
+            load: (buffer: Buffer) => Promise<void>;
+          };
+          worksheets: Array<{
+            name: string;
+            rowCount: number;
+            eachRow: (callback: (row: { values: unknown[] }, rowNumber: number) => void) => void;
+          }>;
+        };
       };
     };
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const ExcelJS = ExcelJSModule.default;
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
 
-    // Get all sheet names
-    const sheetNames = workbook.SheetNames;
+    const worksheets = workbook.worksheets;
 
-    if (sheetNames.length === 0) {
+    if (worksheets.length === 0) {
       return '';
     }
 
-    // If multiple sheets, concatenate with sheet name headers
-    if (sheetNames.length === 1) {
-      const sheet = workbook.Sheets[sheetNames[0]];
-      return XLSX.utils.sheet_to_csv(sheet);
+    // Helper function to convert worksheet to CSV
+    const worksheetToCsv = (worksheet: typeof worksheets[0]): string => {
+      const rows: string[] = [];
+      worksheet.eachRow((row, _rowNumber) => {
+        // Convert row values to CSV format
+        const values = (row.values as unknown[]).slice(1); // Skip index 0 which is undefined
+        const csvRow = values.map(val => {
+          if (val === null || val === undefined) return '';
+          const str = String(val);
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        }).join(',');
+        rows.push(csvRow);
+      });
+      return rows.join('\n');
+    };
+
+    // If single sheet, return CSV directly
+    if (worksheets.length === 1) {
+      return worksheetToCsv(worksheets[0]);
     }
 
     // Multiple sheets: include sheet name as header
     const csvParts: string[] = [];
-    for (const sheetName of sheetNames) {
-      const sheet = workbook.Sheets[sheetName];
-      const csv = XLSX.utils.sheet_to_csv(sheet);
+    for (const worksheet of worksheets) {
+      const csv = worksheetToCsv(worksheet);
       if (csv.trim()) {
-        csvParts.push(`# Sheet: ${sheetName}\n${csv}`);
+        csvParts.push(`# Sheet: ${worksheet.name}\n${csv}`);
       }
     }
 
@@ -268,7 +292,7 @@ async function convertXlsxToCsv(buffer: Buffer): Promise<string> {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
       throw new Error(
-        'xlsx package not installed. Install it with: pnpm add xlsx'
+        'exceljs package not installed. Install it with: pnpm add exceljs'
       );
     }
     throw new Error(`Failed to convert XLSX to CSV: ${(error as Error).message}`);
