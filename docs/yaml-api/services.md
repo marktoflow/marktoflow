@@ -95,7 +95,7 @@ inputs:
     - type: section
       text:
         type: mrkdwn
-        text: "*Deployment Status*\nEnvironment: Production\nVersion: v2.0.1"
+        text: "*Deployment Status*\nEnvironment: Production\nVersion: v2.0.2"
 output_variable: slack_response
 ```
 
@@ -203,7 +203,7 @@ inputs:
   content: "Deployment complete!"
   embeds:
     - title: "Deployment Status"
-      description: "Version 2.0.1 deployed to production"
+      description: "Version 2.0.2 deployed to production"
       color: 3066993  # Green
       fields:
         - name: "Environment"
@@ -1734,7 +1734,7 @@ inputs:
 action: telegram.sendMessage
 inputs:
   chat_id: "{{telegram_chat_id}}"
-  text: "*Deployment Complete!*\nVersion: 2.0.1\nStatus: ✅ Success"
+  text: "*Deployment Complete!*\nVersion: 2.0.2\nStatus: ✅ Success"
   parse_mode: "Markdown"
 ```
 
