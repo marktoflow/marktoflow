@@ -168,7 +168,33 @@ router.post('/:runId/:stepId/:token', async (req: Request, res: Response) => {
       return;
     }
 
-    // TODO: Validate form data against field schema
+    // Validate form data against field schema
+    const fields = stepOutput.fields as Record<string, { type?: string; required?: boolean }> | undefined;
+    if (fields) {
+      const errors: string[] = [];
+      for (const [fieldName, fieldDef] of Object.entries(fields)) {
+        if (fieldDef.required && (formData[fieldName] === undefined || formData[fieldName] === '')) {
+          errors.push(`Field "${fieldName}" is required`);
+        }
+        if (formData[fieldName] !== undefined && formData[fieldName] !== '' && fieldDef.type) {
+          const value = formData[fieldName];
+          if (fieldDef.type === 'number' && typeof value === 'string' && isNaN(Number(value))) {
+            errors.push(`Field "${fieldName}" must be a number`);
+          }
+          if (fieldDef.type === 'boolean' && !['true', 'false', true, false].includes(value)) {
+            errors.push(`Field "${fieldName}" must be a boolean`);
+          }
+        }
+      }
+      if (errors.length > 0) {
+        res.status(400).json({
+          error: 'Validation failed',
+          message: errors.join('; '),
+          errors,
+        });
+        return;
+      }
+    }
 
     // Resume execution with form data
     await executionManager.resumeExecution(runId, stepId, formData);

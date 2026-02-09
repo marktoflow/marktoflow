@@ -21,16 +21,27 @@ jobs:
       - name: Build core
         run: pnpm -C packages/core build
       - name: Test core
-        run: pnpm -C packages/core test
+        run: pnpm -C packages/core test -- --coverage
       - name: Build integrations
         run: pnpm -C packages/integrations build
       - name: Test integrations
-        run: pnpm -C packages/integrations test
+        run: pnpm -C packages/integrations test -- --coverage
       - name: Build CLI
         run: pnpm -C packages/cli build
       - name: Test CLI
-        run: pnpm -C packages/cli test
+        run: pnpm -C packages/cli test -- --coverage
       - name: Build GUI
         run: pnpm -C packages/gui build
       - name: Test GUI
-        run: pnpm -C packages/gui test
+        run: pnpm -C packages/gui test -- --coverage
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            packages/core/coverage/
+            packages/integrations/coverage/
+            packages/cli/coverage/
+            packages/gui/coverage/
+          retention-days: 14
