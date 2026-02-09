@@ -262,7 +262,7 @@ async function main() {
 
     if (!dryRun) {
       console.log('\n📦 Installation command:');
-      console.log('  npm install @marktoflow/marktoflow@2.0.1 --registry=https://npm.pkg.github.com/');
+      console.log('  npm install @marktoflow/marktoflow@2.0.2 --registry=https://npm.pkg.github.com/');
       console.log('\n  Or configure .npmrc:');
       console.log('  echo "@marktoflow:registry=https://npm.pkg.github.com/" >> .npmrc');
     }
