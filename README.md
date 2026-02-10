@@ -62,26 +62,6 @@ steps:
 ---
 ```
 
-## Talk to AI agents through Slack or Telegram
-
-Control AI agents (Claude, Copilot, OpenCode, Ollama) directly from your messaging apps. Send task instructions, get structured results with pass/fail status.
-
-```
-You → Slack: "Create a React component called UserProfile with email validation"
-
-marktoflow → Agent: Executes tasks with safe permissions
-
-Agent → Slack:
-🎉 Task Execution Complete
-Results: 3/3 tasks passed
-
-✅ Create UserProfile component - PASSED
-✅ Add email validation logic - PASSED
-✅ Add unit tests - PASSED
-```
-
-**Example:** [`agent-task-executor`](examples/agent-task-executor/) — Production-ready webhooks for Slack and Telegram
-
 ## Why marktoflow?
 
 | | What you get |
@@ -139,7 +119,10 @@ Results: 3/3 tasks passed
 
 Production-ready workflow templates in [`examples/`](examples/):
 
-- **[agent-task-executor](examples/agent-task-executor/)** — Control AI agents via Slack/Telegram messages
+- **[agent-task-executor](examples/agent-task-executor/)** — Control AI agents (Claude, Copilot, OpenCode, Ollama) via Slack/Telegram. Send task instructions, get structured results with pass/fail status.
+
+  Example: Send "Create a React component called UserProfile with email validation" → Agent executes with safe permissions → Returns structured results (3/3 tasks passed ✅)
+
   ```bash
   # Run the Slack version
   marktoflow run examples/agent-task-executor/workflow-slack.md
