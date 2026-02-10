@@ -69,9 +69,9 @@ describe('CodexProvider', () => {
       expect(provider.capabilities.toolUse).toBe(true);
       expect(provider.capabilities.codeExecution).toBe(true);
       expect(provider.capabilities.systemPrompts).toBe(true);
-      expect(provider.capabilities.models).toContain('codex-1');
-      expect(provider.capabilities.models).toContain('o3');
-      expect(provider.capabilities.models).toContain('o3-mini');
+      expect(provider.capabilities.models).toContain('gpt-5.2-codex');
+      expect(provider.capabilities.models).toContain('gpt-5.1-codex-max');
+      expect(provider.capabilities.models).toContain('gpt-5.2');
     });
   });
 
@@ -134,7 +134,7 @@ describe('CodexProvider', () => {
     it('should return not ready status before initialization', () => {
       const status = provider.getStatus();
       expect(status.ready).toBe(false);
-      expect(status.model).toBe('codex-1');
+      expect(status.model).toBe('gpt-5.2-codex');
     });
 
     it('should return ready status after initialization', async () => {

@@ -92,16 +92,15 @@ export class CodexProvider implements AgentProvider {
     codeExecution: true,
     systemPrompts: true,
     models: [
-      'codex-1',
-      'o3',
-      'o3-mini',
-      'o4-mini',
-      'gpt-4.1',
+      'gpt-5.2-codex',
+      'gpt-5.1-codex-max',
+      'gpt-5.2',
+      'gpt-5.1-codex-mini',
     ],
   };
 
   private codex: CodexInstance | null = null;
-  private model: string = 'codex-1';
+  private model: string = 'gpt-5.2-codex';
   private ready: boolean = false;
   private error: string | undefined;
   private workingDirectory: string = process.cwd();

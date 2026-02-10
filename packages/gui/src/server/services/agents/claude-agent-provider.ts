@@ -52,11 +52,11 @@ export class ClaudeAgentProvider implements AgentProvider {
     toolUse: true,
     codeExecution: true,
     systemPrompts: true,
-    models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'claude-3-5-haiku-20241022'],
+    models: ['claude-opus-4-6', 'claude-sonnet-4-5', 'claude-haiku-4-5'],
   };
 
   private queryFn: QueryFunction | null = null;
-  private model: string = 'claude-sonnet-4-20250514';
+  private model: string = 'claude-sonnet-4-5';
   private ready: boolean = false;
   private error: string | undefined;
   private currentQuery: AgentQuery | null = null;

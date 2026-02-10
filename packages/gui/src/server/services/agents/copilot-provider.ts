@@ -59,16 +59,25 @@ export class CopilotProvider implements AgentProvider {
     codeExecution: true,
     systemPrompts: true,
     models: [
-      'gpt-4.1',
-      'gpt-4o',
-      'gpt-4-turbo',
-      'claude-3.5-sonnet',
+      // Anthropic models
+      'Claude Opus 4.6',
+      'Claude Sonnet 4.5',
+      'Claude Haiku 4.5',
+      // OpenAI Codex models
+      'GPT-5.2-Codex',
+      'GPT-5.1-Codex-Max',
+      'GPT-5.2',
+      'GPT-5.1-Codex-Mini',
+      // Gemini models
+      'Gemini 3 Pro',
+      'Gemini 3 Flash',
+      'Gemini 2.5 Pro',
     ],
   };
 
   // Using 'unknown' to handle SDK version differences
   private client: unknown = null;
-  private model: string = 'gpt-4.1';
+  private model: string = 'Claude Sonnet 4.5';
   private ready: boolean = false;
   private available: boolean = false; // Track if SDK is available
   private error: string | undefined;
