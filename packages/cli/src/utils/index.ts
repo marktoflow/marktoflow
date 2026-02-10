@@ -22,3 +22,10 @@ export {
   type AgentOverrideResult,
   type ModelOverrideResult,
 } from './agent-override.js';
+
+export {
+  detectAgents,
+  detectAgent,
+  getKnownAgentIds,
+  type DetectedAgent,
+} from './detect-agents.js';
