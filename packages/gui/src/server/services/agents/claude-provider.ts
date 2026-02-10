@@ -24,15 +24,14 @@ export class ClaudeProvider implements AgentProvider {
     systemPrompts: true,
     maxContextLength: 200000,
     models: [
-      'claude-sonnet-4-20250514',
-      'claude-opus-4-20250514',
-      'claude-3-5-sonnet-20241022',
-      'claude-3-5-haiku-20241022',
+      'claude-opus-4-6',
+      'claude-sonnet-4-5',
+      'claude-haiku-4-5',
     ],
   };
 
   private client: Anthropic | null = null;
-  private model: string = 'claude-sonnet-4-20250514';
+  private model: string = 'claude-sonnet-4-5';
   private ready: boolean = false;
   private error: string | undefined;
 

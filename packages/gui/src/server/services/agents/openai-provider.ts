@@ -33,12 +33,12 @@ export class OpenAIProvider implements AgentProvider {
     toolUse: true,
     codeExecution: false,
     systemPrompts: true,
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    models: ['gpt-4.5', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4o', 'o3'],
   };
 
   private apiKey: string = '';
   private baseUrl: string = 'https://api.openai.com/v1';
-  private model: string = 'gpt-4o';
+  private model: string = 'gpt-4.5';
   private ready: boolean = false;
   private error: string | undefined;
 
