@@ -48,6 +48,9 @@ import {
   overrideAgentInWorkflow,
   debugLogAgentOverride,
   overrideModelInWorkflow,
+  detectAgents,
+  detectAgent,
+  getKnownAgentIds,
 } from './utils/index.js';
 
 const VERSION = '2.0.2';
@@ -206,10 +209,24 @@ Outputs a greeting message.
 
       spinner.succeed('Project initialized successfully!');
 
+      // Auto-detect agents
+      const agents = detectAgents();
+      const available = agents.filter((a) => a.available);
+      if (available.length > 0) {
+        console.log('\n' + chalk.bold('Detected agents:'));
+        for (const agent of available) {
+          const methodLabel = agent.method === 'cli' ? 'CLI' : agent.method === 'env' ? 'env' : 'server';
+          console.log(`  ${chalk.green('✓')} ${agent.name} (${methodLabel})`);
+        }
+      }
+
       console.log('\n' + chalk.bold('Next steps:'));
       console.log(`  1. Edit ${chalk.cyan('.marktoflow/workflows/hello-world.md')}`);
       console.log(`  2. Run ${chalk.cyan('marktoflow run hello-world.md')}`);
       console.log(`  3. Connect services: ${chalk.cyan('marktoflow connect slack')}`);
+      if (available.length === 0) {
+        console.log(`  4. Set up an AI agent: ${chalk.cyan('marktoflow agent list')}`);
+      }
     } catch (error) {
       spinner.fail(`Initialization failed: ${error}`);
       process.exit(1);
@@ -744,53 +761,53 @@ agentCmd
   .command('list')
   .description('List available agents')
   .action(() => {
-    const capabilitiesPath = join('.marktoflow', 'agents', 'capabilities.yaml');
-    const agentsFromFile: string[] = [];
-    if (existsSync(capabilitiesPath)) {
-      const content = readFileSync(capabilitiesPath, 'utf8');
-      const data = parseYaml(content) as { agents?: Record<string, unknown> };
-      agentsFromFile.push(...Object.keys(data?.agents ?? {}));
-    }
+    const agents = detectAgents();
 
-    const knownAgents = ['claude-agent', 'openai', 'opencode', 'ollama', 'codex', 'gemini-cli'];
-    const allAgents = Array.from(new Set([...agentsFromFile, ...knownAgents]));
-
-    console.log(chalk.bold('Available Agents:'));
-    for (const agent of allAgents) {
-      const status = agentsFromFile.includes(agent)
-        ? chalk.green('Registered')
-        : chalk.yellow('Not configured');
-      console.log(`  ${chalk.cyan(agent)}: ${status}`);
+    console.log(chalk.bold('Available Agents:\n'));
+    for (const agent of agents) {
+      if (agent.available) {
+        const methodLabel = agent.method === 'cli' ? 'CLI found' : agent.method === 'env' ? 'env var set' : 'server running';
+        console.log(`  ${chalk.cyan(agent.id)}  ${chalk.green('Available')} (${methodLabel})`);
+      } else {
+        console.log(`  ${chalk.cyan(agent.id)}  ${chalk.yellow('Not configured')} — ${agent.configHint}`);
+      }
     }
+    console.log(`\n  Config: ${chalk.dim('.marktoflow/agents/capabilities.yaml')}`);
   });
 
 agentCmd
   .command('info <agent>')
   .description('Show agent information')
-  .action((agent) => {
+  .action((agentId) => {
+    const detected = detectAgent(agentId);
+    if (!detected) {
+      const known = getKnownAgentIds();
+      console.log(chalk.red(`Unknown agent: ${agentId}`));
+      console.log(`Known agents: ${known.join(', ')}`);
+      process.exit(1);
+    }
+
+    console.log(chalk.bold(detected.name) + ` (${detected.id})\n`);
+
+    if (detected.available) {
+      const methodLabel = detected.method === 'cli' ? 'CLI found on PATH' : detected.method === 'env' ? 'Environment variable set' : 'Server running';
+      console.log(`  Status:  ${chalk.green('Available')}`);
+      console.log(`  Method:  ${methodLabel}`);
+    } else {
+      console.log(`  Status:  ${chalk.yellow('Not configured')}`);
+      console.log(`  Setup:   ${detected.configHint}`);
+    }
+
+    // Show config file info if it exists
     const capabilitiesPath = join('.marktoflow', 'agents', 'capabilities.yaml');
-    if (!existsSync(capabilitiesPath)) {
-      console.log(chalk.yellow('No capabilities file found. Run `marktoflow init` first.'));
-      process.exit(1);
-    }
-    const content = readFileSync(capabilitiesPath, 'utf8');
-    const data = parseYaml(content) as { agents?: Record<string, any> };
-    const info = data?.agents?.[agent];
-    if (!info) {
-      console.log(chalk.red(`Agent not found: ${agent}`));
-      process.exit(1);
-    }
-    console.log(chalk.bold(agent));
-    console.log(`  Version: ${info.version ?? 'unknown'}`);
-    console.log(`  Provider: ${info.provider ?? 'unknown'}`);
-    const capabilities = info.capabilities ?? {};
-    for (const [key, value] of Object.entries(capabilities)) {
-      if (typeof value === 'object' && value) {
-        for (const [subKey, subValue] of Object.entries(value)) {
-          console.log(`  ${key}.${subKey}: ${String(subValue)}`);
-        }
-      } else {
-        console.log(`  ${key}: ${String(value)}`);
+    if (existsSync(capabilitiesPath)) {
+      const content = readFileSync(capabilitiesPath, 'utf8');
+      const data = parseYaml(content) as { agents?: Record<string, any> };
+      const fileInfo = data?.agents?.[agentId];
+      if (fileInfo) {
+        console.log(`\n  ${chalk.dim('From capabilities.yaml:')}`);
+        if (fileInfo.version) console.log(`  Version:  ${fileInfo.version}`);
+        if (fileInfo.provider) console.log(`  Provider: ${fileInfo.provider}`);
       }
     }
   });
