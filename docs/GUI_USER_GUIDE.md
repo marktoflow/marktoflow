@@ -221,6 +221,17 @@ steps:
 | **Try/Catch** | Shield | Yellow/Orange | Error handling with fallback steps |
 | **Transform** | ArrowRight/Filter/Minimize2 | Teal/Cyan | Map/Filter/Reduce operations |
 
+#### Parallel Action Steps
+
+In addition to the branch-based Parallel control flow node, marktoflow supports action-based parallel operations that appear as standard Step nodes with the `parallel` service icon (Layers, blue/cyan):
+
+| Action | Description |
+|--------|-------------|
+| **parallel.spawn** | Run multiple AI agents concurrently (e.g., security + performance + quality reviewers) |
+| **parallel.map** | Process an array of items in parallel with configurable concurrency |
+
+These actions follow the standard `service.method` pattern and render in the Step Editor, New Step Wizard, and canvas like any other service action. See [YAML-API.md](YAML-API.md) for full syntax.
+
 **Control Flow Features:**
 - Visual progress indicators during execution
 - Active branch highlighting with ring borders
@@ -502,7 +513,7 @@ Control flow nodes provide rich visual feedback during execution:
   - Error: "Loop stopped on error"
 - Progress bar color indicates exit type
 
-**Parallel Execution:**
+**Parallel Execution (branch-based):**
 - **Branch status badges** show individual branch states:
   - Gray: Pending
   - Blue (pulsing): Running
@@ -511,6 +522,11 @@ Control flow nodes provide rich visual feedback during execution:
 - **Rate limiting warning** appears when max concurrent limit is hit
 - **Failed branches** highlighted in red
 - Max concurrent value highlighted in yellow when limit active
+
+**Parallel Actions (`parallel.spawn` / `parallel.map`):**
+- Rendered as standard Step nodes with the Layers icon and blue/cyan color (#4facfe)
+- Available in the New Step Wizard under the "Parallel" service
+- Validated and editable via StepEditor like any other action step
 
 **Try/Catch Blocks:**
 - **Active branch indicator** shows try/catch/finally execution
