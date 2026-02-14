@@ -69,6 +69,7 @@ import { RollbackRegistry } from './rollback.js';
 import { parseFile } from './parser.js';
 import { resolve, dirname } from 'node:path';
 import { executeBuiltInOperation, isBuiltInOperation } from './built-in-operations.js';
+import { executeParallelOperation, isParallelOperation } from './parallel.js';
 import { renderTemplate } from './template-engine.js';
 import { executeScriptAsync } from './script-executor.js';
 
@@ -1405,7 +1406,16 @@ Execute the workflow steps in order and return the final outputs as JSON.`;
 
         // Check if this is a built-in operation
         let output: unknown;
-        if (isBuiltInOperation(step.action)) {
+        if (isParallelOperation(step.action)) {
+          // Parallel operations need access to SDK registry and step executor
+          output = await executeParallelOperation(
+            step.action,
+            resolvedInputs,
+            context,
+            sdkRegistry,
+            stepExecutor
+          );
+        } else if (isBuiltInOperation(step.action)) {
           // Execute built-in operation directly (no timeout, no SDK executor needed)
           // For built-in operations, pass both resolved and unresolved inputs
           // to allow selective resolution of template expressions
