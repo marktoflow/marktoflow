@@ -56,4 +56,4 @@ Full documentation, examples, and source code:
 
 ## License
 
-Apache-2.0
+AGPL-3.0

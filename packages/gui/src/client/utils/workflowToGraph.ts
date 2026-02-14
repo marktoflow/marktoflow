@@ -471,8 +471,9 @@ export function graphToWorkflow(
   metadata: Workflow['metadata']
 ): Workflow {
   // Filter out trigger, output, sticky, and group nodes, sort by vertical position
+  const controlFlowTypes = ['parallel', 'if', 'for_each', 'while', 'switch', 'try', 'map', 'filter', 'reduce'];
   const stepNodes = nodes
-    .filter((node) => node.type === 'step' || node.type === 'subworkflow')
+    .filter((node) => node.type === 'step' || node.type === 'subworkflow' || controlFlowTypes.includes(node.type || ''))
     .sort((a, b) => a.position.y - b.position.y);
 
   // Extract trigger info if present

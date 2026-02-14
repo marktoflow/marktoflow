@@ -170,6 +170,11 @@ export const SERVICES = {
     icon: 'ollama',
     methods: ['generate', 'chat', 'embeddings'],
   },
+  parallel: {
+    name: 'Parallel',
+    icon: 'parallel',
+    methods: ['spawn', 'map'],
+  },
 } as const;
 
 // Default node positions

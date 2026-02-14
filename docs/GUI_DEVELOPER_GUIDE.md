@@ -628,7 +628,7 @@ function createCustomNode(step: Step): Node {
 
 ## Control Flow Node Components
 
-marktoflow v2.0.0-alpha.8 includes 7 built-in control flow node components for the visual workflow designer.
+marktoflow v2.0.0-alpha.8 includes 7 built-in control flow node components for the visual workflow designer. Additionally, action-based parallel operations (`parallel.spawn`, `parallel.map`) are registered as a standard service and render as Step nodes—see the [Service Registration](#service-registration) section below.
 
 ### Node Component Architecture
 
@@ -910,6 +910,20 @@ const nodeTypes = {
   reduce: TransformNode,
 };
 ```
+
+### Service Registration: Parallel Actions
+
+The `parallel.spawn` and `parallel.map` operations use the standard action-based `service.method` pattern (like `slack.chat.postMessage`). They are registered as a service rather than a control flow node type:
+
+- **`SERVICES`** (`shared/constants.ts`): Entry with `name: 'Parallel'`, `icon: 'parallel'`, `methods: ['spawn', 'map']`
+- **`serviceIcons`** (`client/utils/serviceIcons.tsx`): `parallel → Layers` icon, `#4facfe` color
+- **`graphToWorkflow`** (`client/utils/workflowToGraph.ts`): Preserves control-flow node types alongside `step` and `subworkflow` when converting the graph back to a workflow
+
+This means `parallel.spawn` and `parallel.map` steps:
+- Render as standard **StepNode** components with the Layers icon
+- Appear in the **NewStepWizard** service list
+- Are editable via **StepEditor** like any other action
+- Are distinct from the branch-based **ParallelNode** control flow component (`type: 'parallel'`)
 
 ### Design System
 

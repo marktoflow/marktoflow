@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/v/@marktoflow/marktoflow" alt="npm version" /></a>
-  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License" /></a>
+  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License" /></a>
   <a href="https://github.com/marktoflow/marktoflow/stargazers"><img src="https://img.shields.io/github/stars/marktoflow/marktoflow" alt="GitHub stars" /></a>
   <a href="https://github.com/marktoflow/marktoflow/actions"><img src="https://img.shields.io/github/actions/workflow/status/marktoflow/marktoflow/ci.yml?branch=main" alt="Build" /></a>
   <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/dm/@marktoflow/marktoflow" alt="Downloads" /></a>
@@ -70,6 +70,7 @@ steps:
 | **MCP-first** | Native Model Context Protocol support with zero config |
 | **Direct SDK calls** | Official SDKs, full TypeScript types, no wrapper APIs |
 | **AI agents included** | Use your existing Copilot/Claude/Codex subscriptions — no extra API keys |
+| **Parallel execution** | Run multiple AI agents concurrently — 3x faster code reviews, batch processing |
 | **Visual editor** | Optional drag-and-drop GUI with `marktoflow gui` |
 | **Cost tracking** | Know exactly what each workflow run costs |
 
@@ -130,6 +131,10 @@ Production-ready workflow templates in [`examples/`](examples/):
   # Or use Telegram
   marktoflow run examples/agent-task-executor/workflow-telegram.md
   ```
+- **[parallel-agents](examples/parallel-agents/)** — ⚡ NEW: Run multiple AI agents concurrently
+  - [multi-agent-code-review](examples/parallel-agents/multi-agent-code-review.md) — Security + Performance + Quality reviews in parallel (3x faster)
+  - [batch-pr-processing](examples/parallel-agents/batch-pr-processing.md) — Review 50 PRs in 5 minutes instead of 25
+  - [consensus-decision](examples/parallel-agents/consensus-decision.md) — Gather diverse AI perspectives for better decisions
 - **[codebase-qa](examples/codebase-qa/)** — AI-powered Q&A via Slack/Telegram
 - **[copilot-code-review](examples/copilot-code-review/)** — PR review with GitHub Copilot
 - **[daily-standup](examples/daily-standup/)** — Jira + Slack standup automation
@@ -141,6 +146,7 @@ Production-ready workflow templates in [`examples/`](examples/):
 
 - [Installation Guide](docs/INSTALLATION.md)
 - [Detailed Guide](docs/DETAILED-GUIDE.md)
+- [YAML API Reference](docs/YAML-API.md) — Complete API including ⚡ parallel execution
 - [REST API Guide](docs/REST-API-GUIDE.md)
 - [Template Expressions](docs/TEMPLATE-EXPRESSIONS.md)
 - [Control Flow](docs/CONTROL-FLOW-GUIDE.md)
@@ -154,4 +160,4 @@ Production-ready workflow templates in [`examples/`](examples/):
 
 ## License
 
-[Apache-2.0](LICENSE)
+[AGPL-3.0](LICENSE) — Free for personal and open source use. Commercial licensing available for organizations that cannot comply with AGPL terms. Contact [scottgl@gmail.com](mailto:scottgl@gmail.com) for details.

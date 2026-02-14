@@ -8,11 +8,14 @@
  * - core.format: Date/number/string formatting
  * - file.read: Read files with format conversion (docx, pdf, xlsx)
  * - file.write: Write files (text or binary)
+ * - parallel.spawn: Execute multiple AI agents concurrently
+ * - parallel.map: Map over collection with parallel agents
  */
 
 import { ExecutionContext } from './models.js';
 import { resolveTemplates, resolveVariablePath } from './engine.js';
 import { executeFileOperation, isFileOperation } from './file-operations.js';
+import { isParallelOperation } from './parallel.js';
 
 // ============================================================================
 // Types
@@ -610,7 +613,7 @@ export function isBuiltInOperation(action: string): boolean {
     'core.sort', 'core.crypto', 'core.datetime', 'core.parse',
     'core.compress', 'core.decompress',
   ];
-  return builtInActions.includes(action) || isFileOperation(action);
+  return builtInActions.includes(action) || isFileOperation(action) || isParallelOperation(action);
 }
 
 // ============================================================================
