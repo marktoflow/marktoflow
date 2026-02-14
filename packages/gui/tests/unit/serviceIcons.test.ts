@@ -20,6 +20,7 @@ describe('Service Icons', () => {
         'claude',
         'opencode',
         'ollama',
+        'parallel',
       ];
 
       services.forEach((service) => {
@@ -79,6 +80,7 @@ describe('Service Icons', () => {
         gmail: '#EA4335',
         outlook: '#0078D4',
         discord: '#5865F2',
+        parallel: '#4facfe',
       };
 
       Object.entries(serviceColors).forEach(([service, expectedColor]) => {
@@ -144,7 +146,7 @@ describe('Service Icons', () => {
   });
 
   describe('Integration Coverage', () => {
-    it('should have icons for all 30 service integrations', () => {
+    it('should have icons for all 31 service integrations', () => {
       const allServices = [
         // Standard services
         'slack',
@@ -173,6 +175,8 @@ describe('Service Icons', () => {
         'trello',
         'dropbox',
         'aws-s3',
+        // Control flow
+        'parallel',
         // Database services
         'postgres',
         'mysql',

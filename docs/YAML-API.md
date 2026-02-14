@@ -1406,6 +1406,261 @@ inputs:
     amount: '{{ payment.amount }}'
 ```
 
+
+### Parallel Execution Actions
+
+Execute multiple AI agents concurrently for faster processing and diverse perspectives.
+
+**Use cases:**
+- Code review from multiple perspectives (security, performance, quality)
+- Batch processing (PRs, issues, documents)
+- Gathering consensus from different models
+- A/B testing models on the same task
+
+#### `parallel.spawn`
+
+Execute multiple AI agents concurrently with different prompts and wait strategies.
+
+```yaml
+action: parallel.spawn
+inputs:
+  agents:             # Required: Array of agent configurations
+    - id: string      # Required: Unique agent identifier
+      provider: string  # Required: claude, copilot, opencode, ollama
+      model: string   # Optional: Model name (uses provider default if omitted)
+      prompt: string  # Required: Prompt template (supports {{ }} variables)
+      inputs: object  # Optional: Additional inputs
+  wait: string        # Optional: all|any|majority|<number> (default: all)
+  timeout: string     # Optional: Max time per agent (default: 60s)
+  onError: string     # Optional: fail|continue|partial (default: fail)
+```
+
+**Wait Strategies:**
+- `all` (default) - Wait for all agents to complete
+- `any` - Return as soon as any agent completes (fastest wins)
+- `majority` - Wait for >50% of agents to complete
+- `<number>` - Wait for specific count (e.g., `wait: 3` waits for 3 agents)
+
+**Error Handling:**
+- `fail` (default) - Fail if any agent fails
+- `continue` - Continue with successful results
+- `partial` - Fail only if all agents fail
+
+**Output Structure:**
+```typescript
+{
+  results: {
+    [agentId]: {
+      id: string;
+      success: boolean;
+      output?: any;
+      error?: string;
+      timing: { started: string; completed: string; duration: number };
+      cost?: number;
+    }
+  },
+  successful: string[];  // Array of successful agent IDs
+  failed: string[];      // Array of failed agent IDs
+  timing: { duration: number; started: string; completed: string },
+  costs: { total: number; byAgent: { [agentId]: number } }
+}
+```
+
+**Example - Multi-Perspective Code Review (3x faster than sequential):**
+
+```yaml
+- action: parallel.spawn
+  inputs:
+    agents:
+      - id: security
+        provider: claude
+        model: sonnet
+        prompt: "Security review of {{ code_file }}: {{ code_content }}"
+      - id: performance
+        provider: copilot
+        prompt: "Performance review of {{ code_file }}: {{ code_content }}"
+      - id: quality
+        provider: claude
+        model: haiku
+        prompt: "Code quality review of {{ code_file }}: {{ code_content }}"
+    wait: all
+    timeout: 90s
+    onError: partial
+  outputs:
+    security_review: '{{ results.security.output }}'
+    performance_review: '{{ results.performance.output }}'
+    quality_review: '{{ results.quality.output }}'
+    total_cost: '{{ results.costs.total }}'
+```
+
+**Example - Fastest Model Wins:**
+
+```yaml
+- action: parallel.spawn
+  inputs:
+    agents:
+      - id: fast_model
+        provider: claude
+        model: haiku
+        prompt: "{{ question }}"
+      - id: quality_model
+        provider: claude
+        model: opus
+        prompt: "{{ question }}"
+    wait: any  # Return as soon as fastest model responds
+```
+
+**Example - Majority Consensus:**
+
+```yaml
+- action: parallel.spawn
+  inputs:
+    agents:
+      - id: agent1
+        provider: claude
+        prompt: "Classify sentiment: {{ text }}"
+      - id: agent2
+        provider: copilot
+        prompt: "Classify sentiment: {{ text }}"
+      - id: agent3
+        provider: ollama
+        model: llama3
+        prompt: "Classify sentiment: {{ text }}"
+    wait: majority  # Wait for 2 out of 3
+  outputs:
+    results: '{{ results }}'
+```
+
+#### `parallel.map`
+
+Process an array of items in parallel with configurable concurrency.
+
+```yaml
+action: parallel.map
+inputs:
+  items: array        # Required: Array to process (can be template)
+  agent:              # Required: Agent configuration
+    provider: string  # Required: claude, copilot, opencode, ollama
+    model: string     # Optional: Model name
+    prompt: string    # Required: Prompt template (access {{ item }} and {{ itemIndex }})
+  concurrency: number # Optional: Max concurrent agents (default: 5)
+  timeout: string     # Optional: Timeout per item (default: 60s)
+  onError: string     # Optional: fail|continue|partial (default: fail)
+```
+
+**Context Variables:**
+- `{{ item }}` - Current item being processed
+- `{{ itemIndex }}` - Index of current item (0-based)
+
+**Output Structure:**
+```typescript
+[
+  result1,  // Successful result
+  result2,  // Successful result
+  Error,    // Failed result (if onError: continue)
+  ...
+]
+```
+
+**Example - Batch PR Processing (5min instead of 25min sequential):**
+
+```yaml
+- action: parallel.map
+  inputs:
+    items: '{{ pull_requests }}'
+    concurrency: 5
+    agent:
+      provider: claude
+      model: haiku
+      prompt: |
+        Review PR #{{ item.number }}: {{ item.title }}
+        Files changed: {{ item.changed_files }}
+        
+        Provide: summary, issues found, recommendation (approve/request-changes/comment)
+  outputs:
+    pr_reviews: '{{ results }}'
+```
+
+**Example - Document Analysis:**
+
+```yaml
+- action: parallel.map
+  inputs:
+    items: '{{ documents }}'
+    concurrency: 10
+    timeout: 2m
+    agent:
+      provider: claude
+      model: sonnet
+      prompt: 'Analyze document {{ itemIndex + 1 }} of {{ documents | length }}: {{ item.content }}'
+```
+
+**Example - Error Handling:**
+
+```yaml
+- action: parallel.map
+  inputs:
+    items: '{{ large_dataset }}'
+    concurrency: 20
+    onError: continue  # Don't stop on failures, collect all results
+    agent:
+      provider: ollama
+      model: llama3
+      prompt: "Classify: {{ item }}"
+  outputs:
+    all_results: '{{ results }}'
+
+# Check success rate
+- action: workflow.set_outputs
+  inputs:
+    successful: '{{ all_results | select("success") | list | length }}'
+    failed: '{{ all_results | reject("success") | list | length }}'
+    results: '{{ all_results }}'
+```
+
+**Performance Comparison:**
+
+| Scenario | Sequential | Parallel | Speedup |
+|----------|-----------|----------|---------|
+| 3 code reviews (30s each) | 90s | 30s | 3x |
+| 50 PRs (30s each) @ concurrency=5 | 25min | 5min | 5x |
+| 50 PRs (30s each) @ concurrency=10 | 25min | 2.5min | 10x |
+
+**Best Practices:**
+
+1. **Set appropriate concurrency** to avoid rate limits:
+   - Conservative (safe): `concurrency: 5`
+   - Moderate (paid tiers): `concurrency: 10`
+   - Aggressive (monitor): `concurrency: 20`
+
+2. **Use cheaper models for batch operations**:
+   - Simple tasks: `haiku`, `gpt-3.5`
+   - Standard analysis: `sonnet`, `gpt-4`
+   - Complex reasoning: `opus`, `gpt-4-turbo`
+
+3. **Handle partial results**:
+   ```yaml
+   onError: continue  # Collect all results
+   # Then check success rate and filter failures
+   ```
+
+4. **Monitor costs**:
+   ```yaml
+   outputs:
+     total_cost: '{{ results.costs.total }}'
+     cost_per_item: '{{ results.costs.total / items | length }}'
+   ```
+
+5. **Test with small batches first**:
+   ```yaml
+   items: '{{ all_items | slice(0, 5) }}'  # First 5 for testing
+   ```
+
+**Examples:**
+- [Multi-Agent Code Review](../examples/parallel-agents/multi-agent-code-review.md)
+- [Batch PR Processing](../examples/parallel-agents/batch-pr-processing.md)
+- [Consensus Decision Making](../examples/parallel-agents/consensus-decision.md)
+
 ---
 
 ## Control Flow
