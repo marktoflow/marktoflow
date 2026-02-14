@@ -96,4 +96,4 @@ See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/
 
 ## License
 
-Apache-2.0
+AGPL-3.0
