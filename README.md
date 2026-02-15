@@ -34,7 +34,7 @@
 ## Quick Start
 
 ```bash
-npm install -g @marktoflow/marktoflow
+npm install -g marktoflow
 
 marktoflow init
 
@@ -159,7 +159,8 @@ marktoflow is designed for teams and individuals who care about where their data
 
 | Package | Description |
 |---------|-------------|
-| [`@marktoflow/marktoflow`](packages/marktoflow) | All-in-one install (CLI + GUI + integrations) |
+| [`marktoflow`](packages/marktoflow-wrapper) | All-in-one install: `npm install -g marktoflow` |
+| [`@marktoflow/marktoflow`](packages/marktoflow) | Scoped metapackage (CLI + GUI + integrations) |
 | [`@marktoflow/core`](packages/core) | Parser, engine, state management, plugin system |
 | [`@marktoflow/cli`](packages/cli) | Command-line interface and workflow runner |
 | [`@marktoflow/gui`](packages/gui) | Visual workflow designer (web UI) |

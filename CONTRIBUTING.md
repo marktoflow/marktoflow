@@ -64,7 +64,8 @@ marktoflow/
 - **@marktoflow/integrations** - Service integrations and AI adapters
 - **@marktoflow/cli** - Command-line interface
 - **@marktoflow/gui** - Web-based workflow designer
-- **@marktoflow/marktoflow** - Meta-package (installs everything)
+- **marktoflow** - Global install wrapper (`npm install -g marktoflow`)
+- **@marktoflow/marktoflow** - Scoped meta-package (installs everything)
 
 ### Development Workflow
 

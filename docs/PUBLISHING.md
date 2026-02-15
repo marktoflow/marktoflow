@@ -20,14 +20,16 @@ pnpm publish
 
 ## Package Structure
 
-marktoflow is a monorepo with four published packages:
+marktoflow is a monorepo with six published packages:
 
 1. **@marktoflow/core** - Core engine (parser, executor, state management)
 2. **@marktoflow/integrations** - Service integrations (Slack, GitHub, Jira, etc.)
-3. **@marktoflow/gui** - Visual workflow designer (web UI with AI assistance)
-4. **@marktoflow/cli** - CLI package (main package users install)
+3. **@marktoflow/cli** - CLI package (workflow runner)
+4. **@marktoflow/gui** - Visual workflow designer (web UI with AI assistance)
+5. **@marktoflow/marktoflow** - Scoped metapackage (all-in-one)
+6. **marktoflow** - Non-scoped wrapper (`npm install -g marktoflow`)
 
-All packages are published under the `@marktoflow` npm organization.
+Scoped packages are published under the `@marktoflow` npm organization. The `marktoflow` wrapper enables the simple global install command.
 
 ### Package Dependencies
 
@@ -97,7 +99,7 @@ During development, use alpha tags:
 
 - Format: `2.0.0-alpha.1`, `2.0.0-alpha.2`, etc.
 - Published with `--tag alpha` flag
-- Users install with `@alpha` tag: `npm install -g @marktoflow/cli@alpha`
+- Users install with `@alpha` tag: `npm install -g marktoflow@alpha`
 
 ### Stable Releases
 
@@ -105,7 +107,7 @@ For production-ready versions:
 
 - Format: `2.0.0`, `2.1.0`, `2.1.1`, etc.
 - Published without `--tag` flag (defaults to `latest`)
-- Users install normally: `npm install -g @marktoflow/cli`
+- Users install normally: `npm install -g marktoflow`
 
 ---
 
@@ -220,7 +222,7 @@ pnpm publish
 ✅ Publish complete!
 
 📦 Installation command:
-  npm install @marktoflow/cli @marktoflow/gui
+  npm install -g marktoflow
 ```
 
 #### Step 5: Create Git Tag
@@ -369,7 +371,7 @@ pnpm publish
 This publishes to the `latest` tag:
 
 ```bash
-npm install -g @marktoflow/cli  # Gets latest stable version
+npm install -g marktoflow  # Gets latest stable version
 ```
 
 ### Step 4: Restore Alpha Publishing
@@ -517,11 +519,11 @@ For complete details on the publishing system:
 **Installation**:
 
 ```bash
-# Install CLI (includes optional GUI)
-npm install -g @marktoflow/cli
+# Install everything (CLI + GUI + integrations)
+npm install -g marktoflow
 
-# Install GUI separately (for programmatic use)
-npm install @marktoflow/gui
+# Or scoped metapackage
+npm install -g @marktoflow/marktoflow
 ```
 
 **Next Steps**:
