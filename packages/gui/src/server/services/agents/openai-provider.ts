@@ -36,6 +36,8 @@ export class OpenAIProvider implements AgentProvider {
     models: ['gpt-4.5', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4o', 'o3'],
   };
 
+  private detectedModels: string[] = [];
+
   private apiKey: string = '';
   private baseUrl: string = 'https://api.openai.com/v1';
   private model: string = 'gpt-4.5';
@@ -68,9 +70,10 @@ export class OpenAIProvider implements AgentProvider {
         this.model = config.model;
       }
 
-      // Test the connection
+      // Test the connection and auto-detect models
       try {
         await this.testConnection();
+        await this.detectModels();
         this.ready = true;
         this.error = undefined;
       } catch (err) {
@@ -95,15 +98,45 @@ export class OpenAIProvider implements AgentProvider {
     }
   }
 
+  /**
+   * Auto-detect available models from the server.
+   * Useful for local servers (llama.cpp, VLLM) that serve specific models.
+   */
+  private async detectModels(): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/models`, {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { data?: Array<{ id: string }> };
+        if (data.data && Array.isArray(data.data)) {
+          this.detectedModels = data.data.map((m) => m.id);
+
+          // If using a local endpoint and no model was explicitly configured,
+          // auto-select the first available model
+          if (this.baseUrl !== 'https://api.openai.com/v1' && this.detectedModels.length > 0) {
+            if (this.model === 'gpt-4.5' || !this.detectedModels.includes(this.model)) {
+              this.model = this.detectedModels[0];
+            }
+          }
+        }
+      }
+    } catch {
+      // Non-fatal — use configured model
+    }
+  }
+
   isReady(): boolean {
     return this.ready;
   }
 
-  getStatus(): { ready: boolean; model?: string; error?: string } {
+  getStatus(): { ready: boolean; model?: string; error?: string; detectedModels?: string[] } {
     return {
       ready: this.ready,
       model: this.model,
       error: this.error,
+      ...(this.detectedModels.length > 0 ? { detectedModels: this.detectedModels } : {}),
     };
   }
 
