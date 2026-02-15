@@ -369,12 +369,42 @@ export const WorkflowInputSchema = z.object({
   validation: z.record(z.unknown()).optional(),
 });
 
+/**
+ * Workflow execution mode:
+ * - "run" (default): Execute steps once and exit
+ * - "daemon": Run continuously — after the last step, loop back to the first step
+ * - "event": Wait for trigger events, then execute steps for each event
+ */
+export const WorkflowModeSchema = z.enum(["run", "daemon", "event"]).default("run");
+
+/**
+ * Event source configuration for event-driven workflows.
+ */
+export const EventSourceConfigSchema = z.object({
+  /** Event source kind */
+  kind: z.enum(["websocket", "discord", "slack", "cron", "http-stream"]),
+  /** Unique id for this connection */
+  id: z.string(),
+  /** Source-specific options (url, token, etc.) */
+  options: z.record(z.unknown()).default({}),
+  /** Only emit events matching these types */
+  filter: z.array(z.string()).optional(),
+  /** Auto-reconnect (default: true) */
+  reconnect: z.boolean().default(true),
+  /** Reconnect delay in ms */
+  reconnectDelay: z.number().optional(),
+});
+
 export const WorkflowSchema = z.object({
   metadata: WorkflowMetadataSchema,
   tools: z.record(ToolConfigSchema).default({}),
   secrets: WorkflowSecretsConfigSchema.optional(),
   inputs: z.record(WorkflowInputSchema).optional(),
   triggers: z.array(TriggerSchema).optional(),
+  /** Workflow execution mode */
+  mode: WorkflowModeSchema.optional(),
+  /** Event sources for event-driven workflows */
+  sources: z.array(EventSourceConfigSchema).optional(),
   steps: z.array(WorkflowStepUnionSchema),
   rawContent: z.string().optional(), // Original markdown content
   // Workflow-level permissions (apply to all steps)

@@ -391,6 +391,35 @@ export {
   type TriggerHandler,
 } from './trigger-manager.js';
 
+// Event Sources
+export {
+  EventSourceManager,
+  BaseEventSource,
+  WebSocketEventSource,
+  DiscordEventSource,
+  SlackEventSource,
+  CronEventSource,
+  SSEEventSource,
+  createEventSource,
+  type EventSourceEvent,
+  type EventSourceConfig,
+  type EventSourceStatus,
+  type EventSourceStats,
+} from './event-source.js';
+
+// Event Operations
+export {
+  executeEventConnect,
+  executeEventWait,
+  executeEventDisconnect,
+  executeEventSend,
+  executeEventStatus,
+  isEventOperation,
+  executeEventOperation,
+  getEventSourceManager,
+  resetEventSourceManager,
+} from './event-operations.js';
+
 // Plugins
 export {
   PluginState,

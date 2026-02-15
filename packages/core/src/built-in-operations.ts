@@ -7,6 +7,7 @@
 import { ExecutionContext } from './models.js';
 import { executeFileOperation, isFileOperation } from './file-operations.js';
 import { isParallelOperation } from './parallel.js';
+import { isEventOperation, executeEventOperation } from './event-operations.js';
 
 // Re-export all operations and types for backward compatibility
 export {
@@ -92,6 +93,9 @@ export function executeBuiltInOperation(
       if (isFileOperation(action)) {
         return executeFileOperation(action, resolvedInputs, context);
       }
+      if (isEventOperation(action)) {
+        return executeEventOperation(action, resolvedInputs);
+      }
       return null;
   }
 }
@@ -106,5 +110,5 @@ export function isBuiltInOperation(action: string): boolean {
     'core.sort', 'core.crypto', 'core.datetime', 'core.parse',
     'core.compress', 'core.decompress',
   ];
-  return builtInActions.includes(action) || isFileOperation(action) || isParallelOperation(action);
+  return builtInActions.includes(action) || isFileOperation(action) || isParallelOperation(action) || isEventOperation(action);
 }
