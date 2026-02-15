@@ -8,7 +8,9 @@
  */
 
 import { Command } from 'commander';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { loadEnv } from '@marktoflow/core';
 import { workerCommand } from './worker.js';
 import { triggerCommand } from './trigger.js';
@@ -55,7 +57,12 @@ import { existsSync } from 'node:fs';
 import chalk from 'chalk';
 import ora from 'ora';
 
-const VERSION = '2.0.2';
+// Read version from package.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = join(__dirname, '../package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+const VERSION = packageJson.version;
 
 // Load environment variables from .env files on CLI startup
 loadEnv();
