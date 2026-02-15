@@ -112,12 +112,19 @@ export const defaultInitializers: Record<string, SDKInitializer> = {
 
   openai: {
     async initialize(module: unknown, config: ToolConfig): Promise<unknown> {
-      const OpenAI = (module as { default: new (options: { apiKey: string }) => unknown }).default;
+      const OpenAI = (module as { default: new (options: { apiKey: string; baseURL?: string }) => unknown }).default;
       const apiKey = config.auth?.['api_key'] as string;
-      if (!apiKey) {
-        throw new Error('OpenAI SDK requires auth.api_key');
+      const baseUrl = config.auth?.['base_url'] as string || config.options?.['baseUrl'] as string;
+
+      // For local endpoints (llama.cpp, VLLM), allow dummy key
+      const effectiveKey = apiKey || (baseUrl ? 'dummy-key' : '');
+      if (!effectiveKey) {
+        throw new Error('OpenAI SDK requires auth.api_key (or auth.base_url for local endpoints)');
       }
-      return new OpenAI({ apiKey });
+
+      const initOptions: { apiKey: string; baseURL?: string } = { apiKey: effectiveKey };
+      if (baseUrl) initOptions.baseURL = baseUrl;
+      return new OpenAI(initOptions);
     },
   },
 

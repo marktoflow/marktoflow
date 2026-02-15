@@ -98,6 +98,113 @@ tools:
       model: glm-4.7-flash
 ```
 
+## Local LLM Setup (llama.cpp, VLLM, LM Studio, etc.)
+
+Any server that implements the OpenAI-compatible API works with marktoflow, including **llama.cpp**, **VLLM**, **LM Studio**, **text-generation-webui**, and **LocalAI**.
+
+### llama.cpp
+
+```bash
+# Start llama.cpp with OpenAI-compatible API and tool calling support
+llama-server -m model.gguf --port 8000 --jinja
+```
+
+The `--jinja` flag enables tool calling support via chat templates.
+
+### Workflow Configuration
+
+```yaml
+tools:
+  ai:
+    sdk: openai
+    auth:
+      base_url: http://localhost:8000/v1
+      api_key: dummy              # Required by SDK, not validated locally
+    options:
+      model: auto                 # Auto-detect model from server
+```
+
+When `model: auto` is set (or model is omitted) with a custom `base_url`, marktoflow queries the `/v1/models` endpoint and auto-selects the first available model.
+
+### Tool Calling (Agentic Workflows)
+
+The OpenAI adapter supports full tool calling / function calling, enabling agentic workflows where the model decides which tools to call:
+
+```yaml
+steps:
+  - id: research
+    action: ai.chatWithTools
+    inputs:
+      messages:
+        - role: system
+          content: "Use tools to answer questions."
+        - role: user
+          content: "{{ inputs.query }}"
+      tools:
+        - type: function
+          function:
+            name: search
+            description: Search for information
+            parameters:
+              type: object
+              properties:
+                query: { type: string }
+              required: [query]
+      tool_choice: auto
+      maxTurns: 5
+    output_variable: result
+```
+
+The agentic loop works as follows:
+1. Send messages + tool definitions to the model
+2. If the model returns `tool_calls`, execute each tool
+3. Append tool results and re-send to the model
+4. Repeat until the model returns a text response or `maxTurns` is reached
+
+### Structured Output (JSON Mode)
+
+Force valid JSON responses using `generateJSON` or `generateStructured`:
+
+```yaml
+# JSON mode — returns parsed JSON object
+- id: extract
+  action: ai.generateJSON
+  inputs:
+    messages:
+      - role: user
+        content: "Extract entities from: {{ inputs.text }}"
+
+# Schema-validated output
+- id: classify
+  action: ai.generateStructured
+  inputs:
+    messages:
+      - role: user
+        content: "Classify: {{ inputs.text }}"
+    schema:
+      name: classification
+      schema:
+        type: object
+        properties:
+          label: { type: string, enum: [spam, ham] }
+          score: { type: number }
+        required: [label, score]
+```
+
+### Available Methods
+
+| Method | Description |
+|--------|-------------|
+| `ai.generate` | Simple text generation from a prompt |
+| `ai.chatCompletion` | Full chat completion with all parameters |
+| `ai.chatWithTools` | Agentic tool-calling loop |
+| `ai.generateJSON` | Chat completion with JSON mode enforced |
+| `ai.generateStructured` | Chat completion with JSON Schema validation |
+| `ai.chatStream` | Streaming chat completion |
+| `ai.embeddings` | Generate text embeddings |
+| `ai.listModels` | List available models |
+| `ai.autoDetectModel` | Auto-detect and set default model from server |
+
 ## Ollama Setup
 
 ### Prerequisites
@@ -153,10 +260,15 @@ Set the appropriate environment variable:
 - OpenAI: `OPENAI_API_KEY`
 - GitHub Copilot: `GITHUB_TOKEN`
 
+For local endpoints, use `api_key: dummy` in the workflow config — the SDK requires a non-empty string but local servers don't validate it.
+
 ### "Connection refused" (local endpoints)
 
 Ensure your local server is running:
 ```bash
+# llama.cpp (with tool calling)
+llama-server -m model.gguf --port 8000 --jinja
+
 # VLLM
 vllm serve model-name --port 8000
 
@@ -166,3 +278,10 @@ ollama serve
 # OpenCode
 opencode server
 ```
+
+### Tool calling not working with local model
+
+- Ensure your server supports the OpenAI tool calling API
+- For llama.cpp, the `--jinja` flag is required for tool calling support
+- The model must have a chat template that supports tools (most modern models do)
+- Check that `tool_choice` is set to `auto` or `required`
