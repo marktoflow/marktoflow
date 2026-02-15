@@ -29,3 +29,8 @@ export {
   getKnownAgentIds,
   type DetectedAgent,
 } from './detect-agents.js';
+
+export {
+  getAgentSDKName,
+  getAgentAuthConfig,
+} from './agent-config.js';
