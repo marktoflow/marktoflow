@@ -333,7 +333,7 @@ $ pnpm publish
 ✅ Publish complete!
 
 📦 Installation command:
-  npm install @marktoflow/cli@alpha @marktoflow/gui@alpha
+  npm install -g marktoflow
 ```
 
 ## Benefits

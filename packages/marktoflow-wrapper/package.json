@@ -1,5 +1,5 @@
 {
-  "name": "@marktoflow/marktoflow",
+  "name": "marktoflow",
   "version": "2.0.4",
   "description": "Open-source AI workflow automation with tool calling, 38 integrations, and local LLM support — workflows are just markdown files",
   "type": "module",
@@ -9,16 +9,11 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marktoflow/marktoflow.git",
-    "directory": "packages/marktoflow"
+    "directory": "packages/marktoflow-wrapper"
   },
   "homepage": "https://github.com/marktoflow/marktoflow#readme",
   "bugs": {
     "url": "https://github.com/marktoflow/marktoflow/issues"
-  },
-  "overrides": {
-    "@anthropic-ai/claude-agent-sdk": {
-      "zod": "^3.24.0"
-    }
   },
   "scripts": {},
   "dependencies": {
@@ -26,6 +21,11 @@
     "@marktoflow/core": "workspace:*",
     "@marktoflow/gui": "workspace:*",
     "@marktoflow/integrations": "workspace:*"
+  },
+  "overrides": {
+    "@anthropic-ai/claude-agent-sdk": {
+      "zod": "^3.24.0"
+    }
   },
   "files": [
     "README.md",

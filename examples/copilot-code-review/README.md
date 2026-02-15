@@ -59,7 +59,7 @@ Automated code review workflow that uses GitHub Copilot to analyze pull requests
 ### 1. Install marktoflow
 
 ```bash
-npm install -g @marktoflow/cli@alpha
+npm install -g marktoflow
 ```
 
 ### 2. Set Environment Variables

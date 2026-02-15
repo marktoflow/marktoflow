@@ -19,14 +19,14 @@ Complete installation guide for marktoflow CLI with troubleshooting.
 Install from the npm registry:
 
 ```bash
-npm install -g @marktoflow/cli
+npm install -g marktoflow
 ```
 
 **Pros:**
 
 - Fast installation
 - Official npm package
-- Easy updates with `npm update -g @marktoflow/cli`
+- Easy updates with `npm update -g marktoflow`
 
 ### Method 2: Use npx (No Installation)
 
@@ -34,9 +34,9 @@ Run marktoflow commands without installing:
 
 ```bash
 # Run any command with npx
-npx @marktoflow/cli version
-npx @marktoflow/cli init
-npx @marktoflow/cli run workflow.md
+npx marktoflow version
+npx marktoflow init
+npx marktoflow run workflow.md
 ```
 
 **Pros:**
@@ -266,7 +266,7 @@ marktoflow version
 **Option 1: Use npx (Recommended)**
 
 ```bash
-npx @marktoflow/cli version
+npx marktoflow version
 ```
 
 **Option 2: Configure npm to use user directory**
@@ -285,13 +285,13 @@ export PATH="$PATH:$HOME/.npm-global/bin"
 source ~/.bashrc  # or ~/.zshrc
 
 # Try installation again
-npm install -g @marktoflow/cli
+npm install -g marktoflow
 ```
 
 **Option 3: Use sudo (Not Recommended)**
 
 ```bash
-sudo npm install -g @marktoflow/cli
+sudo npm install -g marktoflow
 ```
 
 **Note:** Using sudo can cause permission issues later. Options 1 or 2 are better.
@@ -318,7 +318,7 @@ npm link
 
 ```bash
 # Reinstall from npm
-npm install -g --force @marktoflow/cli
+npm install -g --force marktoflow
 
 # Or if installing from source:
 cd marktoflow
@@ -337,7 +337,7 @@ npm link
 1. **Use npx with cache:**
 
    ```bash
-   npx @marktoflow/cli version
+   npx marktoflow version
    # First run downloads, subsequent runs use cache
    ```
 
@@ -350,7 +350,7 @@ npm link
 
 3. **Use verbose logging:**
    ```bash
-   npm install -g @marktoflow/cli --verbose
+   npm install -g marktoflow --verbose
    ```
 
 ### Issue: "Cannot find module '@marktoflow/core'"
@@ -381,10 +381,10 @@ npm cache clean --force
 
 # Reinstall global package
 npm uninstall -g marktoflow
-npm install -g @marktoflow/cli
+npm install -g marktoflow
 
 # Or use npx with --no-cache
-npx --no-cache @marktoflow/cli version
+npx --no-cache marktoflow version
 ```
 
 ---
@@ -394,7 +394,7 @@ npx --no-cache @marktoflow/cli version
 ### If installed globally from npm:
 
 ```bash
-npm uninstall -g @marktoflow/cli
+npm uninstall -g marktoflow
 ```
 
 ### If installed from source with npm link:
