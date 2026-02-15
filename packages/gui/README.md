@@ -1,10 +1,10 @@
 # @marktoflow/gui
 
-> Visual workflow designer — drag-and-drop editor with AI-powered assistance.
+> Visual workflow designer — drag-and-drop editor with AI-powered assistance for building AI automations.
 
 [![npm](https://img.shields.io/npm/v/@marktoflow/gui)](https://www.npmjs.com/package/@marktoflow/gui)
 
-Part of [marktoflow](../../README.md) — open-source markdown workflow automation.
+Part of [marktoflow](https://github.com/marktoflow/marktoflow) — open-source AI workflow automation.
 
 <!-- TODO: screenshot of the workflow designer -->
 
@@ -56,6 +56,8 @@ const server = await startServer({
 
 | Provider | Auth Type | Authentication |
 |----------|-----------|----------------|
+| OpenAI | API Key | `OPENAI_API_KEY` env var |
+| Local LLM (llama.cpp, VLLM, LM Studio) | Local | Any OpenAI-compatible endpoint — auto-detects models |
 | Claude Agent | SDK | Claude CLI — `claude login` |
 | GitHub Copilot | SDK | Copilot CLI — `copilot login` |
 | OpenAI Codex | SDK | `OPENAI_API_KEY` env var (auto-detected) |
@@ -96,4 +98,4 @@ See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/
 
 ## License
 
-AGPL-3.0
+[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)

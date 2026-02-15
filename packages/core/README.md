@@ -1,10 +1,10 @@
 # @marktoflow/core
 
-> Workflow engine for parsing, executing, and managing markdown-based automations.
+> AI workflow engine — parse, execute, and orchestrate markdown-based automations with tool calling, parallel execution, and structured output.
 
 [![npm](https://img.shields.io/npm/v/@marktoflow/core)](https://www.npmjs.com/package/@marktoflow/core)
 
-Part of [marktoflow](../../README.md) — open-source markdown workflow automation.
+Part of [marktoflow](https://github.com/marktoflow/marktoflow) — open-source AI workflow automation.
 
 ## Quick Start
 
@@ -26,16 +26,33 @@ const result = await engine.execute(workflow, {
 
 ## Features
 
-- **Workflow Parser** — Parse markdown + YAML workflow definitions
+- **Workflow Parser** — Parse markdown + YAML workflow definitions with Zod validation
 - **Execution Engine** — Step-by-step execution with retry, circuit breakers, and error handling
+- **Control Flow** — Conditionals (`if/else`), loops (`for-each`), `try/catch/finally`, `parallel` branches
+- **Parallel Execution** — `parallel.spawn` (multi-agent) and `parallel.map` (batch processing)
+- **Sub-Workflows** — Nested workflow execution with optional AI sub-agent mode
+- **Template Engine** — Nunjucks-based expressions with 50+ built-in filters
 - **State Management** — SQLite-based persistent state tracking
 - **Plugin System** — Extensible architecture with 17 hook types
-- **Cost Tracking** — Monitor and budget API usage per workflow
+- **Cost Tracking** — Monitor and budget API usage per workflow/step
+- **Agent Routing** — Capability-based agent selection with cost optimization and load balancing
 - **Scheduling** — Cron-based workflow scheduling
-- **Security** — RBAC, approval workflows, and audit logging
+- **Security** — RBAC, approval workflows, secret management (Vault, AWS, Azure, env), audit logging
 - **Queue System** — Distributed execution via Redis, RabbitMQ, or in-memory
 
 ## Usage
+
+### Control Flow
+
+```typescript
+// The engine handles conditionals, loops, parallel, and try/catch natively
+const workflow = await parser.parseWorkflow('complex-workflow.md');
+const result = await engine.execute(workflow);
+
+// Access step results
+console.log(result.output);
+console.log(result.stepResults);
+```
 
 ### State Management
 
@@ -78,6 +95,42 @@ await registry.register({
 });
 ```
 
+### Agent Routing
+
+```typescript
+import { AgentRouter, AgentSelector, BudgetTracker } from '@marktoflow/core';
+
+const selector = new AgentSelector(agentProfiles, 'balanced');
+const budget = new BudgetTracker({ totalBudget: 10.0 });
+const router = new AgentRouter(selector, budget);
+
+const result = router.route({
+  requiredCapabilities: new Set(['tool_calling', 'streaming']),
+  maxCost: 0.05,
+});
+```
+
+## Architecture
+
+```
+@marktoflow/core
+├── engine/              # Workflow execution engine
+│   ├── control-flow     # if/else, for-each, parallel, try/catch
+│   ├── subworkflow      # Sub-workflow and AI sub-agent execution
+│   ├── variable-resolution  # Nunjucks template resolution
+│   ├── conditions       # Condition evaluation
+│   └── retry            # Retry with exponential backoff
+├── operations/          # 9 built-in operation modules
+├── filters/             # 9 Nunjucks filter modules (50+ filters)
+├── parser               # Markdown + YAML parser
+├── routing              # Agent selection and routing
+├── costs                # Cost tracking and budgeting
+├── state-manager        # SQLite-based state persistence
+├── sdk-registry         # Dynamic SDK loading and caching
+├── plugin-registry      # Plugin system with 17 hook types
+└── utils/               # Duration parsing, error handling
+```
+
 ## API Reference
 
 ```typescript
@@ -98,6 +151,16 @@ class StateManager {
   getWorkflowHistory(workflowId: string): Promise<WorkflowRun[]>;
   saveWorkflowState(state: WorkflowState): Promise<void>;
 }
+
+class AgentSelector {
+  select(context: RoutingContext): RoutingResult;
+  registerAgent(profile: AgentProfile): void;
+}
+
+class SDKRegistry {
+  registerTools(tools: Record<string, ToolConfig>): void;
+  load(name: string): Promise<unknown>;
+}
 ```
 
 ## Contributing
@@ -106,4 +169,4 @@ See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/
 
 ## License
 
-AGPL-3.0
+[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)

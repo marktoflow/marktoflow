@@ -198,12 +198,22 @@ export function createFailingExecutor(errorMessage: string = 'Mock failure'): Mo
  * - Steps with action containing 'set' return their inputs.value
  * - Steps with action containing 'fail' throw errors
  * - All other steps return { success: true }
+ *
+ * Optionally accepts a map of action handlers:
+ *   createSmartExecutor({ 'mock.chat.completions': async (inputs) => ({ result: '...' }) })
  */
-export function createSmartExecutor(): MockExecutorResult {
+export function createSmartExecutor(
+  actionHandlers?: Record<string, (inputs: Record<string, unknown>) => unknown | Promise<unknown>>
+): MockExecutorResult {
   return createMockExecutor({
     defaultBehavior: {
       dynamic: (step) => {
         const action = 'action' in step ? String(step.action) : '';
+
+        // Check custom action handlers first
+        if (actionHandlers && action in actionHandlers) {
+          return actionHandlers[action](step.inputs as Record<string, unknown>);
+        }
 
         // Handle set/assign operations
         if (action.includes('set') || action.includes('assign') || step.id.startsWith('set-')) {

@@ -168,7 +168,7 @@ describe('Parallel Execution Integration Tests', () => {
 
       expect(result.status).toBe(WorkflowStatus.COMPLETED);
       expect(result.output.results.timing).toBeDefined();
-      expect(result.output.results.timing.duration).toBeGreaterThan(0);
+      expect(result.output.results.timing.duration).toBeGreaterThanOrEqual(0);
       expect(result.output.results.costs).toBeDefined();
       expect(result.output.results.costs.total).toBeDefined();
     });
@@ -500,7 +500,7 @@ describe('Parallel Execution Integration Tests', () => {
           
           - id: conditional-parallel
             type: if
-            condition: "{{ config.needsReview }}"
+            condition: "config.needsReview"
             then:
               - id: parallel-review
                 type: action

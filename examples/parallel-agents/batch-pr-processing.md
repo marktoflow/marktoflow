@@ -1,10 +1,8 @@
-# Batch Pull Request Processing
-
-This workflow demonstrates using `parallel.map` to process multiple pull requests concurrently, significantly speeding up batch operations.
-
-```yaml
-name: Batch PR Review
-description: Review multiple pull requests in parallel using AI agents
+---
+workflow:
+  id: batch-pr-review
+  name: Batch PR Review
+  description: Review multiple pull requests in parallel using AI agents
 
 inputs:
   repository:
@@ -19,53 +17,52 @@ tools:
   github:
     sdk: "@octokit/rest"
     auth:
-      token: {{ env.GITHUB_TOKEN }}
+      token: ${GITHUB_TOKEN}
 
 steps:
   # Step 1: Fetch all open PRs
   - id: fetch_prs
     action: github.pulls.list
     inputs:
-      owner: {{ inputs.repository =~ /^([^\/]+)\//  }}
-      repo: {{ inputs.repository =~ /\/(.+)$/  }}
-      state: {{ inputs.pr_state }}
+      owner: "{{ inputs.repository.split('/')[0] }}"
+      repo: "{{ inputs.repository.split('/')[1] }}"
+      state: "{{ inputs.pr_state }}"
       per_page: 50
-    outputs:
-      pull_requests: {{ output.data }}
+    output_variable: pull_requests
 
   # Step 2: Process PRs in parallel (up to 5 concurrent agents)
   - id: review_prs
     action: parallel.map
     inputs:
-      items: {{ pull_requests }}
+      items: "{{ pull_requests.data }}"
       concurrency: 5  # Process 5 PRs at a time
       timeout: 90s    # 90 seconds per PR
       onError: continue  # Continue even if some PRs fail
-      
+
       agent:
         provider: claude
         model: haiku  # Fast model for batch processing
         prompt: |
           Review this pull request and provide analysis:
-          
+
           **PR #{{ item.number }}:** {{ item.title }}
           **Author:** {{ item.user.login }}
           **Created:** {{ item.created_at }}
           **Branch:** {{ item.head.ref }} → {{ item.base.ref }}
           **Description:**
-          {{ item.body || 'No description provided' }}
-          
+          {{ item.body or 'No description provided' }}
+
           **Files changed:** {{ item.changed_files }}
           **Additions:** +{{ item.additions }}
           **Deletions:** -{{ item.deletions }}
-          
+
           Analyze and provide:
           1. Summary of changes (1-2 sentences)
           2. Potential issues or risks (list)
           3. Recommendation: APPROVE, REQUEST_CHANGES, or COMMENT
           4. Priority: HIGH, MEDIUM, LOW
           5. Estimated review time: <minutes>
-          
+
           Respond in JSON format:
           {
             "summary": "...",
@@ -74,33 +71,26 @@ steps:
             "priority": "HIGH|MEDIUM|LOW",
             "estimated_review_minutes": <number>
           }
-    
-    outputs:
-      pr_reviews: {{ results }}
+
+    output_variable: pr_reviews
 
   # Step 3: Categorize PRs by recommendation
   - id: categorize_prs
     action: core.transform
     inputs:
-      input: {{ pull_requests }}
+      input: "{{ pull_requests.data }}"
       operation: group_by
-      key: |
-        {% set review_index = loop.index0 %}
-        {{ pr_reviews[review_index].recommendation }}
-    outputs:
-      categorized: {{ output }}
+      key: "{{ pr_reviews[loop.index0].recommendation }}"
+    output_variable: categorized
 
   # Step 4: Filter high-priority PRs
   - id: high_priority_prs
     action: core.transform
     inputs:
-      input: {{ pull_requests }}
+      input: "{{ pull_requests.data }}"
       operation: filter
-      condition: |
-        {% set review_index = loop.index0 %}
-        {{ pr_reviews[review_index].priority == "HIGH" }}
-    outputs:
-      urgent_prs: {{ output }}
+      condition: "{{ pr_reviews[loop.index0].priority == 'HIGH' }}"
+    output_variable: urgent_prs
 
   # Step 5: Generate summary report
   - id: generate_summary
@@ -111,78 +101,78 @@ steps:
         - role: user
           content: |
             Create a PR review dashboard summary:
-            
-            Total PRs reviewed: {{ pull_requests | length }}
+
+            Total PRs reviewed: {{ pull_requests.data | length }}
             High priority PRs: {{ urgent_prs | length }}
-            
+
             Reviews by recommendation:
             - Approve: {{ categorized.APPROVE | default([]) | length }}
             - Request Changes: {{ categorized.REQUEST_CHANGES | default([]) | length }}
             - Comment: {{ categorized.COMMENT | default([]) | length }}
-            
+
             High Priority PRs:
-            {{ urgent_prs | json }}
-            
+            {{ urgent_prs | tojson }}
+
             All Reviews:
-            {{ pr_reviews | json }}
-            
+            {{ pr_reviews | tojson }}
+
             Generate a markdown dashboard with:
             1. Overall statistics
             2. High-priority PRs table (number, title, author, recommendation)
             3. PRs needing attention (REQUEST_CHANGES)
             4. PRs ready to merge (APPROVE)
             5. Estimated total review time
-    outputs:
-      dashboard: {{ output.choices[0].message.content }}
+    output_variable: dashboard
 
   # Step 6: Post summary as GitHub issue (optional)
   - id: create_summary_issue
     action: github.issues.create
     conditions:
-      - {{ urgent_prs | length > 0 }}  # Only create if urgent PRs exist
+      - "urgent_prs | length > 0"  # Only create if urgent PRs exist
     inputs:
-      owner: {{ inputs.repository =~ /^([^\/]+)\//  }}
-      repo: {{ inputs.repository =~ /\/(.+)$/  }}
-      title: "🤖 AI PR Review Dashboard - {{ now() | date('YYYY-MM-DD') }}"
+      owner: "{{ inputs.repository.split('/')[0] }}"
+      repo: "{{ inputs.repository.split('/')[1] }}"
+      title: "🤖 AI PR Review Dashboard - {{ now() }}"
       body: |
-        {{ dashboard }}
-        
+        {{ dashboard.choices[0].message.content }}
+
         ---
         *Generated by marktoflow parallel.map workflow*
-        *Processed {{ pull_requests | length }} PRs in parallel*
+        *Processed {{ pull_requests.data | length }} PRs in parallel*
       labels:
         - ai-review
         - automation
-    outputs:
-      issue_url: {{ output.data.html_url }}
+    output_variable: issue_result
 
 outputs:
-  total_prs: {{ pull_requests | length }}
-  high_priority_count: {{ urgent_prs | length }}
-  dashboard_url: {{ issue_url }}
-  reviews: {{ pr_reviews }}
+  total_prs: "{{ pull_requests.data | length }}"
+  high_priority_count: "{{ urgent_prs | length }}"
+  dashboard_url: "{{ issue_result.data.html_url }}"
+  reviews: "{{ pr_reviews }}"
   processing_stats:
-    total_items: {{ pull_requests | length }}
-    successful: {{ pr_reviews | selectattr('success') | list | length }}
-    failed: {{ pr_reviews | rejectattr('success') | list | length }}
-```
+    total_items: "{{ pull_requests.data | length }}"
+    successful: "{{ pr_reviews | length }}"
+---
+
+# Batch Pull Request Processing
+
+This workflow demonstrates using `parallel.map` to process multiple pull requests concurrently, significantly speeding up batch operations.
 
 ## Usage
 
 ```bash
 # Review all open PRs in a repository
-marktoflow run examples/parallel-agents/batch-pr-processing.md \
+./marktoflow run examples/parallel-agents/batch-pr-processing.md \
   --input repository=facebook/react
 
 # Review closed PRs from last week
-marktoflow run examples/parallel-agents/batch-pr-processing.md \
+./marktoflow run examples/parallel-agents/batch-pr-processing.md \
   --input repository=microsoft/vscode \
   --input pr_state=closed
 
 # Use faster/cheaper model for large batches
-marktoflow run examples/parallel-agents/batch-pr-processing.md \
+./marktoflow run examples/parallel-agents/batch-pr-processing.md \
   --input repository=vercel/next.js \
-  --config agents.claude.model=haiku \
   --concurrency 10
 ```
 
@@ -212,19 +202,16 @@ marktoflow run examples/parallel-agents/batch-pr-processing.md \
 
 ## Advanced: Custom Filters
 
-Process only specific PRs:
+Process only specific PRs by adding a filter step before parallel.map:
 
 ```yaml
-# Add this step before parallel.map
 - id: filter_prs
   action: core.transform
   inputs:
-    input: {{ pull_requests }}
+    input: "{{ pull_requests.data }}"
     operation: filter
-    condition: |
-      {{ item.user.login != 'dependabot[bot]' && item.changed_files < 20 }}
-  outputs:
-    filtered_prs: {{ output }}
+    condition: "{{ item.user.login != 'dependabot[bot]' and item.changed_files < 20 }}"
+  output_variable: filtered_prs
 ```
 
 ## Integration with CI/CD
@@ -232,7 +219,6 @@ Process only specific PRs:
 Run this workflow on a schedule to maintain PR health:
 
 ```yaml
-# In your workflow file
 triggers:
   - type: schedule
     cron: "0 9 * * 1-5"  # Weekdays at 9 AM

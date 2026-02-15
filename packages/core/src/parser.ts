@@ -66,6 +66,9 @@ export function parseContent(content: string, options: ParseOptions = {}): Parse
   const { validate = true, resolveEnv = true } = options;
   const warnings: string[] = [];
 
+  // Normalize line endings to \n (handles \r\n, \r, and mixed line endings)
+  content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
   // Extract frontmatter
   const frontmatterMatch = content.match(FRONTMATTER_REGEX);
   if (!frontmatterMatch) {
