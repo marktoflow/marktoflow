@@ -5,7 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const router: RouterType = Router();
 
-// Tool definitions with SDK information and available actions
+// ============================================================================
+// Types
+// ============================================================================
+
 export interface ToolDefinition {
   id: string;
   name: string;
@@ -39,33 +42,32 @@ export interface OutputSchema {
   description: string;
 }
 
+// ============================================================================
 // Load tool definitions from JSON data file
+// ============================================================================
+
 function loadToolDefinitions(): ToolDefinition[] {
   try {
-    // Try multiple paths to find the data file
-    const possiblePaths = [
-      join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'tool-definitions.json'),
-      join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'server', 'data', 'tool-definitions.json'),
-      join(process.cwd(), 'packages', 'gui', 'src', 'server', 'data', 'tool-definitions.json'),
-    ];
-
-    for (const p of possiblePaths) {
-      try {
-        const content = readFileSync(p, 'utf-8');
-        return JSON.parse(content) as ToolDefinition[];
-      } catch {
-        continue;
-      }
-    }
-
-    console.warn('Tool definitions file not found, returning empty list');
-    return [];
-  } catch {
+    // Resolve path relative to package root (works in both dev and built modes)
+    // In dev: src/server/routes/tools.ts → ../../../data/tool-definitions.json
+    // In dist: dist/server/routes/tools.js → ../../../data/tool-definitions.json
+    const currentDir = typeof __dirname !== 'undefined'
+      ? __dirname
+      : dirname(fileURLToPath(import.meta.url));
+    const dataPath = join(currentDir, '..', '..', '..', 'data', 'tool-definitions.json');
+    const content = readFileSync(dataPath, 'utf-8');
+    return JSON.parse(content) as ToolDefinition[];
+  } catch (error) {
+    console.warn('[marktoflow] Failed to load tool definitions:', error);
     return [];
   }
 }
 
 const tools: ToolDefinition[] = loadToolDefinitions();
+
+// ============================================================================
+// Routes
+// ============================================================================
 
 // List all available tools
 router.get('/', (_req, res) => {
@@ -113,4 +115,4 @@ router.get('/:toolId/actions/:actionId', (req, res) => {
   res.json({ action, tool: { id: tool.id, name: tool.name, sdk: tool.sdk } });
 });
 
-export { router as toolsRoutes };
+export const toolsRoutes = router;

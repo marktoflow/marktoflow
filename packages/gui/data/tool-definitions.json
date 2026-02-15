@@ -1,0 +1,1893 @@
+[
+  {
+    "id": "slack",
+    "name": "Slack",
+    "icon": "💬",
+    "category": "Communication",
+    "description": "Send messages and manage Slack workspaces",
+    "sdk": "@slack/web-api",
+    "authType": "token",
+    "docsUrl": "https://api.slack.com/methods",
+    "actions": [
+      {
+        "id": "chat.postMessage",
+        "name": "Post Message",
+        "description": "Send a message to a channel",
+        "inputs": [
+          {
+            "name": "channel",
+            "type": "string",
+            "required": true,
+            "description": "Channel ID or name (e.g., #general)"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "required": true,
+            "description": "Message text"
+          },
+          {
+            "name": "blocks",
+            "type": "array",
+            "required": false,
+            "description": "Block Kit message blocks"
+          },
+          {
+            "name": "thread_ts",
+            "type": "string",
+            "required": false,
+            "description": "Thread timestamp for replies"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Message response with ts (timestamp)"
+        }
+      },
+      {
+        "id": "conversations.list",
+        "name": "List Channels",
+        "description": "Get a list of channels in the workspace",
+        "inputs": [
+          {
+            "name": "types",
+            "type": "string",
+            "required": false,
+            "description": "Channel types (public_channel, private_channel)",
+            "default": "public_channel"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Number of channels to return",
+            "default": 100
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of channel objects"
+        }
+      },
+      {
+        "id": "conversations.history",
+        "name": "Get Messages",
+        "description": "Get messages from a channel",
+        "inputs": [
+          {
+            "name": "channel",
+            "type": "string",
+            "required": true,
+            "description": "Channel ID"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Number of messages",
+            "default": 100
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of messages"
+        }
+      }
+    ]
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "icon": "🐙",
+    "category": "Development",
+    "description": "Manage repositories, issues, and pull requests",
+    "sdk": "@octokit/rest",
+    "authType": "token",
+    "docsUrl": "https://docs.github.com/en/rest",
+    "actions": [
+      {
+        "id": "pulls.get",
+        "name": "Get Pull Request",
+        "description": "Get details of a pull request",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "string",
+            "required": true,
+            "description": "Repository owner"
+          },
+          {
+            "name": "repo",
+            "type": "string",
+            "required": true,
+            "description": "Repository name"
+          },
+          {
+            "name": "pull_number",
+            "type": "number",
+            "required": true,
+            "description": "PR number"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Pull request details"
+        }
+      },
+      {
+        "id": "pulls.listFiles",
+        "name": "List PR Files",
+        "description": "List files changed in a pull request",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "string",
+            "required": true,
+            "description": "Repository owner"
+          },
+          {
+            "name": "repo",
+            "type": "string",
+            "required": true,
+            "description": "Repository name"
+          },
+          {
+            "name": "pull_number",
+            "type": "number",
+            "required": true,
+            "description": "PR number"
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of changed files"
+        }
+      },
+      {
+        "id": "pulls.createReview",
+        "name": "Create Review",
+        "description": "Create a review on a pull request",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "string",
+            "required": true,
+            "description": "Repository owner"
+          },
+          {
+            "name": "repo",
+            "type": "string",
+            "required": true,
+            "description": "Repository name"
+          },
+          {
+            "name": "pull_number",
+            "type": "number",
+            "required": true,
+            "description": "PR number"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": false,
+            "description": "Review comment"
+          },
+          {
+            "name": "event",
+            "type": "string",
+            "required": true,
+            "description": "Review action (APPROVE, REQUEST_CHANGES, COMMENT)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Review details"
+        }
+      },
+      {
+        "id": "issues.create",
+        "name": "Create Issue",
+        "description": "Create a new issue",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "string",
+            "required": true,
+            "description": "Repository owner"
+          },
+          {
+            "name": "repo",
+            "type": "string",
+            "required": true,
+            "description": "Repository name"
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Issue title"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": false,
+            "description": "Issue body"
+          },
+          {
+            "name": "labels",
+            "type": "array",
+            "required": false,
+            "description": "Labels to add"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created issue"
+        }
+      }
+    ]
+  },
+  {
+    "id": "jira",
+    "name": "Jira",
+    "icon": "📋",
+    "category": "Project Management",
+    "description": "Manage Jira issues and projects",
+    "sdk": "jira.js",
+    "authType": "basic",
+    "docsUrl": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/",
+    "actions": [
+      {
+        "id": "issues.search",
+        "name": "Search Issues",
+        "description": "Search for issues using JQL",
+        "inputs": [
+          {
+            "name": "jql",
+            "type": "string",
+            "required": true,
+            "description": "JQL query string"
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "required": false,
+            "description": "Maximum results",
+            "default": 50
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of issues"
+        }
+      },
+      {
+        "id": "issues.create",
+        "name": "Create Issue",
+        "description": "Create a new Jira issue",
+        "inputs": [
+          {
+            "name": "project",
+            "type": "string",
+            "required": true,
+            "description": "Project key"
+          },
+          {
+            "name": "summary",
+            "type": "string",
+            "required": true,
+            "description": "Issue summary"
+          },
+          {
+            "name": "issueType",
+            "type": "string",
+            "required": true,
+            "description": "Issue type (Bug, Task, Story)"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "description": "Issue description"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created issue"
+        }
+      },
+      {
+        "id": "issues.transition",
+        "name": "Transition Issue",
+        "description": "Move issue to a different status",
+        "inputs": [
+          {
+            "name": "issueKey",
+            "type": "string",
+            "required": true,
+            "description": "Issue key (e.g., PROJ-123)"
+          },
+          {
+            "name": "transition",
+            "type": "string",
+            "required": true,
+            "description": "Transition name or ID"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Transition result"
+        }
+      }
+    ]
+  },
+  {
+    "id": "gmail",
+    "name": "Gmail",
+    "icon": "📧",
+    "category": "Communication",
+    "description": "Send and manage emails via Gmail",
+    "sdk": "googleapis",
+    "authType": "oauth",
+    "docsUrl": "https://developers.google.com/gmail/api",
+    "actions": [
+      {
+        "id": "messages.send",
+        "name": "Send Email",
+        "description": "Send an email",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient email"
+          },
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Email subject"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": true,
+            "description": "Email body (HTML or plain text)"
+          },
+          {
+            "name": "cc",
+            "type": "string",
+            "required": false,
+            "description": "CC recipients"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Sent message details"
+        }
+      },
+      {
+        "id": "messages.list",
+        "name": "List Emails",
+        "description": "List emails matching a query",
+        "inputs": [
+          {
+            "name": "query",
+            "type": "string",
+            "required": false,
+            "description": "Gmail search query"
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "required": false,
+            "description": "Maximum results",
+            "default": 10
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of message IDs"
+        }
+      }
+    ]
+  },
+  {
+    "id": "linear",
+    "name": "Linear",
+    "icon": "📐",
+    "category": "Project Management",
+    "description": "Manage Linear issues and projects",
+    "sdk": "@linear/sdk",
+    "authType": "api_key",
+    "docsUrl": "https://developers.linear.app/docs",
+    "actions": [
+      {
+        "id": "issues.create",
+        "name": "Create Issue",
+        "description": "Create a new Linear issue",
+        "inputs": [
+          {
+            "name": "teamId",
+            "type": "string",
+            "required": true,
+            "description": "Team ID"
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Issue title"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "description": "Issue description"
+          },
+          {
+            "name": "priority",
+            "type": "number",
+            "required": false,
+            "description": "Priority (0-4)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created issue"
+        }
+      },
+      {
+        "id": "issues.list",
+        "name": "List Issues",
+        "description": "List issues with filters",
+        "inputs": [
+          {
+            "name": "teamId",
+            "type": "string",
+            "required": false,
+            "description": "Filter by team"
+          },
+          {
+            "name": "state",
+            "type": "string",
+            "required": false,
+            "description": "Filter by state"
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of issues"
+        }
+      }
+    ]
+  },
+  {
+    "id": "notion",
+    "name": "Notion",
+    "icon": "📝",
+    "category": "Documentation",
+    "description": "Manage Notion pages and databases",
+    "sdk": "@notionhq/client",
+    "authType": "token",
+    "docsUrl": "https://developers.notion.com/",
+    "actions": [
+      {
+        "id": "pages.create",
+        "name": "Create Page",
+        "description": "Create a new Notion page",
+        "inputs": [
+          {
+            "name": "parent",
+            "type": "object",
+            "required": true,
+            "description": "Parent page or database"
+          },
+          {
+            "name": "properties",
+            "type": "object",
+            "required": true,
+            "description": "Page properties"
+          },
+          {
+            "name": "children",
+            "type": "array",
+            "required": false,
+            "description": "Page content blocks"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created page"
+        }
+      },
+      {
+        "id": "databases.query",
+        "name": "Query Database",
+        "description": "Query a Notion database",
+        "inputs": [
+          {
+            "name": "database_id",
+            "type": "string",
+            "required": true,
+            "description": "Database ID"
+          },
+          {
+            "name": "filter",
+            "type": "object",
+            "required": false,
+            "description": "Filter conditions"
+          },
+          {
+            "name": "sorts",
+            "type": "array",
+            "required": false,
+            "description": "Sort conditions"
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "Query results"
+        }
+      }
+    ]
+  },
+  {
+    "id": "discord",
+    "name": "Discord",
+    "icon": "🎮",
+    "category": "Communication",
+    "description": "Send messages and manage Discord servers",
+    "sdk": "discord.js",
+    "authType": "token",
+    "docsUrl": "https://discord.com/developers/docs",
+    "actions": [
+      {
+        "id": "messages.create",
+        "name": "Send Message",
+        "description": "Send a message to a channel",
+        "inputs": [
+          {
+            "name": "channelId",
+            "type": "string",
+            "required": true,
+            "description": "Channel ID"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "description": "Message content"
+          },
+          {
+            "name": "embeds",
+            "type": "array",
+            "required": false,
+            "description": "Rich embeds"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Sent message"
+        }
+      },
+      {
+        "id": "channels.list",
+        "name": "List Channels",
+        "description": "List channels in a server",
+        "inputs": [
+          {
+            "name": "guildId",
+            "type": "string",
+            "required": true,
+            "description": "Server/Guild ID"
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of channels"
+        }
+      }
+    ]
+  },
+  {
+    "id": "airtable",
+    "name": "Airtable",
+    "icon": "📊",
+    "category": "Database",
+    "description": "Manage Airtable bases and records",
+    "sdk": "airtable",
+    "authType": "api_key",
+    "docsUrl": "https://airtable.com/developers/web/api",
+    "actions": [
+      {
+        "id": "records.create",
+        "name": "Create Record",
+        "description": "Create a new record in a table",
+        "inputs": [
+          {
+            "name": "baseId",
+            "type": "string",
+            "required": true,
+            "description": "Base ID"
+          },
+          {
+            "name": "tableId",
+            "type": "string",
+            "required": true,
+            "description": "Table ID or name"
+          },
+          {
+            "name": "fields",
+            "type": "object",
+            "required": true,
+            "description": "Record fields"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created record"
+        }
+      },
+      {
+        "id": "records.list",
+        "name": "List Records",
+        "description": "List records from a table",
+        "inputs": [
+          {
+            "name": "baseId",
+            "type": "string",
+            "required": true,
+            "description": "Base ID"
+          },
+          {
+            "name": "tableId",
+            "type": "string",
+            "required": true,
+            "description": "Table ID or name"
+          },
+          {
+            "name": "maxRecords",
+            "type": "number",
+            "required": false,
+            "description": "Maximum records",
+            "default": 100
+          },
+          {
+            "name": "filterByFormula",
+            "type": "string",
+            "required": false,
+            "description": "Airtable formula filter"
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of records"
+        }
+      }
+    ]
+  },
+  {
+    "id": "http",
+    "name": "HTTP",
+    "icon": "🌐",
+    "category": "Network",
+    "description": "Make HTTP requests to any API",
+    "authType": "token",
+    "actions": [
+      {
+        "id": "request",
+        "name": "HTTP Request",
+        "description": "Make a custom HTTP request",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Request URL"
+          },
+          {
+            "name": "method",
+            "type": "string",
+            "required": true,
+            "description": "HTTP method (GET, POST, PUT, DELETE)"
+          },
+          {
+            "name": "headers",
+            "type": "object",
+            "required": false,
+            "description": "Request headers"
+          },
+          {
+            "name": "body",
+            "type": "object",
+            "required": false,
+            "description": "Request body (for POST/PUT)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Response with status, headers, and body"
+        }
+      },
+      {
+        "id": "get",
+        "name": "GET Request",
+        "description": "Make a GET request",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Request URL"
+          },
+          {
+            "name": "headers",
+            "type": "object",
+            "required": false,
+            "description": "Request headers"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Response data"
+        }
+      },
+      {
+        "id": "post",
+        "name": "POST Request",
+        "description": "Make a POST request",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Request URL"
+          },
+          {
+            "name": "body",
+            "type": "object",
+            "required": true,
+            "description": "Request body"
+          },
+          {
+            "name": "headers",
+            "type": "object",
+            "required": false,
+            "description": "Request headers"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Response data"
+        }
+      }
+    ]
+  },
+  {
+    "id": "claude",
+    "name": "Claude",
+    "icon": "🤖",
+    "category": "AI",
+    "description": "Use Claude AI for analysis and generation",
+    "sdk": "@anthropic-ai/sdk",
+    "authType": "api_key",
+    "docsUrl": "https://docs.anthropic.com/",
+    "actions": [
+      {
+        "id": "analyze",
+        "name": "Analyze",
+        "description": "Analyze text or data with Claude",
+        "inputs": [
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "description": "Analysis prompt"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "description": "Content to analyze"
+          },
+          {
+            "name": "model",
+            "type": "string",
+            "required": false,
+            "description": "Model to use",
+            "default": "claude-sonnet-4-20250514"
+          }
+        ],
+        "output": {
+          "type": "string",
+          "description": "Analysis result"
+        }
+      },
+      {
+        "id": "generate",
+        "name": "Generate",
+        "description": "Generate text with Claude",
+        "inputs": [
+          {
+            "name": "prompt",
+            "type": "string",
+            "required": true,
+            "description": "Generation prompt"
+          },
+          {
+            "name": "maxTokens",
+            "type": "number",
+            "required": false,
+            "description": "Maximum tokens",
+            "default": 1024
+          },
+          {
+            "name": "model",
+            "type": "string",
+            "required": false,
+            "description": "Model to use",
+            "default": "claude-sonnet-4-20250514"
+          }
+        ],
+        "output": {
+          "type": "string",
+          "description": "Generated text"
+        }
+      },
+      {
+        "id": "summarize",
+        "name": "Summarize",
+        "description": "Summarize text with Claude",
+        "inputs": [
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "description": "Content to summarize"
+          },
+          {
+            "name": "length",
+            "type": "string",
+            "required": false,
+            "description": "Summary length (short, medium, long)",
+            "default": "medium"
+          }
+        ],
+        "output": {
+          "type": "string",
+          "description": "Summary"
+        }
+      }
+    ]
+  },
+  {
+    "id": "confluence",
+    "name": "Confluence",
+    "icon": "📚",
+    "category": "Documentation",
+    "description": "Manage Confluence pages and spaces",
+    "sdk": "confluence.js",
+    "authType": "basic",
+    "docsUrl": "https://developer.atlassian.com/cloud/confluence/rest/",
+    "actions": [
+      {
+        "id": "pages.create",
+        "name": "Create Page",
+        "description": "Create a new Confluence page",
+        "inputs": [
+          {
+            "name": "spaceKey",
+            "type": "string",
+            "required": true,
+            "description": "Space key"
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Page title"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "description": "Page content (HTML or storage format)"
+          },
+          {
+            "name": "parentId",
+            "type": "string",
+            "required": false,
+            "description": "Parent page ID"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created page"
+        }
+      },
+      {
+        "id": "pages.search",
+        "name": "Search Pages",
+        "description": "Search Confluence pages",
+        "inputs": [
+          {
+            "name": "cql",
+            "type": "string",
+            "required": true,
+            "description": "CQL query"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Maximum results",
+            "default": 25
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "Search results"
+        }
+      }
+    ]
+  },
+  {
+    "id": "outlook",
+    "name": "Outlook",
+    "icon": "📬",
+    "category": "Communication",
+    "description": "Manage emails and calendar via Microsoft Graph",
+    "sdk": "@microsoft/microsoft-graph-client",
+    "authType": "oauth",
+    "docsUrl": "https://learn.microsoft.com/en-us/graph/",
+    "actions": [
+      {
+        "id": "messages.send",
+        "name": "Send Email",
+        "description": "Send an email via Outlook",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient email"
+          },
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Email subject"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": true,
+            "description": "Email body"
+          },
+          {
+            "name": "contentType",
+            "type": "string",
+            "required": false,
+            "description": "Body type (text or html)",
+            "default": "text"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Sent message"
+        }
+      },
+      {
+        "id": "calendar.createEvent",
+        "name": "Create Event",
+        "description": "Create a calendar event",
+        "inputs": [
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Event subject"
+          },
+          {
+            "name": "start",
+            "type": "string",
+            "required": true,
+            "description": "Start time (ISO 8601)"
+          },
+          {
+            "name": "end",
+            "type": "string",
+            "required": true,
+            "description": "End time (ISO 8601)"
+          },
+          {
+            "name": "attendees",
+            "type": "array",
+            "required": false,
+            "description": "Attendee emails"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created event"
+        }
+      }
+    ]
+  },
+  {
+    "id": "stripe",
+    "name": "Stripe",
+    "icon": "💳",
+    "category": "Payments",
+    "description": "Payment processing and subscription management",
+    "sdk": "stripe",
+    "authType": "api_key",
+    "docsUrl": "https://stripe.com/docs/api",
+    "actions": [
+      {
+        "id": "customers.create",
+        "name": "Create Customer",
+        "description": "Create a new customer",
+        "inputs": [
+          {
+            "name": "email",
+            "type": "string",
+            "required": true,
+            "description": "Customer email"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": false,
+            "description": "Customer name"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "description": "Customer description"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Customer object"
+        }
+      },
+      {
+        "id": "paymentIntents.create",
+        "name": "Create Payment Intent",
+        "description": "Create a payment intent",
+        "inputs": [
+          {
+            "name": "amount",
+            "type": "number",
+            "required": true,
+            "description": "Amount in cents"
+          },
+          {
+            "name": "currency",
+            "type": "string",
+            "required": true,
+            "description": "Currency code (e.g., usd)"
+          },
+          {
+            "name": "customer",
+            "type": "string",
+            "required": false,
+            "description": "Customer ID"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Payment intent object"
+        }
+      },
+      {
+        "id": "subscriptions.create",
+        "name": "Create Subscription",
+        "description": "Create a subscription",
+        "inputs": [
+          {
+            "name": "customer",
+            "type": "string",
+            "required": true,
+            "description": "Customer ID"
+          },
+          {
+            "name": "items",
+            "type": "array",
+            "required": true,
+            "description": "Subscription items with price IDs"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Subscription object"
+        }
+      }
+    ]
+  },
+  {
+    "id": "teams",
+    "name": "Microsoft Teams",
+    "icon": "👥",
+    "category": "Communication",
+    "description": "Microsoft Teams collaboration and messaging",
+    "sdk": "@microsoft/microsoft-graph-client",
+    "authType": "oauth",
+    "docsUrl": "https://learn.microsoft.com/en-us/graph/teams-concept-overview",
+    "actions": [
+      {
+        "id": "messages.send",
+        "name": "Send Channel Message",
+        "description": "Send a message to a Teams channel",
+        "inputs": [
+          {
+            "name": "teamId",
+            "type": "string",
+            "required": true,
+            "description": "Team ID"
+          },
+          {
+            "name": "channelId",
+            "type": "string",
+            "required": true,
+            "description": "Channel ID"
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "required": true,
+            "description": "Message content"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Sent message"
+        }
+      },
+      {
+        "id": "meetings.create",
+        "name": "Create Meeting",
+        "description": "Create an online meeting",
+        "inputs": [
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Meeting subject"
+          },
+          {
+            "name": "startDateTime",
+            "type": "string",
+            "required": true,
+            "description": "Start time (ISO 8601)"
+          },
+          {
+            "name": "endDateTime",
+            "type": "string",
+            "required": true,
+            "description": "End time (ISO 8601)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created meeting"
+        }
+      }
+    ]
+  },
+  {
+    "id": "twilio",
+    "name": "Twilio",
+    "icon": "📱",
+    "category": "Communication",
+    "description": "SMS, voice calls, and WhatsApp messaging",
+    "sdk": "twilio",
+    "authType": "basic",
+    "docsUrl": "https://www.twilio.com/docs/api",
+    "actions": [
+      {
+        "id": "sendSMS",
+        "name": "Send SMS",
+        "description": "Send an SMS message",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient phone number"
+          },
+          {
+            "name": "from",
+            "type": "string",
+            "required": true,
+            "description": "Twilio phone number"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": true,
+            "description": "Message body"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Message details"
+        }
+      },
+      {
+        "id": "makeCall",
+        "name": "Make Call",
+        "description": "Make a phone call",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient phone number"
+          },
+          {
+            "name": "from",
+            "type": "string",
+            "required": true,
+            "description": "Twilio phone number"
+          },
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "TwiML URL"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Call details"
+        }
+      },
+      {
+        "id": "sendWhatsApp",
+        "name": "Send WhatsApp",
+        "description": "Send a WhatsApp message",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient (whatsapp:+1234567890)"
+          },
+          {
+            "name": "from",
+            "type": "string",
+            "required": true,
+            "description": "Twilio WhatsApp number"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": true,
+            "description": "Message body"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Message details"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sendgrid",
+    "name": "SendGrid",
+    "icon": "📨",
+    "category": "Communication",
+    "description": "Transactional email delivery",
+    "sdk": "@sendgrid/mail",
+    "authType": "api_key",
+    "docsUrl": "https://docs.sendgrid.com/api-reference",
+    "actions": [
+      {
+        "id": "sendEmail",
+        "name": "Send Email",
+        "description": "Send a single email",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient email"
+          },
+          {
+            "name": "from",
+            "type": "string",
+            "required": true,
+            "description": "Sender email"
+          },
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Email subject"
+          },
+          {
+            "name": "html",
+            "type": "string",
+            "required": false,
+            "description": "HTML email body"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "required": false,
+            "description": "Plain text email body"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Send result"
+        }
+      }
+    ]
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify",
+    "icon": "🛒",
+    "category": "E-commerce",
+    "description": "E-commerce platform for online stores",
+    "sdk": "@shopify/shopify-api",
+    "authType": "token",
+    "docsUrl": "https://shopify.dev/docs/api",
+    "actions": [
+      {
+        "id": "createProduct",
+        "name": "Create Product",
+        "description": "Create a new product",
+        "inputs": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Product title"
+          },
+          {
+            "name": "body_html",
+            "type": "string",
+            "required": false,
+            "description": "Product description"
+          },
+          {
+            "name": "vendor",
+            "type": "string",
+            "required": false,
+            "description": "Product vendor"
+          },
+          {
+            "name": "variants",
+            "type": "array",
+            "required": false,
+            "description": "Product variants"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created product"
+        }
+      },
+      {
+        "id": "createOrder",
+        "name": "Create Order",
+        "description": "Create a new order",
+        "inputs": [
+          {
+            "name": "email",
+            "type": "string",
+            "required": false,
+            "description": "Customer email"
+          },
+          {
+            "name": "line_items",
+            "type": "array",
+            "required": true,
+            "description": "Order line items"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created order"
+        }
+      },
+      {
+        "id": "getProducts",
+        "name": "List Products",
+        "description": "List all products",
+        "inputs": [
+          {
+            "name": "limit",
+            "type": "number",
+            "required": false,
+            "description": "Number of products",
+            "default": 50
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of products"
+        }
+      }
+    ]
+  },
+  {
+    "id": "zendesk",
+    "name": "Zendesk",
+    "icon": "🎧",
+    "category": "Support",
+    "description": "Customer support ticketing platform",
+    "sdk": "node-zendesk",
+    "authType": "token",
+    "docsUrl": "https://developer.zendesk.com/api-reference/",
+    "actions": [
+      {
+        "id": "createTicket",
+        "name": "Create Ticket",
+        "description": "Create a support ticket",
+        "inputs": [
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Ticket subject"
+          },
+          {
+            "name": "comment",
+            "type": "object",
+            "required": true,
+            "description": "Ticket comment with body"
+          },
+          {
+            "name": "priority",
+            "type": "string",
+            "required": false,
+            "description": "Priority (low, normal, high, urgent)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created ticket"
+        }
+      },
+      {
+        "id": "updateTicket",
+        "name": "Update Ticket",
+        "description": "Update a ticket",
+        "inputs": [
+          {
+            "name": "ticketId",
+            "type": "number",
+            "required": true,
+            "description": "Ticket ID"
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": false,
+            "description": "Ticket status"
+          },
+          {
+            "name": "comment",
+            "type": "object",
+            "required": false,
+            "description": "Comment to add"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Updated ticket"
+        }
+      }
+    ]
+  },
+  {
+    "id": "mailchimp",
+    "name": "Mailchimp",
+    "icon": "📬",
+    "category": "Marketing",
+    "description": "Email marketing automation",
+    "sdk": "@mailchimp/mailchimp_marketing",
+    "authType": "api_key",
+    "docsUrl": "https://mailchimp.com/developer/marketing/api/",
+    "actions": [
+      {
+        "id": "addMember",
+        "name": "Add List Member",
+        "description": "Add member to mailing list",
+        "inputs": [
+          {
+            "name": "listId",
+            "type": "string",
+            "required": true,
+            "description": "List ID"
+          },
+          {
+            "name": "email_address",
+            "type": "string",
+            "required": true,
+            "description": "Member email"
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "description": "Status (subscribed, pending)"
+          },
+          {
+            "name": "merge_fields",
+            "type": "object",
+            "required": false,
+            "description": "Merge fields (FNAME, LNAME, etc.)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created member"
+        }
+      },
+      {
+        "id": "createCampaign",
+        "name": "Create Campaign",
+        "description": "Create email campaign",
+        "inputs": [
+          {
+            "name": "type",
+            "type": "string",
+            "required": true,
+            "description": "Campaign type (regular, plaintext)"
+          },
+          {
+            "name": "recipients",
+            "type": "object",
+            "required": true,
+            "description": "Campaign recipients"
+          },
+          {
+            "name": "settings",
+            "type": "object",
+            "required": true,
+            "description": "Campaign settings"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created campaign"
+        }
+      }
+    ]
+  },
+  {
+    "id": "asana",
+    "name": "Asana",
+    "icon": "✓",
+    "category": "Project Management",
+    "description": "Task and project management",
+    "sdk": "asana",
+    "authType": "token",
+    "docsUrl": "https://developers.asana.com/docs",
+    "actions": [
+      {
+        "id": "createTask",
+        "name": "Create Task",
+        "description": "Create a new task",
+        "inputs": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Task name"
+          },
+          {
+            "name": "notes",
+            "type": "string",
+            "required": false,
+            "description": "Task notes"
+          },
+          {
+            "name": "projects",
+            "type": "array",
+            "required": false,
+            "description": "Project IDs"
+          },
+          {
+            "name": "due_on",
+            "type": "string",
+            "required": false,
+            "description": "Due date (YYYY-MM-DD)"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created task"
+        }
+      },
+      {
+        "id": "createProject",
+        "name": "Create Project",
+        "description": "Create a new project",
+        "inputs": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Project name"
+          },
+          {
+            "name": "workspace",
+            "type": "string",
+            "required": true,
+            "description": "Workspace ID"
+          },
+          {
+            "name": "notes",
+            "type": "string",
+            "required": false,
+            "description": "Project notes"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created project"
+        }
+      }
+    ]
+  },
+  {
+    "id": "trello",
+    "name": "Trello",
+    "icon": "📋",
+    "category": "Project Management",
+    "description": "Visual project management with boards",
+    "sdk": "trello",
+    "authType": "token",
+    "docsUrl": "https://developer.atlassian.com/cloud/trello/rest/",
+    "actions": [
+      {
+        "id": "createCard",
+        "name": "Create Card",
+        "description": "Create a new card",
+        "inputs": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Card name"
+          },
+          {
+            "name": "idList",
+            "type": "string",
+            "required": true,
+            "description": "List ID"
+          },
+          {
+            "name": "desc",
+            "type": "string",
+            "required": false,
+            "description": "Card description"
+          },
+          {
+            "name": "due",
+            "type": "string",
+            "required": false,
+            "description": "Due date"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created card"
+        }
+      },
+      {
+        "id": "createList",
+        "name": "Create List",
+        "description": "Create a new list",
+        "inputs": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "List name"
+          },
+          {
+            "name": "idBoard",
+            "type": "string",
+            "required": true,
+            "description": "Board ID"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Created list"
+        }
+      }
+    ]
+  },
+  {
+    "id": "dropbox",
+    "name": "Dropbox",
+    "icon": "☁️",
+    "category": "Storage",
+    "description": "Cloud file storage and sharing",
+    "sdk": "dropbox",
+    "authType": "token",
+    "docsUrl": "https://www.dropbox.com/developers/documentation/http/overview",
+    "actions": [
+      {
+        "id": "uploadFile",
+        "name": "Upload File",
+        "description": "Upload a file to Dropbox",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "File path in Dropbox"
+          },
+          {
+            "name": "contents",
+            "type": "string",
+            "required": true,
+            "description": "File contents"
+          },
+          {
+            "name": "mode",
+            "type": "string",
+            "required": false,
+            "description": "Upload mode (add, overwrite)",
+            "default": "add"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "File metadata"
+        }
+      },
+      {
+        "id": "listFolder",
+        "name": "List Folder",
+        "description": "List folder contents",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "Folder path"
+          },
+          {
+            "name": "recursive",
+            "type": "boolean",
+            "required": false,
+            "description": "Recursive listing",
+            "default": false
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of files and folders"
+        }
+      },
+      {
+        "id": "createSharedLink",
+        "name": "Create Shared Link",
+        "description": "Create a shared link for a file",
+        "inputs": [
+          {
+            "name": "path",
+            "type": "string",
+            "required": true,
+            "description": "File path"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Shared link details"
+        }
+      }
+    ]
+  },
+  {
+    "id": "aws-s3",
+    "name": "AWS S3",
+    "icon": "💾",
+    "category": "Storage",
+    "description": "Amazon object storage",
+    "sdk": "@aws-sdk/client-s3",
+    "authType": "api_key",
+    "docsUrl": "https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html",
+    "actions": [
+      {
+        "id": "uploadObject",
+        "name": "Upload Object",
+        "description": "Upload an object to S3",
+        "inputs": [
+          {
+            "name": "bucket",
+            "type": "string",
+            "required": true,
+            "description": "Bucket name"
+          },
+          {
+            "name": "key",
+            "type": "string",
+            "required": true,
+            "description": "Object key"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "required": true,
+            "description": "Object contents"
+          },
+          {
+            "name": "contentType",
+            "type": "string",
+            "required": false,
+            "description": "Content type"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Upload result"
+        }
+      },
+      {
+        "id": "listObjects",
+        "name": "List Objects",
+        "description": "List objects in bucket",
+        "inputs": [
+          {
+            "name": "bucket",
+            "type": "string",
+            "required": true,
+            "description": "Bucket name"
+          },
+          {
+            "name": "prefix",
+            "type": "string",
+            "required": false,
+            "description": "Key prefix filter"
+          },
+          {
+            "name": "maxKeys",
+            "type": "number",
+            "required": false,
+            "description": "Maximum keys",
+            "default": 1000
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "List of objects"
+        }
+      }
+    ]
+  }
+]
