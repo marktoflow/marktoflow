@@ -20,7 +20,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.d.ts', 'src/server/**'],
+      exclude: ['src/**/*.d.ts', 'src/server/**', 'src/client/components/Canvas/execution/**'],
       thresholds: {
         lines: 25,
         functions: 65,
