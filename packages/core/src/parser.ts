@@ -151,6 +151,20 @@ function buildWorkflow(
     config: (t.config as Record<string, unknown>) || {},
   }));
 
+  // Extract workflow mode (run, daemon, event)
+  const mode = frontmatter.mode as string | undefined;
+
+  // Extract event sources
+  const sourcesRaw = frontmatter.sources as Array<Record<string, unknown>> | undefined;
+  const sources = sourcesRaw?.map((s) => ({
+    kind: s.kind as string,
+    id: s.id as string,
+    options: (s.options as Record<string, unknown>) || {},
+    ...(s.filter ? { filter: s.filter as string[] } : {}),
+    ...(s.reconnect !== undefined ? { reconnect: s.reconnect as boolean } : {}),
+    ...(s.reconnectDelay !== undefined ? { reconnectDelay: s.reconnectDelay as number } : {}),
+  }));
+
   // Extract steps from frontmatter or markdown body
   let steps: WorkflowStep[] = [];
 
@@ -178,6 +192,8 @@ function buildWorkflow(
     tools,
     inputs,
     triggers,
+    ...(mode ? { mode } : {}),
+    ...(sources ? { sources } : {}),
     steps,
     rawContent: markdownBody,
     permissions,
