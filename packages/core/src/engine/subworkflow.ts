@@ -126,6 +126,7 @@ export async function executeSubWorkflowWithAgent(
       model,
       messages,
       max_tokens: 8192,
+      response_format: { type: 'json_object' },
     },
     model,
     agent: agentName,
