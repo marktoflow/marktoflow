@@ -13,7 +13,7 @@
  */
 
 import { ExecutionContext } from './models.js';
-import { resolveTemplates, resolveVariablePath } from './engine.js';
+import { resolveTemplates, resolveVariablePath } from './engine/variable-resolution.js';
 import { executeFileOperation, isFileOperation } from './file-operations.js';
 import { isParallelOperation } from './parallel.js';
 

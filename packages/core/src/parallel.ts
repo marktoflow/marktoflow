@@ -7,8 +7,8 @@
  */
 
 import { ExecutionContext, WorkflowStep } from './models.js';
-import { resolveTemplates, StepExecutorContext } from './engine.js';
-import { SDKRegistryLike } from './sdk-registry.js';
+import { resolveTemplates } from './engine/variable-resolution.js';
+import type { StepExecutorContext, SDKRegistryLike } from './engine/types.js';
 
 // ============================================================================
 // Types
@@ -76,25 +76,11 @@ export interface ParallelResult {
 /**
  * Parse timeout string to milliseconds (e.g., "60s", "5m", "2h")
  */
+import { parseDuration } from './utils/duration.js';
+
 function parseTimeout(timeout?: string): number {
   if (!timeout) return 60000; // Default 60 seconds
-
-  const match = timeout.match(/^(\d+(?:\.\d+)?)(ms|s|m|h)?$/);
-  if (!match) {
-    throw new Error(`Invalid timeout format: ${timeout}. Expected format: "60s", "5m", "2h"`);
-  }
-
-  const value = parseFloat(match[1]);
-  const unit = match[2] || 's';
-
-  const multipliers: Record<string, number> = {
-    ms: 1,
-    s: 1000,
-    m: 60000,
-    h: 3600000,
-  };
-
-  return value * multipliers[unit];
+  return parseDuration(timeout);
 }
 
 /**

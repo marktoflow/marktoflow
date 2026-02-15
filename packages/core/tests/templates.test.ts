@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TemplateRegistry, HELLO_TEMPLATE } from '../src/templates.js';
+import { TemplateRegistry, HELLO_TEMPLATE } from '../src/workflow-templates.js';
 
 
 describe('TemplateRegistry', () => {
