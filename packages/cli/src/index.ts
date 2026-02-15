@@ -121,12 +121,8 @@ program
       return;
     }
     if (!workflow) {
-      console.log(chalk.red('\n❌ Error: workflow argument is required\n'));
+      console.log('\n❌ Error: workflow argument is required\n');
       console.log('Usage: marktoflow update <workflow> [options]');
-      console.log('\nOptions:');
-      console.log('  -a, --agent <id>     Coding agent to use');
-      console.log('  -p, --prompt <text>  Update description');
-      console.log('  --list-agents        List available coding agents');
       process.exit(1);
     }
     await runUpdateWizard({ workflow, ...options });
@@ -150,10 +146,21 @@ program
   .description('Debug a workflow with step-by-step execution')
   .option('-i, --input <key=value...>', 'Input parameters')
   .option('-b, --breakpoint <stepId...>', 'Set breakpoints at step IDs')
-  .option('-a, --agent <provider>', 'AI agent provider (claude-agent, openai, github-copilot, opencode, ollama, codex)')
-  .option('-m, --model <name>', 'Model name to use (e.g., claude-sonnet-4, gpt-4, etc.)')
+  .option('-a, --agent <provider>', 'AI agent provider')
+  .option('-m, --model <name>', 'Model name to use')
   .option('--auto-start', 'Start without initial prompt')
   .action(async (workflowPath, options) => {
+    // Debug command still uses inline import for WorkflowDebugger
+    const { WorkflowDebugger } = await import('./commands/debug.js');
+    const ora = (await import('ora')).default;
+    const chalk = (await import('chalk')).default;
+    const { existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { parseFile, SDKRegistry, createSDKStepExecutor, loadConfig } = await import('@marktoflow/core');
+    const { registerIntegrations } = await import('@marktoflow/integrations');
+    const { parseInputPairs, validateAndApplyDefaults, printMissingInputsError, overrideAgentInWorkflow, overrideModelInWorkflow } = await import('./utils/index.js');
+    const { getAgentSDKName, getAgentAuthConfig } = await import('./helpers/agent-config.js');
+
     const spinner = ora('Loading workflow for debugging...').start();
 
     try {
@@ -161,16 +168,13 @@ program
       const workflowsDir = config.workflows?.path ?? '.marktoflow/workflows';
 
       let resolvedPath = workflowPath;
-      if (!existsSync(resolvedPath)) {
-        resolvedPath = join(workflowsDir, workflowPath);
-      }
+      if (!existsSync(resolvedPath)) resolvedPath = join(workflowsDir, workflowPath);
       if (!existsSync(resolvedPath)) {
         spinner.fail(`Workflow not found: ${workflowPath}`);
         process.exit(1);
       }
 
       const { workflow, warnings } = await parseFile(resolvedPath);
-
       if (warnings.length > 0) {
         spinner.warn('Workflow parsed with warnings:');
         warnings.forEach((w) => console.log(chalk.yellow(`  - ${w}`)));
@@ -185,7 +189,6 @@ program
         printMissingInputsError(workflow, validation.missingInputs, 'debug', workflowPath);
         process.exit(1);
       }
-      const inputs = validation.inputs;
 
       if (options.agent) {
         const sdkName = getAgentSDKName(options.agent);
@@ -204,14 +207,8 @@ program
       registry.registerTools(workflow.tools);
 
       const workflowDebugger = new WorkflowDebugger(
-        workflow,
-        inputs,
-        registry,
-        createSDKStepExecutor(),
-        {
-          breakpoints,
-          autoStart: options.autoStart,
-        }
+        workflow, validation.inputs, registry, createSDKStepExecutor(),
+        { breakpoints, autoStart: options.autoStart },
       );
 
       await workflowDebugger.debug();
@@ -251,7 +248,6 @@ toolsCmd
 
 // --- credentials ---
 const credentialsCmd = program.command('credentials').description('Credential management');
-
 credentialsCmd
   .command('list')
   .description('List stored credentials')
@@ -326,9 +322,7 @@ program
   .command('test-connection [service]')
   .description('Test service connection(s)')
   .option('-a, --all', 'Test all configured services')
-  .action(async (service: string | undefined, options: { all?: boolean }) => {
-    await executeTestConnection(service, options);
-  });
+  .action(async (service, options) => executeTestConnection(service, options));
 
 // --- history ---
 program
@@ -338,7 +332,7 @@ program
   .option('-s, --status <status>', 'Filter by status (completed, failed, running)')
   .option('-w, --workflow <id>', 'Filter by workflow ID')
   .option('--step <stepId>', 'Show specific step details (requires runId)')
-  .action((runId: string | undefined, options: { limit?: string; status?: string; workflow?: string; step?: string }) => {
+  .action((runId, options) => {
     if (runId) {
       executeHistoryDetail(runId, { step: options.step });
     } else {
@@ -356,9 +350,7 @@ program
   .description('Replay a previous execution with the same inputs')
   .option('--from <stepId>', 'Resume from specific step')
   .option('--dry-run', 'Preview what would be executed')
-  .action(async (runId: string, options: { from?: string; dryRun?: boolean }) => {
-    await executeReplay(runId, options);
-  });
+  .action(async (runId, options) => executeReplay(runId, options));
 
 // --- gui ---
 program
@@ -374,9 +366,7 @@ program
 program
   .command('version')
   .description('Show version information')
-  .action(() => {
-    console.log(`marktoflow v${VERSION}`);
-  });
+  .action(() => console.log(`marktoflow v${VERSION}`));
 
 // ============================================================================
 // Parse and Execute
