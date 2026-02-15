@@ -241,7 +241,6 @@ export async function executeParallelSpawn(
 
   // Wait based on strategy
   const results: Record<string, AgentResult> = {};
-  const pendingResults = [...agentPromises];
   const agentIds = agents.map((a) => a.id);
 
   if (wait === 'all') {
@@ -256,13 +255,18 @@ export async function executeParallelSpawn(
     const targetCount =
       wait === 'any' ? 1 : wait === 'majority' ? Math.ceil(agents.length / 2) : (wait as number);
 
-    while (completedCount < targetCount && pendingResults.length > 0) {
-      const result = await Promise.race(
-        pendingResults.map((p, idx) => p.then((r) => ({ result: r, index: idx })))
+    // Track original indices alongside promises so splice doesn't break mapping
+    const pending: { promise: Promise<AgentResult>; originalIndex: number }[] =
+      agentPromises.map((p, idx) => ({ promise: p, originalIndex: idx }));
+
+    while (completedCount < targetCount && pending.length > 0) {
+      const raceResult = await Promise.race(
+        pending.map((entry, idx) => entry.promise.then((r) => ({ result: r, pendingIdx: idx })))
       );
 
-      results[agentIds[result.index]] = result.result;
-      pendingResults.splice(result.index, 1);
+      const originalIndex = pending[raceResult.pendingIdx].originalIndex;
+      results[agentIds[originalIndex]] = raceResult.result;
+      pending.splice(raceResult.pendingIdx, 1);
       completedCount++;
     }
 
@@ -414,31 +418,45 @@ export function isParallelOperation(action: string): boolean {
 }
 
 /**
- * Execute a parallel operation
+ * Execute a parallel operation.
+ *
+ * @param rawInputs - Original unresolved inputs, used to preserve prompt templates
+ *   containing per-item variables ({{ item }}, {{ itemIndex }}) that the engine's
+ *   pre-resolution would replace with empty strings.
  */
 export async function executeParallelOperation(
   action: string,
   resolvedInputs: Record<string, unknown>,
   context: ExecutionContext,
   sdkRegistry: SDKRegistryLike,
-  stepExecutor: (step: WorkflowStep, context: ExecutionContext, sdkRegistry: SDKRegistryLike, executorContext?: StepExecutorContext) => Promise<unknown>
+  stepExecutor: (step: WorkflowStep, context: ExecutionContext, sdkRegistry: SDKRegistryLike, executorContext?: StepExecutorContext) => Promise<unknown>,
+  rawInputs?: Record<string, unknown>
 ): Promise<unknown> {
   switch (action) {
-    case 'parallel.spawn':
-      return executeParallelSpawn(
-        resolvedInputs as unknown as ParallelSpawnInputs,
-        context,
-        sdkRegistry,
-        stepExecutor
-      );
+    case 'parallel.spawn': {
+      // Use resolved inputs but restore raw prompt templates for each agent
+      const spawnInputs = resolvedInputs as unknown as ParallelSpawnInputs;
+      if (rawInputs && Array.isArray((rawInputs as any).agents)) {
+        const rawAgents = (rawInputs as any).agents as AgentConfig[];
+        spawnInputs.agents = spawnInputs.agents.map((agent, idx) => ({
+          ...agent,
+          prompt: rawAgents[idx]?.prompt ?? agent.prompt,
+        }));
+      }
+      return executeParallelSpawn(spawnInputs, context, sdkRegistry, stepExecutor);
+    }
 
-    case 'parallel.map':
-      return executeParallelMap(
-        resolvedInputs as unknown as ParallelMapInputs,
-        context,
-        sdkRegistry,
-        stepExecutor
-      );
+    case 'parallel.map': {
+      // Use resolved inputs but restore raw prompt template for the agent
+      const mapInputs = resolvedInputs as unknown as ParallelMapInputs;
+      if (rawInputs && (rawInputs as any).agent?.prompt) {
+        mapInputs.agent = {
+          ...mapInputs.agent,
+          prompt: (rawInputs as any).agent.prompt,
+        };
+      }
+      return executeParallelMap(mapInputs, context, sdkRegistry, stepExecutor);
+    }
 
     default:
       throw new Error(`Unknown parallel operation: ${action}`);

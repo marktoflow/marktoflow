@@ -5,11 +5,12 @@
 <h1 align="center">marktoflow</h1>
 
 <p align="center">
-  <strong>Open-source workflow automation where your workflows are just markdown files.</strong>
+  <strong>Open-source AI workflow automation — your workflows are just markdown files.</strong>
 </p>
 
 <p align="center">
-  38 native integrations. Built-in AI agent support. Visual editor. No vendor lock-in.
+  Use your Copilot/Claude/Codex subscriptions · 38 integrations · Tool calling · Local LLMs · Self-hosted
+
 </p>
 
 <p align="center">
@@ -62,19 +63,51 @@ steps:
 ---
 ```
 
+Already have a GitHub Copilot, Claude, or Codex subscription? Use it directly — no API keys:
+
+```bash
+marktoflow run workflow.md --agent copilot   # GitHub Copilot subscription
+marktoflow run workflow.md --agent claude     # Claude CLI login
+marktoflow run workflow.md --agent codex      # Codex CLI
+marktoflow run workflow.md --agent ollama     # Free, runs locally
+```
+
 ## Why marktoflow?
 
 | | What you get |
 |---|---|
-| **Markdown-native** | Workflows are `.md` files — readable, diffable, version-controlled |
+| **Markdown-native** | Workflows are `.md` files — readable, auditable, diffable, version-controlled |
+| **Use your existing AI** | Copilot, Claude, Codex subscriptions — no extra API keys needed |
+| **AI tool calling** | Agentic loops — models call tools, get results, and reason autonomously |
+| **Local LLMs too** | Optional llama.cpp, VLLM, Ollama support for air-gapped or offline use |
+| **Secure by design** | Self-hosted, no telemetry, your data never leaves your infrastructure |
+| **Structured output** | JSON mode and JSON Schema validation for reliable AI responses |
 | **MCP-first** | Native Model Context Protocol support with zero config |
 | **Direct SDK calls** | Official SDKs, full TypeScript types, no wrapper APIs |
-| **AI agents included** | Use your existing Copilot/Claude/Codex subscriptions — no extra API keys |
 | **Parallel execution** | Run multiple AI agents concurrently — 3x faster code reviews, batch processing |
 | **Visual editor** | Optional drag-and-drop GUI with `marktoflow gui` |
 | **Cost tracking** | Know exactly what each workflow run costs |
 
+## Security & Privacy
+
+marktoflow is designed for teams and individuals who care about where their data goes.
+
+| | marktoflow | Cloud agent platforms |
+|---|---|---|
+| **Data residency** | Your infrastructure — nothing leaves unless you send it | Data processed on vendor servers |
+| **Local LLM support** | First-class — llama.cpp, VLLM, Ollama | Typically cloud-only |
+| **Air-gapped operation** | ✅ Full offline support with local models | ❌ Requires internet |
+| **Audit trail** | Git history + SQLite execution logs — fully inspectable | Vendor-controlled logs |
+| **Workflow transparency** | Plain markdown — read every step before it runs | Opaque agent behavior |
+| **Telemetry** | None — zero phone-home, zero tracking | Varies |
+| **Credential storage** | Local encryption (AES-256-GCM) or your vault (HashiCorp, AWS, Azure) | Vendor-managed |
+| **Source available** | AGPL-3.0 — inspect, modify, self-host | Often proprietary |
+
+**Use case:** You want AI-powered automation but your company policy (or common sense) says sensitive data — code, credentials, customer info, internal docs — shouldn't flow through third-party agent platforms. marktoflow runs entirely on your machine or your servers with your choice of LLM.
+
 ## How it compares
+
+### vs. Workflow Platforms
 
 | Feature | marktoflow | Zapier | n8n | GitHub Actions |
 |---------|:----------:|:------:|:---:|:--------------:|
@@ -82,10 +115,26 @@ steps:
 | Workflow format | Markdown | Proprietary | JSON | YAML |
 | Version control | Git-native | No | Limited | Git-native |
 | AI agent support | Built-in | Add-on | Plugin | Limited |
+| AI tool calling | Built-in | No | Plugin | No |
+| Local LLMs | Yes | No | Via plugin | No |
 | Direct SDK access | Yes | No | No | Via actions |
 | Visual editor | Yes | Yes | Yes | No |
 | Self-hosted | Yes | No | Yes | Runners only |
 | Per-task pricing | Free | Yes | Free (self-host) | Minutes-based |
+
+### vs. AI Agent Platforms
+
+| Feature | marktoflow | OpenClaw | LangChain | CrewAI |
+|---------|:----------:|:--------:|:---------:|:------:|
+| Self-hosted | Yes | Gateway only | Yes | Yes |
+| Local LLM support | First-class | Limited | Yes | Yes |
+| Air-gapped / offline | Yes | No | Partial | Partial |
+| No telemetry | Yes | No | Opt-out | Opt-out |
+| Workflow format | Markdown (auditable) | Opaque | Python code | Python code |
+| Visual editor | Yes | No | No | No |
+| 38 native integrations | Yes | No | Community | Community |
+| Non-AI workflows | Yes | No | No | No |
+| Data stays local | Always | Routed through gateway | Depends on LLM | Depends on LLM |
 
 ## Integrations
 
@@ -104,7 +153,7 @@ steps:
 | **Storage** | Dropbox, AWS S3 |
 | **Databases** | Supabase, PostgreSQL, MySQL |
 | **Universal** | HTTP client (any REST API) |
-| **AI Agents** | GitHub Copilot, Claude Agent, OpenAI (+ VLLM), OpenCode, Ollama — [control via Slack/Telegram](examples/agent-task-executor/) |
+| **AI Agents** | GitHub Copilot, Claude, Codex — use your existing subscriptions, no API keys — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
 
 ## Packages
 

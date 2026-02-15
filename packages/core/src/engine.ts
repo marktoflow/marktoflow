@@ -740,8 +740,12 @@ export class WorkflowEngine {
 
         let output: unknown;
         if (isParallelOperation(step.action)) {
+          // Pass both resolved and raw inputs to parallel operations.
+          // Resolved inputs are used for structural fields (items, agents, etc.).
+          // Raw inputs preserve prompt templates with per-item variables
+          // ({{ item }}, {{ itemIndex }}) that can't be resolved until iteration.
           output = await executeParallelOperation(
-            step.action, resolvedInputs, context, sdkRegistry, stepExecutor,
+            step.action, resolvedInputs, context, sdkRegistry, stepExecutor, step.inputs,
           );
         } else if (isBuiltInOperation(step.action)) {
           output = await executeBuiltInOperation(step.action, step.inputs, resolvedInputs, context);
