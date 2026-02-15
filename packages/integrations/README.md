@@ -1,10 +1,10 @@
 # @marktoflow/integrations
 
-> 30+ native service integrations and AI agent adapters for workflow automation.
+> 38 native service integrations and AI agent adapters with tool calling, structured output, and local LLM support.
 
 [![npm](https://img.shields.io/npm/v/@marktoflow/integrations)](https://www.npmjs.com/package/@marktoflow/integrations)
 
-Part of [marktoflow](../../README.md) — open-source markdown workflow automation.
+Part of [marktoflow](https://github.com/marktoflow/marktoflow) — open-source AI workflow automation.
 
 ## Quick Start
 
@@ -42,12 +42,72 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 
 ## Features
 
-- **30+ native SDK integrations** with full TypeScript types
-- **6 AI agent adapters** (Copilot, Claude, Codex, OpenCode, Ollama)
+- **38 native SDK integrations** with full TypeScript types
+- **7 AI agent adapters** — OpenAI, Claude, Copilot, Codex, OpenCode, Ollama + any OpenAI-compatible endpoint
+- **Tool calling / function calling** — Agentic loops where AI models invoke tools autonomously
+- **Structured output** — JSON mode and JSON Schema validation for reliable AI responses
+- **Local LLM support** — llama.cpp, VLLM, LM Studio, LocalAI with auto model detection
 - **Input validation** via Zod schemas for every action
 - **Automatic retry** with circuit breakers and exponential backoff
 - **Credential encryption** (AES-256-GCM) and OAuth token refresh
 - **256+ contract tests** across 28 services (MSW-based, no API keys needed)
+
+## AI Agent Adapters
+
+| Agent | Setup | Tool Calling | Structured Output |
+|-------|-------|:------------:|:-----------------:|
+| **OpenAI** | `OPENAI_API_KEY` | ✅ | ✅ |
+| **Local LLM** (llama.cpp, VLLM, LM Studio) | `base_url` + `api_key: dummy` | ✅ | ✅ |
+| **GitHub Copilot** | `copilot auth login` | ✅ | — |
+| **Claude Agent** | Claude CLI or `ANTHROPIC_API_KEY` | ✅ | — |
+| **OpenAI Codex** | Codex CLI | ✅ | — |
+| **OpenCode** | `opencode /connect` | ✅ | — |
+| **Ollama** | Local install | ✅ | — |
+
+### OpenAI / Local LLM Methods
+
+| Method | Description |
+|--------|-------------|
+| `ai.generate` | Simple text generation |
+| `ai.chatCompletion` | Full chat completion with tools and response_format |
+| `ai.chatWithTools` | Agentic tool-calling loop (model calls tools → execute → repeat) |
+| `ai.generateJSON` | Chat with JSON mode — returns parsed JSON |
+| `ai.generateStructured` | Chat with JSON Schema validation |
+| `ai.chatStream` | Streaming chat completion |
+| `ai.embeddings` | Generate text embeddings |
+| `ai.listModels` | List available models |
+| `ai.autoDetectModel` | Auto-detect model from server |
+
+### Tool Calling Example
+
+```yaml
+tools:
+  ai:
+    sdk: openai
+    auth:
+      base_url: http://localhost:8000/v1  # llama.cpp, VLLM, etc.
+      api_key: dummy
+    options:
+      model: auto
+
+steps:
+  - action: ai.chatWithTools
+    inputs:
+      messages:
+        - role: user
+          content: "What's the weather in London?"
+      tools:
+        - type: function
+          function:
+            name: get_weather
+            description: Get current weather
+            parameters:
+              type: object
+              properties:
+                city: { type: string }
+              required: [city]
+      maxTurns: 5
+```
 
 ## Service Reference
 
@@ -85,17 +145,6 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 | **MySQL** | Database | `query`, `insert`, `update`, `delete` |
 | **HTTP** | Universal | `request` (any REST API) |
 
-## AI Agent Adapters
-
-| Agent | Setup | Notes |
-|-------|-------|-------|
-| **GitHub Copilot** | `copilot auth login` | Use existing subscription |
-| **Claude Agent** | Claude CLI | Use existing subscription |
-| **Claude Agent** | `ANTHROPIC_API_KEY` | Direct API with tool calling |
-| **OpenAI Codex** | Codex CLI | Use existing subscription |
-| **OpenCode** | `opencode /connect` | 75+ AI backends |
-| **Ollama** | Local install | Free, runs locally |
-
 ## Creating Custom Integrations
 
 ```typescript
@@ -120,4 +169,4 @@ See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/
 
 ## License
 
-AGPL-3.0
+[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)

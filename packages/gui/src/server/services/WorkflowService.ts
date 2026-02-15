@@ -286,11 +286,15 @@ export class WorkflowService {
   }
 
   private async importSingleWorkflow(content: string, filename: string): Promise<void> {
+    // Normalize line endings to \n (handles \r\n, \r, and mixed line endings)
+    content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
     // Validate workflow content
     try {
       // Basic validation - try to parse YAML frontmatter or direct YAML
       if (filename.endsWith('.md')) {
-        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        // More flexible regex: allow optional whitespace after --- delimiters
+        const frontmatterMatch = content.match(/^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/);
         if (frontmatterMatch) {
           yamlParse(frontmatterMatch[1]);
         } else {

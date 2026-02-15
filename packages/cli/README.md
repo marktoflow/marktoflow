@@ -1,10 +1,10 @@
 # @marktoflow/cli
 
-> Command-line interface for running markdown-based workflow automations.
+> Command-line interface for running AI-powered markdown workflow automations with tool calling, parallel agents, and 38 integrations.
 
 [![npm](https://img.shields.io/npm/v/@marktoflow/cli)](https://www.npmjs.com/package/@marktoflow/cli)
 
-Part of [marktoflow](../../README.md) — open-source markdown workflow automation.
+Part of [marktoflow](https://github.com/marktoflow/marktoflow) — open-source AI workflow automation.
 
 ## Quick Start
 
@@ -24,6 +24,9 @@ npx @marktoflow/cli run workflow.md
 ## Features
 
 - **Workflow Execution** — Run markdown workflows from the terminal
+- **AI Agents** — OpenAI, Claude, Copilot, Ollama, llama.cpp, VLLM — any OpenAI-compatible endpoint
+- **Tool Calling** — Agentic workflows where models decide which tools to invoke
+- **Parallel Agents** — Run multiple AI models concurrently (`parallel.spawn`, `parallel.map`)
 - **Dry Run Mode** — Test workflows without executing actions
 - **OAuth Integration** — Easy OAuth setup for Gmail, Outlook, Google services
 - **Scheduling** — Background cron-based workflow scheduling
@@ -39,9 +42,18 @@ npx @marktoflow/cli run workflow.md
 ```bash
 marktoflow run workflow.md
 marktoflow run workflow.md --input key=value
-marktoflow run workflow.md --agent copilot --model gpt-4o
 marktoflow run workflow.md --verbose
 marktoflow run workflow.md --dry-run
+```
+
+### Run with AI agents
+
+```bash
+marktoflow run workflow.md --agent openai --model gpt-4o
+marktoflow run workflow.md --agent claude --model sonnet
+marktoflow run workflow.md --agent copilot
+marktoflow run workflow.md --agent ollama --model llama3.2
+marktoflow run workflow.md --agent vllm --model my-local-model  # llama.cpp, VLLM, etc.
 ```
 
 ### Validate before running
@@ -96,7 +108,7 @@ marktoflow tools list        # List available integrations
 marktoflow history           # View execution history
 ```
 
-## Example: Daily Standup
+## Example: AI-Powered Daily Standup
 
 ```bash
 cat > workflows/standup.md << 'EOF'
@@ -133,10 +145,41 @@ marktoflow schedule workflows/standup.md --cron "0 9 * * 1-5"
 marktoflow schedule start
 ```
 
+## Example: Local LLM with Tool Calling
+
+```yaml
+tools:
+  ai:
+    sdk: openai
+    auth:
+      base_url: http://localhost:8000/v1
+      api_key: dummy
+    options:
+      model: auto  # Auto-detect from server
+
+steps:
+  - action: ai.chatWithTools
+    inputs:
+      messages:
+        - role: user
+          content: "{{ inputs.query }}"
+      tools:
+        - type: function
+          function:
+            name: search
+            description: Search for information
+            parameters:
+              type: object
+              properties:
+                query: { type: string }
+              required: [query]
+      maxTurns: 5
+```
+
 ## Contributing
 
 See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/CONTRIBUTING.md).
 
 ## License
 
-AGPL-3.0
+[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)
