@@ -13,7 +13,7 @@
 import { promises as fs } from 'node:fs';
 import { extname, resolve, dirname } from 'node:path';
 import { ExecutionContext } from './models.js';
-import { resolveTemplates } from './engine.js';
+import { resolveTemplates } from './engine/variable-resolution.js';
 
 // ============================================================================
 // Types

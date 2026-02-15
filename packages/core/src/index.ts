@@ -143,6 +143,14 @@ export {
   type CircuitState,
 } from './engine.js';
 
+// Engine sub-modules
+export { resolveVariablePath, getNestedValue } from './engine/variable-resolution.js';
+export { evaluateConditions, evaluateCondition } from './engine/conditions.js';
+
+// Utilities
+export { parseDuration } from './utils/duration.js';
+export { errorToString, toError } from './utils/errors.js';
+
 // Permissions
 export {
   mergePermissions,
@@ -408,7 +416,7 @@ export {
   BUILTIN_TEMPLATES,
   type TemplateMetadata,
   type TemplateVariable,
-} from './templates.js';
+} from './workflow-templates.js';
 
 // Config
 export { loadConfig, type MarktoflowConfig } from './config.js';
