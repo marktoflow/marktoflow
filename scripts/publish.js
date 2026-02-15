@@ -27,6 +27,7 @@ const PACKAGES = [
   { name: 'cli', path: 'packages/cli', order: 3 },
   { name: 'gui', path: 'packages/gui', order: 4 },
   { name: 'marktoflow', path: 'packages/marktoflow', order: 5 },
+  { name: 'marktoflow-wrapper', path: 'packages/marktoflow-wrapper', order: 6 },
 ];
 
 function exec(command, cwd = rootDir, options = {}) {
@@ -220,9 +221,9 @@ async function main() {
 
     if (!dryRun) {
       console.log('\n📦 Installation command:');
-      console.log('  npm install -g @marktoflow/marktoflow@alpha');
-      console.log('\n  Or individual packages:');
-      console.log('  npm install @marktoflow/cli@alpha @marktoflow/gui@alpha');
+      console.log('  npm install -g marktoflow');
+      console.log('\n  Or scoped:');
+      console.log('  npm install -g @marktoflow/marktoflow');
     }
   } catch (error) {
     console.error('\n❌ Publish failed:', error.message);

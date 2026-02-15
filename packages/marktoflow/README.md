@@ -30,7 +30,7 @@ This is the all-in-one package that includes everything you need:
 ## Install
 
 ```bash
-npm install -g @marktoflow/marktoflow
+npm install -g marktoflow
 ```
 
 ## Usage

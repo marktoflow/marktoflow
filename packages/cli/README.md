@@ -9,7 +9,7 @@ Part of [marktoflow](https://github.com/marktoflow/marktoflow) — open-source A
 ## Quick Start
 
 ```bash
-npm install -g @marktoflow/cli
+npm install -g marktoflow
 
 marktoflow init
 marktoflow run workflow.md
