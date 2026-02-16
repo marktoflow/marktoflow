@@ -414,11 +414,20 @@ export class WorkflowEngine {
       const { getEventSourceManager } = await import('./event-operations.js');
       const manager = getEventSourceManager();
       
-      for (const sourceConfig of workflow.sources) {
+      for (const source of workflow.sources) {
         try {
-          await manager.add(sourceConfig);
+          // Clean config: remove undefined properties for exactOptionalPropertyTypes
+          const config = {
+            kind: source.kind,
+            id: source.id,
+            options: source.options,
+            ...(source.filter ? { filter: source.filter } : {}),
+            ...(source.reconnect !== undefined ? { reconnect: source.reconnect } : {}),
+            ...(source.reconnectDelay !== undefined ? { reconnectDelay: source.reconnectDelay } : {}),
+          };
+          await manager.add(config);
         } catch (error) {
-          const errorMsg = `Failed to connect to event source '${sourceConfig.id}': ${error instanceof Error ? error.message : String(error)}`;
+          const errorMsg = `Failed to connect to event source '${source.id}': ${error instanceof Error ? error.message : String(error)}`;
           return {
             workflowId: workflow.metadata.id,
             runId: crypto.randomUUID(),
