@@ -38,6 +38,16 @@ describe('API Integration Tests', () => {
         expect(tool).toHaveProperty('category');
         expect(tool).toHaveProperty('description');
         expect(tool).toHaveProperty('actionCount');
+        expect(tool).toHaveProperty('defaultAction');
+      });
+
+      it('should expose a default action id for tools with actions', async () => {
+        const response = await request(app).get('/api/tools');
+        const slackTool = response.body.tools.find((t: { id: string }) => t.id === 'slack');
+
+        expect(slackTool).toBeDefined();
+        expect(typeof slackTool.defaultAction).toBe('string');
+        expect(slackTool.defaultAction.length).toBeGreaterThan(0);
       });
 
       it('should include slack tool', async () => {

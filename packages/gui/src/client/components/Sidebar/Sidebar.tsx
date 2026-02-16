@@ -354,6 +354,7 @@ export interface ToolDefinition {
   sdk?: string;
   authType?: string;
   actionCount?: number;
+  defaultAction?: string;
   actions?: string[];
 }
 

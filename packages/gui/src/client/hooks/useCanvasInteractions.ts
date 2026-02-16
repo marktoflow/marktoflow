@@ -186,7 +186,7 @@ export function useCanvasInteractions() {
           data: {
             id: newId,
             name: tool.name + ' Action',
-            action: tool.id + '.' + (tool.actions?.[0] || 'action'),
+            action: tool.id + '.' + (tool.defaultAction || tool.actions?.[0] || 'action'),
             status: 'pending',
           },
         };
@@ -197,7 +197,7 @@ export function useCanvasInteractions() {
           const newStep: WorkflowStep = {
             id: newId,
             name: tool.name + ' Action',
-            action: tool.id + '.' + (tool.actions?.[0] || 'action'),
+            action: tool.id + '.' + (tool.defaultAction || tool.actions?.[0] || 'action'),
             inputs: {},
           };
           saveWorkflow({
