@@ -227,18 +227,30 @@ export function Canvas() {
 
   const handleContextDuplicate = useCallback(() => {
     if (contextMenuNode) {
-      // Select the node first, then duplicate
-      duplicateSelected();
+      // Select the right-clicked node first so duplicateSelected targets it
+      const updatedNodes = nodes.map((n) => ({
+        ...n,
+        selected: n.id === contextMenuNode.id,
+      }));
+      setNodes(updatedNodes);
+      // Duplicate after state update
+      setTimeout(() => duplicateSelected(), 0);
     }
     setContextMenuNode(null);
-  }, [contextMenuNode, duplicateSelected]);
+  }, [contextMenuNode, nodes, setNodes, duplicateSelected]);
 
   const handleContextDelete = useCallback(() => {
     if (contextMenuNode) {
-      deleteSelected();
+      // Select the right-clicked node first so deleteSelected targets it
+      const updatedNodes = nodes.map((n) => ({
+        ...n,
+        selected: n.id === contextMenuNode.id,
+      }));
+      setNodes(updatedNodes);
+      setTimeout(() => deleteSelected(), 0);
     }
     setContextMenuNode(null);
-  }, [contextMenuNode, deleteSelected]);
+  }, [contextMenuNode, nodes, setNodes, deleteSelected]);
 
   const selectedWorkflow = useWorkflowStore((s) => s.selectedWorkflow);
   const handleContextExecute = useCallback(async () => {
