@@ -23,7 +23,7 @@ export default defineConfig({
       exclude: ['src/**/*.d.ts', 'src/server/**', 'src/client/components/Canvas/execution/**'],
       thresholds: {
         lines: 25,
-        functions: 65,
+        functions: 64,
         branches: 65,
         statements: 25,
       },

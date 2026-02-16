@@ -35,6 +35,8 @@ export const SERVICES = {
   slack: {
     name: 'Slack',
     icon: 'slack',
+    description: 'Team messaging, channels, and file sharing',
+    keywords: ['chat', 'message', 'channel', 'team', 'notification'],
     methods: [
       'chat.postMessage',
       'chat.update',
@@ -48,6 +50,8 @@ export const SERVICES = {
   github: {
     name: 'GitHub',
     icon: 'github',
+    description: 'Source code, pull requests, issues, and repositories',
+    keywords: ['git', 'code', 'pr', 'pull request', 'issue', 'repository', 'review'],
     methods: [
       'pulls.get',
       'pulls.list',
@@ -64,6 +68,8 @@ export const SERVICES = {
   jira: {
     name: 'Jira',
     icon: 'jira',
+    description: 'Project management, issue tracking, and agile boards',
+    keywords: ['ticket', 'issue', 'project', 'sprint', 'agile', 'task', 'board'],
     methods: [
       'issues.getIssue',
       'issues.createIssue',
@@ -76,6 +82,8 @@ export const SERVICES = {
   gmail: {
     name: 'Gmail',
     icon: 'gmail',
+    description: 'Send, receive, and manage email via Google Gmail',
+    keywords: ['email', 'mail', 'send', 'inbox', 'google', 'draft'],
     methods: [
       'messages.list',
       'messages.get',
@@ -87,6 +95,8 @@ export const SERVICES = {
   outlook: {
     name: 'Outlook',
     icon: 'outlook',
+    description: 'Microsoft email and calendar integration',
+    keywords: ['email', 'mail', 'calendar', 'microsoft', 'office', 'meeting'],
     methods: [
       'messages.list',
       'messages.get',
@@ -98,6 +108,8 @@ export const SERVICES = {
   linear: {
     name: 'Linear',
     icon: 'linear',
+    description: 'Modern issue tracking and project management',
+    keywords: ['issue', 'project', 'task', 'bug', 'feature', 'sprint'],
     methods: [
       'issues.get',
       'issues.create',
@@ -109,6 +121,8 @@ export const SERVICES = {
   notion: {
     name: 'Notion',
     icon: 'notion',
+    description: 'Workspace for docs, databases, and knowledge management',
+    keywords: ['wiki', 'document', 'database', 'page', 'knowledge', 'notes'],
     methods: [
       'pages.get',
       'pages.create',
@@ -120,6 +134,8 @@ export const SERVICES = {
   discord: {
     name: 'Discord',
     icon: 'discord',
+    description: 'Community messaging, bots, and webhooks',
+    keywords: ['chat', 'message', 'bot', 'webhook', 'community', 'server'],
     methods: [
       'messages.send',
       'messages.edit',
@@ -131,6 +147,8 @@ export const SERVICES = {
   airtable: {
     name: 'Airtable',
     icon: 'airtable',
+    description: 'Spreadsheet-database hybrid for structured data',
+    keywords: ['database', 'spreadsheet', 'table', 'record', 'data'],
     methods: [
       'records.list',
       'records.get',
@@ -142,6 +160,8 @@ export const SERVICES = {
   confluence: {
     name: 'Confluence',
     icon: 'confluence',
+    description: 'Team documentation and knowledge base',
+    keywords: ['wiki', 'document', 'page', 'knowledge', 'atlassian', 'docs'],
     methods: [
       'pages.list',
       'pages.get',
@@ -153,31 +173,43 @@ export const SERVICES = {
   http: {
     name: 'HTTP',
     icon: 'http',
+    description: 'Make HTTP requests to any REST API endpoint',
+    keywords: ['api', 'rest', 'request', 'fetch', 'webhook', 'url', 'endpoint'],
     methods: ['request', 'get', 'post', 'put', 'patch', 'delete'],
   },
   rss: {
     name: 'RSS',
     icon: 'rss',
+    description: 'Subscribe to and fetch RSS/Atom feed updates',
+    keywords: ['feed', 'news', 'subscribe', 'atom', 'blog'],
     methods: ['fetch', 'getItems'],
   },
   claude: {
     name: 'Claude',
     icon: 'claude',
+    description: 'Anthropic Claude AI for analysis, generation, and chat',
+    keywords: ['ai', 'llm', 'anthropic', 'analyze', 'generate', 'summarize'],
     methods: ['analyze', 'generate', 'summarize', 'chat'],
   },
   opencode: {
     name: 'OpenCode',
     icon: 'opencode',
+    description: 'AI coding assistant for code generation and analysis',
+    keywords: ['ai', 'code', 'programming', 'assistant', 'complete'],
     methods: ['chat', 'complete', 'analyze'],
   },
   ollama: {
     name: 'Ollama',
     icon: 'ollama',
+    description: 'Run local LLMs for private AI inference',
+    keywords: ['ai', 'llm', 'local', 'private', 'model', 'embed'],
     methods: ['generate', 'chat', 'embeddings'],
   },
   parallel: {
     name: 'Parallel',
     icon: 'parallel',
+    description: 'Run multiple AI agents concurrently',
+    keywords: ['concurrent', 'multi-agent', 'spawn', 'batch', 'map'],
     methods: ['spawn', 'map'],
   },
 } as const;
