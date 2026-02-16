@@ -201,37 +201,45 @@ export class GmailActions {
     });
 
     const messages = listResponse.data.messages ?? [];
+    const validMessages = messages.filter((msg) => msg.id);
+
+    // Fetch full messages in parallel (batches of 5 to respect API limits)
+    const BATCH_SIZE = 5;
     const emails: GmailEmail[] = [];
 
-    for (const msg of messages) {
-      if (!msg.id) continue;
+    for (let i = 0; i < validMessages.length; i += BATCH_SIZE) {
+      const batch = validMessages.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(
+        batch.map(async (msg) => {
+          const fullMessage = await this.gmail.users.messages.get({
+            userId: 'me',
+            id: msg.id!,
+            format: 'full',
+          });
 
-      const fullMessage = await this.gmail.users.messages.get({
-        userId: 'me',
-        id: msg.id,
-        format: 'full',
-      });
+          const data = fullMessage.data;
+          const headers = data.payload?.headers;
+          const body = extractBody(data.payload);
 
-      const data = fullMessage.data;
-      const headers = data.payload?.headers;
-      const body = extractBody(data.payload);
-
-      emails.push({
-        id: data.id ?? msg.id,
-        threadId: data.threadId ?? '',
-        subject: getHeader(headers, 'Subject') ?? '(no subject)',
-        from: getHeader(headers, 'From') ?? '',
-        to: parseEmailAddresses(getHeader(headers, 'To')),
-        cc: parseEmailAddresses(getHeader(headers, 'Cc')),
-        bcc: parseEmailAddresses(getHeader(headers, 'Bcc')),
-        date: getHeader(headers, 'Date') ?? '',
-        snippet: data.snippet ?? '',
-        body: body.text,
-        bodyHtml: body.html,
-        labels: data.labelIds ?? [],
-        isUnread: data.labelIds?.includes('UNREAD') ?? false,
-        hasAttachments: hasAttachments(data.payload),
-      });
+          return {
+            id: data.id ?? msg.id!,
+            threadId: data.threadId ?? '',
+            subject: getHeader(headers, 'Subject') ?? '(no subject)',
+            from: getHeader(headers, 'From') ?? '',
+            to: parseEmailAddresses(getHeader(headers, 'To')),
+            cc: parseEmailAddresses(getHeader(headers, 'Cc')),
+            bcc: parseEmailAddresses(getHeader(headers, 'Bcc')),
+            date: getHeader(headers, 'Date') ?? '',
+            snippet: data.snippet ?? '',
+            body: body.text,
+            bodyHtml: body.html,
+            labels: data.labelIds ?? [],
+            isUnread: data.labelIds?.includes('UNREAD') ?? false,
+            hasAttachments: hasAttachments(data.payload),
+          } as GmailEmail;
+        })
+      );
+      emails.push(...results);
     }
 
     return {
