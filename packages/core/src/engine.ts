@@ -969,14 +969,36 @@ export class WorkflowEngine {
 
   /**
    * Execute a function with a timeout.
+   * Uses a settled guard to prevent timer leaks and double-resolution.
    */
   private async executeWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
-    return Promise.race([
-      fn(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Step timed out after ${timeoutMs}ms`)), timeoutMs),
-      ),
-    ]);
+    return new Promise<T>((resolve, reject) => {
+      let settled = false;
+
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          reject(new Error(`Step timed out after ${timeoutMs}ms`));
+        }
+      }, timeoutMs);
+
+      fn().then(
+        (result) => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            resolve(result);
+          }
+        },
+        (error) => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            reject(error);
+          }
+        },
+      );
+    });
   }
 
   /**
