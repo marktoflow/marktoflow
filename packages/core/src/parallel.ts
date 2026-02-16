@@ -270,8 +270,12 @@ export async function executeParallelSpawn(
       completedCount++;
     }
 
-    // Cancel remaining agents if needed (just don't await them)
-    // They will complete in the background but we won't wait
+    // Suppress unhandled rejections from remaining background promises.
+    // We intentionally don't await these — they run in the background
+    // but must not crash the process with unhandled promise rejections.
+    for (const entry of pending) {
+      entry.promise.catch(() => { /* intentionally swallowed */ });
+    }
   }
 
   const completed = new Date().toISOString();
