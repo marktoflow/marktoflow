@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zod overrides to suppress claude-agent-sdk peer dependency warnings
 - Discord, Trello, Mailchimp, and Shopify integrations now fail fast on missing required IDs instead of issuing malformed API calls
 - Trello `getList` now calls the single-list API endpoint instead of board-lists endpoint
+- GUI tool drag-and-drop now uses each tool's default action ID from `/api/tools` instead of generating invalid `<tool>.action` steps
 
 ## [2.0.4] - 2026-02-15
 

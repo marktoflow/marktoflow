@@ -78,6 +78,7 @@ router.get('/', (_req, res) => {
     sdk: tool.sdk,
     authType: tool.authType,
     actionCount: tool.actions.length,
+    defaultAction: tool.actions[0]?.id,
   }));
 
   res.json({ tools: toolList });
