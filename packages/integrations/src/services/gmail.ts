@@ -1,7 +1,7 @@
 import { google, gmail_v1 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
 import { wrapIntegration } from '../reliability/wrapper.js';
 import { gmailSchemas } from '../reliability/schemas/gmail.js';
 
@@ -408,12 +408,17 @@ export class GmailActions {
 /**
  * Load saved OAuth tokens from credentials directory
  */
-function loadSavedTokens(): { refresh_token?: string; access_token?: string } | null {
+async function loadSavedTokens(): Promise<{ refresh_token?: string; access_token?: string } | null> {
   const credentialsPath = join('.marktoflow', 'credentials', 'gmail.json');
-  if (!existsSync(credentialsPath)) return null;
+  try {
+    await access(credentialsPath);
+  } catch {
+    return null;
+  }
 
   try {
-    const data = JSON.parse(readFileSync(credentialsPath, 'utf-8'));
+    const raw = await readFile(credentialsPath, 'utf-8');
+    const data = JSON.parse(raw);
     return {
       refresh_token: data.refresh_token,
       access_token: data.access_token,
@@ -433,7 +438,7 @@ export const GmailInitializer: SDKInitializer = {
 
     // If no refresh token provided in config, try loading from saved credentials
     if (!refreshToken || !accessToken) {
-      const savedTokens = loadSavedTokens();
+      const savedTokens = await loadSavedTokens();
       if (savedTokens) {
         refreshToken = refreshToken || savedTokens.refresh_token;
         accessToken = accessToken || savedTokens.access_token;
@@ -453,23 +458,31 @@ export const GmailInitializer: SDKInitializer = {
     // Listen for token refresh events and persist new tokens
     oauth2Client.on('tokens', (tokens) => {
       if (tokens.access_token && refreshToken) {
-        // Save new access token to credentials file
         const credentialsPath = join('.marktoflow', 'credentials', 'gmail.json');
-        try {
-          const currentData = existsSync(credentialsPath)
-            ? JSON.parse(readFileSync(credentialsPath, 'utf-8'))
-            : {};
+        // Use async I/O in fire-and-forget pattern to avoid blocking
+        (async () => {
+          try {
+            await mkdir(dirname(credentialsPath), { recursive: true });
 
-          currentData.access_token = tokens.access_token;
-          currentData.refresh_token = tokens.refresh_token || refreshToken;
-          if (tokens.expiry_date) {
-            currentData.expiry_date = tokens.expiry_date;
+            let currentData: Record<string, unknown> = {};
+            try {
+              const raw = await readFile(credentialsPath, 'utf-8');
+              currentData = JSON.parse(raw);
+            } catch {
+              // File doesn't exist yet or is invalid — start fresh
+            }
+
+            currentData.access_token = tokens.access_token;
+            currentData.refresh_token = tokens.refresh_token || refreshToken;
+            if (tokens.expiry_date) {
+              currentData.expiry_date = tokens.expiry_date;
+            }
+
+            await writeFile(credentialsPath, JSON.stringify(currentData, null, 2));
+          } catch (error) {
+            console.error('Failed to persist refreshed Gmail token:', error);
           }
-
-          writeFileSync(credentialsPath, JSON.stringify(currentData, null, 2));
-        } catch (error) {
-          console.error('Failed to persist refreshed Gmail token:', error);
-        }
+        })();
       }
     });
 
