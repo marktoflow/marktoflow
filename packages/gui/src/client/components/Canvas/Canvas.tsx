@@ -1,17 +1,13 @@
-import { useCallback, useState, useRef, type DragEvent } from 'react';
+import { useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   BackgroundVariant,
-  useReactFlow,
-  type NodeMouseHandler,
-  type Node,
 } from '@xyflow/react';
 import { Edit, Copy, Trash2, Code, Play } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvasStore';
-import { useWorkflowStore } from '../../stores/workflowStore';
 import { getModKey } from '../../utils/platform';
 import { StepNode } from './StepNode';
 import { SubWorkflowNode } from './SubWorkflowNode';
@@ -26,7 +22,6 @@ import { TryCatchNode } from './TryCatchNode';
 import { TransformNode } from './TransformNode';
 import { StickyNoteNode } from './StickyNoteNode';
 import { GroupNode } from './GroupNode';
-import { AlignmentTools } from './AlignmentTools';
 import { StepEditor } from '../Editor/StepEditor';
 import { YamlViewer } from '../Editor/YamlEditor';
 import { Modal } from '../common/Modal';
@@ -38,9 +33,8 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '../common/ContextMenu';
-import { useCanvas } from '../../hooks/useCanvas';
-import { type ToolDefinition } from '../Sidebar/Sidebar';
-import type { WorkflowStep } from '@shared/types';
+import { useCanvasInteractions } from '../../hooks/useCanvasInteractions';
+import { useCanvasShortcuts } from '../../hooks/useCanvasShortcuts';
 
 // Custom node types
 const nodeTypes = {
@@ -62,320 +56,38 @@ const nodeTypes = {
 };
 
 export function Canvas() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setNodes } =
-    useCanvasStore();
-  const { autoLayout, deleteSelected, duplicateSelected } = useCanvas();
-  const currentWorkflow = useWorkflowStore((s) => s.currentWorkflow);
-  const { screenToFlowPosition } = useReactFlow();
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useCanvasStore();
   const modKey = getModKey();
-
-  // Editor state
-  const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [yamlViewStep, setYamlViewStep] = useState<WorkflowStep | null>(null);
-  const [isYamlViewOpen, setIsYamlViewOpen] = useState(false);
-
-  // Context menu state
-  const [contextMenuNode, setContextMenuNode] = useState<Node | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  // Handle node double-click to open editor or drill down
-  const onNodeDoubleClick: NodeMouseHandler = useCallback(
-    (event, node) => {
-      event.preventDefault();
+  // Extracted interaction logic
+  const {
+    editingStep,
+    isEditorOpen,
+    setIsEditorOpen,
+    yamlViewStep,
+    isYamlViewOpen,
+    setIsYamlViewOpen,
+    onNodeDoubleClick,
+    onNodeContextMenu,
+    onDragOver,
+    onDrop,
+    handleContextEdit,
+    handleContextViewYaml,
+    handleContextDuplicate,
+    handleContextDelete,
+    handleContextExecute,
+    handleStepSave,
+    getAvailableVariables,
+    openEditor,
+    openYamlView,
+  } = useCanvasInteractions();
 
-      // Sub-workflow nodes handle their own double-click via the drill-down button
-      // Don't open editor for special node types that have their own interactions
-      if (node.type === 'trigger' || node.type === 'output') {
-        return;
-      }
-
-      const step = currentWorkflow?.steps.find((s) => s.id === node.data.id);
-      if (step) {
-        setEditingStep(step);
-        setIsEditorOpen(true);
-      }
-    },
-    [currentWorkflow]
-  );
-
-  // Get the currently selected step node (including control flow nodes)
-  const getSelectedStep = useCallback((): WorkflowStep | null => {
-    if (!currentWorkflow) return null;
-    const controlFlowTypes = ['step', 'if', 'for_each', 'while', 'switch', 'parallel', 'try', 'map', 'filter', 'reduce'];
-    const selectedNode = nodes.find((n) => n.selected && controlFlowTypes.includes(n.type || ''));
-    if (!selectedNode) return null;
-    return currentWorkflow.steps.find((s) => s.id === selectedNode.data.id) || null;
-  }, [currentWorkflow, nodes]);
-
-  // Get undo/redo and copy/paste functions from canvas store
-  const { undo, redo, canUndo, canRedo, copySelected, paste, canPaste } = useCanvasStore();
-
-  // Handle keyboard shortcuts
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      const isMeta = event.metaKey || event.ctrlKey;
-
-      // Delete selected nodes
-      if (event.key === 'Backspace' || event.key === 'Delete') {
-        deleteSelected();
-      }
-      // Duplicate selected nodes
-      if (isMeta && event.key === 'd') {
-        event.preventDefault();
-        duplicateSelected();
-      }
-      // Auto-layout
-      if (isMeta && event.key === 'l') {
-        event.preventDefault();
-        autoLayout();
-      }
-      // Undo (Cmd/Ctrl + Z)
-      if (isMeta && event.key === 'z' && !event.shiftKey) {
-        event.preventDefault();
-        if (canUndo()) {
-          undo();
-        }
-      }
-      // Redo (Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y)
-      if ((isMeta && event.shiftKey && event.key === 'z') || (isMeta && event.key === 'y')) {
-        event.preventDefault();
-        if (canRedo()) {
-          redo();
-        }
-      }
-      // Copy (Cmd/Ctrl + C)
-      if (isMeta && event.key === 'c') {
-        event.preventDefault();
-        copySelected();
-      }
-      // Paste (Cmd/Ctrl + V)
-      if (isMeta && event.key === 'v') {
-        event.preventDefault();
-        if (canPaste()) {
-          paste();
-        }
-      }
-      // Edit selected step (E key without modifiers)
-      if (event.key === 'e' && !isMeta && !event.shiftKey && !event.altKey) {
-        event.preventDefault();
-        const step = getSelectedStep();
-        if (step) {
-          setEditingStep(step);
-          setIsEditorOpen(true);
-        }
-      }
-      // View YAML (Y key without modifiers)
-      if (event.key === 'y' && !isMeta && !event.shiftKey && !event.altKey) {
-        event.preventDefault();
-        const step = getSelectedStep();
-        if (step) {
-          setYamlViewStep(step);
-          setIsYamlViewOpen(true);
-        }
-      }
-    },
-    [deleteSelected, duplicateSelected, autoLayout, getSelectedStep, undo, redo, canUndo, canRedo, copySelected, paste, canPaste]
-  );
-
-  // Handle step save
-  const saveWorkflow = useWorkflowStore((s) => s.saveWorkflow);
-  const { updateNodeData } = useCanvasStore();
-  const handleStepSave = useCallback(
-    (updatedStep: WorkflowStep) => {
-      if (currentWorkflow) {
-        const updatedSteps = currentWorkflow.steps.map((s) =>
-          s.id === updatedStep.id ? updatedStep : s
-        );
-        const updatedWorkflow = { ...currentWorkflow, steps: updatedSteps };
-        saveWorkflow(updatedWorkflow);
-
-        // Update the canvas node data to reflect changes
-        updateNodeData(updatedStep.id, {
-          name: updatedStep.name,
-          action: updatedStep.action,
-          inputs: updatedStep.inputs,
-          outputVariable: updatedStep.outputVariable,
-        });
-      }
-      setIsEditorOpen(false);
-      setEditingStep(null);
-    },
-    [currentWorkflow, saveWorkflow, updateNodeData]
-  );
-
-  // Context menu handlers
-  const handleContextEdit = useCallback(() => {
-    if (!contextMenuNode || !currentWorkflow) return;
-    const step = currentWorkflow.steps.find((s) => s.id === contextMenuNode.data.id);
-    if (step) {
-      setEditingStep(step);
-      setIsEditorOpen(true);
-    }
-    setContextMenuNode(null);
-  }, [contextMenuNode, currentWorkflow]);
-
-  const handleContextViewYaml = useCallback(() => {
-    if (!contextMenuNode || !currentWorkflow) return;
-    const step = currentWorkflow.steps.find((s) => s.id === contextMenuNode.data.id);
-    if (step) {
-      setYamlViewStep(step);
-      setIsYamlViewOpen(true);
-    }
-    setContextMenuNode(null);
-  }, [contextMenuNode, currentWorkflow]);
-
-  const handleContextDuplicate = useCallback(() => {
-    if (contextMenuNode) {
-      // Select the right-clicked node first so duplicateSelected targets it
-      const updatedNodes = nodes.map((n) => ({
-        ...n,
-        selected: n.id === contextMenuNode.id,
-      }));
-      setNodes(updatedNodes);
-      // Duplicate after state update
-      setTimeout(() => duplicateSelected(), 0);
-    }
-    setContextMenuNode(null);
-  }, [contextMenuNode, nodes, setNodes, duplicateSelected]);
-
-  const handleContextDelete = useCallback(() => {
-    if (contextMenuNode) {
-      // Select the right-clicked node first so deleteSelected targets it
-      const updatedNodes = nodes.map((n) => ({
-        ...n,
-        selected: n.id === contextMenuNode.id,
-      }));
-      setNodes(updatedNodes);
-      setTimeout(() => deleteSelected(), 0);
-    }
-    setContextMenuNode(null);
-  }, [contextMenuNode, nodes, setNodes, deleteSelected]);
-
-  const selectedWorkflow = useWorkflowStore((s) => s.selectedWorkflow);
-  const handleContextExecute = useCallback(async () => {
-    if (contextMenuNode && selectedWorkflow) {
-      const stepId = contextMenuNode.data.id as string;
-      try {
-        updateNodeData(stepId, { status: 'running' });
-        const response = await fetch(`/api/execute/${encodeURIComponent(selectedWorkflow)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputs: {}, stepId }),
-        });
-        if (!response.ok) {
-          throw new Error('Execution failed');
-        }
-        const data = await response.json();
-        updateNodeData(stepId, { status: data.status === 'started' ? 'running' : 'completed' });
-      } catch (e) {
-        console.error('Step execution failed:', e);
-        updateNodeData(stepId, { status: 'failed' });
-      }
-    }
-    setContextMenuNode(null);
-  }, [contextMenuNode, selectedWorkflow, updateNodeData]);
-
-  // Handle right-click on node
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      // Show context menu for all control flow nodes
-      const controlFlowTypes = ['step', 'if', 'for_each', 'while', 'switch', 'parallel', 'try', 'map', 'filter', 'reduce', 'subworkflow'];
-      if (controlFlowTypes.includes(node.type || '')) {
-        setContextMenuNode(node);
-      }
-    },
-    []
-  );
-
-  // Handle drag over for drop target
-  const onDragOver = useCallback((event: DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
-  }, []);
-
-  // Handle drop from tools palette
-  const onDrop = useCallback(
-    (event: DragEvent) => {
-      event.preventDefault();
-
-      const toolData = event.dataTransfer.getData('application/marktoflow-tool');
-      if (!toolData) return;
-
-      try {
-        const tool: ToolDefinition = JSON.parse(toolData);
-
-        // Get the position where the node was dropped
-        const position = screenToFlowPosition({
-          x: event.clientX,
-          y: event.clientY,
-        });
-
-        // Create a new node
-        const newId = tool.id + '-' + Date.now().toString(36);
-        const newNode: Node = {
-          id: newId,
-          type: 'step',
-          position,
-          data: {
-            id: newId,
-            name: tool.name + ' Action',
-            action: tool.id + '.' + (tool.actions?.[0] || 'action'),
-            status: 'pending',
-          },
-        };
-
-        // Add the node to the canvas
-        setNodes([...nodes, newNode]);
-
-        // Sync to workflow model
-        if (currentWorkflow) {
-          const newStep: WorkflowStep = {
-            id: newId,
-            name: tool.name + ' Action',
-            action: tool.id + '.' + (tool.actions?.[0] || 'action'),
-            inputs: {},
-          };
-          const updatedWorkflow = {
-            ...currentWorkflow,
-            steps: [...currentWorkflow.steps, newStep],
-          };
-          saveWorkflow(updatedWorkflow);
-        }
-      } catch (e) {
-        console.error('Failed to parse dropped tool data:', e);
-      }
-    },
-    [nodes, setNodes, screenToFlowPosition, currentWorkflow, saveWorkflow]
-  );
-
-  // Get available variables for the editing step
-  const getAvailableVariables = useCallback((): string[] => {
-    if (!currentWorkflow || !editingStep) return [];
-
-    const variables: string[] = [];
-
-    // Add input variables
-    if (currentWorkflow.inputs) {
-      for (const key of Object.keys(currentWorkflow.inputs)) {
-        variables.push(`inputs.${key}`);
-      }
-    }
-
-    // Add output variables from steps before the editing step
-    const stepIndex = currentWorkflow.steps.findIndex(
-      (s) => s.id === editingStep.id
-    );
-    for (let i = 0; i < stepIndex; i++) {
-      const step = currentWorkflow.steps[i];
-      if (step.outputVariable) {
-        variables.push(step.outputVariable);
-      }
-    }
-
-    return variables;
-  }, [currentWorkflow, editingStep]);
+  // Extracted keyboard shortcuts
+  const { onKeyDown } = useCanvasShortcuts({
+    onEditStep: openEditor,
+    onViewYaml: openYamlView,
+  });
 
   return (
     <ContextMenu>

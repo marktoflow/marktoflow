@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import { Toaster, toast } from 'sonner';
 import { Menu, PanelRight, PanelLeft, X, Wrench } from 'lucide-react';
 import { Canvas } from './components/Canvas/Canvas';
 import { Toolbar } from './components/Canvas/Toolbar';
@@ -340,9 +341,11 @@ export default function App() {
       subscribeToExecution(runId);
 
       setExecutionLogs((prev) => [...prev, `Execution started: ${runId}`]);
+      toast.success('Workflow execution started');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to execute workflow:', error);
+      toast.error(`Execution failed: ${errorMessage}`);
       setWorkflowStatus('failed');
       setExecutionLogs((prev) => [...prev, `Error: ${errorMessage}`]);
       if (runIdRef.current) {
@@ -367,6 +370,7 @@ export default function App() {
   const handleSave = useCallback(() => {
     if (currentWorkflow) {
       saveWorkflow(currentWorkflow);
+      toast.success('Workflow saved');
     }
   }, [currentWorkflow, saveWorkflow]);
 
@@ -509,6 +513,13 @@ export default function App() {
 
   return (
     <ReactFlowProvider>
+      <Toaster
+        position="bottom-right"
+        theme="dark"
+        toastOptions={{
+          style: { background: '#1e1e3a', border: '1px solid #3d3d5c', color: '#e0e0e0' },
+        }}
+      />
       <SkipNav />
       <LiveRegion message={liveMessage} />
       <CommandPalette />
