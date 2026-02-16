@@ -7,6 +7,7 @@
 
 export {
   wrapIntegration,
+  createTimeoutSignal,
   type WrapperOptions,
   type ActionCallOptions,
 } from './wrapper.js';
