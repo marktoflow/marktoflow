@@ -72,10 +72,10 @@ async function showPublishPlan() {
   }
 
   console.log('\n📝 Process:');
-  console.log('  1. Replace workspace:* with actual versions');
-  console.log('  2. Build all packages');
+  console.log('  1. Build all packages');
+  console.log('  2. Replace workspace:* with actual versions');
   console.log('  3. Run tests');
-  console.log('  4. Publish to npm (with alpha tag)');
+  console.log('  4. Publish to npm');
   console.log('  5. Restore workspace:*');
   console.log('  6. Verify publication');
 }
@@ -185,11 +185,11 @@ async function main() {
       process.exit(1);
     }
 
-    // Prepare (replace workspace:*)
-    preparePackages();
-
     // Build
     buildPackages();
+
+    // Prepare (replace workspace:*)
+    preparePackages();
 
     // Test
     if (!skipTests) {
