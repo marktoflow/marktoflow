@@ -1041,32 +1041,31 @@ export class WorkflowEngine {
 
   /**
    * Execute promises with concurrency limit.
+   * Results are returned in the same order as the input promises.
    */
   private async executeConcurrentlyWithLimit<T>(
     promises: Promise<T>[],
     limit: number,
   ): Promise<T[]> {
-    const results: T[] = [];
-    const executing: Promise<void>[] = [];
+    const results: (T | undefined)[] = new Array(promises.length);
+    const executing = new Set<Promise<void>>();
 
-    for (const promise of promises) {
-      const p = promise.then((result) => {
-        results.push(result);
+    for (let i = 0; i < promises.length; i++) {
+      const p = promises[i].then((result) => {
+        results[i] = result;
+      }).then(() => {
+        executing.delete(p);
       });
 
-      executing.push(p);
+      executing.add(p);
 
-      if (executing.length >= limit) {
+      if (executing.size >= limit) {
         await Promise.race(executing);
-        executing.splice(
-          executing.findIndex((x) => x === p),
-          1,
-        );
       }
     }
 
     await Promise.all(executing);
-    return results;
+    return results as T[];
   }
 }
 
