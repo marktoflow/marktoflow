@@ -210,69 +210,46 @@ The manual process was error-prone:
 - ❌ Forgot to test → discovered issues after publishing
 - ❌ Forgot to restore `workspace:*` → broke local development
 
-The automated system eliminates these issues with comprehensive pre-publish testing and automatic rollback.
-
 ---
 
 ## Maintaining CHANGELOG.md
 
-**Important:** Keep CHANGELOG.md updated when making changes to the project.
+**Keep CHANGELOG.md updated** when making user-visible changes. Follow [Keep a Changelog](https://keepachangelog.com/) format.
 
 ### When to Update
 
-Update CHANGELOG.md for any user-visible change:
-- ✅ New features or integrations
-- ✅ Bug fixes
-- ✅ Security updates
-- ✅ Breaking changes
-- ✅ Deprecations
-- ✅ Performance improvements
-- ✅ Documentation improvements
+- New features, bug fixes, security updates
+- Breaking changes, deprecations
+- Performance improvements
 
-### Format
+### Categories
 
-Follow [Keep a Changelog](https://keepachangelog.com/) format with these categories:
-
-- **Security** - Vulnerability fixes (always list first)
+- **Security** - Vulnerability fixes (with CVE/GHSA numbers)
 - **Added** - New features
 - **Changed** - Changes to existing functionality
 - **Fixed** - Bug fixes
 - **Removed** - Removed features
-- **Technical** - Infrastructure, tests, build system
+- **Technical** - Tests, dependencies, infrastructure
 
 ### Process
 
-1. **During development:** Add entries to `[Unreleased]` section
-2. **Before release:** Move `[Unreleased]` to new version section with date
-3. **Include details:**
-   - What changed and why
-   - Security: Include CVE/GHSA numbers
-   - Breaking changes: Mark clearly
-   - Technical: Include test counts, dependency updates
+1. Add entries to `[Unreleased]` during development
+2. Move to versioned section before release
+3. Include what changed and why
+4. Mark breaking changes clearly
 
-### Example Entry
-
+**Example:**
 ```markdown
 ## [Unreleased]
 
+### Security
+- Fixed CVE-2026-XXXX: Updated qs to >=6.14.2
+
 ### Added
 - OpenAPI tool loader with schema validation
-- Support for custom authentication headers in HTTP integration
 
 ### Fixed
-- Workflow parser now handles CRLF/CR line endings correctly
-- `parallel.spawn` majority/any wait strategy index tracking
-
-### Security
-- Fixed CVE-2026-XXXX: Updated dependency X to >=Y.Z
+- Workflow parser handles CRLF/CR line endings
 ```
 
-### Why This Matters
-
-CHANGELOG.md helps:
-- **Users** understand what's new and what changed
-- **Contributors** see project evolution
-- **Security audits** track vulnerability fixes
-- **Migration** from older versions
-
-**Remember:** The CHANGELOG is user-facing documentation. Write entries that help people understand the impact of changes, not just implementation details.
+Write for users, not implementers. Focus on impact, not internals.
