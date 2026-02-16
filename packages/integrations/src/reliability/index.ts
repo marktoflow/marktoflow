@@ -19,6 +19,14 @@ export {
 } from './errors.js';
 
 export {
+  CircuitBreakerRegistry,
+  getCircuitBreakerRegistry,
+  resetCircuitBreakerRegistry,
+  type CircuitState,
+  type CircuitBreakerOptions,
+} from './circuit-breaker.js';
+
+export {
   RateLimiterRegistry,
   getRateLimiterRegistry,
   resetRateLimiterRegistry,

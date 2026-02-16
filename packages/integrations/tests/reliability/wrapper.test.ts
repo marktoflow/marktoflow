@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { resetCircuitBreakerRegistry } from '../../src/reliability/circuit-breaker.js';
 import { z } from 'zod';
 import { wrapIntegration } from '../../src/reliability/wrapper.js';
 import { IntegrationRequestError } from '../../src/reliability/errors.js';
@@ -32,6 +33,7 @@ describe('wrapIntegration', () => {
 
   beforeEach(() => {
     mockSDK = createMockSDK();
+    resetCircuitBreakerRegistry();
   });
 
   it('should proxy nested method calls transparently', async () => {

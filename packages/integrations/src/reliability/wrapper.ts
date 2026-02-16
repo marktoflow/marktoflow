@@ -11,6 +11,7 @@
 
 import { z } from 'zod';
 import { IntegrationRequestError, normalizeError } from './errors.js';
+import { getCircuitBreakerRegistry } from './circuit-breaker.js';
 import { getRateLimiterRegistry } from './rate-limiter.js';
 
 // ============================================================================
@@ -32,6 +33,8 @@ export interface WrapperOptions {
   maxRetryDelay?: number;
   /** Zod schemas for input validation per action */
   inputSchemas?: Record<string, z.ZodTypeAny>;
+  /** Enable circuit breaker for this service (default: true) */
+  circuitBreaker?: boolean;
   /** Enable proactive rate limiting (default: true) */
   rateLimiter?: boolean;
 }
@@ -81,6 +84,7 @@ export function wrapIntegration<T extends object>(
     initialRetryDelay: options.initialRetryDelay ?? DEFAULT_INITIAL_RETRY_DELAY,
     maxRetryDelay: options.maxRetryDelay ?? DEFAULT_MAX_RETRY_DELAY,
     inputSchemas: options.inputSchemas ?? {},
+    circuitBreaker: options.circuitBreaker ?? true,
     rateLimiter: options.rateLimiter ?? true,
   };
 
@@ -138,6 +142,12 @@ function createWrappedFunction(
   actionPath: string
 ): (...args: unknown[]) => Promise<unknown> {
   return async (...args: unknown[]) => {
+    // 0. Circuit breaker check
+    if (opts.circuitBreaker) {
+      const registry = getCircuitBreakerRegistry();
+      registry.allowRequest(opts.service); // Throws if circuit is open
+    }
+
     // 1. Input validation
     const schema = opts.inputSchemas[actionPath];
     if (schema && args.length > 0 && args[0] && typeof args[0] === 'object') {
@@ -158,6 +168,8 @@ function createWrappedFunction(
     }
 
     // 3. Retry loop with timeout
+    // Circuit breaker records are per-request, not per-attempt,
+    // to avoid fighting with retry logic.
     let lastError: IntegrationRequestError | undefined;
     const maxAttempts = opts.maxRetries + 1;
 
@@ -180,6 +192,12 @@ function createWrappedFunction(
           opts.service,
           actionPath
         );
+
+        // Record success once per request (not per attempt)
+        if (opts.circuitBreaker) {
+          getCircuitBreakerRegistry().recordSuccess(opts.service);
+        }
+
         return result;
       } catch (error) {
         lastError = normalizeError(opts.service, actionPath, error);
@@ -192,11 +210,18 @@ function createWrappedFunction(
           : lastError.retryable;
 
         if (!shouldRetry) {
+          // Non-retryable failure — record and throw
+          if (opts.circuitBreaker) {
+            getCircuitBreakerRegistry().recordFailure(opts.service);
+          }
           throw lastError;
         }
 
-        // Last attempt — throw
+        // Last attempt — record failure and throw
         if (attempt === maxAttempts - 1) {
+          if (opts.circuitBreaker) {
+            getCircuitBreakerRegistry().recordFailure(opts.service);
+          }
           throw lastError;
         }
       }
