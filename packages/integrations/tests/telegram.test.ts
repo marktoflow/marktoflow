@@ -70,6 +70,15 @@ describe('Telegram Integration', () => {
               text: 'Hello World',
             },
           }),
+          text: async () => JSON.stringify({
+            ok: true,
+            result: {
+              message_id: 123,
+              chat: { id: 456, type: 'private' },
+              date: 1737824400,
+              text: 'Hello World',
+            },
+          }),
         });
 
         const result = await client.sendMessage({
@@ -102,6 +111,15 @@ describe('Telegram Integration', () => {
               username: 'test_bot',
             },
           }),
+          text: async () => JSON.stringify({
+            ok: true,
+            result: {
+              id: 123456789,
+              is_bot: true,
+              first_name: 'TestBot',
+              username: 'test_bot',
+            },
+          }),
         });
 
         const result = await client.getMe();
@@ -118,6 +136,10 @@ describe('Telegram Integration', () => {
           ok: true,
           status: 200,
           json: async () => ({
+            ok: false,
+            description: 'Bad Request: chat not found',
+          }),
+          text: async () => JSON.stringify({
             ok: false,
             description: 'Bad Request: chat not found',
           }),
