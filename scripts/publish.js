@@ -114,14 +114,15 @@ function testPackages() {
   exec('node scripts/test-packages.js');
 }
 
-function publishPackage(pkg, dryRun = false) {
+function publishPackage(pkg, dryRun = false, tag = 'latest') {
   const { name, version } = getPackageVersion(pkg.path);
   const pkgPath = join(rootDir, pkg.path);
 
-  console.log(`\n📤 Publishing ${name}@${version}...`);
+  console.log(`\n📤 Publishing ${name}@${version} with tag "${tag}"...`);
 
   const dryRunFlag = dryRun ? '--dry-run' : '';
-  const command = `npm publish --access public ${dryRunFlag}`;
+  const tagFlag = tag !== 'latest' ? `--tag ${tag}` : '';
+  const command = `npm publish --access public ${dryRunFlag} ${tagFlag}`.trim();
 
   try {
     exec(command, pkgPath);
@@ -162,9 +163,15 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const skipTests = args.includes('--skip-tests');
+  const tagIndex = args.indexOf('--tag');
+  const tag = tagIndex !== -1 && args[tagIndex + 1] ? args[tagIndex + 1] : 'latest';
 
   if (dryRun) {
     console.log('🔍 DRY RUN MODE - No actual publishing\n');
+  }
+
+  if (tag !== 'latest') {
+    console.log(`🏷️  Publishing with tag: ${tag}\n`);
   }
 
   try {
@@ -201,7 +208,7 @@ async function main() {
     // Publish in order
     console.log('\n📤 Publishing packages...');
     for (const pkg of PACKAGES.sort((a, b) => a.order - b.order)) {
-      const success = publishPackage(pkg, dryRun);
+      const success = publishPackage(pkg, dryRun, tag);
       if (!success && !dryRun) {
         console.error('\n❌ Publish failed, stopping');
         restorePackages();
