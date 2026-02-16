@@ -18,10 +18,12 @@ interface WorkflowStep {
 }
 
 interface WorkflowTrigger {
-  type: 'manual' | 'schedule' | 'webhook' | 'event';
+  type: 'manual' | 'schedule' | 'webhook' | 'event' | 'rss';
   cron?: string;
   path?: string;
   events?: string[];
+  url?: string;
+  interval?: string;
 }
 
 interface Workflow {
@@ -301,6 +303,8 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
         cron: trigger.cron,
         path: trigger.path,
         events: trigger.events,
+        url: trigger.url,
+        interval: trigger.interval,
         active: true,
       },
     });

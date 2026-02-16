@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { X, FileText, MessageSquare, GitPullRequest, Globe, Clock } from 'lucide-react';
+import { X, FileText, MessageSquare, GitPullRequest, Globe, Clock, Rss } from 'lucide-react';
 
 interface NewWorkflowDialogProps {
   open: boolean;
@@ -49,6 +49,13 @@ const templates: Template[] = [
     name: 'Scheduled Task',
     description: 'Run workflows on a schedule with cron triggers',
     icon: <Clock className="w-5 h-5" />,
+    category: 'Automation',
+  },
+  {
+    id: 'rss-monitor',
+    name: 'RSS Feed Monitor',
+    description: 'Monitor RSS/Atom feeds and react to new articles',
+    icon: <Rss className="w-5 h-5" />,
     category: 'Automation',
   },
 ];

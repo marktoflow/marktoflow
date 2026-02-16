@@ -155,6 +155,11 @@ export const SERVICES = {
     icon: 'http',
     methods: ['request', 'get', 'post', 'put', 'patch', 'delete'],
   },
+  rss: {
+    name: 'RSS',
+    icon: 'rss',
+    methods: ['fetch', 'getItems'],
+  },
   claude: {
     name: 'Claude',
     icon: 'claude',

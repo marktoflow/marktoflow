@@ -1,7 +1,7 @@
 {
   "name": "@marktoflow/integrations",
   "version": "2.0.4",
-  "description": "38 service integrations and AI agent adapters with tool calling, structured output, and local LLM support",
+  "description": "39 service integrations and AI agent adapters with tool calling, structured output, and local LLM support",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,7 @@
     "@slack/web-api": "^7.8.0",
     "asana": "^3.0.11",
     "dropbox": "^10.34.0",
+    "fast-xml-parser": "^4.5.0",
     "googleapis": "^140.0.0",
     "jira-client": "^8.2.2",
     "jira.js": "^5.2.2",
@@ -107,6 +108,8 @@
     "browser-automation",
     "web-scraping",
     "typescript",
+    "rss",
+    "atom",
     "workflow-automation"
   ],
   "author": "Scott Glover",

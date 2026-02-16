@@ -1,11 +1,11 @@
 import { memo } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { Webhook, FolderOpen, Play, Zap, Calendar } from 'lucide-react';
+import { Webhook, FolderOpen, Play, Zap, Calendar, Rss } from 'lucide-react';
 
 export interface TriggerNodeData extends Record<string, unknown> {
   id: string;
   name?: string;
-  type: 'manual' | 'schedule' | 'webhook' | 'file' | 'event';
+  type: 'manual' | 'schedule' | 'webhook' | 'file' | 'event' | 'rss';
   // Schedule trigger
   cron?: string;
   // Webhook trigger
@@ -15,6 +15,9 @@ export interface TriggerNodeData extends Record<string, unknown> {
   pattern?: string;
   // Event trigger
   events?: string[];
+  // RSS trigger
+  url?: string;
+  interval?: string;
   // Status
   active?: boolean;
   lastTriggered?: string;
@@ -58,6 +61,13 @@ const triggerConfig = {
     borderColor: 'border-purple-400',
     label: 'Event',
   },
+  rss: {
+    icon: Rss,
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-400/10',
+    borderColor: 'border-orange-400',
+    label: 'RSS Feed',
+  },
 };
 
 function TriggerNodeComponent({ data, selected }: NodeProps<TriggerNodeType>) {
@@ -74,6 +84,8 @@ function TriggerNodeComponent({ data, selected }: NodeProps<TriggerNodeType>) {
         return data.pattern || '**/*';
       case 'event':
         return data.events?.join(', ') || 'No events';
+      case 'rss':
+        return data.url || 'No feed URL';
       default:
         return 'Click to run';
     }

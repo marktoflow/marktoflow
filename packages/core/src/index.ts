@@ -400,6 +400,7 @@ export {
   SlackEventSource,
   CronEventSource,
   SSEEventSource,
+  RssEventSource,
   createEventSource,
   type EventSourceEvent,
   type EventSourceConfig,
