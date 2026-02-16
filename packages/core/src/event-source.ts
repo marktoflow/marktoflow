@@ -15,6 +15,7 @@
 
 import { EventEmitter } from "node:events";
 import WebSocket from "ws";
+import { parseDuration } from "./utils/duration.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,15 +119,22 @@ export abstract class BaseEventSource extends EventEmitter {
 
   /** Handle disconnection with optional reconnect */
   protected handleDisconnect(reason?: string): void {
+    // Don't reconnect if explicitly stopped
+    if (this._status === "stopped") {
+      return;
+    }
+
     this._status = "disconnected";
     this._connectedAt = undefined;
     this.emit("disconnected", { source: this.id, reason });
 
-    if (this.config.reconnect !== false && this._status === "disconnected") {
+    if (this.config.reconnect !== false) {
       const maxAttempts = this.config.maxReconnectAttempts ?? Infinity;
       if (this._reconnectAttempts < maxAttempts) {
         const delay = this.config.reconnectDelay ?? 5000;
         this._reconnectTimer = setTimeout(() => {
+          // Re-check status in case stop() was called during the delay
+          if (this._status === "stopped") return;
           this._reconnectAttempts++;
           this.connect().catch((err) => {
             this.emit("error", err);
@@ -899,23 +907,4 @@ export class EventSourceManager extends EventEmitter {
   }
 }
 
-// ── Helper ───────────────────────────────────────────────────────────────────
-
-function parseDuration(str: string): number {
-  const match = str.match(/^(\d+)\s*(ms|s|m|h|d)$/i);
-  if (!match) {
-    // Try as plain number (milliseconds)
-    const n = parseInt(str, 10);
-    if (!isNaN(n)) return n;
-    throw new Error(`Invalid duration: ${str}`);
-  }
-  const value = parseInt(match[1], 10);
-  switch (match[2].toLowerCase()) {
-    case "ms": return value;
-    case "s": return value * 1000;
-    case "m": return value * 60_000;
-    case "h": return value * 3_600_000;
-    case "d": return value * 86_400_000;
-    default: return value;
-  }
-}
+// parseDuration imported from ./utils/duration.js (single source of truth)
