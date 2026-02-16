@@ -92,9 +92,12 @@ export function workflowToGraph(workflow: Workflow & { markdown?: string }): Gra
   const VERTICAL_SPACING = 180;
   const HORIZONTAL_OFFSET = 250;
 
-  // Try to extract control flow from markdown if available
+  // Extract control flow from markdown, but only add steps not already in workflow.steps
+  // (the core parser now handles control flow, so this is a fallback for legacy workflows)
   const controlFlowSteps = extractControlFlowFromMarkdown(workflow.markdown);
-  const allSteps = [...workflow.steps, ...controlFlowSteps];
+  const existingStepIds = new Set(workflow.steps.map(s => s.id));
+  const newControlFlowSteps = controlFlowSteps.filter(s => !existingStepIds.has(s.id));
+  const allSteps = [...workflow.steps, ...newControlFlowSteps];
 
   // Helper for recursive step processing
   const processSteps = (
@@ -440,10 +443,11 @@ function findTemplateVariables(inputs: Record<string, unknown> | undefined): str
   const variables: string[] = [];
   if (!inputs) return variables;
 
-  const templateRegex = /\{\{\s*([^}]+)\s*\}\}/g;
-
   function extractFromValue(value: unknown): void {
     if (typeof value === 'string') {
+      // Create regex per string to avoid lastIndex persistence bug
+      // (a shared /g regex retains lastIndex across different strings)
+      const templateRegex = /\{\{\s*([^}]+)\s*\}\}/g;
       let match;
       while ((match = templateRegex.exec(value)) !== null) {
         // Extract variable name, removing any method calls
