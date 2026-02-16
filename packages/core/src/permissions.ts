@@ -7,6 +7,7 @@
 
 import { Permissions } from './models.js';
 import { minimatch } from 'minimatch';
+import path from 'node:path';
 
 // ============================================================================
 // Types
@@ -203,9 +204,14 @@ function checkFilePermission(
 
   // Check allowed directories if specified
   if (target && perms.allowedDirectories.length > 0) {
-    const inAllowedDir = perms.allowedDirectories.some((dir) =>
-      target.startsWith(dir) || matchPath(target, dir + '/**')
-    );
+    const normalizedTarget = normalizePathForPolicy(target);
+    const inAllowedDir = perms.allowedDirectories.some((dir) => {
+      const normalizedDir = normalizePathForPolicy(dir);
+      return (
+        normalizedTarget === normalizedDir ||
+        normalizedTarget.startsWith(normalizedDir + '/')
+      );
+    });
     if (!inAllowedDir) {
       return { allowed: false, reason: `Path not in allowed directories` };
     }
@@ -319,7 +325,7 @@ function commandMatches(command: string, pattern: string): boolean {
   }
 
   // Check if command starts with pattern (for matching command prefixes like "rm -rf")
-  if (command.startsWith(pattern + ' ') || command.startsWith(pattern)) {
+  if (command.startsWith(pattern + ' ')) {
     return true;
   }
 
@@ -330,6 +336,16 @@ function commandMatches(command: string, pattern: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * Normalize path-like inputs for safe policy comparison.
+ */
+function normalizePathForPolicy(input: string): string {
+  const normalized = path.posix
+    .normalize(input.replace(/\\/g, '/'))
+    .replace(/\/+$/, '');
+  return normalized === '' ? '.' : normalized;
 }
 
 /**
