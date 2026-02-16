@@ -54,7 +54,13 @@
       "fast-xml-parser@<5.3.4": ">=5.3.4",
       "esbuild@<0.24.2": ">=0.24.2",
       "axios": "1.13.5",
-      "langsmith": ">=0.5.0"
+      "langsmith": ">=0.5.0",
+      "@anthropic-ai/claude-agent-sdk>zod": "^3.24.0"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "zod"
+      ]
     }
   }
 }

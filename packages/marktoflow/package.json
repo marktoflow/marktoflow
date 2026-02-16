@@ -15,11 +15,6 @@
   "bugs": {
     "url": "https://github.com/marktoflow/marktoflow/issues"
   },
-  "overrides": {
-    "@anthropic-ai/claude-agent-sdk": {
-      "zod": "^3.24.0"
-    }
-  },
   "scripts": {},
   "dependencies": {
     "@marktoflow/cli": "workspace:*",

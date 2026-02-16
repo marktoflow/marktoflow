@@ -12,6 +12,7 @@ overrides:
   esbuild@<0.24.2: '>=0.24.2'
   axios: 1.13.5
   langsmith: '>=0.5.0'
+  '@anthropic-ai/claude-agent-sdk>zod': ^3.24.0
 
 importers:
 
@@ -583,7 +584,7 @@ packages:
     resolution: {integrity: sha512-/CugP7AjP57Dqtl2sbsDtxdbpQoPKIhjyF5WrTViGu4NHQdM+UikrRs4MhZ2jeotiC5R7iK9ZUN9SiBgcZ8oLw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      zod: ^4.0.0
+      zod: ^3.24.0
 
   '@anthropic-ai/sdk@0.39.0':
     resolution: {integrity: sha512-eMyDIPRZbt1CCLErRCi3exlAvNkBtRe+kW5vvJyef93PmNr/clstYgHhtvmkxN82nlKgzyGPCyGxrm0JQ1ZIdg==}
