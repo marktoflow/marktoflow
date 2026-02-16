@@ -152,7 +152,7 @@ function buildWorkflow(
   }));
 
   // Extract workflow mode (run, daemon, event)
-  const mode = frontmatter.mode as 'run' | 'daemon' | 'event' | undefined;
+  const mode = (frontmatter.mode as 'run' | 'daemon' | 'event' | undefined) ?? 'run';
 
   // Extract event sources
   const sourcesRaw = frontmatter.sources as Array<Record<string, unknown>> | undefined;
@@ -192,7 +192,7 @@ function buildWorkflow(
     tools,
     inputs,
     triggers,
-    ...(mode ? { mode } : {}),
+    mode,
     ...(sources ? { sources } : {}),
     steps,
     rawContent: markdownBody,
