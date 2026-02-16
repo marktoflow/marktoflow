@@ -49,7 +49,8 @@ export class ParseError extends Error {
 // ============================================================================
 
 const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---/;
-const STEP_CODE_BLOCK_REGEX = /```ya?ml\n([\s\S]*?)```/g;
+// Note: STEP_CODE_BLOCK_REGEX is now defined locally in parseStepsFromMarkdown
+// to avoid regex state persistence issues. See that function for details.
 
 /**
  * Parse a workflow from a markdown file.
@@ -233,9 +234,12 @@ function parseStepsFromMarkdown(markdown: string, warnings: string[]): WorkflowS
   const steps: WorkflowStep[] = [];
   let stepIndex = 0;
 
-  // Find all YAML code blocks
-  let match;
-  while ((match = STEP_CODE_BLOCK_REGEX.exec(markdown)) !== null) {
+  // Find all YAML code blocks using matchAll to avoid regex state issues
+  // matchAll returns an iterator of all non-overlapping matches
+  const regex = /```ya?ml\n([\s\S]*?)```/g;
+  const matches = Array.from(markdown.matchAll(regex));
+
+  for (const match of matches) {
     const yamlContent = match[1];
 
     try {
