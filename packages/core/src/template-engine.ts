@@ -116,6 +116,9 @@ export function renderTemplate(
  * Evaluate a single expression and return its value.
  * This is used for single {{expr}} templates where we want to preserve
  * the actual type (object, array, number, etc.) instead of stringifying.
+ *
+ * IMPORTANT: Never use new Function() or eval() - they allow arbitrary code execution.
+ * Always use Nunjucks for evaluation to maintain the security sandbox.
  */
 function evaluateExpression(expression: string, context: Record<string, unknown>): unknown {
   try {
@@ -131,21 +134,13 @@ function evaluateExpression(expression: string, context: Record<string, unknown>
       return result !== undefined ? result : '';
     }
 
-    // Check if this is an arithmetic expression (has +, -, *, /, etc. but no filters)
-    // If so, evaluate it as JavaScript for proper numeric operations
-    if (!expression.includes('|') && /[+\-*/]/.test(expression)) {
-      try {
-        // Create a safe evaluation context
-        const fn = new Function(...Object.keys(context), `return ${expression}`);
-        return fn(...Object.values(context));
-      } catch {
-        // Fall through to Nunjucks if JavaScript evaluation fails
-      }
-    }
-
-    // Has filters or complex expression - use Nunjucks with JSON serialization
-    // to preserve the actual type
-    const wrappedTemplate = `{{ ${expression} | to_json }}`;
+    // All other expressions (including arithmetic) go through Nunjucks for safe evaluation
+    // Nunjucks provides proper expression evaluation without arbitrary code execution
+    // Use JSON serialization to preserve the actual type (object, array, number, etc.)
+    // Note: Parentheses around expression are critical for operator precedence.
+    // Without them, filters bind tighter than operators: {{ x + y | filter }} === {{ x + (y | filter) }}
+    // With parentheses: {{ (x + y) | filter }} evaluates the full expression first.
+    const wrappedTemplate = `{{ (${expression}) | to_json }}`;
     const jsonResult = env.renderString(wrappedTemplate, context);
 
     // Parse JSON to get the actual type
