@@ -86,10 +86,15 @@ export function NewStepWizard({
     handleClose();
   };
 
-  const filteredServices = Object.entries(SERVICES).filter(([key, service]) =>
-    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    key.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredServices = Object.entries(SERVICES).filter(([key, service]) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      service.name.toLowerCase().includes(q) ||
+      key.toLowerCase().includes(q) ||
+      ('description' in service && (service as any).description?.toLowerCase().includes(q)) ||
+      ('keywords' in service && (service as any).keywords?.some((kw: string) => kw.includes(q)))
+    );
+  });
 
   const currentServiceMethods = selectedService
     ? SERVICES[selectedService as keyof typeof SERVICES]?.methods || []
@@ -187,6 +192,7 @@ export function NewStepWizard({
             <div className="grid grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
               {filteredServices.map(([key, service]) => {
                 const Icon = getServiceIcon(key);
+                const description = 'description' in service ? (service as any).description : undefined;
                 return (
                   <button
                     key={key}
@@ -195,6 +201,9 @@ export function NewStepWizard({
                   >
                     <Icon className="w-8 h-8 text-primary" />
                     <span className="text-sm text-white">{service.name}</span>
+                    {description && (
+                      <span className="text-xs text-gray-500 text-center line-clamp-2">{description}</span>
+                    )}
                   </button>
                 );
               })}
