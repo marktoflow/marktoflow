@@ -6,7 +6,7 @@
  */
 
 import { Router, type Router as RouterType, type Request, type Response } from 'express';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 import type { ExecutionManager } from '../services/ExecutionManager.js';
 
@@ -25,23 +25,35 @@ export function setExecutionManager(manager: ExecutionManager, dir: string): voi
 }
 
 /**
- * Resolve workflow path relative to workflow directory
+ * Check if a resolved path is safely contained within the base directory.
+ * Prevents path traversal attacks (e.g., ../../etc/passwd).
+ */
+function isPathSafe(resolvedPath: string, baseDir: string): boolean {
+  const normalizedBase = resolve(baseDir);
+  const normalizedPath = resolve(resolvedPath);
+  // Path must start with the base directory (+ separator or exact match)
+  return normalizedPath === normalizedBase || normalizedPath.startsWith(normalizedBase + '/');
+}
+
+/**
+ * Resolve workflow path relative to workflow directory.
+ * Rejects paths that escape the workflow directory (path traversal prevention).
  */
 function resolveWorkflowPath(requestPath: string): string | null {
-  // Try the path as-is first
-  if (existsSync(requestPath)) {
-    return requestPath;
+  // Never allow absolute paths from user input
+  if (requestPath.startsWith('/')) {
+    return null;
   }
 
   // Try relative to workflow directory
   const relativePath = join(workflowDir, requestPath);
-  if (existsSync(relativePath)) {
+  if (isPathSafe(relativePath, workflowDir) && existsSync(relativePath)) {
     return relativePath;
   }
 
   // Try in .marktoflow/workflows
   const marktoflowPath = join(workflowDir, '.marktoflow', 'workflows', requestPath);
-  if (existsSync(marktoflowPath)) {
+  if (isPathSafe(marktoflowPath, workflowDir) && existsSync(marktoflowPath)) {
     return marktoflowPath;
   }
 
