@@ -7,7 +7,7 @@ import {
   isError,
   prefixError,
   chainError,
-} from '../src/utils/error-handling.js';
+} from '../src/utils/errors.js';
 
 describe('Error Handling Utilities', () => {
   describe('getErrorMessage', () => {
@@ -34,7 +34,7 @@ describe('Error Handling Utilities', () => {
     it('should convert other types to string', () => {
       expect(getErrorMessage(42)).toBe('42');
       expect(getErrorMessage(true)).toBe('true');
-      expect(getErrorMessage({})).toBe('[object Object]');
+      expect(getErrorMessage({})).toBe('{}'); // JSON.stringify({}) returns '{}'
     });
 
     it('should handle errors with custom properties', () => {
