@@ -9,7 +9,7 @@ import { google, drive_v3 } from 'googleapis';
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
 import { wrapIntegration } from '../reliability/wrapper.js';
 import { Readable } from 'stream';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export interface DriveFile {
@@ -391,12 +391,12 @@ export class GoogleDriveActions {
 /**
  * Load saved OAuth tokens from credentials file
  */
-function loadSavedTokens(): { refresh_token?: string; access_token?: string } | null {
+async function loadSavedTokens(): Promise<{ refresh_token?: string; access_token?: string } | null> {
   const credentialsPath = join('.marktoflow', 'credentials', 'google-drive.json');
-  if (!existsSync(credentialsPath)) return null;
+  try { await access(credentialsPath); } catch { return null; }
 
   try {
-    const data = JSON.parse(readFileSync(credentialsPath, 'utf-8'));
+    const data = JSON.parse(await readFile(credentialsPath, 'utf-8'));
     return {
       refresh_token: data.refresh_token,
       access_token: data.access_token,
@@ -416,7 +416,7 @@ export const GoogleDriveInitializer: SDKInitializer = {
 
     // If no refresh token provided in config, try loading from saved credentials
     if (!refreshToken || !accessToken) {
-      const savedTokens = loadSavedTokens();
+      const savedTokens = await loadSavedTokens();
       if (savedTokens) {
         refreshToken = refreshToken || savedTokens.refresh_token;
         accessToken = accessToken || savedTokens.access_token;
