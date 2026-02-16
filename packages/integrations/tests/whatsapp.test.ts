@@ -75,6 +75,9 @@ describe('WhatsApp Integration', () => {
           json: async () => ({
             messages: [{ id: 'wamid.123' }],
           }),
+          text: async () => JSON.stringify({
+            messages: [{ id: 'wamid.123' }],
+          }),
         });
 
         const result = await client.sendText({
@@ -97,6 +100,9 @@ describe('WhatsApp Integration', () => {
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: async () => ({
+            messages: [{ id: 'wamid.125' }],
+          }),
+          text: async () => JSON.stringify({
             messages: [{ id: 'wamid.125' }],
           }),
         });
