@@ -362,7 +362,7 @@ Report issues at: https://github.com/marktoflow/marktoflow/issues
 
 ## See Also
 
-- [Installation Guide](./INSTALLATION.md)
+- [Installation Guide](./setup/INSTALLATION.md)
 - [AI Agents Guide](./AI-AGENTS.md)
-- [REST API Guide](./REST-API-GUIDE.md)
+- [REST API Guide](./guides/REST-API-GUIDE.md)
 - [Workflow Examples](../examples/)

@@ -201,5 +201,5 @@ After running this test:
 
 - [OpenCode Documentation](https://docs.opencode.ai)
 - [OpenCode SDK Reference](https://github.com/opencode-ai/opencode-sdk)
-- [marktoflow AI Agents Guide](../../../docs/SETUP_AI_AGENTS.md)
-- [marktoflow YAML API](../../../docs/YAML-API.md)
+- [marktoflow AI Agents Guide](../../../docs/setup/SETUP_AI_AGENTS.md)
+- [marktoflow YAML API](../../../docs/yaml-api/README.md)

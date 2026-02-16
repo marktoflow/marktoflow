@@ -155,9 +155,9 @@ output_variable: result
 
 - `README.md` - Project overview and quick start
 - `PROGRESS.md` - Development history
-- `docs/INSTALLATION.md` - Installation guide
+- `docs/setup/INSTALLATION.md` - Installation guide
 - `docs/PUBLISHING.md` - Publishing packages to npm
-- `docs/REST-API-GUIDE.md` - HTTP integration guide
+- `docs/guides/REST-API-GUIDE.md` - HTTP integration guide
 - `examples/` - Production workflow examples
 
 ---

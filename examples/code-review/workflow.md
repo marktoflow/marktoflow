@@ -287,4 +287,4 @@ inputs:
 {% endfor %}
 ```
 
-See [Template Expressions Guide](../../docs/TEMPLATE-EXPRESSIONS.md) for complete documentation.
+See [Template Expressions Guide](../../docs/guides/TEMPLATE-EXPRESSIONS.md) for complete documentation.

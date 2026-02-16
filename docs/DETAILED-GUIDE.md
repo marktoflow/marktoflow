@@ -248,7 +248,7 @@ steps:
 ---
 ```
 
-See [REST API Guide](REST-API-GUIDE.md) for complete documentation.
+See [REST API Guide](guides/REST-API-GUIDE.md) for complete documentation.
 
 ---
 
@@ -422,9 +422,9 @@ The GUI supports multiple AI backends. **Use existing subscriptions without extr
 ```
 
 For detailed documentation, see:
-- [GUI User Guide](GUI_USER_GUIDE.md)
-- [GUI API Reference](GUI_API_REFERENCE.md)
-- [GUI Developer Guide](GUI_DEVELOPER_GUIDE.md)
+- [GUI User Guide](gui/GUI_USER_GUIDE.md)
+- [GUI API Reference](gui/GUI_API_REFERENCE.md)
+- [GUI Developer Guide](gui/GUI_DEVELOPER_GUIDE.md)
 
 ---
 
@@ -588,7 +588,7 @@ steps:
 
 **Example Workflows:**
 
-See the [Control Flow Guide](CONTROL-FLOW-GUIDE.md) for detailed examples including map/filter/reduce operations, concurrent execution, switch/case routing, and try/catch patterns.
+See the [Control Flow Guide](guides/CONTROL-FLOW-GUIDE.md) for detailed examples including map/filter/reduce operations, concurrent execution, switch/case routing, and try/catch patterns.
 
 ### Template Expressions (Nunjucks)
 
@@ -750,7 +750,7 @@ steps:
 - `string` - String templates
 - `json` - JSON formatting with indentation
 
-See [TEMPLATE-EXPRESSIONS.md](TEMPLATE-EXPRESSIONS.md) for complete documentation of all Nunjucks filters and features.
+See [TEMPLATE-EXPRESSIONS.md](guides/TEMPLATE-EXPRESSIONS.md) for complete documentation of all Nunjucks filters and features.
 
 ### Native MCP Support
 

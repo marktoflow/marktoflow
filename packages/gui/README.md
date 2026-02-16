@@ -89,8 +89,8 @@ SDK-based providers detect availability automatically and show "Available" statu
 
 ## Documentation
 
-- [GUI User Guide](../../docs/GUI_USER_GUIDE.md)
-- [GUI Developer Guide](../../docs/GUI_DEVELOPER_GUIDE.md)
+- [GUI User Guide](../../docs/gui/GUI_USER_GUIDE.md)
+- [GUI Developer Guide](../../docs/gui/GUI_DEVELOPER_GUIDE.md)
 
 ## Contributing
 

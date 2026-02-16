@@ -516,9 +516,9 @@ ollama pull llama3.2:1b
 ### Getting Help
 
 1. Check troubleshooting sections in:
-   - `docs/SETUP_GITHUB_COPILOT.md` (for native SDK)
-   - `docs/OPENCODE.md` (this file, for OpenCode with Copilot backend)
-   - `docs/SETUP_OLLAMA.md` (for Ollama)
+   - `docs/setup/SETUP_GITHUB_COPILOT.md` (for native SDK)
+   - `docs/setup/OPENCODE.md` (this file, for OpenCode with Copilot backend)
+   - `docs/setup/SETUP_OLLAMA.md` (for Ollama)
    - `examples/opencode-config/README.md`
 
 2. Run diagnostics:

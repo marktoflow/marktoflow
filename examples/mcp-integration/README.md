@@ -182,4 +182,4 @@ echo '{"status": "ready"}' > data/config.json
 
 - [MCP Official Docs](https://modelcontextprotocol.io)
 - [MCP Server Registry](https://github.com/modelcontextprotocol/servers)
-- [marktoflow Tool Guide](../../docs/YAML-API.md#tools)
+- [marktoflow Tool Guide](../../docs/yaml-api/README.md#tools)

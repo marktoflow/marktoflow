@@ -107,7 +107,7 @@ else
     echo -e "${RED}✗ $ERRORS check(s) failed${NC}"
     echo ""
     echo "If marktoflow is not in PATH, see:"
-    echo "  docs/INSTALLATION.md - Complete installation guide"
+    echo "  docs/setup/INSTALLATION.md - Complete installation guide"
     exit 1
 fi
 echo "======================================"
@@ -119,7 +119,7 @@ echo "  3. Create workflow: marktoflow new"
 echo "  4. Run workflow: marktoflow run workflow.md"
 echo ""
 echo "Documentation:"
-echo "  - Installation Guide: docs/INSTALLATION.md"
-echo "  - REST API Guide: docs/REST-API-GUIDE.md"
+echo "  - Installation Guide: docs/setup/INSTALLATION.md"
+echo "  - REST API Guide: docs/guides/REST-API-GUIDE.md"
 echo "  - Examples: examples/"
 echo ""

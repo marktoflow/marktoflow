@@ -132,4 +132,4 @@ tools:
 - **API Key** - Custom header-based authentication
 - **No Auth** - For public APIs
 
-See [REST API Guide](../docs/REST-API-GUIDE.md) for complete documentation.
+See [REST API Guide](../docs/guides/REST-API-GUIDE.md) for complete documentation.
