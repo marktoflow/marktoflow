@@ -17,6 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 const testDir = join(rootDir, '.publish-test');
+const npmCacheDir = join(testDir, '.npm-cache');
 
 function exec(command, cwd = rootDir) {
   try {
@@ -24,6 +25,10 @@ function exec(command, cwd = rootDir) {
       cwd,
       encoding: 'utf-8',
       stdio: 'pipe',
+      env: {
+        ...process.env,
+        npm_config_cache: npmCacheDir,
+      },
     });
   } catch (error) {
     console.error(`❌ Command failed: ${command}`);
