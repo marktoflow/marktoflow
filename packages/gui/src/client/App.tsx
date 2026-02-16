@@ -629,12 +629,22 @@ export default function App() {
               logs={executionLogs}
               onPause={() => pauseExecution()}
               onResume={() => resumeExecution()}
-              onStop={() => {
+              onStop={async () => {
                 if (runIdRef.current) {
+                  // Cancel via API to actually stop the backend execution
+                  try {
+                    await fetch(`/api/execute/cancel/${runIdRef.current}`, {
+                      method: 'POST',
+                    });
+                  } catch (error) {
+                    console.error('Failed to cancel execution:', error);
+                  }
                   cancelExecution(runIdRef.current);
+                  unsubscribeFromExecution(runIdRef.current);
                   runIdRef.current = null;
                 }
                 setWorkflowStatus('cancelled');
+                setExecutionLogs((prev) => [...prev, 'Execution stopped by user']);
               }}
               onStepOver={() => stepOver()}
               onClose={() => {
