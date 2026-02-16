@@ -230,7 +230,7 @@ In addition to the branch-based Parallel control flow node, marktoflow supports 
 | **parallel.spawn** | Run multiple AI agents concurrently (e.g., security + performance + quality reviewers) |
 | **parallel.map** | Process an array of items in parallel with configurable concurrency |
 
-These actions follow the standard `service.method` pattern and render in the Step Editor, New Step Wizard, and canvas like any other service action. See [YAML-API.md](YAML-API.md) for full syntax.
+These actions follow the standard `service.method` pattern and render in the Step Editor, New Step Wizard, and canvas like any other service action. See [YAML-API.md](../yaml-api/README.md) for full syntax.
 
 **Control Flow Features:**
 - Visual progress indicators during execution

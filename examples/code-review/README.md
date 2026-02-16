@@ -52,5 +52,5 @@ json: "{{ response | match('/```json\\s*([\\s\\S]*?)\\s*```/', 1) }}"
 
 ## Learn More
 
-- [Template Expressions Guide](../../docs/TEMPLATE-EXPRESSIONS.md) - Complete Nunjucks documentation
+- [Template Expressions Guide](../../docs/guides/TEMPLATE-EXPRESSIONS.md) - Complete Nunjucks documentation
 - [marktoflow Documentation](../../docs/DETAILED-GUIDE.md) - Full feature guide

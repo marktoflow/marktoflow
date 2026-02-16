@@ -196,13 +196,13 @@ Production-ready workflow templates in [`examples/`](examples/):
 
 **[📋 CHANGELOG](CHANGELOG.md)** — Version history, new features, security fixes, breaking changes
 
-- [Installation Guide](docs/INSTALLATION.md)
+- [Installation Guide](docs/setup/INSTALLATION.md)
 - [Detailed Guide](docs/DETAILED-GUIDE.md)
-- [YAML API Reference](docs/YAML-API.md) — Complete API including ⚡ parallel execution
-- [REST API Guide](docs/REST-API-GUIDE.md)
-- [Template Expressions](docs/TEMPLATE-EXPRESSIONS.md)
-- [Control Flow](docs/CONTROL-FLOW-GUIDE.md)
-- [GUI User Guide](docs/GUI_USER_GUIDE.md)
+- [YAML API Reference](docs/yaml-api/README.md) — Complete API including ⚡ parallel execution
+- [REST API Guide](docs/guides/REST-API-GUIDE.md)
+- [Template Expressions](docs/guides/TEMPLATE-EXPRESSIONS.md)
+- [Control Flow](docs/guides/CONTROL-FLOW-GUIDE.md)
+- [GUI User Guide](docs/gui/GUI_USER_GUIDE.md)
 
 ## Community
 

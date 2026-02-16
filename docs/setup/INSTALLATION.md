@@ -487,7 +487,7 @@ marktoflow run test-workflow.md --dry-run
 ## Additional Resources
 
 - [README.md](../README.md) - Project overview
-- [REST API Guide](REST-API-GUIDE.md) - Connect to any REST API
+- [REST API Guide](../guides/REST-API-GUIDE.md) - Connect to any REST API
 - [GitHub Repository](https://github.com/marktoflow/marktoflow)
 - [Issue Tracker](https://github.com/marktoflow/marktoflow/issues)
 

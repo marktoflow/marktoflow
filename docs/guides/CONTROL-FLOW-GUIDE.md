@@ -2,7 +2,7 @@
 
 Complete reference for using control flow in marktoflow v2.0 workflows.
 
-> **Note:** This is a comprehensive tutorial-style guide. For a concise API reference, see [yaml-api/control-flow.md](./yaml-api/control-flow.md).
+> **Note:** This is a comprehensive tutorial-style guide. For a concise API reference, see [yaml-api/control-flow.md](../yaml-api/control-flow.md).
 
 ---
 

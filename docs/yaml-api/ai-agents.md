@@ -205,7 +205,7 @@ Use external prompts with per-step model configuration:
 3. **Keep prompts focused**: One task per prompt file
 4. **Version control prompts**: Track changes like code
 
-For more details on prompt file format and validation, see [External Prompts](../YAML-API.md#external-prompts) in the main API reference.
+For more details on prompt file format and validation, see [External Prompts](./README.md#external-prompts) in the main API reference.
 
 ---
 

@@ -102,5 +102,5 @@ tools:
 
 ## Documentation
 
-- [Playwright Integration Guide](../../docs/PLAYWRIGHT-GUIDE.md)
-- [Control Flow Guide](../../docs/CONTROL-FLOW-GUIDE.md)
+- [Playwright Integration Guide](../../docs/guides/PLAYWRIGHT-GUIDE.md)
+- [Control Flow Guide](../../docs/guides/CONTROL-FLOW-GUIDE.md)
