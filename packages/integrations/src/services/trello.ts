@@ -109,7 +109,10 @@ export class TrelloClient {
    * Get list by ID
    */
   async getList(listId: string) {
-    return await this.client.getListsOnBoard(listId);
+    if (!listId || !listId.trim()) {
+      throw new Error('listId is required');
+    }
+    return await this.client.getList(listId);
   }
 
   /**
