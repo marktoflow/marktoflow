@@ -57,6 +57,10 @@ class MockTrelloSDK {
     return this.makeRequest('GET', `/boards/${boardId}/lists`);
   }
 
+  async getList(listId: string) {
+    return this.makeRequest('GET', `/lists/${listId}`);
+  }
+
   async addListToBoard(idBoard: string, name: string, pos?: any) {
     return this.makeRequest('POST', '/lists', { name, idBoard, pos });
   }
@@ -166,6 +170,16 @@ const server = setupServer(
       id: 'newList1',
       name,
       idBoard,
+      closed: false,
+    });
+  }),
+
+  // Get list
+  http.get('https://api.trello.com/1/lists/:listId', ({ params }) => {
+    return HttpResponse.json({
+      id: params.listId,
+      name: 'To Do',
+      idBoard: 'board123',
       closed: false,
     });
   }),
@@ -338,6 +352,19 @@ describe('Trello Contract Tests', () => {
     expect(lists).toHaveLength(3);
     expect(lists[0].name).toBe('To Do');
     expect(lists[2].name).toBe('Done');
+  });
+
+  it('should get list successfully', async () => {
+    const client = new MockTrelloSDK('test-api-key', 'test-token');
+    const wrapper = new TrelloClient(client as any);
+    const wrapped = wrapIntegration('trello', wrapper, {
+      inputSchemas: trelloSchemas,
+    });
+
+    const list = await wrapped.getList('list1');
+    expect(list.id).toBe('list1');
+    expect(list.name).toBe('To Do');
+    expect(list.idBoard).toBe('board123');
   });
 
   it('should create card successfully', async () => {
