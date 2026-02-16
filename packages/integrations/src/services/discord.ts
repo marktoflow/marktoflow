@@ -197,7 +197,15 @@ export class DiscordClient extends BaseApiClient {
    * Send a message to a channel
    */
   async sendMessage(channelId: string, options: SendMessageOptions | string): Promise<DiscordMessage> {
+    if (!channelId || !channelId.trim()) {
+      throw new Error('channelId is required');
+    }
+
     const body = typeof options === 'string' ? { content: options } : options;
+    if (!body.content && !body.embeds) {
+      throw new Error('Either content or embeds is required');
+    }
+
     const msg = await this.request<Record<string, unknown>>('POST', `/channels/${channelId}/messages`, body);
     return this.parseMessage(msg);
   }

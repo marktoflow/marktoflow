@@ -62,6 +62,9 @@ export class TrelloClient {
    * Get board by ID
    */
   async getBoard(boardId: string) {
+    if (!boardId || !boardId.trim()) {
+      throw new Error('boardId is required');
+    }
     return await this.client.getBoard(boardId);
   }
 
