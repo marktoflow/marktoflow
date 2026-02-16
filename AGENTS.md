@@ -58,7 +58,7 @@ marktoflow/
 │   ├── cli/                  # CLI commands, OAuth flows
 │   ├── gui/                  # Visual workflow designer
 │   └── integrations/         # Service integrations + AI adapters
-│       ├── services/         # 38 native integrations
+│       ├── services/         # 39 native integrations
 │       └── adapters/         # AI agents (Copilot, Claude, OpenCode, Ollama)
 ├── examples/                 # Production-ready workflow templates
 └── docs/                     # Documentation
@@ -66,7 +66,7 @@ marktoflow/
 
 ### Available Integrations
 
-**Services (38):** Slack, GitHub, GitLab, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP, Google Sheets, Google Calendar, Google Drive, Google Docs, Telegram, WhatsApp, Supabase, PostgreSQL, MySQL, HubSpot, Salesforce, PagerDuty, Sentry, Calendly, Intercom, Monday.com, Stripe, Twilio, SendGrid, Shopify, Zendesk, Mailchimp, Asana, Trello, Dropbox, AWS S3
+**Services (39):** Slack, GitHub, GitLab, Jira, Gmail, Outlook, Linear, Notion, Discord, Airtable, Confluence, HTTP, Google Sheets, Google Calendar, Google Drive, Google Docs, Telegram, WhatsApp, Supabase, PostgreSQL, MySQL, HubSpot, Salesforce, PagerDuty, Sentry, Calendly, Intercom, Monday.com, Stripe, Twilio, SendGrid, Shopify, Zendesk, Mailchimp, Asana, Trello, Dropbox, AWS S3, RSS
 
 **AI Agents:** GitHub Copilot, Claude Agent, OpenAI (+ VLLM), OpenCode, Ollama
 

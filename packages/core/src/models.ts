@@ -382,7 +382,7 @@ export const WorkflowModeSchema = z.enum(["run", "daemon", "event"]).default("ru
  */
 export const EventSourceConfigSchema = z.object({
   /** Event source kind */
-  kind: z.enum(["websocket", "discord", "slack", "cron", "http-stream"]),
+  kind: z.enum(["websocket", "discord", "slack", "cron", "http-stream", "rss"]),
   /** Unique id for this connection */
   id: z.string(),
   /** Source-specific options (url, token, etc.) */

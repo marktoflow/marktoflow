@@ -22,6 +22,7 @@ import {
   HardDrive,
   CreditCard,
   Layers,
+  Rss,
 } from 'lucide-react';
 
 type IconComponent = React.ComponentType<{ className?: string }>;
@@ -57,6 +58,7 @@ const serviceIcons: Record<string, IconComponent> = {
   's3': HardDrive,
   'aws-s3': HardDrive,
   parallel: Layers,
+  rss: Rss,
 };
 
 export function getServiceIcon(serviceName: string): IconComponent {
@@ -93,6 +95,7 @@ export function getServiceColor(serviceName: string): string {
     's3': '#FF9900',
     'aws-s3': '#FF9900',
     parallel: '#4facfe',
+    rss: '#F26522',
   };
 
   const normalizedName = serviceName.toLowerCase().split('.')[0];

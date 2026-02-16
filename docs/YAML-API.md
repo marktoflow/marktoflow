@@ -2562,11 +2562,25 @@ sources:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `kind` | string | Source type: websocket, discord, slack, cron, http-stream |
+| `kind` | string | Source type: websocket, discord, slack, cron, http-stream, rss |
 | `id` | string | Unique connection id |
 | `options` | object | Source-specific config (url, token, etc.) |
 | `filter` | string[] | Only emit matching event types |
 | `reconnect` | boolean | Auto-reconnect (default: true) |
+
+### RSS Event Source Example
+
+```yaml
+sources:
+  - kind: rss
+    id: tech-feed
+    options:
+      url: "https://hnrss.org/newest?points=100"
+      interval: "5m"
+      immediate: true
+```
+
+RSS sources poll a feed at the configured interval and emit `new_item` events for each new entry. On the first poll, existing items are tracked but not emitted, so only genuinely new items trigger events.
 
 See [examples/event-driven/](../examples/event-driven/) for complete workflow examples.
 

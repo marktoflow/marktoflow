@@ -376,6 +376,9 @@ importers:
       dropbox:
         specifier: ^10.34.0
         version: 10.34.0(@types/node-fetch@2.6.13)
+      fast-xml-parser:
+        specifier: '>=5.3.4'
+        version: 5.3.4
       googleapis:
         specifier: ^140.0.0
         version: 140.0.1

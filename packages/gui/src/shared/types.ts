@@ -46,10 +46,12 @@ export interface WorkflowInput {
 }
 
 export interface WorkflowTrigger {
-  type: 'manual' | 'schedule' | 'webhook' | 'event';
+  type: 'manual' | 'schedule' | 'webhook' | 'event' | 'rss';
   cron?: string;
   path?: string;
   events?: string[];
+  url?: string;
+  interval?: string;
 }
 
 export interface Workflow {

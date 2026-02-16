@@ -10,6 +10,7 @@
  * - slack: Listen for Slack events via Socket Mode
  * - cron: Emit events on a schedule (wraps the existing scheduler)
  * - http-stream: SSE (Server-Sent Events) listener
+ * - rss: Poll RSS/Atom feeds for new items
  */
 
 import { EventEmitter } from "node:events";
@@ -32,7 +33,7 @@ export interface EventSourceEvent {
 
 export interface EventSourceConfig {
   /** Source type */
-  kind: "websocket" | "discord" | "slack" | "cron" | "http-stream";
+  kind: "websocket" | "discord" | "slack" | "cron" | "http-stream" | "rss";
   /** Unique id for this source */
   id: string;
   /** Source-specific configuration */
@@ -603,6 +604,193 @@ export class SSEEventSource extends BaseEventSource {
   }
 }
 
+// ── RSS Event Source ─────────────────────────────────────────────────────────
+
+/**
+ * RSS/Atom feed event source — polls a feed and emits events for new items.
+ *
+ * Options:
+ * - url: Feed URL (required)
+ * - interval: Polling interval as duration string (default: "5m")
+ * - immediate: Poll immediately on connect (default: false)
+ * - headers: Custom HTTP headers for feed requests
+ * - maxItems: Max new items to emit per poll (default: unlimited)
+ */
+export class RssEventSource extends BaseEventSource {
+  private timer: ReturnType<typeof setInterval> | undefined;
+  private intervalMs: number;
+  private seenIds: Set<string> = new Set();
+  private firstPoll = true;
+  private static readonly MAX_SEEN_IDS = 10_000;
+
+  constructor(config: EventSourceConfig) {
+    super({ ...config, kind: "rss" });
+    const interval = (config.options.interval as string) ?? "5m";
+    this.intervalMs = parseDuration(interval);
+  }
+
+  async connect(): Promise<void> {
+    const url = this.config.options.url as string;
+    if (!url) throw new Error("RSS event source requires 'url' option");
+
+    this._status = "connected";
+    this._connectedAt = new Date().toISOString();
+    this.emit("connected", { source: this.id });
+
+    if (this.config.options.immediate) {
+      await this.poll();
+    }
+
+    this.timer = setInterval(() => {
+      this.poll().catch((err) => {
+        this.emit("error", err);
+      });
+    }, this.intervalMs);
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+  }
+
+  private async poll(): Promise<void> {
+    const url = this.config.options.url as string;
+    const headers = (this.config.options.headers as Record<string, string>) ?? {};
+    const maxItems = this.config.options.maxItems as number | undefined;
+
+    let xml: string;
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml", ...headers },
+      });
+      if (!res.ok) {
+        throw new Error(`RSS fetch failed: ${res.status} ${res.statusText}`);
+      }
+      xml = await res.text();
+    } catch (err) {
+      this.emit("error", err);
+      return;
+    }
+
+    const items = parseRssItems(xml);
+    const newItems: RssItem[] = [];
+
+    for (const item of items) {
+      const id = item.guid || item.link || item.title;
+      if (!id) continue;
+      if (!this.seenIds.has(id)) {
+        this.seenIds.add(id);
+        if (!this.firstPoll) {
+          newItems.push(item);
+        }
+      }
+    }
+
+    this.firstPoll = false;
+
+    // Evict oldest entries if seenIds grows too large
+    if (this.seenIds.size > RssEventSource.MAX_SEEN_IDS) {
+      const entries = Array.from(this.seenIds);
+      const toRemove = entries.length - RssEventSource.MAX_SEEN_IDS;
+      for (let i = 0; i < toRemove; i++) {
+        this.seenIds.delete(entries[i]);
+      }
+    }
+
+    const toEmit = maxItems ? newItems.slice(0, maxItems) : newItems;
+    for (const item of toEmit) {
+      this.emitEvent("new_item", {
+        title: item.title,
+        link: item.link,
+        description: item.description,
+        pubDate: item.pubDate,
+        guid: item.guid,
+        author: item.author,
+        categories: item.categories,
+        feedUrl: url,
+      });
+    }
+  }
+}
+
+// ── RSS XML Parsing Helpers ──────────────────────────────────────────────────
+
+interface RssItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
+  guid: string;
+  author: string;
+  categories: string[];
+}
+
+function extractTag(xml: string, tag: string): string {
+  const re = new RegExp(`<${tag}[^>]*>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([\\s\\S]*?))\\s*</${tag}>`, "i");
+  const m = xml.match(re);
+  if (!m) return "";
+  return (m[1] ?? m[2] ?? "").trim();
+}
+
+function extractAtomLink(xml: string): string {
+  const m = xml.match(/<link[^>]+href\s*=\s*["']([^"']+)["'][^>]*\/?>/i);
+  return m ? m[1] : "";
+}
+
+function extractAllTags(xml: string, tag: string): string[] {
+  const re = new RegExp(`<${tag}[^>]*>\\s*(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([\\s\\S]*?))\\s*</${tag}>`, "gi");
+  const results: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml)) !== null) {
+    const val = (m[1] ?? m[2] ?? "").trim();
+    if (val) results.push(val);
+  }
+  return results;
+}
+
+function parseRssItems(xml: string): RssItem[] {
+  const items: RssItem[] = [];
+
+  // Detect RSS 2.0 vs Atom
+  const isAtom = /<feed[\s>]/i.test(xml);
+
+  if (isAtom) {
+    // Atom: split on <entry>
+    const entries = xml.split(/<entry[\s>]/i).slice(1);
+    for (const entry of entries) {
+      const block = entry.split(/<\/entry>/i)[0];
+      items.push({
+        title: extractTag(block, "title"),
+        link: extractAtomLink(block) || extractTag(block, "link"),
+        description: extractTag(block, "summary") || extractTag(block, "content"),
+        pubDate: extractTag(block, "updated") || extractTag(block, "published"),
+        guid: extractTag(block, "id"),
+        author: extractTag(block, "name") || extractTag(block, "author"),
+        categories: extractAllTags(block, "category"),
+      });
+    }
+  } else {
+    // RSS 2.0: split on <item>
+    const rawItems = xml.split(/<item[\s>]/i).slice(1);
+    for (const raw of rawItems) {
+      const block = raw.split(/<\/item>/i)[0];
+      items.push({
+        title: extractTag(block, "title"),
+        link: extractTag(block, "link"),
+        description: extractTag(block, "description"),
+        pubDate: extractTag(block, "pubDate"),
+        guid: extractTag(block, "guid"),
+        author: extractTag(block, "author") || extractTag(block, "dc:creator"),
+        categories: extractAllTags(block, "category"),
+      });
+    }
+  }
+
+  return items;
+}
+
 // ── Factory ──────────────────────────────────────────────────────────────────
 
 export function createEventSource(config: EventSourceConfig): BaseEventSource {
@@ -617,6 +805,8 @@ export function createEventSource(config: EventSourceConfig): BaseEventSource {
       return new CronEventSource(config);
     case "http-stream":
       return new SSEEventSource(config);
+    case "rss":
+      return new RssEventSource(config);
     default:
       throw new Error(`Unknown event source kind: ${config.kind}`);
   }
