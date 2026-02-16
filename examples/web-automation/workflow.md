@@ -204,4 +204,4 @@ tools:
 | `browser.storage` | Manage local/session storage |
 | `browser.close` | Close the browser |
 
-See [Playwright Integration Guide](../../docs/PLAYWRIGHT-GUIDE.md) for complete documentation.
+See [Playwright Integration Guide](../../docs/guides/PLAYWRIGHT-GUIDE.md) for complete documentation.

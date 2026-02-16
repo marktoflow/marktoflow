@@ -306,7 +306,7 @@ tools:
 - [OpenAI API Specification](https://platform.openai.com/docs/api-reference)
 - [VLLM Documentation](https://docs.vllm.ai/)
 - [GLM-4 Model Card](https://huggingface.co/THUDM/glm-4-9b-chat)
-- [marktoflow AI Agents Guide](../../../docs/SETUP_AI_AGENTS.md)
+- [marktoflow AI Agents Guide](../../../docs/setup/SETUP_AI_AGENTS.md)
 - [marktoflow OpenAI Adapter](../../../packages/integrations/src/adapters/openai.ts)
 
 ## Next Steps

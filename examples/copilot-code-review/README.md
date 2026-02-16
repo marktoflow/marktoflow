@@ -385,7 +385,7 @@ inputs:
 
 - [GitHub Copilot Docs](https://docs.github.com/copilot)
 - [Copilot CLI Guide](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli)
-- [Copilot SDK Analysis](../../docs/COPILOT_SDK_ANALYSIS.md)
+- [Copilot SDK Analysis](../../docs/archived/COPILOT_SDK_ANALYSIS.md)
 - [marktoflow Documentation](../../README.md)
 
 ## License
