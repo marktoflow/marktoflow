@@ -1,7 +1,7 @@
 import { Client, PageCollection } from '@microsoft/microsoft-graph-client';
 import { ToolConfig, SDKInitializer, refreshMicrosoftToken } from '@marktoflow/core';
 import { wrapIntegration } from '../reliability/wrapper.js';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFile, writeFile, mkdir, access as fsAccess } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
 export interface OutlookEmail {
@@ -646,19 +646,24 @@ export class OutlookActions {
 /**
  * Load saved Outlook OAuth tokens from credentials directory
  */
-function loadOutlookTokens(): {
+async function loadOutlookTokens(): Promise<{
   access_token?: string;
   refresh_token?: string;
   client_id?: string;
   client_secret?: string;
   tenant_id?: string;
   expires_at?: number;
-} | null {
+} | null> {
   const credentialsPath = join('.marktoflow', 'credentials', 'outlook.json');
-  if (!existsSync(credentialsPath)) return null;
+  try {
+    await fsAccess(credentialsPath);
+  } catch {
+    return null;
+  }
 
   try {
-    return JSON.parse(readFileSync(credentialsPath, 'utf-8'));
+    const raw = await readFile(credentialsPath, 'utf-8');
+    return JSON.parse(raw);
   } catch {
     return null;
   }
@@ -667,20 +672,18 @@ function loadOutlookTokens(): {
 /**
  * Save Outlook OAuth tokens to credentials directory
  */
-function saveOutlookTokens(tokens: {
+async function saveOutlookTokens(tokens: {
   access_token: string;
   refresh_token: string;
   expires_in?: number;
   client_id?: string;
   client_secret?: string;
   tenant_id?: string;
-}): void {
+}): Promise<void> {
   const credentialsPath = join('.marktoflow', 'credentials', 'outlook.json');
   const dir = dirname(credentialsPath);
 
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
+  await mkdir(dir, { recursive: true });
 
   const data = {
     access_token: tokens.access_token,
@@ -691,7 +694,7 @@ function saveOutlookTokens(tokens: {
     expires_at: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : undefined,
   };
 
-  writeFileSync(credentialsPath, JSON.stringify(data, null, 2));
+  await writeFile(credentialsPath, JSON.stringify(data, null, 2));
 }
 
 /**
@@ -711,7 +714,7 @@ export const OutlookInitializer: SDKInitializer = {
     const tenantId = (config.auth?.['tenant_id'] as string | undefined) || 'common';
 
     // Try loading from saved credentials if not provided
-    let savedTokens = loadOutlookTokens();
+    let savedTokens = await loadOutlookTokens();
     if (!accessToken && savedTokens) {
       accessToken = savedTokens.access_token;
     }
@@ -738,7 +741,7 @@ export const OutlookInitializer: SDKInitializer = {
           accessToken = newTokens.accessToken;
 
           // Save refreshed tokens
-          saveOutlookTokens({
+          await saveOutlookTokens({
             access_token: newTokens.accessToken,
             refresh_token: newTokens.refreshToken || savedTokens.refresh_token,
             expires_in: newTokens.expiresIn,
