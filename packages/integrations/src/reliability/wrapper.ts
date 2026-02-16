@@ -11,6 +11,7 @@
 
 import { z } from 'zod';
 import { IntegrationRequestError, normalizeError } from './errors.js';
+import { getRateLimiterRegistry } from './rate-limiter.js';
 
 // ============================================================================
 // Types
@@ -31,6 +32,8 @@ export interface WrapperOptions {
   maxRetryDelay?: number;
   /** Zod schemas for input validation per action */
   inputSchemas?: Record<string, z.ZodTypeAny>;
+  /** Enable proactive rate limiting (default: true) */
+  rateLimiter?: boolean;
 }
 
 export interface ActionCallOptions {
@@ -78,6 +81,7 @@ export function wrapIntegration<T extends object>(
     initialRetryDelay: options.initialRetryDelay ?? DEFAULT_INITIAL_RETRY_DELAY,
     maxRetryDelay: options.maxRetryDelay ?? DEFAULT_MAX_RETRY_DELAY,
     inputSchemas: options.inputSchemas ?? {},
+    rateLimiter: options.rateLimiter ?? true,
   };
 
   return createProxy(sdk, opts, '');
@@ -148,7 +152,12 @@ function createWrappedFunction(
       }
     }
 
-    // 2. Retry loop with timeout
+    // 2. Proactive rate limiting
+    if (opts.rateLimiter) {
+      await getRateLimiterRegistry().acquire(opts.service);
+    }
+
+    // 3. Retry loop with timeout
     let lastError: IntegrationRequestError | undefined;
     const maxAttempts = opts.maxRetries + 1;
 

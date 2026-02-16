@@ -18,6 +18,14 @@ export {
 } from './errors.js';
 
 export {
+  RateLimiterRegistry,
+  getRateLimiterRegistry,
+  resetRateLimiterRegistry,
+  KNOWN_RATE_LIMITS,
+  type RateLimitConfig,
+} from './rate-limiter.js';
+
+export {
   slackSchemas,
   githubSchemas,
   gmailSchemas,
