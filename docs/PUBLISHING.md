@@ -98,7 +98,7 @@ We follow semantic versioning (semver):
 During development, use alpha tags:
 
 - Format: `2.0.0-alpha.1`, `2.0.0-alpha.2`, etc.
-- Published with `--tag alpha` flag
+- Publish with npm `alpha` dist-tag when needed
 - Users install with `@alpha` tag: `npm install -g marktoflow@alpha`
 
 ### Stable Releases
@@ -208,10 +208,10 @@ pnpm publish
   4. @marktoflow/gui@2.0.0-alpha.14
 
 📝 Process:
-  1. Replace workspace:* with actual versions
-  2. Build all packages
+  1. Build all packages
+  2. Replace workspace:* with actual versions
   3. Run tests
-  4. Publish to npm (with alpha tag)
+  4. Publish to npm
   5. Restore workspace:*
   6. Verify publication
 
@@ -338,7 +338,7 @@ pnpm publish:restore
 
 ## Publishing Stable Releases
 
-When ready to publish a stable release (no alpha tag):
+When ready to publish a stable release:
 
 ### Step 1: Update Versions (Remove Alpha)
 
@@ -350,19 +350,7 @@ Update package.json files to remove `-alpha.x`:
 }
 ```
 
-### Step 2: Update Publishing Script
-
-Edit `scripts/publish.js` to remove `--tag alpha`:
-
-```javascript
-// Change this line:
-const command = `npm publish --access public --tag alpha`;
-
-// To:
-const command = `npm publish --access public`;
-```
-
-### Step 3: Publish
+### Step 2: Publish
 
 ```bash
 pnpm publish
@@ -373,10 +361,6 @@ This publishes to the `latest` tag:
 ```bash
 npm install -g marktoflow  # Gets latest stable version
 ```
-
-### Step 4: Restore Alpha Publishing
-
-After publishing stable, restore the alpha tag in `scripts/publish.js`.
 
 ---
 
@@ -496,11 +480,9 @@ For complete details on the publishing system:
 ### Stable Release Checklist
 
 - [ ] Update version in all package.json files (remove `-alpha.X`)
-- [ ] Update `scripts/publish.js` (remove `--tag alpha`)
 - [ ] Run full test suite: `pnpm test`
 - [ ] Test: `pnpm publish:dry-run`
 - [ ] Publish: `pnpm publish`
-- [ ] Restore alpha tag in `scripts/publish.js`
 - [ ] Tag: `git tag vX.X.X && git push origin vX.X.X`
 - [ ] Create GitHub release with changelog
 - [ ] Update all documentation (remove `@alpha` references)
