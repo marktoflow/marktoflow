@@ -152,16 +152,16 @@ function buildWorkflow(
   }));
 
   // Extract workflow mode (run, daemon, event)
-  const mode = frontmatter.mode as string | undefined;
+  const mode = frontmatter.mode as 'run' | 'daemon' | 'event' | undefined;
 
   // Extract event sources
   const sourcesRaw = frontmatter.sources as Array<Record<string, unknown>> | undefined;
   const sources = sourcesRaw?.map((s) => ({
-    kind: s.kind as string,
+    kind: s.kind as 'websocket' | 'discord' | 'slack' | 'cron' | 'http-stream',
     id: s.id as string,
     options: (s.options as Record<string, unknown>) || {},
     ...(s.filter ? { filter: s.filter as string[] } : {}),
-    ...(s.reconnect !== undefined ? { reconnect: s.reconnect as boolean } : {}),
+    reconnect: (s.reconnect as boolean) ?? true,
     ...(s.reconnectDelay !== undefined ? { reconnectDelay: s.reconnectDelay as number } : {}),
   }));
 
