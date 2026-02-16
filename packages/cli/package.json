@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/cli",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "CLI for running AI-powered markdown workflows with tool calling, parallel agents, and 38 integrations",
   "type": "module",
   "main": "./dist/index.js",

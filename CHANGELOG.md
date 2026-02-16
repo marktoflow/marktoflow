@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-02-16
+
 ### Security
 - Hardened permission enforcement to block directory traversal (`..`) escapes from `allowedDirectories`
 - Tightened command allowlist matching so entries like `git` no longer permit unrelated binaries like `gitlab-runner`
 - GUI workflow APIs now reject absolute paths and path traversal (`..`) for execute/update/delete/read operations to prevent access outside the workflow directory
 
 ### Added
+- Circuit breaker pattern for integration reliability with configurable failure thresholds
+- Proactive rate limiting with token bucket algorithm for API calls
 - Non-scoped wrapper package (`marktoflow`) for easier installation (#56)
   - Enables `npm install -g marktoflow` instead of `npm install -g @marktoflow/cli`
   - Wrapper package delegates to `@marktoflow/cli` for all functionality
@@ -21,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved CLI bin from `@marktoflow/cli` to `marktoflow` package to resolve "File exists" conflicts
 - Updated all documentation to use `npm install -g marktoflow` command
 - Updated publish pipeline to include wrapper package
+- GUI Canvas component decomposed into smaller, more maintainable components
+- Enhanced GUI service discovery with improved toast notifications
 
 ### Fixed
 - CLI now reads version from package.json dynamically
@@ -28,7 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Discord, Trello, Mailchimp, and Shopify integrations now fail fast on missing required IDs instead of issuing malformed API calls
 - Trello `getList` now calls the single-list API endpoint instead of board-lists endpoint
 - GUI tool drag-and-drop now uses each tool's default action ID from `/api/tools` instead of generating invalid `<tool>.action` steps
+- GUI context menu now targets correct node when right-clicking
+- GUI stop button now properly cancels running workflows
 - Publish dry-run/build no longer breaks workspace dependency resolution (build now runs before `workspace:*` replacement)
+- Prevented duplicate nodes from being created in GUI workflow canvas
+- Fixed template variable detection in GUI workflow editor
+- Timer leak in engine executeWithTimeout resolved
+- Result ordering now preserved in concurrent execution with limit
+- Reconnect prevention after explicit stop and deduplicated parseDuration logic
+- Suppressed unhandled rejections from background parallel agents
+- Converted blocking I/O to async in credential persistence
+- Added safe JSON parsing with error recovery
+- Stabilized WebSocket integration tests
+
+### Performance
+- Parallelized Gmail email fetching with batched Promise.all for 3x faster retrieval
 
 ## [2.0.4] - 2026-02-15
 
