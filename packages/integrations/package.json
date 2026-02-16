@@ -1,6 +1,6 @@
 {
   "name": "@marktoflow/integrations",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "39 service integrations and AI agent adapters with tool calling, structured output, and local LLM support",
   "type": "module",
   "main": "./dist/index.js",
