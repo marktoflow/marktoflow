@@ -171,6 +171,17 @@ describe('checkPermission', () => {
       const result2 = checkPermission(perms, 'write', './src/index.ts');
       expect(result2.allowed).toBe(false);
     });
+
+    it('should deny path traversal outside allowed directories', () => {
+      const perms: EffectivePermissions = {
+        ...createDefaultPermissions(),
+        write: true,
+        allowedDirectories: ['./output'],
+      };
+
+      const result = checkPermission(perms, 'write', './output/../secrets.txt');
+      expect(result.allowed).toBe(false);
+    });
   });
 
   describe('execute operations', () => {
@@ -223,6 +234,17 @@ describe('checkPermission', () => {
 
       const result2 = checkPermission(perms, 'execute', 'rm -rf');
       expect(result2.allowed).toBe(false);
+    });
+
+    it('should not allow prefix-matched different executables', () => {
+      const perms: EffectivePermissions = {
+        ...createDefaultPermissions(),
+        execute: true,
+        allowedCommands: ['git'],
+      };
+
+      const result = checkPermission(perms, 'execute', 'gitlab-runner --version');
+      expect(result.allowed).toBe(false);
     });
   });
 
