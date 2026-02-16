@@ -98,11 +98,17 @@ describe("WebSocketEventSource", () => {
 
   beforeEach(async () => {
     server = new WebSocketServer({ port: 0 });
-    port = (server.address() as { port: number }).port;
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("WebSocket server failed to bind a port");
+    }
+    port = address.port;
   });
 
   afterEach(async () => {
-    server.close();
+    server.clients.forEach((client) => client.terminate());
+    await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
   it("connects to a WebSocket server and receives messages", async () => {

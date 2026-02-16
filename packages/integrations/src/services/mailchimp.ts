@@ -182,6 +182,9 @@ export class MailchimpClient {
    * Send campaign
    */
   async sendCampaign(campaignId: string) {
+    if (!campaignId || !campaignId.trim()) {
+      throw new Error('campaignId is required');
+    }
     return await mailchimp.campaigns.send(campaignId);
   }
 
