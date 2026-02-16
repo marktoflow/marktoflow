@@ -194,6 +194,8 @@ Production-ready workflow templates in [`examples/`](examples/):
 
 ## Documentation
 
+**[📋 CHANGELOG](CHANGELOG.md)** — Version history, new features, security fixes, breaking changes
+
 - [Installation Guide](docs/INSTALLATION.md)
 - [Detailed Guide](docs/DETAILED-GUIDE.md)
 - [YAML API Reference](docs/YAML-API.md) — Complete API including ⚡ parallel execution
