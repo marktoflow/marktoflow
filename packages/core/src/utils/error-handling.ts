@@ -116,7 +116,7 @@ export function getErrorDetails(error: unknown): ErrorDetails {
   const details: ErrorDetails = {
     message: err.message,
     name: err.name,
-    stack: err.stack,
+    ...(err.stack !== undefined && { stack: err.stack }),
   };
 
   // Extract additional properties for common error types
@@ -187,7 +187,10 @@ export function prefixError(error: unknown, prefix: string): Error {
 
   if (error instanceof Error && error.stack) {
     const stack = error.stack.split('\n');
-    err.stack = err.stack?.split('\n').slice(0, 1).concat(stack.slice(1)).join('\n');
+    const newStack = err.stack?.split('\n').slice(0, 1).concat(stack.slice(1)).join('\n');
+    if (newStack) {
+      err.stack = newStack;
+    }
   }
 
   return err;
