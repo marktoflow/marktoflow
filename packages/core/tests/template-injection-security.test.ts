@@ -36,9 +36,9 @@ describe('Template Engine - Security', () => {
   it('should handle arithmetic safely through Nunjucks', () => {
     const context = { x: 5, y: 3 };
 
-    // Safe arithmetic that should work (note: Nunjucks does string concatenation for +)
+    // Safe arithmetic that should work - Nunjucks performs numeric addition
     const result1 = renderTemplate('{{ x + y }}', context);
-    expect(result1).toBe(53); // Nunjucks: + is string concat (53 as number when preserved)
+    expect(result1).toBe(8); // Nunjucks: + is numeric addition
 
     // Multiplication should work as arithmetic
     const result2 = renderTemplate('{{ x * y }}', context);

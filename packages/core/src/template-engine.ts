@@ -137,7 +137,10 @@ function evaluateExpression(expression: string, context: Record<string, unknown>
     // All other expressions (including arithmetic) go through Nunjucks for safe evaluation
     // Nunjucks provides proper expression evaluation without arbitrary code execution
     // Use JSON serialization to preserve the actual type (object, array, number, etc.)
-    const wrappedTemplate = `{{ ${expression} | to_json }}`;
+    // Note: Parentheses around expression are critical for operator precedence.
+    // Without them, filters bind tighter than operators: {{ x + y | filter }} === {{ x + (y | filter) }}
+    // With parentheses: {{ (x + y) | filter }} evaluates the full expression first.
+    const wrappedTemplate = `{{ (${expression}) | to_json }}`;
     const jsonResult = env.renderString(wrappedTemplate, context);
 
     // Parse JSON to get the actual type
