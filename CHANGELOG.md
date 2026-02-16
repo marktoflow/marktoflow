@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - CLI now reads version from package.json dynamically
 - Zod overrides to suppress claude-agent-sdk peer dependency warnings
+- Trello `getList` now calls the single-list API endpoint instead of board-lists endpoint
 
 ## [2.0.4] - 2026-02-15
 

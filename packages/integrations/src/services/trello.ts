@@ -62,6 +62,9 @@ export class TrelloClient {
    * Get board by ID
    */
   async getBoard(boardId: string) {
+    if (!boardId || !boardId.trim()) {
+      throw new Error('boardId is required');
+    }
     return await this.client.getBoard(boardId);
   }
 
@@ -106,7 +109,10 @@ export class TrelloClient {
    * Get list by ID
    */
   async getList(listId: string) {
-    return await this.client.getListsOnBoard(listId);
+    if (!listId || !listId.trim()) {
+      throw new Error('listId is required');
+    }
+    return await this.client.getList(listId);
   }
 
   /**
