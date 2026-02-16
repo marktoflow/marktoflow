@@ -5,6 +5,16 @@ import { WorkflowService } from '../services/WorkflowService.js';
 const router: RouterType = Router();
 const workflowService = new WorkflowService();
 
+function getWorkflowPathParam(req: { params: Record<string, string> }): string {
+  const wildcard = (req.params as Record<string, string>)['path(*)'];
+  const fallback = (req.params as Record<string, string>)['0'];
+  return decodeURIComponent(wildcard || fallback || '');
+}
+
+function isInvalidPathError(error: unknown): boolean {
+  return error instanceof Error && error.message === 'Invalid workflow path';
+}
+
 // Configure multer for file uploads (in-memory storage)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -38,8 +48,7 @@ router.get('/', async (_req, res) => {
 // Get a specific workflow
 router.get('/:path(*)', async (req, res) => {
   try {
-    // Express captures wildcard routes in params[0]
-    const workflowPath = decodeURIComponent((req.params as any)[0] || '');
+    const workflowPath = getWorkflowPathParam(req as { params: Record<string, string> });
     const workflow = await workflowService.getWorkflow(workflowPath);
 
     if (!workflow) {
@@ -48,6 +57,9 @@ router.get('/:path(*)', async (req, res) => {
 
     res.json({ workflow });
   } catch (error) {
+    if (isInvalidPathError(error)) {
+      return res.status(400).json({ error: 'Invalid workflow path' });
+    }
     res.status(500).json({
       error: 'Failed to get workflow',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -77,7 +89,7 @@ router.post('/', async (req, res) => {
 // Update a workflow
 router.put('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
+    const workflowPath = getWorkflowPathParam(req as { params: Record<string, string> });
     const { workflow } = req.body;
 
     if (!workflow) {
@@ -87,6 +99,9 @@ router.put('/:path(*)', async (req, res) => {
     const updated = await workflowService.updateWorkflow(workflowPath, workflow);
     res.json({ workflow: updated });
   } catch (error) {
+    if (isInvalidPathError(error)) {
+      return res.status(400).json({ error: 'Invalid workflow path' });
+    }
     res.status(500).json({
       error: 'Failed to update workflow',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -97,10 +112,13 @@ router.put('/:path(*)', async (req, res) => {
 // Delete a workflow
 router.delete('/:path(*)', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
+    const workflowPath = getWorkflowPathParam(req as { params: Record<string, string> });
     await workflowService.deleteWorkflow(workflowPath);
     res.json({ success: true });
   } catch (error) {
+    if (isInvalidPathError(error)) {
+      return res.status(400).json({ error: 'Invalid workflow path' });
+    }
     res.status(500).json({
       error: 'Failed to delete workflow',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -111,10 +129,13 @@ router.delete('/:path(*)', async (req, res) => {
 // Get workflow execution history
 router.get('/:path(*)/runs', async (req, res) => {
   try {
-    const workflowPath = decodeURIComponent((req.params as Record<string, string>)['path(*)']);
+    const workflowPath = getWorkflowPathParam(req as { params: Record<string, string> });
     const runs = await workflowService.getExecutionHistory(workflowPath);
     res.json({ runs });
   } catch (error) {
+    if (isInvalidPathError(error)) {
+      return res.status(400).json({ error: 'Invalid workflow path' });
+    }
     res.status(500).json({
       error: 'Failed to get execution history',
       message: error instanceof Error ? error.message : 'Unknown error',

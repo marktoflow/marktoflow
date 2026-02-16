@@ -1,5 +1,5 @@
 import { readdir, readFile, writeFile, unlink, mkdir } from 'fs/promises';
-import { join, relative, resolve, dirname, basename, extname } from 'path';
+import { join, relative, dirname, basename, extname, resolve, isAbsolute } from 'path';
 import { existsSync } from 'fs';
 import { stringify as yamlStringify, parse as yamlParse } from 'yaml';
 import AdmZip from 'adm-zip';
@@ -374,19 +374,20 @@ export class WorkflowService {
   }
 
   private resolvePath(workflowPath: string): string {
-    // Never allow absolute paths from user input — always resolve relative to workflowDir
-    const resolved = workflowPath.startsWith('/')
-      ? workflowPath
-      : join(this.workflowDir, workflowPath);
-
-    // Verify the resolved path is within the workflow directory (path traversal prevention)
-    const normalizedBase = resolve(this.workflowDir);
-    const normalizedPath = resolve(resolved);
-    if (!normalizedPath.startsWith(normalizedBase + '/') && normalizedPath !== normalizedBase) {
-      throw new Error(`Path traversal detected: ${workflowPath}`);
+    const sanitizedPath = workflowPath.trim();
+    if (!sanitizedPath || sanitizedPath.includes('\0') || isAbsolute(sanitizedPath)) {
+      throw new Error('Invalid workflow path');
     }
 
-    return normalizedPath;
+    const baseWorkflowDir = resolve(this.workflowDir);
+    const fullPath = resolve(baseWorkflowDir, sanitizedPath);
+    const relativePath = relative(baseWorkflowDir, fullPath);
+
+    if (relativePath.startsWith('..') || isAbsolute(relativePath)) {
+      throw new Error('Invalid workflow path');
+    }
+
+    return fullPath;
   }
 
   private parseWorkflow(content: string, path: string): Workflow {
