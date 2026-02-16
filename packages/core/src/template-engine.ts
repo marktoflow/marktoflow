@@ -106,8 +106,14 @@ export function renderTemplate(
   try {
     return env.renderString(template, context);
   } catch (error) {
-    // If rendering fails, return the original template
-    console.error('Template render error:', error);
+    // If rendering fails, return the original template.
+    // Undefined/falsey variable access is expected when previewing workflows
+    // without inputs — log as debug, not error.
+    if (error instanceof Error && /undefined or falsey/.test(error.message)) {
+      // Silently return original template for undefined variable access
+      return template;
+    }
+    console.warn('Template render warning:', error instanceof Error ? error.message : error);
     return template;
   }
 }
@@ -154,7 +160,12 @@ function evaluateExpression(expression: string, context: Record<string, unknown>
       return directResult || '';
     }
   } catch (error) {
-    console.error('Expression evaluation error:', error);
+    // Undefined/falsey variable access is expected when inputs are not provided
+    // (e.g., GUI preview, workflow validation). Don't log as error.
+    if (error instanceof Error && /undefined or falsey/.test(error.message)) {
+      return '';
+    }
+    console.warn('Expression evaluation warning:', error instanceof Error ? error.message : error);
     return '';
   }
 }

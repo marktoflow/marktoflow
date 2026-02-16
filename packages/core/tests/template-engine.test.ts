@@ -48,6 +48,20 @@ describe('renderTemplate', () => {
       const result = renderTemplate('{{ undefined_var }}', {});
       expect(result).toBe('');
     });
+
+    it('should gracefully handle filters on undefined variables', () => {
+      // This simulates the GUI preview case where inputs are not provided
+      // e.g., {{ inputs.repository | split('/') | first }}
+      const result = renderTemplate('{{ inputs.repository | split("/") | first }}', {
+        inputs: {},
+      });
+      expect(result).toBe('');
+    });
+
+    it('should gracefully handle method calls on undefined nested properties', () => {
+      const result = renderTemplate('{{ inputs.repo | split("/") | last }}', {});
+      expect(result).toBe('');
+    });
   });
 
   describe('Nunjucks built-in filters', () => {
