@@ -785,6 +785,74 @@
     ]
   },
   {
+    "id": "rss",
+    "name": "RSS",
+    "icon": "📰",
+    "category": "Network",
+    "description": "Fetch and parse RSS/Atom feeds",
+    "authType": "none",
+    "actions": [
+      {
+        "id": "fetch",
+        "name": "Fetch Feed",
+        "description": "Fetch and parse a full RSS/Atom feed",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Feed URL"
+          },
+          {
+            "name": "headers",
+            "type": "object",
+            "required": false,
+            "description": "Custom HTTP headers"
+          }
+        ],
+        "output": {
+          "type": "object",
+          "description": "Parsed feed with title, description, link, and items array"
+        }
+      },
+      {
+        "id": "getItems",
+        "name": "Get Items",
+        "description": "Fetch feed items with optional filtering",
+        "inputs": [
+          {
+            "name": "url",
+            "type": "string",
+            "required": true,
+            "description": "Feed URL"
+          },
+          {
+            "name": "since",
+            "type": "string",
+            "required": false,
+            "description": "Only return items published after this ISO date"
+          },
+          {
+            "name": "filter",
+            "type": "string",
+            "required": false,
+            "description": "Regex pattern to match against item titles"
+          },
+          {
+            "name": "maxItems",
+            "type": "number",
+            "required": false,
+            "description": "Maximum number of items to return"
+          }
+        ],
+        "output": {
+          "type": "array",
+          "description": "Array of feed items"
+        }
+      }
+    ]
+  },
+  {
     "id": "claude",
     "name": "Claude",
     "icon": "🤖",

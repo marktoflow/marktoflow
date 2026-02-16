@@ -41,6 +41,7 @@ import { GitLabInitializer } from './services/gitlab.js';
 import { CalendlyInitializer } from './services/calendly.js';
 import { IntercomInitializer } from './services/intercom.js';
 import { MondayInitializer } from './services/monday.js';
+import { RssInitializer } from './services/rss.js';
 
 // AI Adapters
 import { OllamaInitializer } from './adapters/ollama.js';
@@ -122,8 +123,9 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('google-drive', GoogleDriveInitializer);
   registry.registerInitializer('google-docs', GoogleDocsInitializer);
 
-  // Generic HTTP
+  // Generic HTTP & Feeds
   registry.registerInitializer('http', HttpInitializer);
+  registry.registerInitializer('rss', RssInitializer);
 
   // Browser Automation
   registry.registerInitializer('playwright', PlaywrightInitializer);
@@ -404,6 +406,15 @@ export {
   type MondayGroup,
   type MondayUpdate,
 } from './services/monday.js';
+
+export {
+  RssClient,
+  RssInitializer,
+  type RssFeed,
+  type RssFeedItem,
+  type FetchFeedOptions,
+  type GetItemsOptions as RssGetItemsOptions,
+} from './services/rss.js';
 
 // Export triggers
 export { SlackSocketTrigger } from './services/slack-socket.js';

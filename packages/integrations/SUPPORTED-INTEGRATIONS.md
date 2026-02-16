@@ -1,6 +1,6 @@
 # Supported Integrations
 
-marktoflow v2.0 includes 38 native service integrations, 6 AI agent adapters, and built-in tools.
+marktoflow v2.0 includes 39 native service integrations, 6 AI agent adapters, and built-in tools.
 
 ## Communication & Collaboration
 
@@ -105,6 +105,7 @@ marktoflow v2.0 includes 38 native service integrations, 6 AI agent adapters, an
 | Service | SDK Key | SDK Package | Auth |
 |---------|---------|-------------|------|
 | HTTP | `http` | Built-in (fetch) | Configurable |
+| RSS/Atom | `rss` | `fast-xml-parser` | None (optional headers) |
 | Playwright | `playwright` | `playwright` | N/A |
 
 ## AI Agent Adapters

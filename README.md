@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Use your Copilot/Claude/Codex subscriptions · 38 integrations · Tool calling · Local LLMs · Self-hosted
+  Use your Copilot/Claude/Codex subscriptions · 39 integrations · Tool calling · Local LLMs · Self-hosted
 
 </p>
 
@@ -132,13 +132,13 @@ marktoflow is designed for teams and individuals who care about where their data
 | No telemetry | Yes | No | Opt-out | Opt-out |
 | Workflow format | Markdown (auditable) | Opaque | Python code | Python code |
 | Visual editor | Yes | No | No | No |
-| 38 native integrations | Yes | No | Community | Community |
+| 39 native integrations | Yes | No | Community | Community |
 | Non-AI workflows | Yes | No | No | No |
 | Data stays local | Always | Routed through gateway | Depends on LLM | Depends on LLM |
 
 ## Integrations
 
-38 native SDK integrations — all with TypeScript types, retry logic, and input validation.
+39 native SDK integrations — all with TypeScript types, retry logic, and input validation.
 
 | Category | Services |
 |----------|----------|
@@ -152,7 +152,7 @@ marktoflow is designed for teams and individuals who care about where their data
 | **Support** | Zendesk |
 | **Storage** | Dropbox, AWS S3 |
 | **Databases** | Supabase, PostgreSQL, MySQL |
-| **Universal** | HTTP client (any REST API) |
+| **Universal** | HTTP client (any REST API), RSS/Atom feeds |
 | **AI Agents** | GitHub Copilot, Claude, Codex — use your existing subscriptions, no API keys — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
 
 ## Packages
@@ -163,7 +163,7 @@ marktoflow is designed for teams and individuals who care about where their data
 | [`@marktoflow/core`](packages/core) | Parser, engine, state management, plugin system |
 | [`@marktoflow/cli`](packages/cli) | Command-line interface and workflow runner |
 | [`@marktoflow/gui`](packages/gui) | Visual workflow designer (web UI) |
-| [`@marktoflow/integrations`](packages/integrations) | 38 service integrations and AI adapters |
+| [`@marktoflow/integrations`](packages/integrations) | 39 service integrations and AI adapters |
 
 ## Examples
 
