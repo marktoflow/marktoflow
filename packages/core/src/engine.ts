@@ -60,6 +60,7 @@ import {
 import { RollbackRegistry } from './rollback.js';
 import { parseFile } from './parser.js';
 import { resolve } from 'node:path';
+import crypto from 'node:crypto';
 import { executeBuiltInOperation, isBuiltInOperation } from './built-in-operations.js';
 import { executeParallelOperation, isParallelOperation } from './parallel.js';
 
@@ -251,6 +252,11 @@ export class WorkflowEngine {
     sdkRegistry: SDKRegistryLike,
     stepExecutor: StepExecutor,
   ): Promise<WorkflowResult> {
+    // Daemon/event mode: delegate to continuous execution
+    if (workflow.mode === 'daemon' || workflow.mode === 'event') {
+      return this.executeDaemon(workflow, inputs, sdkRegistry, stepExecutor);
+    }
+
     const context = createExecutionContext(workflow, inputs);
     const stepResults: StepResult[] = [];
     const startedAt = new Date();
@@ -380,6 +386,110 @@ export class WorkflowEngine {
 
     this.events.onWorkflowComplete?.(workflow, workflowResult);
     return workflowResult;
+  }
+
+  /**
+   * Execute workflow in daemon/continuous mode.
+   * Automatically connects to event sources from frontmatter and loops execution.
+   */
+  private async executeDaemon(
+    workflow: Workflow,
+    inputs: Record<string, unknown>,
+    sdkRegistry: SDKRegistryLike,
+    stepExecutor: StepExecutor,
+  ): Promise<WorkflowResult> {
+    const startedAt = new Date();
+    
+    // Store workflow-level permissions and defaults
+    this.workflowPermissions = workflow.permissions;
+    if (!this.config.defaultAgent && workflow.defaultAgent) {
+      this.config.defaultAgent = workflow.defaultAgent;
+    }
+    if (!this.config.defaultModel && workflow.defaultModel) {
+      this.config.defaultModel = workflow.defaultModel;
+    }
+
+    // Auto-connect to event sources from frontmatter
+    if (workflow.sources && workflow.sources.length > 0) {
+      const { getEventSourceManager } = await import('./event-operations.js');
+      const manager = getEventSourceManager();
+      
+      for (const sourceConfig of workflow.sources) {
+        try {
+          await manager.add(sourceConfig);
+        } catch (error) {
+          const errorMsg = `Failed to connect to event source '${sourceConfig.id}': ${error instanceof Error ? error.message : String(error)}`;
+          return {
+            workflowId: workflow.metadata.id,
+            runId: crypto.randomUUID(),
+            status: WorkflowStatus.FAILED,
+            stepResults: [],
+            output: {},
+            error: errorMsg,
+            startedAt,
+            completedAt: new Date(),
+            duration: Date.now() - startedAt.getTime(),
+          };
+        }
+      }
+    }
+
+    // Daemon mode: run indefinitely until killed
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const context = createExecutionContext(workflow, inputs);
+      const stepResults: StepResult[] = [];
+      
+      context.status = WorkflowStatus.RUNNING;
+      this.events.onWorkflowStart?.(workflow, context);
+
+      try {
+        for (let i = 0; i < workflow.steps.length; i++) {
+          const step = workflow.steps[i];
+          context.currentStepIndex = i;
+
+          const result = await this.executeStep(step, context, sdkRegistry, stepExecutor);
+          stepResults.push(result);
+
+          // Store step metadata
+          context.stepMetadata[step.id] = {
+            status: result.status.toLowerCase(),
+            retryCount: result.retryCount,
+            ...(result.error ? { error: errorToString(result.error) } : {}),
+          };
+
+          // Store output variable
+          if (step.outputVariable && result.status === StepStatus.COMPLETED) {
+            context.variables[step.outputVariable] = result.output;
+          }
+
+          // Handle failure
+          if (result.status === StepStatus.FAILED) {
+            let errorAction = 'stop';
+            if ('errorHandling' in step && step.errorHandling?.action) {
+              errorAction = step.errorHandling.action;
+            }
+
+            if (errorAction === 'stop') {
+              // In daemon mode, log error and restart loop
+              const error = errorToString(result.error);
+              console.error(`[Daemon] Step ${step.id} failed: ${error}`);
+              context.status = WorkflowStatus.FAILED;
+              break;
+            }
+          }
+        }
+
+        context.status = WorkflowStatus.COMPLETED;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`[Daemon] Workflow error: ${errorMsg}`);
+        context.status = WorkflowStatus.FAILED;
+      }
+
+      // Brief pause before next iteration
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   }
 
   /**
