@@ -70,6 +70,10 @@ describe('Supabase Integration', () => {
             count: 42,
             average: 25.5,
           }),
+          text: async () => JSON.stringify({
+            count: 42,
+            average: 25.5,
+          }),
         });
 
         const result = await client.rpc('calculate_stats', {
@@ -95,6 +99,10 @@ describe('Supabase Integration', () => {
             user: { id: 'user123', email: 'newuser@example.com' },
             session: { access_token: 'token123', refresh_token: 'refresh123' },
           }),
+          text: async () => JSON.stringify({
+            user: { id: 'user123', email: 'newuser@example.com' },
+            session: { access_token: 'token123', refresh_token: 'refresh123' },
+          }),
         });
 
         const result = await client.signUp({
@@ -117,6 +125,10 @@ describe('Supabase Integration', () => {
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: async () => ({
+            user: { id: 'user123', email: 'user@example.com' },
+            session: { access_token: 'token456', refresh_token: 'refresh456' },
+          }),
+          text: async () => JSON.stringify({
             user: { id: 'user123', email: 'user@example.com' },
             session: { access_token: 'token456', refresh_token: 'refresh456' },
           }),

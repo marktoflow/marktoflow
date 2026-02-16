@@ -218,10 +218,19 @@ export class BaseApiClient {
 
           // Check if status is retryable
           if (!response.ok) {
-            const error = await response.text();
-            const statusError = new Error(
-              `${this.serviceName} API error: ${response.status} ${error}`
-            );
+            // Try to parse error response as JSON first, fall back to text
+            const errorText = await response.text();
+            let errorMessage = `${this.serviceName} API error: ${response.status}`;
+            
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage += ` ${JSON.stringify(errorData)}`;
+            } catch {
+              // Not JSON, use raw text
+              errorMessage += ` ${errorText}`;
+            }
+            
+            const statusError = new Error(errorMessage);
 
             // Check if we should retry this status code
             if (retry && retry.retryableStatusCodes.includes(response.status)) {
@@ -237,7 +246,21 @@ export class BaseApiClient {
             return undefined as T;
           }
 
-          return (await response.json()) as T;
+          // Safely parse JSON response
+          const responseText = await response.text();
+          if (!responseText || responseText.trim().length === 0) {
+            return undefined as T;
+          }
+          
+          try {
+            return JSON.parse(responseText) as T;
+          } catch (parseError) {
+            const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+            const preview = responseText.substring(0, 200);
+            throw new Error(
+              `${this.serviceName} returned invalid JSON: ${errorMessage}\nResponse preview: ${preview}`
+            );
+          }
         } finally {
           clearTimeout(timeoutId);
         }

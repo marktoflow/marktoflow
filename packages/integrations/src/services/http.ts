@@ -151,7 +151,21 @@ export class HttpClient {
       let data: T;
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('application/json')) {
-        data = (await response.json()) as T;
+        // Safely parse JSON response
+        const responseText = await response.text();
+        if (!responseText || responseText.trim().length === 0) {
+          data = undefined as T;
+        } else {
+          try {
+            data = JSON.parse(responseText) as T;
+          } catch (parseError) {
+            const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+            const preview = responseText.substring(0, 200);
+            throw new Error(
+              `HTTP response claimed to be JSON but failed to parse: ${errorMessage}\nResponse preview: ${preview}`
+            );
+          }
+        }
       } else if (contentType.includes('text/')) {
         data = (await response.text()) as T;
       } else {
