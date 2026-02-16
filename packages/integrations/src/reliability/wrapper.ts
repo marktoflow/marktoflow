@@ -240,27 +240,53 @@ async function withTimeout(
     return promise;
   }
 
+  const controller = new AbortController();
+
   return new Promise((resolve, reject) => {
+    let settled = false;
+
     const timer = setTimeout(() => {
-      reject(
-        new IntegrationRequestError({
-          service,
-          action,
-          message: `Request timed out after ${timeoutMs}ms`,
-          retryable: true,
-        })
-      );
+      if (!settled) {
+        settled = true;
+        controller.abort();
+        reject(
+          new IntegrationRequestError({
+            service,
+            action,
+            message: `Request timed out after ${timeoutMs}ms`,
+            retryable: true,
+          })
+        );
+      }
     }, timeoutMs);
 
     (promise as Promise<unknown>).then(
       (result) => {
-        clearTimeout(timer);
-        resolve(result);
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(result);
+        }
       },
       (error) => {
-        clearTimeout(timer);
-        reject(error);
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(error);
+        }
       }
     );
   });
+}
+
+/**
+ * Create an AbortSignal that triggers after the given timeout.
+ * Useful for passing to fetch() or other cancellable operations.
+ */
+export function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // Prevent timer from keeping the process alive
+  if (timer.unref) timer.unref();
+  return controller.signal;
 }
