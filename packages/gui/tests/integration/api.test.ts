@@ -350,6 +350,24 @@ describe('API Integration Tests', () => {
         expect(response.status).toBe(200);
         expect(response.body.dryRun).toBe(true);
       });
+
+      it('should reject path traversal attempts', async () => {
+        const response = await request(app)
+          .post('/api/execute/..%2F..%2Fetc%2Fpasswd')
+          .send({ inputs: {} });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid workflow path');
+      });
+
+      it('should reject absolute workflow paths', async () => {
+        const response = await request(app)
+          .post('/api/execute/%2Fetc%2Fpasswd')
+          .send({ inputs: {} });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid workflow path');
+      });
     });
 
     describe('GET /api/execute/status/:runId', () => {
@@ -403,6 +421,34 @@ describe('API Integration Tests', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.error).toBe('Workflow data is required');
+      });
+
+      it('should reject path traversal attempts', async () => {
+        const response = await request(app)
+          .put('/api/workflows/..%2F..%2Ftmp%2Foutside.md')
+          .send({
+            workflow: {
+              metadata: { id: 'test', name: 'test' },
+              steps: [],
+            },
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid workflow path');
+      });
+
+      it('should reject absolute paths', async () => {
+        const response = await request(app)
+          .put('/api/workflows/%2Ftmp%2Foutside.md')
+          .send({
+            workflow: {
+              metadata: { id: 'test', name: 'test' },
+              steps: [],
+            },
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid workflow path');
       });
     });
   });

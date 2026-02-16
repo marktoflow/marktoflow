@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Hardened permission enforcement to block directory traversal (`..`) escapes from `allowedDirectories`
 - Tightened command allowlist matching so entries like `git` no longer permit unrelated binaries like `gitlab-runner`
+- GUI workflow APIs now reject absolute paths and path traversal (`..`) for execute/update/delete/read operations to prevent access outside the workflow directory
 
 ### Added
 - Non-scoped wrapper package (`marktoflow`) for easier installation (#56)

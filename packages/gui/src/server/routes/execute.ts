@@ -6,7 +6,7 @@
  */
 
 import { Router, type Router as RouterType, type Request, type Response } from 'express';
-import { join, resolve } from 'path';
+import { join, resolve, relative, isAbsolute } from 'path';
 import { existsSync } from 'fs';
 import type { ExecutionManager } from '../services/ExecutionManager.js';
 
@@ -25,39 +25,68 @@ export function setExecutionManager(manager: ExecutionManager, dir: string): voi
 }
 
 /**
- * Check if a resolved path is safely contained within the base directory.
- * Prevents path traversal attacks (e.g., ../../etc/passwd).
- */
-function isPathSafe(resolvedPath: string, baseDir: string): boolean {
-  const normalizedBase = resolve(baseDir);
-  const normalizedPath = resolve(resolvedPath);
-  // Path must start with the base directory (+ separator or exact match)
-  return normalizedPath === normalizedBase || normalizedPath.startsWith(normalizedBase + '/');
-}
-
-/**
- * Resolve workflow path relative to workflow directory.
- * Rejects paths that escape the workflow directory (path traversal prevention).
+ * Resolve workflow path relative to workflow directory
  */
 function resolveWorkflowPath(requestPath: string): string | null {
-  // Never allow absolute paths from user input
-  if (requestPath.startsWith('/')) {
+  const sanitizedPath = requestPath.trim();
+  const normalizedRequestPath = sanitizedPath.replace(/\\/g, '/');
+
+  if (
+    !sanitizedPath ||
+    sanitizedPath.includes('\0') ||
+    isAbsolute(sanitizedPath) ||
+    normalizedRequestPath.split('/').includes('..')
+  ) {
     return null;
   }
 
-  // Try relative to workflow directory
-  const relativePath = join(workflowDir, requestPath);
-  if (isPathSafe(relativePath, workflowDir) && existsSync(relativePath)) {
+  const baseWorkflowDir = resolve(workflowDir);
+  const allowedLocalPath = resolve(baseWorkflowDir, sanitizedPath);
+  const allowedMarktoflowDir = resolve(baseWorkflowDir, '.marktoflow', 'workflows');
+  const allowedMarktoflowPath = resolve(allowedMarktoflowDir, sanitizedPath);
+
+  const localRelative = relative(baseWorkflowDir, allowedLocalPath);
+  if (
+    !localRelative.startsWith('..') &&
+    !isAbsolute(localRelative) &&
+    existsSync(allowedLocalPath)
+  ) {
+    return allowedLocalPath;
+  }
+
+  const marktoflowRelative = relative(allowedMarktoflowDir, allowedMarktoflowPath);
+  if (
+    !marktoflowRelative.startsWith('..') &&
+    !isAbsolute(marktoflowRelative) &&
+    existsSync(allowedMarktoflowPath)
+  ) {
+    return allowedMarktoflowPath;
+  }
+
+  // Try relative to workflow directory for backwards compatibility
+  const relativePath = join(workflowDir, sanitizedPath);
+  if (existsSync(relativePath)) {
     return relativePath;
   }
 
-  // Try in .marktoflow/workflows
-  const marktoflowPath = join(workflowDir, '.marktoflow', 'workflows', requestPath);
-  if (isPathSafe(marktoflowPath, workflowDir) && existsSync(marktoflowPath)) {
+  // Try in .marktoflow/workflows for backwards compatibility
+  const marktoflowPath = join(workflowDir, '.marktoflow', 'workflows', sanitizedPath);
+  if (existsSync(marktoflowPath)) {
     return marktoflowPath;
   }
 
   return null;
+}
+
+function isInvalidWorkflowPath(requestPath: string): boolean {
+  const sanitizedPath = requestPath.trim();
+  const normalizedRequestPath = sanitizedPath.replace(/\\/g, '/');
+  return (
+    !sanitizedPath ||
+    sanitizedPath.includes('\0') ||
+    isAbsolute(sanitizedPath) ||
+    normalizedRequestPath.split('/').includes('..')
+  );
 }
 
 // Note: Specific routes must come before catch-all routes
@@ -199,6 +228,14 @@ router.post('/:path(*)', async (req: Request, res: Response) => {
       res.status(503).json({
         error: 'Service unavailable',
         message: 'ExecutionManager not initialized',
+      });
+      return;
+    }
+
+    if (isInvalidWorkflowPath(requestPath)) {
+      res.status(400).json({
+        error: 'Invalid workflow path',
+        message: 'Path must be relative and stay within the workflow directory',
       });
       return;
     }
