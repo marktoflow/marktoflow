@@ -82,19 +82,28 @@ describe("event.connect with WebSocket", () => {
   let server: WebSocketServer;
   let port: number;
 
-  afterEach(() => {
-    server?.close();
+  afterEach(async () => {
+    if (!server) return;
+    server.clients.forEach((client) => client.terminate());
+    await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
   it("connects to WebSocket and waits for event", async () => {
     server = new WebSocketServer({ port: 0 });
-    port = (server.address() as { port: number }).port;
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("WebSocket server failed to bind a port");
+    }
+    port = address.port;
+    const connected = new Promise<void>((resolve) => server.once("connection", () => resolve()));
 
     await executeEventConnect({
       kind: "websocket",
       id: "ws-test",
       options: { url: `ws://localhost:${port}` },
     });
+    await connected;
 
     // Server sends event after short delay
     setTimeout(() => {

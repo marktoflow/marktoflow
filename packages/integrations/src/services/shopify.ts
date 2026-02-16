@@ -102,6 +102,9 @@ export class ShopifyClient {
    * Get product by ID
    */
   async getProduct(productId: string) {
+    if (!productId || !productId.trim()) {
+      throw new Error('productId is required');
+    }
     const client = new this.shopify.clients.Rest({ session: this.session });
     return await client.get({ path: `products/${productId}` });
   }
