@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Hardened permission enforcement to block directory traversal (`..`) escapes from `allowedDirectories`
+- Tightened command allowlist matching so entries like `git` no longer permit unrelated binaries like `gitlab-runner`
+
 ### Added
 - Non-scoped wrapper package (`marktoflow`) for easier installation (#56)
   - Enables `npm install -g marktoflow` instead of `npm install -g @marktoflow/cli`
