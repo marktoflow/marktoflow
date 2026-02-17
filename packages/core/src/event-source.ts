@@ -15,6 +15,7 @@
 
 import { EventEmitter } from "node:events";
 import WebSocket from "ws";
+import { CronExpressionParser } from "cron-parser";
 import { parseDuration } from "./utils/duration.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -478,21 +479,37 @@ export class SlackEventSource extends BaseEventSource {
  * Cron event source — emits events on a schedule.
  *
  * Options:
- * - schedule: Cron expression or interval string (e.g., "30m", "1h")
+ * - schedule: Duration string (e.g., "30m", "1h", "5s") for fixed-interval,
+ *             or cron expression (e.g., "0 * * * *") for cron-based scheduling
  * - payload: Optional static payload to include with each event
+ * - immediate: Emit first event immediately on connect (default: false)
  */
 export class CronEventSource extends BaseEventSource {
-  private timer: ReturnType<typeof setInterval> | undefined;
-  private intervalMs: number;
+  private timer: ReturnType<typeof setInterval> | ReturnType<typeof setTimeout> | undefined;
+  private intervalMs: number | null;
+  private cronExpression: string | null;
+  private stopped = false;
 
   constructor(config: EventSourceConfig) {
     super({ ...config, kind: "cron" });
-    this.intervalMs = parseDuration(config.options.schedule as string);
+    const schedule = config.options.schedule as string;
+    if (!schedule) throw new Error("Cron event source requires 'schedule' option");
+
+    // Detect if schedule is a cron expression (5 space-separated fields) or duration
+    const isCron = /^[\d*,/-]+\s+[\d*,/-]+\s+[\d*,/-]+\s+[\d*,/-]+\s+[\d*,/-]+$/.test(schedule.trim());
+    if (isCron) {
+      this.cronExpression = schedule;
+      this.intervalMs = null;
+    } else {
+      this.cronExpression = null;
+      this.intervalMs = parseDuration(schedule);
+    }
   }
 
   async connect(): Promise<void> {
     this._status = "connected";
     this._connectedAt = new Date().toISOString();
+    this.stopped = false;
     this.emit("connected", { source: this.id });
 
     // Emit first event immediately if configured
@@ -500,13 +517,41 @@ export class CronEventSource extends BaseEventSource {
       this.tick();
     }
 
-    this.timer = setInterval(() => this.tick(), this.intervalMs);
+    if (this.intervalMs !== null) {
+      // Fixed interval mode
+      this.timer = setInterval(() => this.tick(), this.intervalMs);
+    } else if (this.cronExpression) {
+      // Cron expression mode: schedule next tick
+      this.scheduleNextCronTick();
+    }
   }
 
   async disconnect(): Promise<void> {
+    this.stopped = true;
     if (this.timer) {
       clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = undefined;
+    }
+  }
+
+  private scheduleNextCronTick(): void {
+    if (this.stopped || !this.cronExpression) return;
+
+    try {
+      const expr = CronExpressionParser.parse(this.cronExpression, {
+        currentDate: new Date(),
+      });
+      const nextDate = expr.next().toDate();
+      const delayMs = nextDate.getTime() - Date.now();
+
+      this.timer = setTimeout(() => {
+        if (this.stopped) return;
+        this.tick();
+        this.scheduleNextCronTick();
+      }, Math.max(0, delayMs));
+    } catch (err) {
+      this.emit("error", new Error(`Invalid cron expression "${this.cronExpression}": ${err instanceof Error ? err.message : String(err)}`));
     }
   }
 
