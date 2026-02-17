@@ -560,6 +560,9 @@ export class SSEEventSource extends BaseEventSource {
 
     const decoder = new TextDecoder();
     let buffer = "";
+    // Track event fields across buffer boundaries
+    let eventType = "message";
+    let eventData = "";
 
     const readLoop = async () => {
       try {
@@ -569,18 +572,18 @@ export class SSEEventSource extends BaseEventSource {
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
+          // Keep the last incomplete line in the buffer
           buffer = lines.pop() ?? "";
-
-          let eventType = "message";
-          let eventData = "";
 
           for (const line of lines) {
             if (line.startsWith("event:")) {
               eventType = line.slice(6).trim();
             } else if (line.startsWith("data:")) {
               eventData += (eventData ? "\n" : "") + line.slice(5).trim();
-            } else if (line === "") {
-              // End of event
+            } else if (line.startsWith(":")) {
+              // SSE comment line — ignore (used for keep-alive)
+            } else if (line === "" || line === "\r") {
+              // Empty line = end of event dispatch
               if (eventData) {
                 let parsed: Record<string, unknown>;
                 try {
@@ -590,6 +593,7 @@ export class SSEEventSource extends BaseEventSource {
                 }
                 this.emitEvent(eventType, parsed, eventData);
               }
+              // Reset for next event
               eventType = "message";
               eventData = "";
             }
@@ -603,7 +607,10 @@ export class SSEEventSource extends BaseEventSource {
       this.handleDisconnect("stream ended");
     };
 
-    readLoop();
+    // Start reading in background — connect() resolves once the HTTP
+    // connection is established (status 200), stream processing continues
+    // asynchronously.
+    void readLoop();
   }
 
   async disconnect(): Promise<void> {
