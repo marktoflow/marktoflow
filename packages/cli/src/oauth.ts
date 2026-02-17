@@ -9,6 +9,7 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
+import { randomBytes } from 'node:crypto';
 import { URL } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -57,23 +58,49 @@ export interface OutlookOAuthConfig {
 }
 
 /**
- * Start a local server and wait for OAuth callback
+ * Generate a cryptographically random state parameter for OAuth CSRF protection.
  */
-async function waitForCallback(port: number): Promise<{ code: string; state?: string }> {
+function generateOAuthState(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/**
+ * Start a local server and wait for OAuth callback.
+ * If expectedState is provided, validates the state parameter to prevent CSRF attacks.
+ */
+async function waitForCallback(port: number, expectedState?: string): Promise<{ code: string; state?: string }> {
   return new Promise((resolve, reject) => {
     let timeoutId: NodeJS.Timeout | null = null;
 
+    let server: ReturnType<typeof createServer>;
+
     const cleanup = () => {
       if (timeoutId) clearTimeout(timeoutId);
+      server?.close();
     };
 
-    const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+    server = createServer((req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://localhost:${port}`);
 
       if (url.pathname === '/callback') {
         const code = url.searchParams.get('code');
         const error = url.searchParams.get('error');
         const state = url.searchParams.get('state');
+
+        // Validate state parameter to prevent CSRF attacks
+        if (expectedState && state !== expectedState) {
+          cleanup();
+          res.writeHead(400, { 'Content-Type': 'text/html' });
+          res.end(`
+            <html><body>
+              <h1>Authentication Failed</h1>
+              <p>Invalid state parameter — possible CSRF attack.</p>
+              <p>You can close this window and try again.</p>
+            </body></html>
+          `);
+          reject(new Error('OAuth state mismatch: possible CSRF attack'));
+          return;
+        }
 
         if (error) {
           cleanup();
@@ -85,7 +112,6 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
               <p>You can close this window.</p>
             </body></html>
           `);
-          server.close();
           reject(new Error(`OAuth error: ${error}`));
           return;
         }
@@ -100,7 +126,6 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
               <p>You can close this window.</p>
             </body></html>
           `);
-          server.close();
           reject(new Error('No authorization code received'));
           return;
         }
@@ -115,7 +140,8 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
           </body></html>
         `);
 
-        // Close server and resolve after response is sent
+        // Clear timeout and close server after response is sent
+        if (timeoutId) clearTimeout(timeoutId);
         res.on('finish', () => {
           server.close(() => {
             resolve({ code, state: state ?? undefined });
@@ -138,7 +164,7 @@ async function waitForCallback(port: number): Promise<{ code: string; state?: st
 
     // Timeout after 5 minutes
     timeoutId = setTimeout(() => {
-      server.close();
+      cleanup();
       reject(new Error('OAuth timeout: no callback received within 5 minutes'));
     }, 5 * 60 * 1000);
   });
@@ -254,6 +280,7 @@ export async function runGmailOAuth(config: GmailOAuthConfig): Promise<OAuthToke
   const port = config.port ?? DEFAULT_PORT;
   const redirectUri = `http://localhost:${port}/callback`;
   const scopes = config.scopes ?? DEFAULT_GMAIL_SCOPES;
+  const state = generateOAuthState();
 
   // Build authorization URL
   const authUrl = new URL(GMAIL_AUTH_URL);
@@ -263,6 +290,7 @@ export async function runGmailOAuth(config: GmailOAuthConfig): Promise<OAuthToke
   authUrl.searchParams.set('scope', scopes.join(' '));
   authUrl.searchParams.set('access_type', 'offline');
   authUrl.searchParams.set('prompt', 'consent'); // Force refresh token
+  authUrl.searchParams.set('state', state);
 
   console.log(chalk.bold('\nGmail OAuth Flow'));
   console.log(chalk.dim('Opening browser for authorization...'));
@@ -270,8 +298,8 @@ export async function runGmailOAuth(config: GmailOAuthConfig): Promise<OAuthToke
   // Open browser
   await open(authUrl.toString());
 
-  // Wait for callback
-  const { code } = await waitForCallback(port);
+  // Wait for callback (validates state parameter)
+  const { code } = await waitForCallback(port, state);
 
   console.log(chalk.dim('Exchanging code for tokens...'));
 
@@ -366,6 +394,7 @@ export async function runGoogleOAuth(
   }
 
   const scopes = config.scopes ?? defaultScopes;
+  const state = generateOAuthState();
 
   // Build authorization URL
   const authUrl = new URL(GOOGLE_AUTH_URL);
@@ -375,6 +404,7 @@ export async function runGoogleOAuth(
   authUrl.searchParams.set('scope', scopes.join(' '));
   authUrl.searchParams.set('access_type', 'offline');
   authUrl.searchParams.set('prompt', 'consent'); // Force refresh token
+  authUrl.searchParams.set('state', state);
 
   console.log(chalk.bold(`\n${serviceName} OAuth Flow`));
   console.log(chalk.dim('Opening browser for authorization...'));
@@ -383,8 +413,8 @@ export async function runGoogleOAuth(
   // Open browser
   await open(authUrl.toString());
 
-  // Wait for callback
-  const { code } = await waitForCallback(port);
+  // Wait for callback (validates state parameter)
+  const { code } = await waitForCallback(port, state);
 
   console.log(chalk.dim('Exchanging code for tokens...'));
 
@@ -459,12 +489,15 @@ export async function runOutlookOAuth(config: OutlookOAuthConfig): Promise<OAuth
   const tenant = config.tenantId ?? 'common';
   const scopes = config.scopes ?? DEFAULT_OUTLOOK_SCOPES;
 
+  const state = generateOAuthState();
+
   const authUrl = new URL(OUTLOOK_AUTH_URL.replace('{tenant}', tenant));
   authUrl.searchParams.set('client_id', config.clientId);
   authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', scopes.join(' '));
   authUrl.searchParams.set('response_mode', 'query');
+  authUrl.searchParams.set('state', state);
 
   console.log(chalk.bold('\nOutlook/Microsoft Graph OAuth Flow'));
   console.log(chalk.dim('Opening browser for authorization...'));
@@ -472,8 +505,8 @@ export async function runOutlookOAuth(config: OutlookOAuthConfig): Promise<OAuth
   // Open browser
   await open(authUrl.toString());
 
-  // Wait for callback
-  const { code } = await waitForCallback(port);
+  // Wait for callback (validates state parameter)
+  const { code } = await waitForCallback(port, state);
 
   console.log(chalk.dim('Exchanging code for tokens...'));
 
