@@ -38,6 +38,48 @@ export interface MySQLTransaction {
  * MySQL client wrapper for workflow integration
  * Note: This is a lightweight wrapper. The actual mysql2 module will be dynamically imported.
  */
+/**
+ * Validate and quote a SQL identifier (table name, column name) to prevent injection.
+ * Only allows alphanumeric, underscores, dots (for schema.table), and hyphens.
+ * Returns the identifier wrapped in backticks (MySQL convention).
+ */
+function quoteIdentifier(identifier: string): string {
+  if (!identifier || identifier.length > 128) {
+    throw new Error(`Invalid SQL identifier: ${identifier}`);
+  }
+  if (!/^[a-zA-Z_][a-zA-Z0-9_.\-]*$/.test(identifier)) {
+    throw new Error(`Invalid SQL identifier: ${identifier}`);
+  }
+  // Backtick-quote for MySQL, escape embedded backticks
+  return `\`${identifier.replace(/`/g, '``')}\``;
+}
+
+/**
+ * Validate and quote a list of column names.
+ */
+function quoteColumns(columns: string[]): string {
+  return columns.map(quoteIdentifier).join(', ');
+}
+
+/**
+ * Validate an ORDER BY clause. Only allows "column [ASC|DESC]" patterns.
+ */
+function sanitizeOrderBy(orderBy: string): string {
+  return orderBy
+    .split(',')
+    .map((part) => {
+      const trimmed = part.trim();
+      const match = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_.\-]*)\s*(ASC|DESC)?$/i);
+      if (!match) {
+        throw new Error(`Invalid ORDER BY clause: ${trimmed}`);
+      }
+      const col = quoteIdentifier(match[1]);
+      const dir = match[2] ? ` ${match[2].toUpperCase()}` : '';
+      return `${col}${dir}`;
+    })
+    .join(', ');
+}
+
 export class MySQLClient {
   private pool: unknown | null = null;
   private config: MySQLConfig;
@@ -125,14 +167,15 @@ export class MySQLClient {
       offset?: number;
     }
   ): Promise<T[]> {
-    const columns = options?.columns?.join(', ') ?? '*';
-    let sql = `SELECT ${columns} FROM ${table}`;
+    const columns = options?.columns ? quoteColumns(options.columns) : '*';
+    const quotedTable = quoteIdentifier(table);
+    let sql = `SELECT ${columns} FROM ${quotedTable}`;
     const params: unknown[] = [];
 
     if (options?.where) {
       const conditions: string[] = [];
       for (const [key, value] of Object.entries(options.where)) {
-        conditions.push(`${key} = ?`);
+        conditions.push(`${quoteIdentifier(key)} = ?`);
         params.push(value);
       }
       if (conditions.length > 0) {
@@ -141,15 +184,15 @@ export class MySQLClient {
     }
 
     if (options?.orderBy) {
-      sql += ` ORDER BY ${options.orderBy}`;
+      sql += ` ORDER BY ${sanitizeOrderBy(options.orderBy)}`;
     }
 
     if (options?.limit) {
-      sql += ` LIMIT ${options.limit}`;
+      sql += ` LIMIT ${Number(options.limit)}`;
     }
 
     if (options?.offset) {
-      sql += ` OFFSET ${options.offset}`;
+      sql += ` OFFSET ${Number(options.offset)}`;
     }
 
     const result = await this.query<T>(sql, params);
@@ -167,7 +210,8 @@ export class MySQLClient {
     if (rows.length === 0) return { insertId: 0, affectedRows: 0 };
 
     const keys = Object.keys(rows[0]);
-    const columns = keys.join(', ');
+    const columns = quoteColumns(keys);
+    const quotedTable = quoteIdentifier(table);
     const params: unknown[] = [];
     const valuePlaceholders: string[] = [];
 
@@ -180,7 +224,7 @@ export class MySQLClient {
       valuePlaceholders.push(`(${rowPlaceholders.join(', ')})`);
     }
 
-    const sql = `INSERT INTO ${table} (${columns}) VALUES ${valuePlaceholders.join(', ')}`;
+    const sql = `INSERT INTO ${quotedTable} (${columns}) VALUES ${valuePlaceholders.join(', ')}`;
     const result = await this.query<T>(sql, params);
 
     return {
@@ -197,21 +241,22 @@ export class MySQLClient {
     data: Record<string, unknown>,
     where: Record<string, unknown>
   ): Promise<{ affectedRows: number }> {
+    const quotedTable = quoteIdentifier(table);
     const setColumns: string[] = [];
     const params: unknown[] = [];
 
     for (const [key, value] of Object.entries(data)) {
-      setColumns.push(`${key} = ?`);
+      setColumns.push(`${quoteIdentifier(key)} = ?`);
       params.push(value);
     }
 
     const conditions: string[] = [];
     for (const [key, value] of Object.entries(where)) {
-      conditions.push(`${key} = ?`);
+      conditions.push(`${quoteIdentifier(key)} = ?`);
       params.push(value);
     }
 
-    const sql = `UPDATE ${table} SET ${setColumns.join(', ')} WHERE ${conditions.join(' AND ')}`;
+    const sql = `UPDATE ${quotedTable} SET ${setColumns.join(', ')} WHERE ${conditions.join(' AND ')}`;
     const result = await this.query<T>(sql, params);
 
     return {
@@ -226,15 +271,16 @@ export class MySQLClient {
     table: string,
     where: Record<string, unknown>
   ): Promise<{ affectedRows: number }> {
+    const quotedTable = quoteIdentifier(table);
     const conditions: string[] = [];
     const params: unknown[] = [];
 
     for (const [key, value] of Object.entries(where)) {
-      conditions.push(`${key} = ?`);
+      conditions.push(`${quoteIdentifier(key)} = ?`);
       params.push(value);
     }
 
-    const sql = `DELETE FROM ${table} WHERE ${conditions.join(' AND ')}`;
+    const sql = `DELETE FROM ${quotedTable} WHERE ${conditions.join(' AND ')}`;
     const result = await this.query<T>(sql, params);
 
     return {
