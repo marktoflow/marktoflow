@@ -134,7 +134,7 @@ describe('MySQL Contract Tests', () => {
     expect(result).toHaveLength(2);
     expect(result[0].name).toBe('User 1');
     expect(mockPool.query).toHaveBeenCalledWith(
-      'SELECT id, name, email FROM users WHERE id = ? LIMIT 10',
+      'SELECT `id`, `name`, `email` FROM `users` WHERE `id` = ? LIMIT 10',
       [1]
     );
   });
@@ -190,7 +190,7 @@ describe('MySQL Contract Tests', () => {
     expect(result.insertId).toBe(1);
     expect(result.affectedRows).toBe(1);
     expect(mockPool.query).toHaveBeenCalledWith(
-      'INSERT INTO users (name, email) VALUES (?, ?)',
+      'INSERT INTO `users` (`name`, `email`) VALUES (?, ?)',
       ['New User', 'new@example.com']
     );
   });
@@ -244,7 +244,7 @@ describe('MySQL Contract Tests', () => {
     );
 
     expect(result.affectedRows).toBe(1);
-    expect(mockPool.query).toHaveBeenCalledWith('UPDATE users SET name = ? WHERE id = ?', [
+    expect(mockPool.query).toHaveBeenCalledWith('UPDATE `users` SET `name` = ? WHERE `id` = ?', [
       'Updated User',
       1,
     ]);
@@ -291,7 +291,7 @@ describe('MySQL Contract Tests', () => {
     const result = await wrapped.delete('users', { id: 1 });
 
     expect(result.affectedRows).toBe(1);
-    expect(mockPool.query).toHaveBeenCalledWith('DELETE FROM users WHERE id = ?', [1]);
+    expect(mockPool.query).toHaveBeenCalledWith('DELETE FROM `users` WHERE `id` = ?', [1]);
   });
 
   it('should reject invalid inputs (missing table in delete)', async () => {
