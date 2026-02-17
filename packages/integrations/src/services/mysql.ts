@@ -312,6 +312,8 @@ export class MySQLClient {
     try {
       await connection.beginTransaction();
 
+      let manuallyFinalized = false;
+
       const trx: MySQLTransaction = {
         query: async <R = unknown>(sql: string, params?: unknown[]): Promise<QueryResult<R>> => {
           const [rows, fields] = await connection.query(sql, params);
@@ -333,18 +335,31 @@ export class MySQLClient {
           };
         },
         commit: async () => {
+          if (manuallyFinalized) return;
+          manuallyFinalized = true;
           await connection.commit();
         },
         rollback: async () => {
+          if (manuallyFinalized) return;
+          manuallyFinalized = true;
           await connection.rollback();
         },
       };
 
       const result = await callback(trx);
-      await connection.commit();
+
+      // Auto-commit only if the user didn't manually commit/rollback
+      if (!manuallyFinalized) {
+        await connection.commit();
+      }
+
       return result;
     } catch (error) {
-      await connection.rollback();
+      try {
+        await connection.rollback();
+      } catch {
+        // Rollback failed — connection may already be finalized or broken
+      }
       throw error;
     } finally {
       connection.release();
