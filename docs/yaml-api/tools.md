@@ -276,3 +276,186 @@ tools:
       headers:
         Content-Type: application/json
 ```
+
+---
+
+### User-Defined SDK Integrations
+
+You can create your own SDK integrations and use them in workflows just like built-in ones. marktoflow discovers user integrations from three sources (in priority order):
+
+1. **`marktoflow.integrations.ts`** — Config file with inline integrations
+2. **`./integrations/` directory** — Auto-discovered integration files
+3. **NPM packages** — `marktoflow-integration-*` packages from node_modules
+
+#### Quick Start: Integration File
+
+Create `integrations/my-api.ts` in your project directory:
+
+```ts
+import { defineIntegration } from '@marktoflow/core';
+
+export default defineIntegration({
+  name: 'my-api',
+  description: 'My custom API integration',
+
+  // Optional: validate config before initialization
+  validate(config) {
+    const errors: string[] = [];
+    if (!config.auth?.api_key) errors.push('auth.api_key is required');
+    return errors;
+  },
+
+  // Required: return an object whose methods become workflow actions
+  async initialize(config) {
+    const apiKey = config.auth?.api_key as string;
+    const baseUrl = config.options?.baseUrl as string || 'https://api.example.com';
+
+    return {
+      getItems: async (inputs) => {
+        const res = await fetch(`${baseUrl}/items?q=${inputs.query}`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        return res.json();
+      },
+      createItem: async (inputs) => {
+        const res = await fetch(`${baseUrl}/items`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: inputs.name }),
+        });
+        return res.json();
+      },
+    };
+  },
+});
+```
+
+Then use in your workflow:
+
+```yaml
+tools:
+  myapi:
+    sdk: 'my-api'
+    auth:
+      api_key: ${MY_API_KEY}
+
+steps:
+  - id: search
+    action: my-api.getItems
+    inputs:
+      query: 'typescript'
+
+  - id: create
+    action: my-api.createItem
+    inputs:
+      name: 'New Item'
+```
+
+#### Config File: `marktoflow.integrations.ts`
+
+For more control, create a config file at your project root:
+
+```ts
+import { defineIntegrationsConfig, defineIntegration } from '@marktoflow/core';
+
+export default defineIntegrationsConfig({
+  // Inline integrations
+  integrations: [
+    defineIntegration({
+      name: 'internal-api',
+      async initialize(config) {
+        return {
+          healthCheck: async () => ({ status: 'ok' }),
+        };
+      },
+    }),
+  ],
+
+  // Custom integration directories (default: ['./integrations'])
+  integrationDirs: ['./integrations', './custom-sdks'],
+
+  // Auto-discover marktoflow-integration-* npm packages (default: true)
+  discoverNpmIntegrations: true,
+});
+```
+
+#### NPM Package Convention
+
+Publish your integration as `marktoflow-integration-<name>`:
+
+```json
+{
+  "name": "marktoflow-integration-weather",
+  "main": "dist/index.js",
+  "exports": { ".": "./dist/index.js" }
+}
+```
+
+```ts
+// src/index.ts
+import { defineIntegration } from '@marktoflow/core';
+
+export default defineIntegration({
+  name: 'weather',
+  async initialize(config) {
+    return {
+      getCurrent: async (inputs) => { /* ... */ },
+      getForecast: async (inputs) => { /* ... */ },
+    };
+  },
+});
+```
+
+Install and it's auto-discovered:
+
+```bash
+npm install marktoflow-integration-weather
+```
+
+> **Note:** NPM discovery scans `node_modules` in the workflow directory. In pnpm workspaces or hoisted monorepos, packages may live in a parent `node_modules` — use `marktoflow.integrations.ts` with explicit imports in those setups.
+
+```yaml
+tools:
+  weather:
+    sdk: 'weather'
+# Just works — no additional config needed
+```
+
+#### UserIntegration Interface
+
+```ts
+interface UserIntegration {
+  /** Unique name — used in tools.sdk and action references */
+  name: string;
+
+  /** Human-readable description */
+  description?: string;
+
+  /** Return an object with async methods callable from workflow steps */
+  initialize(config: ToolConfig): Promise<Record<string, (inputs: Record<string, unknown>) => Promise<unknown>>>;
+
+  /** Optional config validation — return array of error strings */
+  validate?(config: ToolConfig): string[];
+}
+```
+
+#### Debugging
+
+Run with `--debug` to see which user integrations were discovered:
+
+```bash
+marktoflow run workflow.md --debug
+```
+
+Output:
+```
+🐛 Debug: SDK Registry
+  Registered tools: weather, core
+  User integrations: weather
+    weather → dir:/project/integrations
+```
+
+See [examples/custom-integration](../../examples/custom-integration/) for a complete working example.

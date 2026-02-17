@@ -15,6 +15,7 @@ import {
   WorkflowStatus,
   loadConfig,
   StateStore,
+  registerUserIntegrations,
 } from '@marktoflow/core';
 import { registerIntegrations } from '@marktoflow/integrations';
 import {
@@ -192,11 +193,23 @@ export async function executeRun(workflowPath: string, options: RunOptions): Pro
 
     const registry = new SDKRegistry();
     registerIntegrations(registry);
+
+    // Load user-defined integrations from config file, ./integrations/ dir, and npm packages
+    const userResult = await registerUserIntegrations(registry, {
+      workDir: resolvedPath ? join(resolvedPath, '..') : process.cwd(),
+    });
+
     registry.registerTools(workflow.tools);
 
     if (options.debug) {
       console.log(chalk.gray('\n🐛 Debug: SDK Registry'));
       console.log(chalk.gray(`  Registered tools: ${Object.keys(workflow.tools).join(', ')}`));
+      if (userResult.integrations.length > 0) {
+        console.log(chalk.gray(`  User integrations: ${userResult.integrations.map((i) => i.name).join(', ')}`));
+        for (const [name, source] of userResult.sources) {
+          console.log(chalk.gray(`    ${name} → ${source}`));
+        }
+      }
     }
 
     const result = await engine.execute(workflow, inputs, registry, createSDKStepExecutor());
