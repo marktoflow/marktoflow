@@ -214,6 +214,22 @@ export {
   type SDKInitializer,
 } from './sdk-registry.js';
 
+// User-defined Integrations
+export {
+  defineIntegration,
+  defineIntegrationsConfig,
+  toSDKInitializer,
+  loadIntegrationsConfig,
+  loadIntegrationDir,
+  discoverNpmIntegrations,
+  loadUserIntegrations,
+  registerUserIntegrations,
+  type UserIntegration,
+  type UserIntegrationsConfig,
+  type LoadUserIntegrationsOptions,
+  type LoadUserIntegrationsResult,
+} from './user-integrations.js';
+
 // Core Built-in Tools
 export {
   CoreToolsClient,
