@@ -323,35 +323,31 @@ export class SupabaseTableQuery<T> {
    * Select data
    */
   async select(options: SupabaseQueryOptions = {}): Promise<T[]> {
-    let url = `${this.apiUrl}/rest/v1/${this.table}`;
-    const params: string[] = [];
+    const url = new URL(`${this.apiUrl}/rest/v1/${encodeURIComponent(this.table)}`);
 
     if (options.select) {
-      params.push(`select=${options.select}`);
+      url.searchParams.set('select', options.select);
     }
 
     if (options.filter) {
       for (const f of options.filter) {
-        params.push(`${f.column}=${f.operator}.${f.value}`);
+        // PostgREST filter format: column=operator.value
+        url.searchParams.append(f.column, `${f.operator}.${f.value}`);
       }
     }
 
     if (options.order) {
       for (const o of options.order) {
-        params.push(`order=${o.column}.${o.ascending ? 'asc' : 'desc'}`);
+        url.searchParams.append('order', `${o.column}.${o.ascending ? 'asc' : 'desc'}`);
       }
     }
 
     if (options.limit) {
-      params.push(`limit=${options.limit}`);
+      url.searchParams.set('limit', String(options.limit));
     }
 
     if (options.offset) {
-      params.push(`offset=${options.offset}`);
-    }
-
-    if (params.length > 0) {
-      url += `?${params.join('&')}`;
+      url.searchParams.set('offset', String(options.offset));
     }
 
     const headers = { ...this.headers };
@@ -359,7 +355,7 @@ export class SupabaseTableQuery<T> {
       headers.Accept = 'application/vnd.pgrst.object+json';
     }
 
-    const response = await fetch(url, { headers });
+    const response = await fetch(url.toString(), { headers });
 
     if (!response.ok) {
       const error = await response.text();
@@ -374,7 +370,7 @@ export class SupabaseTableQuery<T> {
    * Insert data
    */
   async insert(options: SupabaseInsertOptions<T>): Promise<T[]> {
-    const response = await fetch(`${this.apiUrl}/rest/v1/${this.table}`, {
+    const response = await fetch(`${this.apiUrl}/rest/v1/${encodeURIComponent(this.table)}`, {
       method: 'POST',
       headers: {
         ...this.headers,
@@ -399,19 +395,15 @@ export class SupabaseTableQuery<T> {
    * Update data
    */
   async update(options: SupabaseUpdateOptions<T>): Promise<T[]> {
-    let url = `${this.apiUrl}/rest/v1/${this.table}`;
+    const url = new URL(`${this.apiUrl}/rest/v1/${encodeURIComponent(this.table)}`);
 
     if (options.filter) {
-      const params: string[] = [];
       for (const f of options.filter) {
-        params.push(`${f.column}=${f.operator}.${f.value}`);
-      }
-      if (params.length > 0) {
-        url += `?${params.join('&')}`;
+        url.searchParams.append(f.column, `${f.operator}.${f.value}`);
       }
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
       method: 'PATCH',
       headers: {
         ...this.headers,
@@ -432,18 +424,13 @@ export class SupabaseTableQuery<T> {
    * Delete data
    */
   async delete(options: SupabaseDeleteOptions): Promise<T[]> {
-    let url = `${this.apiUrl}/rest/v1/${this.table}`;
-    const params: string[] = [];
+    const url = new URL(`${this.apiUrl}/rest/v1/${encodeURIComponent(this.table)}`);
 
     for (const f of options.filter) {
-      params.push(`${f.column}=${f.operator}.${f.value}`);
+      url.searchParams.append(f.column, `${f.operator}.${f.value}`);
     }
 
-    if (params.length > 0) {
-      url += `?${params.join('&')}`;
-    }
-
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
       method: 'DELETE',
       headers: {
         ...this.headers,
