@@ -878,8 +878,9 @@ export class KeyManager {
   }
 
   generateAES256GCMKey(name: string = 'default'): string {
-    const encryptor = new AES256GCMEncryptor({ key: 'temp' }); // temp key just to call generateKey
-    const key = encryptor.generateKey();
+    // Generate key directly — no need to instantiate a full encryptor
+    // (AES256GCMEncryptor constructor runs expensive scrypt key derivation)
+    const key = randomBytes(32).toString('hex');
     const keyFile = join(this.keyDir, `${name}.aes`);
     writeFileSync(keyFile, key, { mode: 0o600 });
     return key;
