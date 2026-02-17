@@ -40,6 +40,8 @@ export interface WebhookResponse {
 export interface WebhookReceiverOptions {
   host?: string;
   port?: number;
+  /** Maximum request body size in bytes (default: 1MB) */
+  maxBodySize?: number;
 }
 
 // ============================================================================
@@ -116,16 +118,21 @@ export function generateSignature(payload: string, secret: string): string {
 // WebhookReceiver Implementation
 // ============================================================================
 
+/** Default maximum body size: 1 MB */
+const DEFAULT_MAX_BODY_SIZE = 1024 * 1024;
+
 export class WebhookReceiver {
   private server: Server | null = null;
   private endpoints: Map<string, WebhookEndpoint> = new Map();
   private handlers: Map<string, WebhookHandler> = new Map();
   private host: string;
   private port: number;
+  private maxBodySize: number;
 
   constructor(options: WebhookReceiverOptions = {}) {
     this.host = options.host || '0.0.0.0';
     this.port = options.port || 3000;
+    this.maxBodySize = options.maxBodySize ?? DEFAULT_MAX_BODY_SIZE;
   }
 
   /**
@@ -235,8 +242,18 @@ export class WebhookReceiver {
       return;
     }
 
-    // Read body
-    const body = await this.readBody(req);
+    // Read body (enforces maxBodySize limit)
+    let body: string;
+    try {
+      body = await this.readBody(req);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('maximum size')) {
+        res.statusCode = 413;
+        res.end('Payload Too Large');
+        return;
+      }
+      throw error;
+    }
 
     // Verify signature if secret is configured
     if (endpoint.secret) {
@@ -301,8 +318,17 @@ export class WebhookReceiver {
   private readBody(req: IncomingMessage): Promise<string> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
+      let totalSize = 0;
 
-      req.on('data', (chunk) => chunks.push(chunk));
+      req.on('data', (chunk: Buffer) => {
+        totalSize += chunk.length;
+        if (totalSize > this.maxBodySize) {
+          req.destroy();
+          reject(new Error(`Request body exceeds maximum size of ${this.maxBodySize} bytes`));
+          return;
+        }
+        chunks.push(chunk);
+      });
       req.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
       req.on('error', reject);
     });
