@@ -308,24 +308,41 @@ export class PostgresClient {
     try {
       await client.query('BEGIN');
 
+      let manuallyFinalized = false;
+
       const trx: PostgresTransaction = {
         query: async <R = unknown>(sql: string, params?: unknown[]): Promise<QueryResult<R>> => {
           const result = await client.query(sql, params);
           return result as QueryResult<R>;
         },
         commit: async () => {
+          if (manuallyFinalized) return;
+          manuallyFinalized = true;
           await client.query('COMMIT');
         },
         rollback: async () => {
+          if (manuallyFinalized) return;
+          manuallyFinalized = true;
           await client.query('ROLLBACK');
         },
       };
 
       const result = await callback(trx);
-      await client.query('COMMIT');
+
+      // Auto-commit only if the user didn't manually commit/rollback
+      if (!manuallyFinalized) {
+        await client.query('COMMIT');
+      }
+
       return result;
     } catch (error) {
-      await client.query('ROLLBACK');
+      // Only rollback if not already finalized (user may have committed
+      // before a subsequent non-DB error in the callback)
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // Rollback failed — connection may already be finalized or broken
+      }
       throw error;
     } finally {
       client.release();
