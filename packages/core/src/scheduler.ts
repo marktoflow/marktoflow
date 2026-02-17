@@ -208,12 +208,16 @@ export class Scheduler {
 
     this.running = true;
 
-    // Calculate time until next minute
+    // Check immediately for any jobs that are already due
+    this.checkJobs();
+
+    // Calculate time until next minute boundary for aligned checks
     const now = new Date();
     const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
 
-    // Start checking at the next minute boundary
+    // Start regular interval checks at the next minute boundary
     setTimeout(() => {
+      if (!this.running) return;
       this.checkJobs();
       this.intervalId = setInterval(() => this.checkJobs(), this.checkIntervalMs);
     }, msUntilNextMinute);
