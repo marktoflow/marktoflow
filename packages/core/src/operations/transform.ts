@@ -3,7 +3,7 @@
  */
 
 import { ExecutionContext } from '../models.js';
-import { resolveTemplates, resolveVariablePath } from '../engine/variable-resolution.js';
+import { resolveTemplates, resolveVariablePath, getNestedValue } from '../engine/variable-resolution.js';
 
 export interface TransformOperationInputs {
   input: unknown[];
@@ -87,12 +87,39 @@ function transformFind(items: unknown[], condition: string, context: ExecutionCo
   return undefined;
 }
 
+/**
+ * Resolve a key path from an item. Supports both:
+ * - Direct property paths: "name", "address.city" (resolved from item)
+ * - Explicit item references: "item.name" (resolved from context variables)
+ *
+ * If the key doesn't start with "item.", we first try resolving from the
+ * item directly, then fall back to full context resolution.
+ */
+function resolveItemKey(item: unknown, key: string, context: ExecutionContext): unknown {
+  const itemContext = { ...context, variables: { ...context.variables, item } };
+
+  // If key explicitly references "item.", use standard resolution
+  if (key.startsWith('item.') || key === 'item') {
+    return resolveVariablePath(key, itemContext);
+  }
+
+  // Try resolving the key directly from the item first (most intuitive behavior)
+  if (item !== null && item !== undefined && typeof item === 'object') {
+    const fromItem = getNestedValue(item, key);
+    if (fromItem !== undefined) {
+      return fromItem;
+    }
+  }
+
+  // Fall back to full context resolution
+  return resolveVariablePath(key, itemContext);
+}
+
 function transformGroupBy(items: unknown[], key: string, context: ExecutionContext): Record<string, unknown[]> {
   const groups: Record<string, unknown[]> = {};
 
   for (const item of items) {
-    const itemContext = { ...context, variables: { ...context.variables, item } };
-    const groupKey = String(resolveVariablePath(key, itemContext));
+    const groupKey = String(resolveItemKey(item, key, context));
     if (!groups[groupKey]) groups[groupKey] = [];
     groups[groupKey].push(item);
   }
@@ -107,8 +134,7 @@ function transformUnique(items: unknown[], key: string | undefined, context: Exe
   const result: unknown[] = [];
 
   for (const item of items) {
-    const itemContext = { ...context, variables: { ...context.variables, item } };
-    const keyValue = String(resolveVariablePath(key, itemContext));
+    const keyValue = String(resolveItemKey(item, key, context));
     if (!seen.has(keyValue)) {
       seen.add(keyValue);
       result.push(item);
@@ -126,10 +152,8 @@ function transformSort(items: unknown[], key: string | undefined, reverse: boole
     let bVal: unknown = b;
 
     if (key) {
-      const aContext = { ...context, variables: { ...context.variables, item: a } };
-      const bContext = { ...context, variables: { ...context.variables, item: b } };
-      aVal = resolveVariablePath(key, aContext);
-      bVal = resolveVariablePath(key, bContext);
+      aVal = resolveItemKey(a, key, context);
+      bVal = resolveItemKey(b, key, context);
     }
 
     if (typeof aVal === 'number' && typeof bVal === 'number') return aVal - bVal;
