@@ -394,10 +394,11 @@ export class NotionClient extends BaseApiClient {
     options: { startCursor?: string; pageSize?: number } = {}
   ): Promise<{ blocks: NotionBlock[]; hasMore: boolean; nextCursor?: string }> {
     let url = `/blocks/${blockId}/children`;
-    const params: string[] = [];
-    if (options.startCursor) params.push(`start_cursor=${options.startCursor}`);
-    if (options.pageSize) params.push(`page_size=${options.pageSize}`);
-    if (params.length) url += `?${params.join('&')}`;
+    const params = new URLSearchParams();
+    if (options.startCursor) params.set('start_cursor', options.startCursor);
+    if (options.pageSize) params.set('page_size', String(options.pageSize));
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
 
     const data = await this.request<{
       results: Array<Record<string, unknown>>;
