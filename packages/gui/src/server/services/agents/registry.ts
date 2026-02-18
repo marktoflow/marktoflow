@@ -18,6 +18,7 @@ import { createDemoProvider } from './demo-provider.js';
 import { createOllamaProvider } from './ollama-provider.js';
 import { createOpenAIProvider } from './openai-provider.js';
 import { createOpenCodeProvider } from './opencode-provider.js';
+import { createGeminiCliProvider } from './gemini-cli-provider.js';
 
 /**
  * Registry of all available agent providers
@@ -55,6 +56,12 @@ export class AgentRegistry {
       id: 'openai',
       name: 'OpenAI',
       factory: createOpenAIProvider,
+    });
+    // Google Gemini
+    this.registerProvider({
+      id: 'gemini-cli',
+      name: 'Google Gemini (CLI)',
+      factory: createGeminiCliProvider,
     });
     // Local providers
     this.registerProvider({

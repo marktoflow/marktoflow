@@ -25,6 +25,11 @@ export async function executeConnect(service: string, options: ConnectOptions): 
     return;
   }
 
+  if (serviceLower === 'gemini-cli' || serviceLower === 'google-gemini-cli') {
+    await connectGeminiCli(options);
+    return;
+  }
+
   if (serviceLower === 'outlook' || serviceLower === 'microsoft') {
     await connectOutlook(options);
     return;
@@ -173,6 +178,92 @@ async function connectOutlook(options: ConnectOptions): Promise<void> {
   }
 }
 
+async function connectGeminiCli(options: ConnectOptions): Promise<void> {
+  try {
+    const { extractGeminiCliCredentials, loginGeminiCliOAuth } = await import('@marktoflow/integrations');
+    const { default: open } = await import('open').catch(() => ({ default: null }));
+
+    // Try to extract credentials from installed gemini-cli
+    const extracted = extractGeminiCliCredentials();
+    const clientId = options.clientId ?? process.env.GEMINI_CLI_OAUTH_CLIENT_ID ?? extracted?.clientId;
+    const clientSecret = options.clientSecret ?? process.env.GEMINI_CLI_OAUTH_CLIENT_SECRET ?? extracted?.clientSecret;
+
+    if (!clientId) {
+      console.log(chalk.yellow('\nGemini CLI OAuth requires credentials.'));
+      console.log('\nTo connect Gemini CLI:');
+      console.log('  1. Install Gemini CLI: npm install -g @google/gemini-cli');
+      console.log('  2. Run: marktoflow connect gemini-cli');
+      console.log('\nOr set environment variables:');
+      console.log('  export GEMINI_CLI_OAUTH_CLIENT_ID="your-client-id"');
+      console.log('  export GEMINI_CLI_OAUTH_CLIENT_SECRET="your-client-secret"');
+      console.log('\nAlternatively, use an API key:');
+      console.log('  export GEMINI_API_KEY="your-api-key"');
+      return;
+    }
+
+    if (clientId) {
+      process.env.GEMINI_CLI_OAUTH_CLIENT_ID = clientId;
+    }
+    if (clientSecret) {
+      process.env.GEMINI_CLI_OAUTH_CLIENT_SECRET = clientSecret;
+    }
+
+    const credentials = await loginGeminiCliOAuth({
+      isRemote: false,
+      openUrl: async (url: string) => {
+        if (open) {
+          await (open as (url: string) => Promise<unknown>)(url);
+        } else {
+          throw new Error('Cannot open browser');
+        }
+      },
+      log: (msg: string) => console.log(msg),
+      note: async (message: string, title?: string) => {
+        if (title) console.log(chalk.bold(`\n${title}`));
+        console.log(message);
+      },
+      prompt: async (message: string) => {
+        const readline = await import('node:readline');
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        return new Promise<string>((resolve) => {
+          rl.question(message, (answer) => {
+            rl.close();
+            resolve(answer);
+          });
+        });
+      },
+      progress: {
+        update: (msg: string) => console.log(chalk.dim(msg)),
+        stop: (msg?: string) => { if (msg) console.log(chalk.dim(msg)); },
+      },
+    });
+
+    console.log(chalk.green('\nGemini CLI connected successfully!'));
+    if (credentials.email) {
+      console.log(chalk.dim(`Authenticated as: ${credentials.email}`));
+    }
+    console.log(chalk.dim(`Project ID: ${credentials.projectId}`));
+    console.log('\nAdd these to your environment:');
+    console.log(chalk.cyan(`  export GEMINI_REFRESH_TOKEN="${credentials.refresh}"`));
+    console.log(chalk.cyan(`  export GEMINI_PROJECT_ID="${credentials.projectId}"`));
+    console.log('\nYou can now use Gemini in your workflows:');
+    console.log(
+      chalk.cyan(`  tools:
+    gemini:
+      sdk: "google-gemini-cli"
+      auth:
+        refresh_token: "\${GEMINI_REFRESH_TOKEN}"
+        project_id: "\${GEMINI_PROJECT_ID}"
+      options:
+        model: "gemini-2.5-flash"`)
+    );
+    process.exit(0);
+  } catch (error) {
+    console.log(chalk.red(`\nGemini CLI OAuth failed: ${error}`));
+    process.exit(1);
+  }
+}
+
 function showManualSetup(serviceLower: string, serviceDisplay: string): void {
   console.log('\nManual setup required. Set environment variables:');
 
@@ -233,6 +324,6 @@ function showManualSetup(serviceLower: string, serviceDisplay: string): void {
       console.log('  Documentation: notion, confluence');
       console.log('  Developer: github');
       console.log('  Data: airtable');
-      console.log('  AI: anthropic, openai');
+      console.log('  AI: anthropic, openai, gemini-cli');
   }
 }

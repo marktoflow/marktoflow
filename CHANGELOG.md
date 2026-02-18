@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed GHSA-jmr7-xgp7-cmfj (CVE-2026-26278, high): Updated `fast-xml-parser` to >=5.3.6 via pnpm override; transitive copies pulled in by `@aws-sdk/xml-builder` were vulnerable to DoS through unbounded DOCTYPE entity expansion
 - Fixed GHSA-2g4f-4pwh-qvx6 (CVE-2025-69873, medium): Updated `ajv` to >=8.18.0 via pnpm override; transitive copy pulled in by `@modelcontextprotocol/sdk` was vulnerable to ReDoS when using the `$data` option
 
+### Added
+
+- Google Gemini CLI integration — use your existing Gemini subscription via OAuth or API key
+  - `google-gemini-cli`, `gemini-cli`, `@google/gemini-cli` SDK keys
+  - OAuth credentials extracted from installed `gemini-cli` binary (no manual setup)
+  - PKCE OAuth flow via `marktoflow connect gemini-cli`
+  - API key authentication as alternative
+  - Streaming support, thinking tag parsing, OpenAI-compatible interface
+  - GUI agent provider with model selection
+
 ## [2.0.5] - 2026-02-16
 
 ### Security
