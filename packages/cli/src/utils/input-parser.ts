@@ -19,7 +19,14 @@ export function parseInputPairs(inputPairs: string[] | undefined): Record<string
   const inputs: Record<string, unknown> = {};
   if (inputPairs) {
     for (const pair of inputPairs) {
-      const [key, value] = pair.split('=');
+      const eqIndex = pair.indexOf('=');
+      if (eqIndex === -1) {
+        // Treat bare flags as boolean true
+        inputs[pair] = true;
+        continue;
+      }
+      const key = pair.slice(0, eqIndex);
+      const value = pair.slice(eqIndex + 1);
       inputs[key] = value;
     }
   }
