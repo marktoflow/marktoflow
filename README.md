@@ -70,6 +70,7 @@ marktoflow run workflow.md --agent copilot   # GitHub Copilot subscription
 marktoflow run workflow.md --agent claude     # Claude CLI login
 marktoflow run workflow.md --agent codex      # Codex CLI
 marktoflow run workflow.md --agent ollama     # Free, runs locally
+marktoflow run workflow.md --agent gemini     # Google Gemini subscription
 ```
 
 ## Why marktoflow?
@@ -153,7 +154,7 @@ marktoflow is designed for teams and individuals who care about where their data
 | **Storage** | Dropbox, AWS S3 |
 | **Databases** | Supabase, PostgreSQL, MySQL |
 | **Universal** | HTTP client (any REST API), RSS/Atom feeds |
-| **AI Agents** | GitHub Copilot, Claude, Codex — use your existing subscriptions, no API keys — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
+| **AI Agents** | GitHub Copilot, Claude, Codex, Gemini — use your existing subscriptions, no API keys — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
 
 ## Packages
 

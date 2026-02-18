@@ -43,7 +43,7 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 ## Features
 
 - **39 native SDK integrations** with full TypeScript types
-- **7 AI agent adapters** — OpenAI, Claude, Copilot, Codex, OpenCode, Ollama + any OpenAI-compatible endpoint
+- **8 AI agent adapters** — OpenAI, Claude, Copilot, Codex, OpenCode, Ollama, Google Gemini + any OpenAI-compatible endpoint
 - **Tool calling / function calling** — Agentic loops where AI models invoke tools autonomously
 - **Structured output** — JSON mode and JSON Schema validation for reliable AI responses
 - **Local LLM support** — llama.cpp, VLLM, LM Studio, LocalAI with auto model detection
@@ -63,6 +63,7 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 | **OpenAI Codex** | Codex CLI | ✅ | — |
 | **OpenCode** | `opencode /connect` | ✅ | — |
 | **Ollama** | Local install | ✅ | — |
+| **Google Gemini** | `gemini-cli` or `GEMINI_API_KEY` | ✅ | — |
 
 ### OpenAI / Local LLM Methods
 

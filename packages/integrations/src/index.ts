@@ -50,6 +50,7 @@ import { ClaudeAgentInitializer } from './adapters/claude-agent.js';
 import { OpenCodeInitializer } from './adapters/opencode.js';
 import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
 import { CodexInitializer } from './adapters/codex.js';
+import { GeminiCliInitializer } from './adapters/gemini-cli.js';
 
 // Tools
 import { ScriptInitializer } from './tools/script.js';
@@ -142,6 +143,9 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('@github/copilot-sdk', GitHubCopilotInitializer);
   registry.registerInitializer('codex', CodexInitializer);
   registry.registerInitializer('@openai/codex-sdk', CodexInitializer);
+  registry.registerInitializer('google-gemini-cli', GeminiCliInitializer);
+  registry.registerInitializer('gemini-cli', GeminiCliInitializer);
+  registry.registerInitializer('@google/gemini-cli', GeminiCliInitializer);
 
   // Tools
   registry.registerInitializer('script', ScriptInitializer);
@@ -433,6 +437,9 @@ export * from './adapters/github-copilot-workflow.js';
 export * from './adapters/codex.js';
 export * from './adapters/codex-types.js';
 export * from './adapters/codex-workflow.js';
+export * from './adapters/gemini-cli.js';
+export * from './adapters/gemini-cli-types.js';
+export * from './adapters/gemini-cli-oauth.js';
 
 // Export tools
 export * from './tools/script.js';

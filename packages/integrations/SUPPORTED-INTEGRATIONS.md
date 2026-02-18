@@ -1,6 +1,6 @@
 # Supported Integrations
 
-marktoflow v2.0 includes 39 native service integrations, 6 AI agent adapters, and built-in tools.
+marktoflow v2.0 includes 39 native service integrations, 7 AI agent adapters, and built-in tools.
 
 ## Communication & Collaboration
 
@@ -118,6 +118,7 @@ marktoflow v2.0 includes 39 native service integrations, 6 AI agent adapters, an
 | OpenCode | `opencode` | OpenCode CLI agent |
 | GitHub Copilot | `github-copilot`, `@github/copilot-sdk` | GitHub Copilot SDK |
 | Codex | `codex`, `@openai/codex-sdk` | OpenAI Codex SDK |
+| Google Gemini CLI | `google-gemini-cli`, `gemini-cli`, `@google/gemini-cli` | Google Gemini via OAuth (gemini-cli) or API key |
 
 ## Built-in Tools
 
