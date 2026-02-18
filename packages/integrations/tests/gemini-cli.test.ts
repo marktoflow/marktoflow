@@ -405,6 +405,8 @@ describe('Gemini CLI Integration', () => {
           accessToken: 'expired-token',
           expiresAt: Date.now() - 1000, // expired
           projectId: 'test-project',
+          clientId: 'test-client-id',
+          clientSecret: 'test-client-secret',
         },
       });
 
