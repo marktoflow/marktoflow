@@ -144,13 +144,18 @@ export class SupabaseClient extends BaseApiClient {
    * Sign out a user
    */
   async signOut(accessToken: string): Promise<void> {
-    await fetch(`${this.apiUrl}/auth/v1/logout`, {
+    const response = await fetch(`${this.apiUrl}/auth/v1/logout`, {
       method: 'POST',
       headers: {
         ...this.headers,
         Authorization: `Bearer ${accessToken}`,
       },
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Supabase API error: ${response.status} ${error}`);
+    }
   }
 
   /**
@@ -182,17 +187,25 @@ export class SupabaseClient extends BaseApiClient {
    * Upload a file to storage
    */
   async uploadFile(options: SupabaseStorageUploadOptions): Promise<{ path: string; id: string }> {
-    const formData = new FormData();
-    formData.append('file', options.file);
-
     const headers: Record<string, string> = {
       apikey: this.headers.apikey,
       Authorization: this.headers.Authorization,
     };
 
+    // When Content-Type is provided, send the file as raw bytes rather than
+    // multipart form data.  Using FormData while also setting Content-Type
+    // manually would overwrite the auto-generated multipart boundary and
+    // corrupt the upload.
+    let body: Buffer | Blob | FormData;
     if (options.contentType) {
       headers['Content-Type'] = options.contentType;
+      body = options.file;
+    } else {
+      const formData = new FormData();
+      formData.append('file', options.file);
+      body = formData;
     }
+
     if (options.cacheControl) {
       headers['Cache-Control'] = options.cacheControl;
     }
@@ -202,7 +215,7 @@ export class SupabaseClient extends BaseApiClient {
       {
         method: 'POST',
         headers,
-        body: formData,
+        body,
       }
     );
 
