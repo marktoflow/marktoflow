@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { X, Play, AlertCircle } from 'lucide-react';
 import type { WorkflowInput } from '@shared/types';
 
@@ -10,6 +10,14 @@ interface ExecutionInputDialogProps {
   workflowName?: string;
 }
 
+function buildDefaults(inputs: Record<string, WorkflowInput>): Record<string, any> {
+  const initial: Record<string, any> = {};
+  Object.entries(inputs).forEach(([key, config]) => {
+    initial[key] = config.default ?? '';
+  });
+  return initial;
+}
+
 export function ExecutionInputDialog({
   open,
   onOpenChange,
@@ -17,16 +25,16 @@ export function ExecutionInputDialog({
   onExecute,
   workflowName = 'Workflow',
 }: ExecutionInputDialogProps) {
-  const [values, setValues] = useState<Record<string, any>>(() => {
-    // Initialize with default values
-    const initial: Record<string, any> = {};
-    Object.entries(inputs).forEach(([key, config]) => {
-      initial[key] = config.default ?? '';
-    });
-    return initial;
-  });
+  const [values, setValues] = useState<Record<string, any>>(() => buildDefaults(inputs));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset values and errors when the inputs definition changes (e.g., user
+  // switches to a different workflow) or when the dialog is reopened.
+  useEffect(() => {
+    setValues(buildDefaults(inputs));
+    setErrors({});
+  }, [inputs, open]);
 
   const validateInputs = useCallback(() => {
     const newErrors: Record<string, string> = {};
