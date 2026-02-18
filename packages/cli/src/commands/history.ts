@@ -23,6 +23,20 @@ function getStateStore(): StateStore | null {
   return new StateStore(dbPath);
 }
 
+/**
+ * Open a StateStore, run a callback, and ensure the store is closed afterward.
+ * Returns early if the state database doesn't exist.
+ */
+function withStateStore<T>(fn: (store: StateStore) => T): T | undefined {
+  const store = getStateStore();
+  if (!store) return undefined;
+  try {
+    return fn(store);
+  } finally {
+    store.close();
+  }
+}
+
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
@@ -65,8 +79,7 @@ export function executeHistory(options: {
   status?: string;
   workflow?: string;
 }): void {
-  const store = getStateStore();
-  if (!store) return;
+  withStateStore((store) => {
 
   const limit = options.limit ?? 20;
   const filterStatus = options.status as WorkflowStatus | undefined;
@@ -125,6 +138,8 @@ export function executeHistory(options: {
     chalk.dim(`Avg: ${stats.averageDuration ? formatDuration(stats.averageDuration) : 'N/A'}`)
   );
   console.log('');
+
+  }); // withStateStore
 }
 
 // ============================================================================
@@ -132,8 +147,7 @@ export function executeHistory(options: {
 // ============================================================================
 
 export function executeHistoryDetail(runId: string, options: { step?: string }): void {
-  const store = getStateStore();
-  if (!store) return;
+  withStateStore((store) => {
 
   const exec = store.getExecution(runId);
   if (!exec) {
@@ -242,6 +256,8 @@ export function executeHistoryDetail(runId: string, options: { step?: string }):
     chalk.dim('  Replay execution:  marktoflow replay ' + exec.runId.substring(0, 8))
   );
   console.log('');
+
+  }); // withStateStore
 }
 
 // ============================================================================
@@ -255,69 +271,74 @@ export async function executeReplay(
   const store = getStateStore();
   if (!store) return;
 
-  const exec = store.getExecution(runId);
-  if (!exec) {
-    // Try prefix match
-    const all = store.listExecutions({ limit: 1000 });
-    const match = all.find((e) => e.runId.startsWith(runId));
-    if (match) {
-      return executeReplay(match.runId, options);
+  try {
+    const exec = store.getExecution(runId);
+    if (!exec) {
+      // Try prefix match
+      const all = store.listExecutions({ limit: 1000 });
+      const match = all.find((e) => e.runId.startsWith(runId));
+      if (match) {
+        store.close();
+        return executeReplay(match.runId, options);
+      }
+      console.log(chalk.red(`  Execution not found: ${runId}`));
+      return;
     }
-    console.log(chalk.red(`  Execution not found: ${runId}`));
-    return;
+
+    if (!exec.workflowPath) {
+      console.log(chalk.red('  Cannot replay: workflow path not stored in execution record.'));
+      console.log(chalk.dim('  Workflow ID: ' + exec.workflowId));
+      return;
+    }
+
+    if (!existsSync(exec.workflowPath)) {
+      console.log(chalk.red(`  Cannot replay: workflow file not found at ${exec.workflowPath}`));
+      return;
+    }
+
+    const mode = options.dryRun ? 'dry-run' : 'run';
+    const fromStep = options.from ? ` --from ${options.from}` : '';
+
+    console.log(chalk.bold('\n  Replaying Execution\n'));
+    console.log(`  Original Run:  ${chalk.cyan(exec.runId)}`);
+    console.log(`  Workflow:      ${exec.workflowPath}`);
+    console.log(`  Mode:          ${mode}`);
+    if (options.from) {
+      console.log(`  Starting from: ${options.from}`);
+    }
+
+    const inputs = exec.inputs ? Object.entries(exec.inputs).map(([k, v]) => `${k}=${v}`).join(' ') : '';
+    console.log(chalk.dim(`\n  Equivalent command:`));
+    console.log(chalk.dim(`    marktoflow ${mode} ${exec.workflowPath}${inputs ? ' --input ' + inputs : ''}${fromStep}`));
+    console.log('');
+
+    // Import and execute the workflow
+    const { parseFile, WorkflowEngine, SDKRegistry, createSDKStepExecutor, loadEnv } = await import('@marktoflow/core');
+    const { registerIntegrations } = await import('@marktoflow/integrations');
+
+    loadEnv();
+
+    const { workflow } = await parseFile(exec.workflowPath);
+    const registry = new SDKRegistry();
+    registerIntegrations(registry);
+    registry.registerTools(workflow.tools);
+
+    const engine = new WorkflowEngine({}, {}, store);
+    engine.workflowPath = exec.workflowPath;
+    const executor = createSDKStepExecutor();
+
+    const replayInputs = exec.inputs ?? {};
+
+    console.log(chalk.blue('  Starting execution...\n'));
+    const result = await engine.execute(workflow, replayInputs, registry, executor);
+
+    if (result.status === 'completed') {
+      console.log(chalk.green(`  ✓ Replay completed successfully in ${formatDuration(result.duration)}`));
+    } else {
+      console.log(chalk.red(`  ✗ Replay failed: ${result.error}`));
+    }
+    console.log('');
+  } finally {
+    store.close();
   }
-
-  if (!exec.workflowPath) {
-    console.log(chalk.red('  Cannot replay: workflow path not stored in execution record.'));
-    console.log(chalk.dim('  Workflow ID: ' + exec.workflowId));
-    return;
-  }
-
-  if (!existsSync(exec.workflowPath)) {
-    console.log(chalk.red(`  Cannot replay: workflow file not found at ${exec.workflowPath}`));
-    return;
-  }
-
-  const mode = options.dryRun ? 'dry-run' : 'run';
-  const fromStep = options.from ? ` --from ${options.from}` : '';
-
-  console.log(chalk.bold('\n  Replaying Execution\n'));
-  console.log(`  Original Run:  ${chalk.cyan(exec.runId)}`);
-  console.log(`  Workflow:      ${exec.workflowPath}`);
-  console.log(`  Mode:          ${mode}`);
-  if (options.from) {
-    console.log(`  Starting from: ${options.from}`);
-  }
-
-  const inputs = exec.inputs ? Object.entries(exec.inputs).map(([k, v]) => `${k}=${v}`).join(' ') : '';
-  console.log(chalk.dim(`\n  Equivalent command:`));
-  console.log(chalk.dim(`    marktoflow ${mode} ${exec.workflowPath}${inputs ? ' --input ' + inputs : ''}${fromStep}`));
-  console.log('');
-
-  // Import and execute the workflow
-  const { parseFile, WorkflowEngine, SDKRegistry, createSDKStepExecutor, loadEnv } = await import('@marktoflow/core');
-  const { registerIntegrations } = await import('@marktoflow/integrations');
-
-  loadEnv();
-
-  const { workflow } = await parseFile(exec.workflowPath);
-  const registry = new SDKRegistry();
-  registerIntegrations(registry);
-  registry.registerTools(workflow.tools);
-
-  const engine = new WorkflowEngine({}, {}, store);
-  engine.workflowPath = exec.workflowPath;
-  const executor = createSDKStepExecutor();
-
-  const replayInputs = exec.inputs ?? {};
-
-  console.log(chalk.blue('  Starting execution...\n'));
-  const result = await engine.execute(workflow, replayInputs, registry, executor);
-
-  if (result.status === 'completed') {
-    console.log(chalk.green(`  ✓ Replay completed successfully in ${formatDuration(result.duration)}`));
-  } else {
-    console.log(chalk.red(`  ✗ Replay failed: ${result.error}`));
-  }
-  console.log('');
 }
