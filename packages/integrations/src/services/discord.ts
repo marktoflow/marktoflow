@@ -230,14 +230,15 @@ export class DiscordClient extends BaseApiClient {
    * Get messages from a channel
    */
   async getMessages(channelId: string, options: GetMessagesOptions = {}): Promise<DiscordMessage[]> {
-    const params: string[] = [];
-    if (options.around) params.push(`around=${options.around}`);
-    if (options.before) params.push(`before=${options.before}`);
-    if (options.after) params.push(`after=${options.after}`);
-    if (options.limit) params.push(`limit=${options.limit}`);
+    const params = new URLSearchParams();
+    if (options.around) params.set('around', options.around);
+    if (options.before) params.set('before', options.before);
+    if (options.after) params.set('after', options.after);
+    if (options.limit) params.set('limit', String(options.limit));
 
-    const query = params.length ? `?${params.join('&')}` : '';
-    const messages = await this.request<Array<Record<string, unknown>>>('GET', `/channels/${channelId}/messages${query}`);
+    const query = params.toString();
+    const suffix = query ? `?${query}` : '';
+    const messages = await this.request<Array<Record<string, unknown>>>('GET', `/channels/${channelId}/messages${suffix}`);
     return messages.map((m) => this.parseMessage(m));
   }
 
