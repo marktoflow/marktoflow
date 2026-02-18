@@ -233,6 +233,13 @@ export class PostgresClient {
     where: Record<string, unknown>,
     returning?: string[]
   ): Promise<T[]> {
+    if (!data || Object.keys(data).length === 0) {
+      throw new Error('update() requires at least one column in data');
+    }
+    if (!where || Object.keys(where).length === 0) {
+      throw new Error('update() requires at least one condition in where (use query() for unconditional updates)');
+    }
+
     const quotedTable = quoteIdentifier(table);
     const setColumns: string[] = [];
     const params: unknown[] = [];
@@ -267,6 +274,10 @@ export class PostgresClient {
     where: Record<string, unknown>,
     returning?: string[]
   ): Promise<T[]> {
+    if (!where || Object.keys(where).length === 0) {
+      throw new Error('delete() requires at least one condition in where (use query() for unconditional deletes)');
+    }
+
     const quotedTable = quoteIdentifier(table);
     const conditions: string[] = [];
     const params: unknown[] = [];
