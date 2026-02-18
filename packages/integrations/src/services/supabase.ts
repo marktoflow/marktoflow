@@ -101,7 +101,7 @@ export class SupabaseClient extends BaseApiClient {
   /**
    * Query data from a table
    */
-  async from<T = Record<string, unknown>>(table: string): Promise<SupabaseTableQuery<T>> {
+  from<T = Record<string, unknown>>(table: string): SupabaseTableQuery<T> {
     return new SupabaseTableQuery<T>(this.apiUrl, this.headers, table);
   }
 
