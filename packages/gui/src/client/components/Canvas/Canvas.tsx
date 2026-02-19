@@ -6,7 +6,7 @@ import {
   MiniMap,
   BackgroundVariant,
 } from '@xyflow/react';
-import { Edit, Copy, Trash2, Code, Play } from 'lucide-react';
+import { Edit, Copy, Trash2, Code, Play, Plus, FolderOpen, AlertTriangle } from 'lucide-react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { getModKey } from '../../utils/platform';
 import { StepNode } from './StepNode';
@@ -31,6 +31,9 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '../common/ContextMenu';
 import { useCanvasInteractions } from '../../hooks/useCanvasInteractions';
@@ -72,11 +75,16 @@ export function Canvas() {
     onNodeContextMenu,
     onDragOver,
     onDrop,
+    contextMenuNode,
     handleContextEdit,
     handleContextViewYaml,
     handleContextDuplicate,
     handleContextDelete,
     handleContextExecute,
+    handleContextAddStepBefore,
+    handleContextAddStepAfter,
+    handleContextConvertToSubworkflow,
+    handleContextViewError,
     handleStepSave,
     getAvailableVariables,
     openEditor,
@@ -158,10 +166,35 @@ export function Canvas() {
           <ContextMenuShortcut>Y</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Step
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            <ContextMenuItem onClick={handleContextAddStepBefore}>
+              Before this step
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleContextAddStepAfter}>
+              After this step
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuItem onClick={handleContextConvertToSubworkflow}>
+          <FolderOpen className="w-4 h-4 mr-2" />
+          Convert to Sub-workflow
+        </ContextMenuItem>
+        <ContextMenuSeparator />
         <ContextMenuItem onClick={handleContextExecute}>
           <Play className="w-4 h-4 mr-2" />
-          Execute Step
+          Execute from here
         </ContextMenuItem>
+        {contextMenuNode?.data?.status === 'failed' && (
+          <ContextMenuItem onClick={handleContextViewError}>
+            <AlertTriangle className="w-4 h-4 mr-2 text-error" />
+            View Error Details
+          </ContextMenuItem>
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleContextDuplicate}>
           <Copy className="w-4 h-4 mr-2" />
