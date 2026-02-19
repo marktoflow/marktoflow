@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Fixed GHSA-jmr7-xgp7-cmfj (CVE-2026-26278, high): Updated `fast-xml-parser` to >=5.3.6 via pnpm override; transitive copies pulled in by `@aws-sdk/xml-builder` were vulnerable to DoS through unbounded DOCTYPE entity expansion
+- Fixed GHSA-2g4f-4pwh-qvx6 (CVE-2025-69873, medium): Updated `ajv` to >=8.18.0 via pnpm override; transitive copy pulled in by `@modelcontextprotocol/sdk` was vulnerable to ReDoS when using the `$data` option
+
 ## [2.0.5] - 2026-02-16
 
 ### Security
+
 - Hardened permission enforcement to block directory traversal (`..`) escapes from `allowedDirectories`
 - Tightened command allowlist matching so entries like `git` no longer permit unrelated binaries like `gitlab-runner`
 - GUI workflow APIs now reject absolute paths and path traversal (`..`) for execute/update/delete/read operations to prevent access outside the workflow directory
 
 ### Added
+
 - Circuit breaker pattern for integration reliability with configurable failure thresholds
 - Proactive rate limiting with token bucket algorithm for API calls
 - Non-scoped wrapper package (`marktoflow`) for easier installation (#56)
@@ -22,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Wrapper package delegates to `@marktoflow/cli` for all functionality
 
 ### Changed
+
 - Moved CLI bin from `@marktoflow/cli` to `marktoflow` package to resolve "File exists" conflicts
 - Updated all documentation to use `npm install -g marktoflow` command
 - Updated publish pipeline to include wrapper package
@@ -29,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced GUI service discovery with improved toast notifications
 
 ### Fixed
+
 - CLI now reads version from package.json dynamically
 - Zod overrides to suppress claude-agent-sdk peer dependency warnings
 - Discord, Trello, Mailchimp, and Shopify integrations now fail fast on missing required IDs instead of issuing malformed API calls
@@ -48,15 +57,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stabilized WebSocket integration tests
 
 ### Performance
+
 - Parallelized Gmail email fetching with batched Promise.all for 3x faster retrieval
 
 ## [2.0.4] - 2026-02-15
 
 ### Security
+
 - Fixed CVE-2026-2391 (GHSA-w7fw-mjwx-w883): Updated qs dependency to >=6.14.2 to fix arrayLimit bypass DoS vulnerability
   - All transitive dependencies now use patched qs@6.15.0
 
 ### Fixed
+
 - Workflow parser now handles CRLF/CR line endings correctly
 - GUI workflow importer supports all line ending formats
 - `parallel.spawn` majority/any wait strategy index tracking fixed
@@ -64,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WorkflowService frontmatter regex allows trailing whitespace
 
 ### Changed
+
 - Converted 3 parallel-agent examples to executable YAML frontmatter format
 - All 46 example workflows validated and loadable via GUI
 - Comprehensive SEO refresh across all package READMEs
@@ -71,12 +84,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Root README: Enhanced Security & Privacy section, AI platform comparison table
 
 ### Technical
+
 - All 1,805 tests passing (1,646 unit, 150 integration, 9 smoke)
 - All 46 example workflows validated
 
 ## [2.0.3] - 2026-02-09
 
 ### Added
+
 - Auto-detect available AI agents in `marktoflow agent list`, `agent info`, and `agent init` based on runtime availability
   - Runtime detection via CLI availability, environment variables, and server pings
   - No longer relies on static capabilities.yaml file
@@ -92,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SUPPORTED-INTEGRATIONS.md documentation with categorized tables of all 38 services, 6 AI adapters, and built-in tools
 
 ### Changed
+
 - Updated AI provider models to 2026 versions:
   - Claude: claude-opus-4-6, claude-sonnet-4-5, claude-haiku-4-5
   - OpenAI: gpt-4.5, gpt-4.1, gpt-4.1-mini, gpt-4o, o3
@@ -107,19 +123,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added 1-second stabilization wait after start() for reliable connections
 
 ### Fixed
+
 - Form data validation against field schema in GUI routes
 - GitHub Copilot activation flow - "Connect & Activate" button now works correctly
 - Security vulnerabilities:
-  - Updated axios from 1.13.2 to 1.13.5 (fixes DoS via __proto__ vulnerability)
+  - Updated axios from 1.13.2 to 1.13.5 (fixes DoS via **proto** vulnerability)
   - Updated langsmith from 0.3.87 to 0.5.0 (fixes SSRF via tracing header injection)
   - Added pnpm overrides to enforce secure dependency versions
 
 ### Removed
+
 - Removed gemini-cli from known agents list (no provider implementation)
 - Removed Claude API provider from GUI (redundant with Claude Agent)
 - Cleaned up legacy Python artifacts and added .ruff_cache/ to .gitignore
 
 ### Technical
+
 - Enhanced CI workflow with coverage flags and artifact uploads (14-day retention)
 - Added visual status indicators in GUI with color coding:
   - 🟢 Ready (green) - Connected and active
@@ -131,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.2] - 2026-02-03
 
 ### Security
+
 - Fixed 11 security vulnerabilities:
   - Replaced xlsx (0.18.5) with exceljs (4.4.0) to fix prototype pollution and ReDoS
   - Added pnpm overrides to force secure versions:
@@ -142,22 +162,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Result: 0 security vulnerabilities remaining
 
 ### Added
+
 - GitHub Package Registry support for npm packages
 - Agent-task-executor example showcasing AI agent control from Slack/Telegram
   - Enables conversation-based task execution with pass/fail reporting
   - Example commands: `codex do: <task>`, `claude check: <url>`
 
 ### Changed
+
 - Updated package logo
 - Updated documentation to showcase messaging app integration with AI agents
 - Updated @modelcontextprotocol/sdk from 1.25.3 to 1.26.0
 - Updated hono from 4.11.5 to 4.11.9
 
 ### Fixed
+
 - Updated file-operations.ts to use exceljs instead of xlsx for Excel file processing
 - Fixed metapackage bin field
 
 ### Technical
+
 - All tests passing, 0 security vulnerabilities
 
 ## [2.0.1] - 2026-01-28
@@ -165,6 +189,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **First stable release** - Exited alpha status
 
 ### Fixed
+
 - HTTP action resolution: Spread action methods directly on SDK return object for HTTP integration
 - GUI installation: Moved react/react-dom from peerDependencies to devDependencies so `npm install -g @marktoflow/marktoflow` correctly installs all deps
 - Validated all 46 example workflows against parser
@@ -175,16 +200,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - code-review YAML quoting
 
 ### Changed
+
 - Bumped all packages from v2.0.0-alpha.16 to v2.0.1 (stable release)
 - Added vitest test that validates all example workflows
 
 ### Technical
+
 - All example workflows now parser-validated
 - Stable API commitment begins with 2.0.1
 
 ## [2.0.0-alpha.16] - 2026-01-24
 
 ### Added
+
 - **Complete TypeScript rewrite** from Python for better npm ecosystem integration
 - **Native MCP support** - Direct import of Model Context Protocol servers, no subprocess spawning
 - **Visual workflow designer (GUI)** - Drag-and-drop interface with AI assistance
@@ -238,6 +266,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Environment-based config + CLI config defaults
 
 ### Changed
+
 - **Package organization**: Now uses npm workspace with `@marktoflow` scope
   - `@marktoflow/core` - Parser, engine, state management
   - `@marktoflow/integrations` - Service integrations and AI adapters
@@ -251,6 +280,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tool integration**: Just import SDKs, no subprocess spawning
 
 ### Removed
+
 - Python package no longer maintained (v1.x end-of-life)
 - Legacy `@scottgl` packages deprecated in favor of `@marktoflow` organization
 - Agent adapters (replaced with direct SDK calls)
@@ -258,6 +288,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subprocess spawning for tools (replaced with direct imports)
 
 ### Technical
+
 - Monorepo structure with pnpm workspaces and Turbo
 - TypeScript with full type safety
 - 181 test suite (expanding to match Python's 615+)
