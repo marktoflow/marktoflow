@@ -2,18 +2,22 @@ import { memo, useEffect, useState } from 'react';
 import { Key, Plus, Eye, EyeOff, RotateCw } from 'lucide-react';
 import { useGovernanceStore } from '../../stores/governanceStore';
 
+const ENVIRONMENTS = ['dev', 'staging', 'production'] as const;
+type Environment = typeof ENVIRONMENTS[number];
+
 function SecretsVaultComponent() {
   const { secrets, loadSecrets, createSecret } = useGovernanceStore();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
+  const [environment, setEnvironment] = useState<Environment>('dev');
 
   useEffect(() => { loadSecrets(); }, [loadSecrets]);
 
   const handleCreate = () => {
     if (!name.trim() || !value.trim()) return;
-    createSecret(name, 'dev', value);
-    setName(''); setValue(''); setShowForm(false);
+    createSecret(name, environment, value);
+    setName(''); setValue(''); setEnvironment('dev'); setShowForm(false);
   };
 
   return (
@@ -30,6 +34,15 @@ function SecretsVaultComponent() {
         <div className="p-3 bg-bg-surface rounded-lg border border-border-default space-y-2">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Secret name" className="w-full bg-transparent border border-border-default rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary" />
           <input type="password" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Secret value" className="w-full bg-transparent border border-border-default rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary" />
+          <select
+            value={environment}
+            onChange={(e) => setEnvironment(e.target.value as Environment)}
+            className="w-full bg-transparent border border-border-default rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+          >
+            {ENVIRONMENTS.map((env) => (
+              <option key={env} value={env}>{env}</option>
+            ))}
+          </select>
           <button onClick={handleCreate} className="w-full px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary/90">Add Secret</button>
         </div>
       )}
