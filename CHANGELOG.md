@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-02-19
+
 ### Security
 
 - Fixed GHSA-jmr7-xgp7-cmfj (CVE-2026-26278, high): Updated `fast-xml-parser` to >=5.3.6 via pnpm override; transitive copies pulled in by `@aws-sdk/xml-builder` were vulnerable to DoS through unbounded DOCTYPE entity expansion
 - Fixed GHSA-2g4f-4pwh-qvx6 (CVE-2025-69873, medium): Updated `ajv` to >=8.18.0 via pnpm override; transitive copy pulled in by `@modelcontextprotocol/sdk` was vulnerable to ReDoS when using the `$data` option
+- Prevented SQL identifier injection in PostgreSQL and MySQL clients — table/column names are now validated against an allowlist of safe identifier characters
+- Added CSRF protection to all OAuth flows via `state` parameter — prevents open-redirect and CSRF attacks during authorization callbacks
 
 ### Added
 
@@ -21,6 +25,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - API key authentication as alternative
   - Streaming support, thinking tag parsing, OpenAI-compatible interface
   - GUI agent provider with model selection
+- User-defined SDK integrations: workflows can now declare custom SDK initializers directly in their frontmatter without publishing a plugin package
+
+### Fixed
+
+- CLI `--input` parsing now preserves values containing `=` signs (SQL queries, base64 tokens, etc.); previously everything after the second `=` was silently dropped
+- CLI `history` and `replay` commands now close their SQLite connection on exit, preventing file lock leaks
+- CLI OAuth flows now use a `state` parameter for CSRF protection
+- GUI context menu now exposes all actions: Add Step Before/After, Convert to Sub-workflow, View Error Details
+- GUI secret creation now allows selecting the target environment (dev / staging / production) instead of hardcoding `dev`
+- GUI `DataPreviewBadge` nested `<button>` inside `<button>` replaced with accessible `<div role="button">` to fix invalid HTML and screen-reader issues
+- GUI `ExecutionInputDialog` now resets default values when switching workflows, preventing stale inputs from a previous workflow appearing in dialogs
+- Supabase `uploadFile` no longer corrupts binary uploads: when `contentType` is provided, raw bytes are sent instead of `FormData` (which was overwriting the multipart boundary)
+- Supabase `signOut` now throws on non-OK responses, consistent with all other methods
+- Supabase `from()` is now synchronous, matching the `@supabase/supabase-js` SDK contract
+- Supabase query parameters now encoded via the URL API instead of manual string concatenation
+- Discord and Notion query parameters now use `URLSearchParams` for correct URL encoding
+- PostgreSQL and MySQL now validate that `where` and `data` arguments are non-empty before executing `UPDATE` or `DELETE` to prevent unintended full-table mutations
+- PostgreSQL and MySQL no longer double-commit transactions when the callback throws after a successful commit
+- Salesforce `getRecord` passes `fields` via the `params` option rather than embedding them in the URL path, ensuring proper URL encoding
+- SendGrid `sendEmail` now validates that at least one of `body`, `html`, or `templateId` is provided before making a network call, returning a clear error instead of an opaque HTTP 400
+- Core `transform` operations (`group_by`, `unique`, `sort`) now resolve sort/group keys directly from each item instead of the outer context
+- Core `CronEventSource` now fully parses cron expressions and validates the schedule on startup rather than treating the entire expression as a simple interval
+- Core webhook receiver now enforces a configurable maximum body size limit to prevent memory exhaustion from oversized payloads
+- Core SSE event source now preserves event state across buffer boundaries, fixing dropped events at chunk edges
+- Core scheduler now checks for due jobs immediately on startup instead of waiting for the first tick interval
+- Core `KeyManager.generateAES256GCMKey` no longer performs a wasteful scrypt derivation; keys are now generated directly
+- Core template engine now gracefully handles undefined variables instead of throwing
+
+### Technical
+
+- Reorganized documentation into categorized subdirectories for easier navigation
+- Updated docs: corrected stale version references, replaced non-existent `core.process` action with `api.get` in examples, standardized template spacing to `{{ var }}`, added `--input` CLI usage section
 
 ## [2.0.5] - 2026-02-16
 
@@ -334,7 +370,9 @@ The original Python implementation is no longer maintained. All future developme
 
 ## Version Summary
 
-- **2.0.4** (Latest) - Security fixes, parser improvements, parallel execution fixes, SEO refresh
+- **2.0.6** (Latest) - Google Gemini CLI integration, security fixes (SQL injection, CSRF, CVEs), 20+ bug fixes across integrations, CLI, GUI, and core
+- **2.0.5** - Circuit breaker, rate limiting, GUI service discovery, path traversal hardening, Gmail perf improvement
+- **2.0.4** - Security fixes, parser improvements, parallel execution fixes, SEO refresh
 - **2.0.3** - AI provider updates, auto-detection, coverage infrastructure, security fixes
 - **2.0.2** - Security fixes (11 vulnerabilities), exceljs migration, GitHub Package Registry
 - **2.0.1** - First stable release, HTTP action fix, GUI install fix, example validation
