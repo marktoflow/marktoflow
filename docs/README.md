@@ -24,6 +24,7 @@
 - [GitHub Copilot](./setup/SETUP_GITHUB_COPILOT.md) — Copilot integration
 - [Ollama](./setup/SETUP_OLLAMA.md) — Local LLM setup
 - [OpenCode](./setup/OPENCODE.md) — OpenCode agent
+- [Google Gemini CLI](./setup/SETUP_AI_AGENTS.md#google-gemini-cli-setup) — Gemini CLI integration
 
 ## GUI
 

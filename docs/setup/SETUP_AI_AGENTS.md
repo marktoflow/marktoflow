@@ -4,15 +4,16 @@ This guide shows you how to configure marktoflow's AI agent adapters.
 
 ## Available Agents
 
-| Agent | CLI Flag | Description |
-|-------|----------|-------------|
-| Claude Agent | `--agent claude-agent` or `--agent claude` | Anthropic Claude via Agent SDK |
-| OpenAI | `--agent openai` | OpenAI GPT models (also VLLM, local endpoints) |
-| VLLM | `--agent vllm` | Local VLLM inference (alias for openai) |
-| GitHub Copilot | `--agent copilot` | GitHub Copilot SDK |
-| OpenCode | `--agent opencode` | OpenCode AI agent |
-| Ollama | `--agent ollama` | Local LLM via Ollama |
-| Codex | `--agent codex` | OpenAI Codex SDK |
+| Agent             | CLI Flag                                   | Description                                    |
+| ----------------- | ------------------------------------------ | ---------------------------------------------- |
+| Claude Agent      | `--agent claude-agent` or `--agent claude` | Anthropic Claude via Agent SDK                 |
+| OpenAI            | `--agent openai`                           | OpenAI GPT models (also VLLM, local endpoints) |
+| VLLM              | `--agent vllm`                             | Local VLLM inference (alias for openai)        |
+| GitHub Copilot    | `--agent copilot`                          | GitHub Copilot SDK                             |
+| OpenCode          | `--agent opencode`                         | OpenCode AI agent                              |
+| Ollama            | `--agent ollama`                           | Local LLM via Ollama                           |
+| Codex             | `--agent codex`                            | OpenAI Codex SDK                               |
+| Google Gemini CLI | `--agent gemini-cli`                       | Google Gemini via OAuth or API key             |
 
 ## Claude Agent Setup
 
@@ -119,9 +120,9 @@ tools:
     sdk: openai
     auth:
       base_url: http://localhost:8000/v1
-      api_key: dummy              # Required by SDK, not validated locally
+      api_key: dummy # Required by SDK, not validated locally
     options:
-      model: auto                 # Auto-detect model from server
+      model: auto # Auto-detect model from server
 ```
 
 When `model: auto` is set (or model is omitted) with a custom `base_url`, marktoflow queries the `/v1/models` endpoint and auto-selects the first available model.
@@ -137,9 +138,9 @@ steps:
     inputs:
       messages:
         - role: system
-          content: "Use tools to answer questions."
+          content: 'Use tools to answer questions.'
         - role: user
-          content: "{{ inputs.query }}"
+          content: '{{ inputs.query }}'
       tools:
         - type: function
           function:
@@ -156,6 +157,7 @@ steps:
 ```
 
 The agentic loop works as follows:
+
 1. Send messages + tool definitions to the model
 2. If the model returns `tool_calls`, execute each tool
 3. Append tool results and re-send to the model
@@ -172,7 +174,7 @@ Force valid JSON responses using `generateJSON` or `generateStructured`:
   inputs:
     messages:
       - role: user
-        content: "Extract entities from: {{ inputs.text }}"
+        content: 'Extract entities from: {{ inputs.text }}'
 
 # Schema-validated output
 - id: classify
@@ -180,7 +182,7 @@ Force valid JSON responses using `generateJSON` or `generateStructured`:
   inputs:
     messages:
       - role: user
-        content: "Classify: {{ inputs.text }}"
+        content: 'Classify: {{ inputs.text }}'
     schema:
       name: classification
       schema:
@@ -193,17 +195,17 @@ Force valid JSON responses using `generateJSON` or `generateStructured`:
 
 ### Available Methods
 
-| Method | Description |
-|--------|-------------|
-| `ai.generate` | Simple text generation from a prompt |
-| `ai.chatCompletion` | Full chat completion with all parameters |
-| `ai.chatWithTools` | Agentic tool-calling loop |
-| `ai.generateJSON` | Chat completion with JSON mode enforced |
-| `ai.generateStructured` | Chat completion with JSON Schema validation |
-| `ai.chatStream` | Streaming chat completion |
-| `ai.embeddings` | Generate text embeddings |
-| `ai.listModels` | List available models |
-| `ai.autoDetectModel` | Auto-detect and set default model from server |
+| Method                  | Description                                   |
+| ----------------------- | --------------------------------------------- |
+| `ai.generate`           | Simple text generation from a prompt          |
+| `ai.chatCompletion`     | Full chat completion with all parameters      |
+| `ai.chatWithTools`      | Agentic tool-calling loop                     |
+| `ai.generateJSON`       | Chat completion with JSON mode enforced       |
+| `ai.generateStructured` | Chat completion with JSON Schema validation   |
+| `ai.chatStream`         | Streaming chat completion                     |
+| `ai.embeddings`         | Generate text embeddings                      |
+| `ai.listModels`         | List available models                         |
+| `ai.autoDetectModel`    | Auto-detect and set default model from server |
 
 ## Ollama Setup
 
@@ -241,21 +243,84 @@ opencode server
 marktoflow run workflow.md --agent opencode
 ```
 
+## Google Gemini CLI Setup
+
+### Prerequisites
+
+**Option 1: OAuth via installed gemini-cli (recommended — no API key needed)**
+
+```bash
+# Install gemini-cli (if not already installed)
+npm install -g @google/gemini-cli
+
+# Connect marktoflow to gemini-cli OAuth credentials
+marktoflow connect gemini-cli
+```
+
+This extracts OAuth credentials from your installed `gemini-cli` binary, so no manual API key is required if you already have a Gemini subscription.
+
+**Option 2: API key**
+
+```bash
+export GEMINI_API_KEY="your-api-key-here"
+```
+
+### Usage
+
+```bash
+# Run with Gemini CLI (uses OAuth or GEMINI_API_KEY)
+marktoflow run workflow.md --agent gemini-cli
+
+# With specific model
+marktoflow run workflow.md --agent gemini-cli --model gemini-2.5-pro
+```
+
+### Workflow Configuration
+
+```yaml
+# OAuth (credentials extracted automatically from gemini-cli)
+tools:
+  gemini:
+    sdk: gemini-cli
+    options:
+      model: gemini-2.5-flash
+
+# API key
+tools:
+  gemini:
+    sdk: gemini-cli
+    auth:
+      api_key: '${GEMINI_API_KEY}'
+    options:
+      model: gemini-2.5-flash
+```
+
+### Available Models
+
+| Model              | Description                    |
+| ------------------ | ------------------------------ |
+| `gemini-2.5-flash` | Fast, cost-effective (default) |
+| `gemini-2.5-pro`   | Best reasoning quality         |
+| `gemini-2.0-flash` | Balanced performance           |
+
 ## Troubleshooting
 
 ### "Unknown agent provider"
 
 Make sure you're using a supported provider name:
+
 - `claude` or `claude-agent`
 - `openai`, `vllm`, or `openai-compatible`
 - `copilot` or `github-copilot`
 - `opencode`
 - `ollama`
 - `codex`
+- `gemini-cli`, `google-gemini-cli`, or `gemini`
 
 ### "API key not set"
 
 Set the appropriate environment variable:
+
 - Claude: `ANTHROPIC_API_KEY`
 - OpenAI: `OPENAI_API_KEY`
 - GitHub Copilot: `GITHUB_TOKEN`
@@ -265,6 +330,7 @@ For local endpoints, use `api_key: dummy` in the workflow config — the SDK req
 ### "Connection refused" (local endpoints)
 
 Ensure your local server is running:
+
 ```bash
 # llama.cpp (with tool calling)
 llama-server -m model.gguf --port 8000 --jinja

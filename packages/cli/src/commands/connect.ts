@@ -41,9 +41,16 @@ export async function executeConnect(service: string, options: ConnectOptions): 
 
 function isGoogleService(service: string): boolean {
   return [
-    'google-drive', 'drive', 'google-sheets', 'sheets',
-    'google-calendar', 'calendar', 'google-docs', 'docs',
-    'google-workspace', 'workspace',
+    'google-drive',
+    'drive',
+    'google-sheets',
+    'sheets',
+    'google-calendar',
+    'calendar',
+    'google-docs',
+    'docs',
+    'google-workspace',
+    'workspace',
   ].includes(service);
 }
 
@@ -57,7 +64,9 @@ async function connectGmail(options: ConnectOptions): Promise<void> {
     console.log('\nTo connect Gmail:');
     console.log('  1. Go to https://console.cloud.google.com/');
     console.log('  2. Create OAuth 2.0 credentials (Desktop app type)');
-    console.log('  3. Run: marktoflow connect gmail --client-id YOUR_ID --client-secret YOUR_SECRET');
+    console.log(
+      '  3. Run: marktoflow connect gmail --client-id YOUR_ID --client-secret YOUR_SECRET'
+    );
     console.log('\nOr set environment variables:');
     console.log('  export GOOGLE_CLIENT_ID="your-client-id"');
     console.log('  export GOOGLE_CLIENT_SECRET="your-client-secret"');
@@ -69,7 +78,9 @@ async function connectGmail(options: ConnectOptions): Promise<void> {
     const tokens = await runGmailOAuth({ clientId, clientSecret, port });
     console.log(chalk.green('\nGmail connected successfully!'));
     console.log(
-      chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`)
+      chalk.dim(
+        `Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`
+      )
     );
     console.log('\nYou can now use Gmail in your workflows:');
     console.log(
@@ -89,7 +100,11 @@ async function connectGmail(options: ConnectOptions): Promise<void> {
   }
 }
 
-async function connectGoogleService(serviceLower: string, serviceDisplay: string, options: ConnectOptions): Promise<void> {
+async function connectGoogleService(
+  serviceLower: string,
+  serviceDisplay: string,
+  options: ConnectOptions
+): Promise<void> {
   const clientId = options.clientId ?? process.env.GOOGLE_CLIENT_ID;
   const clientSecret = options.clientSecret ?? process.env.GOOGLE_CLIENT_SECRET;
   const port = parseInt(options.port, 10);
@@ -100,7 +115,9 @@ async function connectGoogleService(serviceLower: string, serviceDisplay: string
     console.log('  1. Go to https://console.cloud.google.com/');
     console.log('  2. Enable the API for your service (Drive, Sheets, etc.)');
     console.log('  3. Create OAuth 2.0 credentials (Desktop app type)');
-    console.log(`  4. Run: marktoflow connect ${serviceDisplay} --client-id YOUR_ID --client-secret YOUR_SECRET`);
+    console.log(
+      `  4. Run: marktoflow connect ${serviceDisplay} --client-id YOUR_ID --client-secret YOUR_SECRET`
+    );
     console.log('\nOr set environment variables:');
     console.log('  export GOOGLE_CLIENT_ID="your-client-id"');
     console.log('  export GOOGLE_CLIENT_SECRET="your-client-secret"');
@@ -111,10 +128,14 @@ async function connectGoogleService(serviceLower: string, serviceDisplay: string
     const { runGoogleOAuth } = await import('../oauth.js');
     const tokens = await runGoogleOAuth(serviceLower, { clientId, clientSecret, port });
     console.log(
-      chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`)
+      chalk.dim(
+        `Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`
+      )
     );
 
-    const normalizedService = serviceLower.startsWith('google-') ? serviceLower : `google-${serviceLower}`;
+    const normalizedService = serviceLower.startsWith('google-')
+      ? serviceLower
+      : `google-${serviceLower}`;
 
     console.log('\nYou can now use this service in your workflows:');
     console.log(
@@ -161,7 +182,9 @@ async function connectOutlook(options: ConnectOptions): Promise<void> {
     const tokens = await runOutlookOAuth({ clientId, clientSecret, tenantId, port });
     console.log(chalk.green('\nOutlook connected successfully!'));
     console.log(
-      chalk.dim(`Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`)
+      chalk.dim(
+        `Access token expires: ${tokens.expires_at ? new Date(tokens.expires_at).toISOString() : 'unknown'}`
+      )
     );
     console.log('\nYou can now use Outlook in your workflows:');
     console.log(
@@ -180,13 +203,16 @@ async function connectOutlook(options: ConnectOptions): Promise<void> {
 
 async function connectGeminiCli(options: ConnectOptions): Promise<void> {
   try {
-    const { extractGeminiCliCredentials, loginGeminiCliOAuth } = await import('@marktoflow/integrations');
+    const { extractGeminiCliCredentials, loginGeminiCliOAuth } =
+      await import('@marktoflow/integrations');
     const { default: open } = await import('open').catch(() => ({ default: null }));
 
     // Try to extract credentials from installed gemini-cli
     const extracted = extractGeminiCliCredentials();
-    const clientId = options.clientId ?? process.env.GEMINI_CLI_OAUTH_CLIENT_ID ?? extracted?.clientId;
-    const clientSecret = options.clientSecret ?? process.env.GEMINI_CLI_OAUTH_CLIENT_SECRET ?? extracted?.clientSecret;
+    const clientId =
+      options.clientId ?? process.env.GEMINI_CLI_OAUTH_CLIENT_ID ?? extracted?.clientId;
+    const clientSecret =
+      options.clientSecret ?? process.env.GEMINI_CLI_OAUTH_CLIENT_SECRET ?? extracted?.clientSecret;
 
     if (!clientId) {
       console.log(chalk.yellow('\nGemini CLI OAuth requires credentials.'));
@@ -201,9 +227,8 @@ async function connectGeminiCli(options: ConnectOptions): Promise<void> {
       return;
     }
 
-    if (clientId) {
-      process.env.GEMINI_CLI_OAUTH_CLIENT_ID = clientId;
-    }
+    // clientId is guaranteed non-null here — the early return above handles the null case
+    process.env.GEMINI_CLI_OAUTH_CLIENT_ID = clientId;
     if (clientSecret) {
       process.env.GEMINI_CLI_OAUTH_CLIENT_SECRET = clientSecret;
     }
@@ -234,7 +259,9 @@ async function connectGeminiCli(options: ConnectOptions): Promise<void> {
       },
       progress: {
         update: (msg: string) => console.log(chalk.dim(msg)),
-        stop: (msg?: string) => { if (msg) console.log(chalk.dim(msg)); },
+        stop: (msg?: string) => {
+          if (msg) console.log(chalk.dim(msg));
+        },
       },
     });
 
@@ -257,10 +284,8 @@ async function connectGeminiCli(options: ConnectOptions): Promise<void> {
       options:
         model: "gemini-2.5-flash"`)
     );
-    process.exit(0);
   } catch (error) {
-    console.log(chalk.red(`\nGemini CLI OAuth failed: ${error}`));
-    process.exit(1);
+    throw new Error(`Gemini CLI OAuth failed: ${error}`);
   }
 }
 
@@ -281,13 +306,17 @@ function showManualSetup(serviceLower: string, serviceDisplay: string): void {
       console.log(`  export JIRA_HOST="https://your-domain.atlassian.net"`);
       console.log(`  export JIRA_EMAIL="your-email@example.com"`);
       console.log(`  export JIRA_API_TOKEN="your-api-token"`);
-      console.log(chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'));
+      console.log(
+        chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens')
+      );
       break;
     case 'confluence':
       console.log(`  export CONFLUENCE_HOST="https://your-domain.atlassian.net"`);
       console.log(`  export CONFLUENCE_EMAIL="your-email@example.com"`);
       console.log(`  export CONFLUENCE_API_TOKEN="your-api-token"`);
-      console.log(chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens'));
+      console.log(
+        chalk.dim('\n  Create token at https://id.atlassian.com/manage-profile/security/api-tokens')
+      );
       break;
     case 'linear':
       console.log(`  export LINEAR_API_KEY="lin_api_your-key"`);
@@ -319,7 +348,9 @@ function showManualSetup(serviceLower: string, serviceDisplay: string): void {
       console.log('\n' + chalk.bold('Available services:'));
       console.log('  Communication: slack, discord');
       console.log('  Email: gmail, outlook');
-      console.log('  Google Workspace: google-drive, google-sheets, google-calendar, google-docs, google-workspace');
+      console.log(
+        '  Google Workspace: google-drive, google-sheets, google-calendar, google-docs, google-workspace'
+      );
       console.log('  Project management: jira, linear');
       console.log('  Documentation: notion, confluence');
       console.log('  Developer: github');
