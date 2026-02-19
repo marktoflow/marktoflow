@@ -78,10 +78,10 @@ export class SalesforceClient extends BaseApiClient {
    * Get a record by ID
    */
   async getRecord(objectType: string, id: string, fields?: string[]): Promise<SalesforceRecord> {
-    const path = fields
-      ? `/sobjects/${objectType}/${id}?fields=${fields.join(',')}`
-      : `/sobjects/${objectType}/${id}`;
-    return this.get(path);
+    const path = `/sobjects/${objectType}/${id}`;
+    return fields && fields.length > 0
+      ? this.get(path, { params: { fields: fields.join(',') } })
+      : this.get(path);
   }
 
   /**
