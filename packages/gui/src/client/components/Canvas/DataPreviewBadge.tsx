@@ -29,10 +29,15 @@ function DataPreviewBadgeComponent({ label, data, variant = 'output', className 
 
   return (
     <div className={cn('mt-1', className)}>
-      <button
+      {/* Outer row: not a <button> to avoid nesting interactive elements. */}
+      <div
+        role={isExpandable ? 'button' : undefined}
+        tabIndex={isExpandable ? 0 : undefined}
         onClick={(e) => { e.stopPropagation(); if (isExpandable) setExpanded(!expanded); }}
+        onKeyDown={(e) => { if (isExpandable && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setExpanded((x) => !x); } }}
         className={cn(
           'flex items-center gap-1.5 px-2 py-1 rounded text-xs w-full text-left transition-colors',
+          isExpandable && 'cursor-pointer',
           variant === 'input' ? 'bg-blue-500/10 text-blue-400' : 'bg-success/10 text-success'
         )}
       >
@@ -48,7 +53,7 @@ function DataPreviewBadgeComponent({ label, data, variant = 'output', className 
         >
           {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3 opacity-50" />}
         </button>
-      </button>
+      </div>
       {expanded && isExpandable && (
         <pre className="mt-1 px-2 py-1.5 bg-bg-surface rounded text-xs font-mono text-text-secondary overflow-x-auto max-h-[120px] overflow-y-auto">
           {JSON.stringify(data, null, 2)}
