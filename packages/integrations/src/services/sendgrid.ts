@@ -41,6 +41,13 @@ export class SendGridClient {
    * Send a single email
    */
   async sendEmail(options: SendEmailOptions) {
+    if (!options.text && !options.html && !options.templateId) {
+      throw new Error(
+        'SendGrid sendEmail requires at least one of: text, html, or templateId. ' +
+        'Without a body or template the API will reject the request with HTTP 400.',
+      );
+    }
+
     const msg: Record<string, unknown> = {
       to: options.to,
       from: options.from,
@@ -65,6 +72,15 @@ export class SendGridClient {
    * Send multiple emails
    */
   async sendMultiple(messages: SendEmailOptions[]) {
+    for (const options of messages) {
+      if (!options.text && !options.html && !options.templateId) {
+        throw new Error(
+          'SendGrid sendMultiple: each message requires at least one of: text, html, or templateId. ' +
+          'Without a body or template the API will reject the request with HTTP 400.',
+        );
+      }
+    }
+
     const msgs = messages.map((options) => {
       const msg: Record<string, unknown> = {
         to: options.to,

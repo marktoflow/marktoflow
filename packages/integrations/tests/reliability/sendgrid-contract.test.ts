@@ -84,10 +84,10 @@ describe('SendGrid Contract Tests', () => {
     });
 
     const result = await wrapped.sendEmail({
-      to: [{ email: 'recipient@example.com' }],
-      from: { email: 'sender@example.com' },
+      to: 'recipient@example.com',
+      from: 'sender@example.com',
       subject: 'Test Email',
-      content: 'This is a test email',
+      text: 'This is a test email',
     });
 
     // SendGrid returns an array with response data
@@ -103,10 +103,10 @@ describe('SendGrid Contract Tests', () => {
     });
 
     const result = await wrapped.sendEmail({
-      to: [{ email: 'recipient@example.com' }],
-      from: { email: 'sender@example.com' },
+      to: 'recipient@example.com',
+      from: 'sender@example.com',
       subject: 'Test Email',
-      content: '<h1>This is a test email</h1>',
+      html: '<h1>This is a test email</h1>',
     });
 
     expect(result).toBeDefined();
@@ -120,13 +120,10 @@ describe('SendGrid Contract Tests', () => {
     });
 
     const result = await wrapped.sendEmail({
-      to: [
-        { email: 'recipient1@example.com' },
-        { email: 'recipient2@example.com' },
-      ],
-      from: { email: 'sender@example.com' },
+      to: ['recipient1@example.com', 'recipient2@example.com'],
+      from: 'sender@example.com',
       subject: 'Test Email',
-      content: 'This is a test email to multiple recipients',
+      text: 'This is a test email to multiple recipients',
     });
 
     expect(result).toBeDefined();
@@ -140,10 +137,12 @@ describe('SendGrid Contract Tests', () => {
     });
 
     const result = await wrapped.sendEmail({
-      to: [{ email: 'recipient@example.com' }],
-      from: { email: 'sender@example.com' },
+      to: 'recipient@example.com',
+      from: 'sender@example.com',
       subject: 'Test Email',
-      content: 'This is a test email',
+      text: 'This is a test email',
+      cc: 'cc@example.com',
+      bcc: 'bcc@example.com',
     });
 
     expect(result).toBeDefined();
@@ -158,46 +157,72 @@ describe('SendGrid Contract Tests', () => {
 
     await expect(
       wrapped.sendEmail({
-        to: [{ email: 'recipient@example.com' }],
-        from: { email: 'sender@example.com' },
+        to: 'recipient@example.com',
+        from: 'sender@example.com',
         subject: '',
-        content: 'Test',
+        text: 'Test',
       })
     ).rejects.toThrow(/subject/);
   });
 
-  it('should reject empty recipient email', async () => {
+  it('should reject missing body (no text, html, or templateId)', async () => {
     const client = new SendGridClient('SG.test-api-key');
     const wrapped = wrapIntegration('sendgrid', client, {
       inputSchemas: sendgridSchemas,
     });
 
-    // SendGrid client will throw error before API call
+    await expect(
+      // Cast required: intentionally testing runtime guard when TS body fields are omitted
+      wrapped.sendEmail({
+        to: 'recipient@example.com',
+        from: 'sender@example.com',
+        subject: 'Test',
+      } as any)
+    ).rejects.toThrow(/text, html, or templateId/);
+  });
+
+  it('should reject empty sender email', async () => {
+    const client = new SendGridClient('SG.test-api-key');
+    const wrapped = wrapIntegration('sendgrid', client, {
+      inputSchemas: sendgridSchemas,
+    });
+
     await expect(
       wrapped.sendEmail({
-        to: [{ email: '' }],
-        from: { email: 'sender@example.com' },
+        to: 'recipient@example.com',
+        from: '',
         subject: 'Test',
-        content: 'Test',
+        text: 'Test',
       })
     ).rejects.toThrow(/email/);
   });
 
-  it('should reject invalid sender email', async () => {
+  it('sendMultiple should reject a message missing body', async () => {
     const client = new SendGridClient('SG.test-api-key');
     const wrapped = wrapIntegration('sendgrid', client, {
       inputSchemas: sendgridSchemas,
     });
 
-    // SendGrid client will throw error before API call
     await expect(
-      wrapped.sendEmail({
-        to: [{ email: 'recipient@example.com' }],
-        from: { email: '' },
-        subject: 'Test',
-        content: 'Test',
-      })
-    ).rejects.toThrow(/email/);
+      // Cast required: intentionally testing runtime guard when TS body fields are omitted
+      wrapped.sendMultiple([
+        { to: 'a@example.com', from: 'sender@example.com', subject: 'Hi' } as any,
+      ])
+    ).rejects.toThrow(/text, html, or templateId/);
+  });
+
+  it('sendMultiple should pass when all messages have a body', async () => {
+    const client = new SendGridClient('SG.test-api-key');
+    const wrapped = wrapIntegration('sendgrid', client, {
+      inputSchemas: sendgridSchemas,
+    });
+
+    const result = await wrapped.sendMultiple([
+      { to: 'a@example.com', from: 'sender@example.com', subject: 'Hi', text: 'Hello A' },
+      { to: 'b@example.com', from: 'sender@example.com', subject: 'Hi', html: '<p>Hello B</p>' },
+    ]);
+
+    expect(result).toBeDefined();
   });
 
   it('should handle API errors gracefully', async () => {
@@ -224,10 +249,10 @@ describe('SendGrid Contract Tests', () => {
 
     await expect(
       wrapped.sendEmail({
-        to: [{ email: 'recipient@example.com' }],
-        from: { email: 'sender@example.com' },
+        to: 'recipient@example.com',
+        from: 'sender@example.com',
         subject: 'Test',
-        content: 'Test',
+        text: 'Test',
       })
     ).rejects.toThrow();
   });
