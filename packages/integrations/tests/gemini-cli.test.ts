@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { SDKRegistry } from '@marktoflow/core';
 import { registerIntegrations, GeminiCliInitializer, GeminiCliClient } from '../src/index.js';
 import {
@@ -6,6 +9,7 @@ import {
   clearCredentialsCache,
   parseGeminiAuth,
   refreshAccessToken,
+  loadGeminiCliOAuthCredentials,
 } from '../src/adapters/gemini-cli-oauth.js';
 import {
   GeminiCliClientConfigSchema,
@@ -19,12 +23,41 @@ import {
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-function mockGenerateContent(text: string, usage?: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number }) {
+function mockGenerateContent(
+  text: string,
+  usage?: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number }
+) {
   return {
     ok: true,
     json: async () => ({
       candidates: [{ content: { parts: [{ text }] } }],
-      usageMetadata: usage || { promptTokenCount: 10, candidatesTokenCount: 20, totalTokenCount: 30 },
+      usageMetadata: usage || {
+        promptTokenCount: 10,
+        candidatesTokenCount: 20,
+        totalTokenCount: 30,
+      },
+    }),
+    text: async () => '',
+  };
+}
+
+/** Simulate a Code Assist OAuth response: candidates nested under "response" */
+function mockCodeAssistGenerateContent(
+  text: string,
+  usage?: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number }
+) {
+  return {
+    ok: true,
+    json: async () => ({
+      response: {
+        candidates: [{ content: { parts: [{ text }] } }],
+        usageMetadata: usage || {
+          promptTokenCount: 10,
+          candidatesTokenCount: 20,
+          totalTokenCount: 30,
+        },
+      },
+      traceId: 'test-trace-id',
     }),
     text: async () => '',
   };
@@ -162,9 +195,16 @@ describe('Gemini CLI Integration', () => {
         options: {},
       };
 
-      await expect(GeminiCliInitializer.initialize({}, config)).rejects.toThrow(
-        /api_key or refresh_token/,
-      );
+      // Redirect HOME so no ~/.gemini/oauth_creds.json is found
+      const origHome = process.env.HOME;
+      process.env.HOME = '/nonexistent-path-for-testing';
+      try {
+        await expect(GeminiCliInitializer.initialize({}, config)).rejects.toThrow(
+          /api_key or refresh_token/
+        );
+      } finally {
+        process.env.HOME = origHome;
+      }
     });
   });
 
@@ -193,7 +233,7 @@ describe('Gemini CLI Integration', () => {
         await client.generate('test');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('gemini-2.5-flash'),
-          expect.any(Object),
+          expect.any(Object)
         );
       });
 
@@ -203,7 +243,7 @@ describe('Gemini CLI Integration', () => {
         await client.generate('test', 'gemini-2.5-pro');
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('gemini-2.5-pro'),
-          expect.any(Object),
+          expect.any(Object)
         );
       });
     });
@@ -227,7 +267,7 @@ describe('Gemini CLI Integration', () => {
             promptTokenCount: 5,
             candidatesTokenCount: 15,
             totalTokenCount: 20,
-          }),
+          })
         );
 
         const result = await client.chat({
@@ -282,7 +322,7 @@ describe('Gemini CLI Integration', () => {
 
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('key=test-api-key'),
-          expect.any(Object),
+          expect.any(Object)
         );
       });
 
@@ -294,7 +334,7 @@ describe('Gemini CLI Integration', () => {
         });
 
         await expect(
-          client.chat({ messages: [{ role: 'user', parts: [{ text: 'Hi' }] }] }),
+          client.chat({ messages: [{ role: 'user', parts: [{ text: 'Hi' }] }] })
         ).rejects.toThrow('Gemini API error 403');
       });
     });
@@ -322,7 +362,7 @@ describe('Gemini CLI Integration', () => {
     describe('parseThinking()', () => {
       it('should extract thinking content from <think> tags', () => {
         const { content, thinking } = client.parseThinking(
-          '<think>Let me reason about this.</think>The answer is 42.',
+          '<think>Let me reason about this.</think>The answer is 42.'
         );
         expect(content).toBe('The answer is 42.');
         expect(thinking).toBe('Let me reason about this.');
@@ -388,13 +428,96 @@ describe('Gemini CLI Integration', () => {
   describe('GeminiCliClient (OAuth)', () => {
     it('should use Bearer token in headers', async () => {
       const client = createOAuthClient();
-      mockFetch.mockResolvedValueOnce(mockGenerateContent('response'));
+      mockFetch.mockResolvedValueOnce(mockCodeAssistGenerateContent('response'));
 
       await client.generate('test');
 
       const headers = mockFetch.mock.calls[0][1].headers;
       expect(headers['Authorization']).toBe('Bearer test-access-token');
       expect(headers['x-goog-api-key']).toBeUndefined();
+    });
+
+    it('should call the Code Assist endpoint, not generativelanguage.googleapis.com', async () => {
+      const client = createOAuthClient();
+      mockFetch.mockResolvedValueOnce(mockCodeAssistGenerateContent('response'));
+
+      await client.generate('test');
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('cloudcode-pa.googleapis.com');
+      expect(url).not.toContain('generativelanguage.googleapis.com');
+    });
+
+    it('should wrap request body for Code Assist endpoint', async () => {
+      const client = createOAuthClient();
+      mockFetch.mockResolvedValueOnce(mockCodeAssistGenerateContent('response'));
+
+      await client.chat({
+        messages: [{ role: 'user', parts: [{ text: 'Hello' }] }],
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      // Must have top-level model + project + request wrapper
+      expect(body.model).toBe('gemini-2.5-flash');
+      expect(body.project).toBe('test-project');
+      expect(body.request).toBeDefined();
+      expect(body.request.contents).toBeDefined();
+      // Contents should NOT be at top level
+      expect(body.contents).toBeUndefined();
+    });
+
+    it('should use snake_case system_instruction for Code Assist endpoint', async () => {
+      const client = createOAuthClient();
+      mockFetch.mockResolvedValueOnce(mockCodeAssistGenerateContent('Arrr!'));
+
+      await client.chat({
+        messages: [{ role: 'user', parts: [{ text: 'Who are you?' }] }],
+        systemInstruction: 'You are a pirate.',
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.request.system_instruction).toEqual({ parts: [{ text: 'You are a pirate.' }] });
+      expect(body.request.systemInstruction).toBeUndefined();
+    });
+
+    it('should unwrap response from Code Assist "response" wrapper', async () => {
+      const client = createOAuthClient();
+      mockFetch.mockResolvedValueOnce(mockCodeAssistGenerateContent('Hello from Code Assist!'));
+
+      const result = await client.generate('Hello');
+      expect(result).toBe('Hello from Code Assist!');
+    });
+
+    it('should return usage metadata from Code Assist response', async () => {
+      const client = createOAuthClient();
+      mockFetch.mockResolvedValueOnce(
+        mockCodeAssistGenerateContent('response', {
+          promptTokenCount: 5,
+          candidatesTokenCount: 15,
+          totalTokenCount: 20,
+        })
+      );
+
+      const result = await client.chat({
+        messages: [{ role: 'user', parts: [{ text: 'Hi' }] }],
+      });
+
+      expect(result.usage).toEqual({
+        promptTokens: 5,
+        completionTokens: 15,
+        totalTokens: 20,
+      });
+    });
+
+    it('should return static model list in OAuth mode (no fetch call)', async () => {
+      const client = createOAuthClient();
+      const models = await client.listModels();
+
+      // No fetch should have been made
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(models.length).toBeGreaterThan(0);
+      expect(models.map((m) => m.name)).toContain('gemini-2.5-flash');
+      expect(models.map((m) => m.name)).toContain('gemini-2.5-pro');
     });
 
     it('should refresh expired token', async () => {
@@ -413,7 +536,7 @@ describe('Gemini CLI Integration', () => {
       // First call: token refresh
       mockFetch.mockResolvedValueOnce(mockTokenRefresh());
       // Second call: actual API call
-      mockFetch.mockResolvedValueOnce(mockGenerateContent('response'));
+      mockFetch.mockResolvedValueOnce(mockCodeAssistGenerateContent('response'));
 
       await client.generate('test');
 
@@ -429,18 +552,18 @@ describe('Gemini CLI Integration', () => {
   // ============================================================================
 
   describe('parseGeminiAuth()', () => {
-    it('should parse API key auth', () => {
-      const result = parseGeminiAuth({ api_key: 'my-key' });
+    it('should parse API key auth', async () => {
+      const result = await parseGeminiAuth({ api_key: 'my-key' });
       expect(result).toEqual({ mode: 'api_key', apiKey: 'my-key' });
     });
 
-    it('should parse apiKey (camelCase)', () => {
-      const result = parseGeminiAuth({ apiKey: 'my-key' });
+    it('should parse apiKey (camelCase)', async () => {
+      const result = await parseGeminiAuth({ apiKey: 'my-key' });
       expect(result).toEqual({ mode: 'api_key', apiKey: 'my-key' });
     });
 
-    it('should parse OAuth auth with refresh_token', () => {
-      const result = parseGeminiAuth({
+    it('should parse OAuth auth with refresh_token', async () => {
+      const result = await parseGeminiAuth({
         refresh_token: 'my-refresh',
         project_id: 'my-project',
       });
@@ -453,8 +576,8 @@ describe('Gemini CLI Integration', () => {
       });
     });
 
-    it('should parse OAuth auth with camelCase keys', () => {
-      const result = parseGeminiAuth({
+    it('should parse OAuth auth with camelCase keys', async () => {
+      const result = await parseGeminiAuth({
         refreshToken: 'my-refresh',
         projectId: 'my-project',
         clientId: 'my-client',
@@ -469,8 +592,38 @@ describe('Gemini CLI Integration', () => {
       });
     });
 
-    it('should throw on missing auth', () => {
-      expect(() => parseGeminiAuth({})).toThrow(/api_key or refresh_token/);
+    it('should throw on missing auth when no stored credentials found', async () => {
+      // Temporarily point HOME to a directory with no .gemini/oauth_creds.json
+      const origHome = process.env.HOME;
+      process.env.HOME = '/nonexistent-path-for-testing';
+      try {
+        await expect(parseGeminiAuth({})).rejects.toThrow(/api_key or refresh_token/);
+      } finally {
+        process.env.HOME = origHome;
+      }
+    });
+
+    it('should auto-discover OAuth credentials from stored file when no auth provided', async () => {
+      // Write a temporary oauth_creds.json so auto-discovery has something to find
+      const tmpHome = join(tmpdir(), `marktoflow-test-${Date.now()}`);
+      mkdirSync(join(tmpHome, '.gemini'), { recursive: true });
+      writeFileSync(
+        join(tmpHome, '.gemini', 'oauth_creds.json'),
+        JSON.stringify({ refresh_token: 'auto-discovered-token' })
+      );
+      const origHome = process.env.HOME;
+      process.env.HOME = tmpHome;
+      try {
+        // Pass empty auth — should fall through to auto-discovery
+        const result = await parseGeminiAuth({});
+        expect(result.mode).toBe('oauth');
+        if (result.mode === 'oauth') {
+          expect(result.refreshToken).toBe('auto-discovered-token');
+        }
+      } finally {
+        process.env.HOME = origHome;
+        rmSync(tmpHome, { recursive: true, force: true });
+      }
     });
   });
 
@@ -517,7 +670,7 @@ describe('Gemini CLI Integration', () => {
       });
 
       await expect(refreshAccessToken('bad-token', 'client', 'secret')).rejects.toThrow(
-        'Token refresh failed',
+        'Token refresh failed'
       );
     });
   });

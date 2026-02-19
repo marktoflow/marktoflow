@@ -23,6 +23,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "test:integration": "vitest run --include 'tests/**/*.integration.test.ts'",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

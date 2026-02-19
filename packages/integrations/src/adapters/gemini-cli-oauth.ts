@@ -8,6 +8,7 @@
 
 import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { access, readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { delimiter, dirname, join } from 'node:path';
 
@@ -18,7 +19,10 @@ import type { GeminiCliOAuthCredentials } from './gemini-cli-types.js';
 // ============================================================================
 
 const CLIENT_ID_KEYS = ['MARKTOFLOW_GEMINI_OAUTH_CLIENT_ID', 'GEMINI_CLI_OAUTH_CLIENT_ID'];
-const CLIENT_SECRET_KEYS = ['MARKTOFLOW_GEMINI_OAUTH_CLIENT_SECRET', 'GEMINI_CLI_OAUTH_CLIENT_SECRET'];
+const CLIENT_SECRET_KEYS = [
+  'MARKTOFLOW_GEMINI_OAUTH_CLIENT_SECRET',
+  'GEMINI_CLI_OAUTH_CLIENT_SECRET',
+];
 const REDIRECT_URI = 'http://localhost:8085/oauth2callback';
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -92,8 +96,25 @@ export function extractGeminiCliCredentials(): { clientId: string; clientSecret:
     const geminiCliDir = dirname(dirname(resolvedPath));
 
     const searchPaths = [
-      join(geminiCliDir, 'node_modules', '@google', 'gemini-cli-core', 'dist', 'src', 'code_assist', 'oauth2.js'),
-      join(geminiCliDir, 'node_modules', '@google', 'gemini-cli-core', 'dist', 'code_assist', 'oauth2.js'),
+      join(
+        geminiCliDir,
+        'node_modules',
+        '@google',
+        'gemini-cli-core',
+        'dist',
+        'src',
+        'code_assist',
+        'oauth2.js'
+      ),
+      join(
+        geminiCliDir,
+        'node_modules',
+        '@google',
+        'gemini-cli-core',
+        'dist',
+        'code_assist',
+        'oauth2.js'
+      ),
     ];
 
     let content: string | null = null;
@@ -178,7 +199,7 @@ function resolveOAuthClientConfig(): { clientId: string; clientSecret?: string }
   }
 
   throw new Error(
-    'Gemini CLI not found. Install it first: npm install -g @google/gemini-cli, or set GEMINI_CLI_OAUTH_CLIENT_ID.',
+    'Gemini CLI not found. Install it first: npm install -g @google/gemini-cli, or set GEMINI_CLI_OAUTH_CLIENT_ID.'
   );
 }
 
@@ -214,7 +235,7 @@ function buildAuthUrl(challenge: string, verifier: string): string {
 
 function parseCallbackInput(
   input: string,
-  expectedState: string,
+  expectedState: string
 ): { code: string; state: string } | { error: string } {
   const trimmed = input.trim();
   if (!trimmed) {
@@ -294,7 +315,7 @@ async function waitForLocalCallback(params: {
         res.end(
           '<!doctype html><html><head><meta charset="utf-8"/></head>' +
             '<body><h2>Gemini CLI OAuth complete</h2>' +
-            '<p>You can close this window and return to marktoflow.</p></body></html>',
+            '<p>You can close this window and return to marktoflow.</p></body></html>'
         );
         finish(undefined, { code, state });
       } catch (err) {
@@ -338,7 +359,7 @@ async function waitForLocalCallback(params: {
 
 async function exchangeCodeForTokens(
   code: string,
-  verifier: string,
+  verifier: string
 ): Promise<GeminiCliOAuthCredentials> {
   const { clientId, clientSecret } = resolveOAuthClientConfig();
   const body = new URLSearchParams({
@@ -466,7 +487,7 @@ export async function discoverProject(accessToken: string): Promise<string> {
       return envProject;
     }
     throw new Error(
-      'This account requires GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID to be set.',
+      'This account requires GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID to be set.'
     );
   }
 
@@ -474,7 +495,7 @@ export async function discoverProject(accessToken: string): Promise<string> {
   const tierId = tier?.id || TIER_FREE;
   if (tierId !== TIER_FREE && !envProject) {
     throw new Error(
-      'This account requires GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID to be set.',
+      'This account requires GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID to be set.'
     );
   }
 
@@ -520,7 +541,7 @@ export async function discoverProject(accessToken: string): Promise<string> {
   }
 
   throw new Error(
-    'Could not discover or provision a Google Cloud project. Set GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID.',
+    'Could not discover or provision a Google Cloud project. Set GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID.'
   );
 }
 
@@ -540,12 +561,12 @@ function isVpcScAffected(payload: unknown): boolean {
     (item) =>
       typeof item === 'object' &&
       item &&
-      (item as { reason?: string }).reason === 'SECURITY_POLICY_VIOLATED',
+      (item as { reason?: string }).reason === 'SECURITY_POLICY_VIOLATED'
   );
 }
 
 function getDefaultTier(
-  allowedTiers?: Array<{ id?: string; isDefault?: boolean }>,
+  allowedTiers?: Array<{ id?: string; isDefault?: boolean }>
 ): { id?: string } | undefined {
   if (!allowedTiers?.length) {
     return { id: TIER_LEGACY };
@@ -555,7 +576,7 @@ function getDefaultTier(
 
 async function pollOperation(
   operationName: string,
-  headers: Record<string, string>,
+  headers: Record<string, string>
 ): Promise<{ done?: boolean; response?: { cloudaicompanionProject?: { id?: string } } }> {
   for (let attempt = 0; attempt < 24; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -583,7 +604,7 @@ async function pollOperation(
 export async function refreshAccessToken(
   refreshToken: string,
   clientId?: string,
-  clientSecret?: string,
+  clientSecret?: string
 ): Promise<{ accessToken: string; expiresAt: number }> {
   const config = clientId ? { clientId, clientSecret } : resolveOAuthClientConfig();
 
@@ -619,23 +640,68 @@ export async function refreshAccessToken(
 }
 
 // ============================================================================
+// Auto-discovery from ~/.gemini/oauth_creds.json
+// ============================================================================
+
+/**
+ * Attempt to load OAuth credentials saved by `marktoflow connect gemini-cli`
+ * (or by the gemini-cli itself) from ~/.gemini/oauth_creds.json.
+ *
+ * Returns null if the file does not exist or cannot be parsed.
+ */
+export async function loadGeminiCliOAuthCredentials(): Promise<{
+  refreshToken: string;
+  accessToken?: string;
+  expiresAt?: number;
+} | null> {
+  try {
+    const home = process.env.HOME || process.env.USERPROFILE || '';
+    const credsPath = join(home, '.gemini', 'oauth_creds.json');
+    await access(credsPath);
+    const raw = JSON.parse(await readFile(credsPath, 'utf8')) as Record<string, unknown>;
+    const refreshToken = (raw['refresh_token'] ?? raw['refreshToken']) as string | undefined;
+    if (!refreshToken) {
+      return null;
+    }
+    const accessToken = (raw['access_token'] ?? raw['accessToken']) as string | undefined;
+    const expiryDate = (raw['expiry_date'] ?? raw['expiresAt']) as number | undefined;
+    return {
+      refreshToken,
+      accessToken,
+      expiresAt: expiryDate,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
 // Auth Config Parser
 // ============================================================================
 
 /**
  * Parse auth configuration from workflow YAML into a unified GeminiCliAuthConfig.
  * Supports both OAuth (refresh_token + project_id) and API key modes.
+ *
+ * When no auth is supplied (empty object), attempts to auto-discover OAuth
+ * credentials from ~/.gemini/oauth_creds.json (written by `marktoflow connect
+ * gemini-cli` or by the gemini-cli itself).
  */
-export function parseGeminiAuth(auth: Record<string, unknown>): {
-  mode: 'oauth';
-  refreshToken: string;
-  projectId: string;
-  clientId?: string;
-  clientSecret?: string;
-} | {
-  mode: 'api_key';
-  apiKey: string;
-} {
+export async function parseGeminiAuth(auth: Record<string, unknown>): Promise<
+  | {
+      mode: 'oauth';
+      refreshToken: string;
+      projectId: string;
+      clientId?: string;
+      clientSecret?: string;
+      accessToken?: string;
+      expiresAt?: number;
+    }
+  | {
+      mode: 'api_key';
+      apiKey: string;
+    }
+> {
   if (auth.api_key || auth.apiKey) {
     return {
       mode: 'api_key',
@@ -653,9 +719,26 @@ export function parseGeminiAuth(auth: Record<string, unknown>): {
     };
   }
 
+  // No explicit auth — try to auto-discover from ~/.gemini/oauth_creds.json
+  const stored = await loadGeminiCliOAuthCredentials();
+  if (stored) {
+    return {
+      mode: 'oauth',
+      refreshToken: stored.refreshToken,
+      // projectId is resolved lazily at request time via discoverProject()
+      projectId: (auth.project_id ||
+        auth.projectId ||
+        process.env.GOOGLE_CLOUD_PROJECT ||
+        process.env.GOOGLE_CLOUD_PROJECT_ID ||
+        '') as string,
+      accessToken: stored.accessToken,
+      expiresAt: stored.expiresAt,
+    };
+  }
+
   throw new Error(
     'Gemini CLI auth requires either api_key or refresh_token + project_id. ' +
-    'Run `marktoflow connect gemini-cli` to set up OAuth.',
+      'Run `marktoflow connect gemini-cli` to set up OAuth.'
   );
 }
 
@@ -664,7 +747,7 @@ export function parseGeminiAuth(auth: Record<string, unknown>): {
 // ============================================================================
 
 export async function loginGeminiCliOAuth(
-  ctx: GeminiCliOAuthContext,
+  ctx: GeminiCliOAuthContext
 ): Promise<GeminiCliOAuthCredentials> {
   const needsManual = ctx.isRemote;
   await ctx.note(
@@ -679,7 +762,7 @@ export async function loginGeminiCliOAuth(
           'Sign in with your Google account for Gemini CLI access.',
           'The callback will be captured automatically on localhost:8085.',
         ].join('\n'),
-    'Gemini CLI OAuth',
+    'Gemini CLI OAuth'
   );
 
   const { verifier, challenge } = generatePkce();
