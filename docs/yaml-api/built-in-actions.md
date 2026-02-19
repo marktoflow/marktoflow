@@ -20,10 +20,10 @@ inputs:
 **Example:**
 
 ```yaml
-## Step 1: Process data
-action: core.process
+## Step 1: Fetch data (example uses the HTTP integration)
+action: api.get
 inputs:
-  data: '{{ inputs.data }}'
+  path: '/items'
 output_variable: processed
 
 ## Step 2: Set workflow outputs

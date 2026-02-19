@@ -77,13 +77,35 @@ inputs:
 
 #### Accessing Inputs in Steps
 
-Use `{{inputs.<name>}}` template syntax:
+Use `{{ inputs.<name> }}` template syntax:
 
 ```yaml
 action: slack.chat.postMessage
 inputs:
-  channel: "{{inputs.channel}}"
-  text: "{{inputs.message}}"
+  channel: "{{ inputs.channel }}"
+  text: "{{ inputs.message }}"
+```
+
+#### Passing Inputs via CLI
+
+Use the `--input key=value` flag to supply inputs at runtime:
+
+```bash
+marktoflow run workflow.md --input channel="#alerts" --input limit=10
+```
+
+Values containing `=` signs (SQL queries, base64 tokens, connection strings) are fully
+supported — only the **first** `=` is used as the key/value separator:
+
+```bash
+# SQL query
+marktoflow run workflow.md --input query="SELECT * FROM users WHERE id=1"
+
+# Base64 token with trailing padding
+marktoflow run workflow.md --input token="eyJhbGciOiJIUzI1NiJ9.payload=="
+
+# Multiple inputs
+marktoflow run workflow.md --input project=PROJ --input query="status='open'"
 ```
 
 ---
