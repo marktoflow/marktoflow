@@ -112,6 +112,64 @@ export function useCanvasInteractions() {
     setContextMenuNode(null);
   }, [contextMenuNode, nodes, setNodes, deleteSelected]);
 
+  const handleContextAddStepBefore = useCallback(() => {
+    if (!contextMenuNode || !currentWorkflow) { setContextMenuNode(null); return; }
+    const idx = currentWorkflow.steps.findIndex((s) => s.id === contextMenuNode.data.id);
+    const insertAt = Math.max(0, idx);
+    const newId = 'step-' + Date.now().toString(36);
+    const newStep = { id: newId, name: 'New Step', action: '', inputs: {} };
+    const updatedSteps = [
+      ...currentWorkflow.steps.slice(0, insertAt),
+      newStep,
+      ...currentWorkflow.steps.slice(insertAt),
+    ];
+    saveWorkflow({ ...currentWorkflow, steps: updatedSteps });
+    setEditingStep(newStep);
+    setIsEditorOpen(true);
+    setContextMenuNode(null);
+  }, [contextMenuNode, currentWorkflow, saveWorkflow]);
+
+  const handleContextAddStepAfter = useCallback(() => {
+    if (!contextMenuNode || !currentWorkflow) { setContextMenuNode(null); return; }
+    const idx = currentWorkflow.steps.findIndex((s) => s.id === contextMenuNode.data.id);
+    const insertAt = idx + 1;
+    const newId = 'step-' + Date.now().toString(36);
+    const newStep = { id: newId, name: 'New Step', action: '', inputs: {} };
+    const updatedSteps = [
+      ...currentWorkflow.steps.slice(0, insertAt),
+      newStep,
+      ...currentWorkflow.steps.slice(insertAt),
+    ];
+    saveWorkflow({ ...currentWorkflow, steps: updatedSteps });
+    setEditingStep(newStep);
+    setIsEditorOpen(true);
+    setContextMenuNode(null);
+  }, [contextMenuNode, currentWorkflow, saveWorkflow]);
+
+  const handleContextConvertToSubworkflow = useCallback(() => {
+    if (!contextMenuNode || !currentWorkflow) { setContextMenuNode(null); return; }
+    // Mark node type as subworkflow — persisted on next save
+    const updatedNodes = nodes.map((n) =>
+      n.id === contextMenuNode.id ? { ...n, type: 'subworkflow' } : n,
+    );
+    setNodes(updatedNodes);
+    const updatedSteps = currentWorkflow.steps.map((s) =>
+      s.id === contextMenuNode.data.id ? { ...s, type: 'subworkflow' } : s,
+    );
+    saveWorkflow({ ...currentWorkflow, steps: updatedSteps });
+    setContextMenuNode(null);
+  }, [contextMenuNode, currentWorkflow, nodes, setNodes, saveWorkflow]);
+
+  const handleContextViewError = useCallback(() => {
+    if (!contextMenuNode || !currentWorkflow) { setContextMenuNode(null); return; }
+    const step = currentWorkflow.steps.find((s) => s.id === contextMenuNode.data.id);
+    if (step) {
+      setYamlViewStep(step);
+      setIsYamlViewOpen(true);
+    }
+    setContextMenuNode(null);
+  }, [contextMenuNode, currentWorkflow]);
+
   const handleContextExecute = useCallback(async () => {
     if (contextMenuNode && selectedWorkflow) {
       const stepId = contextMenuNode.data.id as string;
@@ -267,6 +325,10 @@ export function useCanvasInteractions() {
     handleContextDuplicate,
     handleContextDelete,
     handleContextExecute,
+    handleContextAddStepBefore,
+    handleContextAddStepAfter,
+    handleContextConvertToSubworkflow,
+    handleContextViewError,
     // Step editor
     handleStepSave,
     getAvailableVariables,
