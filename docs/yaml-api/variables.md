@@ -73,8 +73,8 @@ inputs:
 Access workflow inputs with `inputs.` prefix:
 
 ```yaml
-text: "{{inputs.message}}"
-channel: "{{inputs.channel}}"
+text: "{{ inputs.message }}"
+channel: "{{ inputs.channel }}"
 ```
 
 ### Step Output Variables
@@ -85,14 +85,14 @@ Reference step outputs by their `output_variable` name:
 # Step 1: Get user info
 action: slack.users.info
 inputs:
-  user: "{{inputs.user_id}}"
+  user: "{{ inputs.user_id }}"
 output_variable: user_info
 
 # Step 2: Use output from Step 1
 action: slack.chat.postMessage
 inputs:
-  channel: "{{inputs.channel}}"
-  text: "Hello {{user_info.user.real_name}}!"
+  channel: "{{ inputs.channel }}"
+  text: "Hello {{ user_info.user.real_name }}!"
 ```
 
 ### Nested Property Access
