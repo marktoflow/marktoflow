@@ -3,13 +3,15 @@
  *
  * Provides integration with Google's Gemini API using either:
  * - OAuth credentials extracted from the installed gemini-cli binary
+ *   (uses the Cloud Code Assist endpoint: cloudcode-pa.googleapis.com/v1internal)
  * - Direct API key authentication
+ *   (uses the standard Gemini API: generativelanguage.googleapis.com/v1beta)
  *
  * Follows the OllamaClient / OpenAIClient adapter pattern.
  */
 
 import { ToolConfig, SDKInitializer } from '@marktoflow/core';
-import { refreshAccessToken, parseGeminiAuth } from './gemini-cli-oauth.js';
+import { refreshAccessToken, parseGeminiAuth, discoverProject } from './gemini-cli-oauth.js';
 import type {
   GeminiCliClientConfig,
   GeminiCliChatOptions,
@@ -23,6 +25,13 @@ import type {
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+
+/**
+ * The Cloud Code Assist endpoint used by gemini-cli OAuth tokens.
+ * OAuth tokens issued by gemini-cli only carry the `cloud-platform` scope,
+ * which is accepted by this endpoint but NOT by generativelanguage.googleapis.com.
+ */
+const CODE_ASSIST_BASE_URL = 'https://cloudcode-pa.googleapis.com/v1internal';
 
 // ============================================================================
 // Gemini CLI Client
@@ -76,16 +85,26 @@ export class GeminiCliClient {
     const oauthConfig = this.auth as GeminiCliOAuthConfig;
 
     if (this.accessToken && this.expiresAt && Date.now() < this.expiresAt) {
+      // Also resolve projectId if still empty (using the cached token)
+      if (!oauthConfig.projectId) {
+        oauthConfig.projectId = await discoverProject(this.accessToken);
+      }
       return this.accessToken;
     }
 
     const result = await refreshAccessToken(
       oauthConfig.refreshToken,
       oauthConfig.clientId,
-      oauthConfig.clientSecret,
+      oauthConfig.clientSecret
     );
     this.accessToken = result.accessToken;
     this.expiresAt = result.expiresAt;
+
+    // Lazily discover the GCP project ID if not supplied in YAML
+    if (!oauthConfig.projectId) {
+      oauthConfig.projectId = await discoverProject(this.accessToken);
+    }
+
     return result.accessToken;
   }
 
@@ -94,14 +113,63 @@ export class GeminiCliClient {
   // ============================================================================
 
   /**
-   * Generate text from a prompt (simple interface)
+   * Generate text from a prompt. Returns the generated text as a plain string.
+   *
+   * Accepts either a plain string or an inputs object from the workflow engine:
+   *   { prompt: string, model?: string, temperature?: number, max_tokens?: number }
+   *
+   * Use `generateDetailed()` if you need the model name and usage metadata.
    */
-  async generate(prompt: string, model?: string): Promise<string> {
+  async generate(
+    promptOrInputs: string | Record<string, unknown>,
+    model?: string
+  ): Promise<string> {
+    const result = await this.generateDetailed(promptOrInputs, model);
+    return result.text;
+  }
+
+  /**
+   * Generate text from a prompt, returning a rich result with model name and
+   * usage metadata in addition to the generated text.
+   *
+   * Accepts either a plain string or an inputs object from the workflow engine:
+   *   { prompt: string, model?: string, temperature?: number, max_tokens?: number }
+   */
+  async generateDetailed(
+    promptOrInputs: string | Record<string, unknown>,
+    model?: string
+  ): Promise<{
+    text: string;
+    model: string;
+    usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number };
+  }> {
+    let prompt: string;
+    let resolvedModel: string | undefined = model;
+    let temperature: number | undefined;
+    let maxOutputTokens: number | undefined;
+
+    if (typeof promptOrInputs === 'string') {
+      prompt = promptOrInputs;
+    } else {
+      prompt = (promptOrInputs['prompt'] as string) || '';
+      resolvedModel = (promptOrInputs['model'] as string | undefined) || model;
+      temperature = promptOrInputs['temperature'] as number | undefined;
+      maxOutputTokens = (promptOrInputs['max_tokens'] ?? promptOrInputs['maxOutputTokens']) as
+        | number
+        | undefined;
+    }
+
     const result = await this.chat({
-      model,
+      model: resolvedModel,
       messages: [{ role: 'user', parts: [{ text: prompt }] }],
+      temperature,
+      maxOutputTokens,
     });
-    return result.content;
+    return {
+      text: result.content,
+      model: result.model,
+      usage: result.usage,
+    };
   }
 
   // ============================================================================
@@ -130,20 +198,10 @@ export class GeminiCliClient {
       throw new Error(`Gemini API error ${response.status}: ${errorText}`);
     }
 
-    const data = (await response.json()) as {
-      candidates?: Array<{
-        content?: { parts?: Array<{ text?: string }> };
-      }>;
-      usageMetadata?: {
-        promptTokenCount?: number;
-        candidatesTokenCount?: number;
-        totalTokenCount?: number;
-      };
-    };
+    const raw = (await response.json()) as Record<string, unknown>;
+    const data = this.unwrapResponse(raw);
 
-    const text = data.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text || '')
-      .join('') || '';
+    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
 
     const { content, thinking } = this.parseThinking(text);
 
@@ -152,12 +210,14 @@ export class GeminiCliClient {
       model,
       done: true,
       thinking,
-      usage: data.usageMetadata ? {
-        promptTokens: data.usageMetadata.promptTokenCount,
-        completionTokens: data.usageMetadata.candidatesTokenCount,
-        totalTokens: data.usageMetadata.totalTokenCount,
-      } : undefined,
-      raw: data,
+      usage: data.usageMetadata
+        ? {
+            promptTokens: data.usageMetadata.promptTokenCount,
+            completionTokens: data.usageMetadata.candidatesTokenCount,
+            totalTokens: data.usageMetadata.totalTokenCount,
+          }
+        : undefined,
+      raw,
     };
   }
 
@@ -167,7 +227,7 @@ export class GeminiCliClient {
   async *chatStream(options: GeminiCliChatOptions): AsyncGenerator<string> {
     const model = options.model || this.defaultModel;
     const headers = await this.getHeaders();
-    const url = this.buildUrl(model, 'streamGenerateContent') + '&alt=sse';
+    const url = this.buildStreamUrl(model);
 
     const body = this.buildRequestBody(options);
 
@@ -203,14 +263,11 @@ export class GeminiCliClient {
         if (!jsonStr || jsonStr === '[DONE]') continue;
 
         try {
-          const data = JSON.parse(jsonStr) as {
-            candidates?: Array<{
-              content?: { parts?: Array<{ text?: string }> };
-            }>;
-          };
-          const text = data.candidates?.[0]?.content?.parts
-            ?.map((p) => p.text || '')
-            .join('') || '';
+          const raw = JSON.parse(jsonStr) as Record<string, unknown>;
+          // Code Assist SSE wraps candidates under "response"
+          const data = this.unwrapResponse(raw);
+          const text =
+            data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
           if (text) {
             yield text;
           }
@@ -226,7 +283,7 @@ export class GeminiCliClient {
    */
   async chatWithCallback(
     options: GeminiCliChatOptions,
-    callback: GeminiCliStreamCallback,
+    callback: GeminiCliStreamCallback
   ): Promise<GeminiCliChatResult> {
     let fullResponse = '';
     const model = options.model || this.defaultModel;
@@ -252,9 +309,42 @@ export class GeminiCliClient {
   // ============================================================================
 
   /**
-   * List available models
+   * List available models.
+   * Only supported in API key mode. In OAuth (Code Assist) mode a static list
+   * of well-known models is returned since the Code Assist endpoint does not
+   * expose a model-listing API.
    */
   async listModels(): Promise<GeminiCliModelInfo[]> {
+    if (this.isOAuth()) {
+      return [
+        {
+          name: 'gemini-2.5-flash',
+          displayName: 'Gemini 2.5 Flash',
+          supportedGenerationMethods: ['generateContent'],
+        },
+        {
+          name: 'gemini-2.5-pro',
+          displayName: 'Gemini 2.5 Pro',
+          supportedGenerationMethods: ['generateContent'],
+        },
+        {
+          name: 'gemini-2.0-flash',
+          displayName: 'Gemini 2.0 Flash',
+          supportedGenerationMethods: ['generateContent'],
+        },
+        {
+          name: 'gemini-1.5-pro',
+          displayName: 'Gemini 1.5 Pro',
+          supportedGenerationMethods: ['generateContent'],
+        },
+        {
+          name: 'gemini-1.5-flash',
+          displayName: 'Gemini 1.5 Flash',
+          supportedGenerationMethods: ['generateContent'],
+        },
+      ];
+    }
+
     const headers = await this.getHeaders();
     const url = `${this.baseUrl}/models`;
 
@@ -317,37 +407,93 @@ export class GeminiCliClient {
   // Private Helpers
   // ============================================================================
 
+  /**
+   * Returns true when using OAuth mode — in that case the Code Assist endpoint
+   * is used instead of the standard generativelanguage.googleapis.com endpoint.
+   */
+  private isOAuth(): boolean {
+    return this.auth.mode === 'oauth';
+  }
+
   private buildUrl(model: string, method: string): string {
-    const separator = this.baseUrl.includes('?') ? '&' : '?';
-    if (this.auth.mode === 'api_key') {
-      return `${this.baseUrl}/models/${model}:${method}?key=${this.auth.apiKey}`;
+    if (this.isOAuth()) {
+      // Code Assist: POST https://cloudcode-pa.googleapis.com/v1internal:generateContent
+      const base = this.baseUrl !== DEFAULT_BASE_URL ? this.baseUrl : CODE_ASSIST_BASE_URL;
+      return `${base}:${method}`;
     }
-    return `${this.baseUrl}/models/${model}:${method}${separator}`;
+    // Standard API key: POST .../models/{model}:generateContent?key=...
+    const apiKey = (this.auth as { apiKey: string }).apiKey;
+    return `${this.baseUrl}/models/${model}:${method}?key=${apiKey}`;
+  }
+
+  private buildStreamUrl(model: string): string {
+    if (this.isOAuth()) {
+      const base = this.baseUrl !== DEFAULT_BASE_URL ? this.baseUrl : CODE_ASSIST_BASE_URL;
+      return `${base}:streamGenerateContent?alt=sse`;
+    }
+    const apiKey = (this.auth as { apiKey: string }).apiKey;
+    return `${this.baseUrl}/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
   }
 
   private buildRequestBody(options: GeminiCliChatOptions): Record<string, unknown> {
-    const body: Record<string, unknown> = {
+    const model = options.model || this.defaultModel;
+
+    // Inner request payload (same structure for both endpoints)
+    const inner: Record<string, unknown> = {
       contents: options.messages,
     };
 
     if (options.systemInstruction) {
-      body.systemInstruction = {
-        parts: [{ text: options.systemInstruction }],
-      };
+      if (this.isOAuth()) {
+        // Code Assist uses snake_case for system instruction
+        inner['system_instruction'] = { parts: [{ text: options.systemInstruction }] };
+      } else {
+        inner['systemInstruction'] = { parts: [{ text: options.systemInstruction }] };
+      }
     }
 
     const generationConfig: Record<string, unknown> = {};
     if (options.temperature !== undefined) generationConfig.temperature = options.temperature;
     if (options.topP !== undefined) generationConfig.topP = options.topP;
     if (options.topK !== undefined) generationConfig.topK = options.topK;
-    if (options.maxOutputTokens !== undefined) generationConfig.maxOutputTokens = options.maxOutputTokens;
+    if (options.maxOutputTokens !== undefined)
+      generationConfig.maxOutputTokens = options.maxOutputTokens;
     if (options.stopSequences?.length) generationConfig.stopSequences = options.stopSequences;
 
     if (Object.keys(generationConfig).length > 0) {
-      body.generationConfig = generationConfig;
+      inner['generationConfig'] = generationConfig;
     }
 
-    return body;
+    if (this.isOAuth()) {
+      // Code Assist wraps the request: { model, project, request: { contents, ... } }
+      const oauthConfig = this.auth as GeminiCliOAuthConfig;
+      return {
+        model,
+        project: oauthConfig.projectId,
+        request: inner,
+      };
+    }
+
+    return inner;
+  }
+
+  /**
+   * Extract the candidates payload, handling both response shapes:
+   * - Standard API:      { candidates: [...], usageMetadata: {...} }
+   * - Code Assist OAuth: { response: { candidates: [...], usageMetadata: {...} }, traceId: ... }
+   */
+  private unwrapResponse(data: Record<string, unknown>): {
+    candidates: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    usageMetadata?: {
+      promptTokenCount?: number;
+      candidatesTokenCount?: number;
+      totalTokenCount?: number;
+    };
+  } {
+    if (this.isOAuth() && data['response']) {
+      return data['response'] as ReturnType<typeof this.unwrapResponse>;
+    }
+    return data as ReturnType<typeof this.unwrapResponse>;
   }
 
   // ============================================================================
@@ -366,9 +512,7 @@ export class GeminiCliClient {
 
       // Extract system message if present
       const systemMsg = inputs.messages.find((m) => m.role === 'system');
-      const nonSystemMessages = messages.filter(
-        (_, i) => inputs.messages[i].role !== 'system',
-      );
+      const nonSystemMessages = messages.filter((_, i) => inputs.messages[i].role !== 'system');
 
       const result = await this.chat({
         model: inputs.model || this.defaultModel,
@@ -399,7 +543,7 @@ export const GeminiCliInitializer: SDKInitializer = {
     const auth = config.auth || {};
     const options = config.options || {};
 
-    const parsedAuth = parseGeminiAuth(auth as Record<string, unknown>);
+    const parsedAuth = await parseGeminiAuth(auth as Record<string, unknown>);
     const model = (options['model'] as string) || DEFAULT_MODEL;
 
     return new GeminiCliClient({
