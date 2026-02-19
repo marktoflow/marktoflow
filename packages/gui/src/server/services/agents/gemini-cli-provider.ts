@@ -56,11 +56,15 @@ export class GeminiCliProvider implements AgentProvider {
 
       if (!this.apiKey) {
         this.ready = false;
-        this.error = 'No Gemini API key. Set GEMINI_API_KEY or run `marktoflow connect gemini-cli`.';
+        this.error =
+          'No Gemini API key. Set GEMINI_API_KEY or run `marktoflow connect gemini-cli`.';
         return;
       }
 
-      // Verify the API key works by listing models
+      // Verify the API key works by listing models.
+      // The Gemini REST API uses a ?key= query param for authentication (per Google's docs).
+      // This runs server-side in a local GUI process, so the key appearing in server logs is
+      // acceptable — there is no third-party server involved.
       const response = await fetch(`${DEFAULT_BASE_URL}/models?key=${this.apiKey}`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
@@ -103,6 +107,7 @@ export class GeminiCliProvider implements AgentProvider {
       const workflowYaml = yamlStringify(workflow, { indent: 2, lineWidth: 0 });
 
       const response = await fetch(
+        // ?key= is the standard Gemini REST auth param; local server context, see initialize() comment.
         `${DEFAULT_BASE_URL}/models/${this.model}:generateContent?key=${this.apiKey}`,
         {
           method: 'POST',
@@ -112,11 +117,15 @@ export class GeminiCliProvider implements AgentProvider {
             contents: [
               {
                 role: 'user',
-                parts: [{ text: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}` }],
+                parts: [
+                  {
+                    text: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}`,
+                  },
+                ],
               },
             ],
           }),
-        },
+        }
       );
 
       if (!response.ok) {
@@ -129,9 +138,7 @@ export class GeminiCliProvider implements AgentProvider {
         }>;
       };
 
-      const text = data.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text || '')
-        .join('') || '';
+      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
 
       return this.parseAIResponse(text, workflow);
     } catch (err) {
@@ -146,25 +153,17 @@ export class GeminiCliProvider implements AgentProvider {
     const suggestions: string[] = [];
 
     if (!workflow || !workflow.steps) {
-      return [
-        'Add your first step',
-        'Create a simple workflow',
-        'Add an HTTP request',
-      ];
+      return ['Add your first step', 'Create a simple workflow', 'Add an HTTP request'];
     }
 
-    suggestions.push(
-      'Add error handling',
-      'Add a notification step',
-      'Simplify the workflow',
-    );
+    suggestions.push('Add error handling', 'Add a notification step', 'Simplify the workflow');
 
     if (selectedStepId) {
       const step = workflow.steps.find((s) => s.id === selectedStepId);
       if (step) {
         suggestions.push(
           `Improve "${step.name || step.id}"`,
-          `Add validation to "${step.name || step.id}"`,
+          `Add validation to "${step.name || step.id}"`
         );
       }
     }
@@ -175,7 +174,7 @@ export class GeminiCliProvider implements AgentProvider {
   async streamPrompt(
     prompt: string,
     workflow: Workflow,
-    onChunk: (chunk: string) => void,
+    onChunk: (chunk: string) => void
   ): Promise<PromptResult> {
     if (!this.ready || !this.apiKey) {
       return this.processPrompt(prompt, workflow);
@@ -186,6 +185,7 @@ export class GeminiCliProvider implements AgentProvider {
 
     try {
       const response = await fetch(
+        // ?key= is the standard Gemini REST auth param; local server context, see initialize() comment.
         `${DEFAULT_BASE_URL}/models/${this.model}:streamGenerateContent?key=${this.apiKey}&alt=sse`,
         {
           method: 'POST',
@@ -195,11 +195,15 @@ export class GeminiCliProvider implements AgentProvider {
             contents: [
               {
                 role: 'user',
-                parts: [{ text: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}` }],
+                parts: [
+                  {
+                    text: `Current workflow:\n\`\`\`yaml\n${workflowYaml}\n\`\`\`\n\nUser request: ${prompt}`,
+                  },
+                ],
               },
             ],
           }),
-        },
+        }
       );
 
       if (!response.ok || !response.body) {
@@ -227,9 +231,8 @@ export class GeminiCliProvider implements AgentProvider {
                 content?: { parts?: Array<{ text?: string }> };
               }>;
             };
-            const text = data.candidates?.[0]?.content?.parts
-              ?.map((p) => p.text || '')
-              .join('') || '';
+            const text =
+              data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
             if (text) {
               fullResponse += text;
               onChunk(text);

@@ -37,7 +37,7 @@ const server = await startServer({
 
 - **Drag-and-Drop Editor** — Visual node-based workflow canvas with pan/zoom
 - **Auto-Layout** — Dagre-based auto-layout on workflow load with per-node-type sizing; also available via Cmd+L
-- **AI Assistance** — Natural language commands to modify workflows (Claude, Copilot, Ollama)
+- **AI Assistance** — Natural language commands to modify workflows (Claude, Copilot, Gemini, Ollama)
 - **Command Palette (Cmd+K)** — Fuzzy search across actions, workflows, nodes, and settings
 - **Real-time Execution** — Run workflows and watch live status via WebSocket
 - **Validation Panel** — Dry-run checks before execution
@@ -54,18 +54,20 @@ const server = await startServer({
 
 ## AI Providers
 
-| Provider | Auth Type | Authentication |
-|----------|-----------|----------------|
-| OpenAI | API Key | `OPENAI_API_KEY` env var |
-| Local LLM (llama.cpp, VLLM, LM Studio) | Local | Any OpenAI-compatible endpoint — auto-detects models |
-| Claude Agent | SDK | Claude CLI — `claude login` |
-| GitHub Copilot | SDK | Copilot CLI — `copilot login` |
-| OpenAI Codex | SDK | `OPENAI_API_KEY` env var (auto-detected) |
-| Claude API | API Key | `ANTHROPIC_API_KEY` env var |
-| Ollama | Local | `ollama serve` on `localhost:11434` |
-| Demo Mode | — | Always available |
+| Provider                               | Auth Type   | Authentication                                                                   |
+| -------------------------------------- | ----------- | -------------------------------------------------------------------------------- |
+| OpenAI                                 | API Key     | `OPENAI_API_KEY` env var                                                         |
+| Local LLM (llama.cpp, VLLM, LM Studio) | Local       | Any OpenAI-compatible endpoint — auto-detects models                             |
+| Claude Agent                           | SDK         | Claude CLI — `claude login`                                                      |
+| GitHub Copilot                         | SDK         | Copilot CLI — `copilot login`                                                    |
+| OpenAI Codex                           | SDK         | `OPENAI_API_KEY` env var (auto-detected)                                         |
+| Claude API                             | API Key     | `ANTHROPIC_API_KEY` env var                                                      |
+| Ollama                                 | Local       | `ollama serve` on `localhost:11434`                                              |
+| Google Gemini CLI                      | SDK/API Key | `gemini-cli` OAuth (`marktoflow connect gemini-cli`) or `GEMINI_API_KEY` env var |
+| Demo Mode                              | —           | Always available                                                                 |
 
 **SDK Provider Status:**
+
 - 🟢 **Ready** (green) — Connected and active
 - 🔵 **Available** (blue) — SDK installed, click to connect
 - 🟡 **Needs Config** (yellow) — Configuration required
@@ -75,17 +77,17 @@ SDK-based providers detect availability automatically and show "Available" statu
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Cmd/Ctrl + S` | Save workflow |
-| `Cmd/Ctrl + Z` | Undo |
-| `Cmd/Ctrl + Shift + Z` | Redo |
-| `Cmd/Ctrl + K` | Open Command Palette |
-| `Cmd/Ctrl + P` | Quick Workflow Switcher |
-| `Cmd/Ctrl + ,` | Open Settings |
-| `Cmd/Ctrl + Shift + T` | Toggle theme |
-| `Delete` | Delete selected |
-| `Cmd/Ctrl + D` | Duplicate selected |
+| Shortcut               | Action                  |
+| ---------------------- | ----------------------- |
+| `Cmd/Ctrl + S`         | Save workflow           |
+| `Cmd/Ctrl + Z`         | Undo                    |
+| `Cmd/Ctrl + Shift + Z` | Redo                    |
+| `Cmd/Ctrl + K`         | Open Command Palette    |
+| `Cmd/Ctrl + P`         | Quick Workflow Switcher |
+| `Cmd/Ctrl + ,`         | Open Settings           |
+| `Cmd/Ctrl + Shift + T` | Toggle theme            |
+| `Delete`               | Delete selected         |
+| `Cmd/Ctrl + D`         | Duplicate selected      |
 
 ## Documentation
 

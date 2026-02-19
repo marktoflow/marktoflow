@@ -15,7 +15,8 @@ Complete API reference for AI agent integrations in marktoflow workflows.
 7. [OpenCode](#opencode)
 8. [OpenAI](#openai)
 9. [Ollama](#ollama)
-10. [AI-Powered Browser Automation](#ai-powered-browser-automation)
+10. [Google Gemini CLI](#google-gemini-cli)
+11. [AI-Powered Browser Automation](#ai-powered-browser-automation)
 
 ---
 
@@ -45,20 +46,20 @@ steps:
   # Use fast, cheap model for quick summary
   - id: quick-summary
     action: agent.chat.completions
-    model: haiku                    # Fast, cheap
+    model: haiku # Fast, cheap
     inputs:
       messages:
         - role: user
-          content: "Summarize: {{ inputs.text }}"
+          content: 'Summarize: {{ inputs.text }}'
 
   # Use powerful model for deep analysis
   - id: deep-analysis
     action: agent.chat.completions
-    model: opus                     # Most capable
+    model: opus # Most capable
     inputs:
       messages:
         - role: user
-          content: "Detailed analysis: {{ inputs.code }}"
+          content: 'Detailed analysis: {{ inputs.code }}'
 ```
 
 ### Agent Backend Override
@@ -69,21 +70,21 @@ Override the agent backend for a specific step:
 steps:
   - id: copilot-task
     action: agent.chat.completions
-    agent: copilot                  # Use GitHub Copilot
+    agent: copilot # Use GitHub Copilot
     model: gpt-4.1
     inputs:
       messages:
         - role: user
-          content: "Generate code: {{ inputs.spec }}"
+          content: 'Generate code: {{ inputs.spec }}'
 
   - id: claude-task
     action: agent.chat.completions
-    agent: claude-agent             # Use Claude Agent
+    agent: claude-agent # Use Claude Agent
     model: claude-sonnet-4-5
     inputs:
       messages:
         - role: user
-          content: "Review code: {{ inputs.code }}"
+          content: 'Review code: {{ inputs.code }}'
 ```
 
 ### Workflow-Level Defaults
@@ -93,7 +94,7 @@ Set default model and agent at the workflow level:
 ```yaml
 workflow:
   id: my-workflow
-  name: "My Workflow"
+  name: 'My Workflow'
   default_agent: claude-agent
   default_model: claude-sonnet-4-5
 
@@ -104,25 +105,26 @@ steps:
     inputs:
       messages:
         - role: user
-          content: "Process this"
+          content: 'Process this'
 
   - id: overrides-model
     action: agent.chat.completions
-    model: haiku                    # Override for this step only
+    model: haiku # Override for this step only
     inputs:
       messages:
         - role: user
-          content: "Quick task"
+          content: 'Quick task'
 ```
 
 ### Available Models
 
-| Agent | Available Models |
-|-------|-----------------|
-| Claude Agent | `claude-opus-4`, `claude-sonnet-4-5`, `haiku` |
-| GitHub Copilot | `gpt-4.1`, `gpt-4-turbo`, `gpt-3.5-turbo` |
-| OpenAI Codex | `gpt-4-turbo`, `gpt-3.5-turbo` |
-| Ollama | Any locally installed model (`llama2`, `codellama`, etc.) |
+| Agent             | Available Models                                                                |
+| ----------------- | ------------------------------------------------------------------------------- |
+| Claude Agent      | `claude-opus-4`, `claude-sonnet-4-5`, `haiku`                                   |
+| GitHub Copilot    | `gpt-4.1`, `gpt-4-turbo`, `gpt-3.5-turbo`                                       |
+| OpenAI Codex      | `gpt-4-turbo`, `gpt-3.5-turbo`                                                  |
+| Ollama            | Any locally installed model (`llama2`, `codellama`, etc.)                       |
+| Google Gemini CLI | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, any Gemini REST model |
 
 ---
 
@@ -149,6 +151,7 @@ Reference an external prompt file in a step:
 Prompt files use markdown with optional YAML frontmatter:
 
 **prompts/code-review.md:**
+
 ```markdown
 ---
 name: Code Review
@@ -165,9 +168,10 @@ variables:
 # Code Review
 
 Review this {{ prompt.language }} code:
-
 ```
+
 {{ prompt.code }}
+
 ```
 
 Focus on:
@@ -190,7 +194,7 @@ Use external prompts with per-step model configuration:
 ```yaml
 - id: security-scan
   action: agent.chat.completions
-  model: opus                       # Use most capable model
+  model: opus # Use most capable model
   prompt: ./prompts/security-analysis.md
   prompt_inputs:
     code: '{{ inputs.source_code }}'
@@ -220,14 +224,14 @@ tools:
   copilot:
     sdk: '@github/copilot-sdk'
     options:
-      cli_path: string         # Optional: Path to Copilot CLI
-      cli_url: string          # Optional: Download URL for CLI
-      model: string            # Optional: Model name (default: "gpt-4.1")
-      auto_start: boolean      # Optional: Auto-start server (default: true)
-      log_level: string        # Optional: Log level
-      cwd: string              # Optional: Working directory
-      exclude_files: string[]  # Optional: Files to exclude from context
-      env: object              # Optional: Environment variables
+      cli_path: string # Optional: Path to Copilot CLI
+      cli_url: string # Optional: Download URL for CLI
+      model: string # Optional: Model name (default: "gpt-4.1")
+      auto_start: boolean # Optional: Auto-start server (default: true)
+      log_level: string # Optional: Log level
+      cwd: string # Optional: Working directory
+      exclude_files: string[] # Optional: Files to exclude from context
+      env: object # Optional: Environment variables
 ```
 
 **Example:**
@@ -241,9 +245,9 @@ tools:
       auto_start: true
       cwd: /path/to/project
       exclude_files:
-        - "node_modules/**"
-        - "dist/**"
-        - "*.log"
+        - 'node_modules/**'
+        - 'dist/**'
+        - '*.log'
 ```
 
 ### Simple Actions
@@ -255,11 +259,11 @@ Send a prompt and get a response.
 ```yaml
 action: copilot.send
 inputs:
-  message: string          # Required: User message/prompt
-  system: string           # Optional: System prompt
-  temperature: number      # Optional: Temperature (0-1)
-  max_tokens: number       # Optional: Max response tokens
-  top_p: number            # Optional: Nucleus sampling
+  message: string # Required: User message/prompt
+  system: string # Optional: System prompt
+  temperature: number # Optional: Temperature (0-1)
+  max_tokens: number # Optional: Max response tokens
+  top_p: number # Optional: Nucleus sampling
 ```
 
 **Example:**
@@ -267,7 +271,7 @@ inputs:
 ```yaml
 action: copilot.send
 inputs:
-  message: "Write a TypeScript function to validate email addresses using regex"
+  message: 'Write a TypeScript function to validate email addresses using regex'
   temperature: 0.7
 output_variable: email_validator_code
 ```
@@ -279,10 +283,10 @@ Stream a response with callbacks.
 ```yaml
 action: copilot.stream
 inputs:
-  message: string          # Required: User message
-  system: string           # Optional: System prompt
-  on_chunk: function       # Optional: Callback for each chunk
-  on_complete: function    # Optional: Callback on completion
+  message: string # Required: User message
+  system: string # Optional: System prompt
+  on_chunk: function # Optional: Callback for each chunk
+  on_complete: function # Optional: Callback on completion
 ```
 
 ### Session Actions
@@ -296,13 +300,13 @@ Send message with full session control.
 ```yaml
 action: copilot.sendWithSession
 inputs:
-  message: string          # Required: User message
-  session_config:          # Optional: Session configuration
-    system: string         # System prompt
+  message: string # Required: User message
+  session_config: # Optional: Session configuration
+    system: string # System prompt
     temperature: number
     max_tokens: number
-    files: string[]        # Files to include in context
-    tools: object[]        # Custom tools to enable
+    files: string[] # Files to include in context
+    tools: object[] # Custom tools to enable
 ```
 
 **Example:**
@@ -333,10 +337,10 @@ Create a new session.
 ```yaml
 action: copilot.createSession
 inputs:
-  system: string           # Optional: System prompt
-  temperature: number      # Optional: Temperature
-  max_tokens: number       # Optional: Max tokens
-  files: string[]          # Optional: Context files
+  system: string # Optional: System prompt
+  temperature: number # Optional: Temperature
+  max_tokens: number # Optional: Max tokens
+  files: string[] # Optional: Context files
 output_variable: session_id
 ```
 
@@ -347,8 +351,8 @@ Resume an existing session.
 ```yaml
 action: copilot.resumeSession
 inputs:
-  session_id: string       # Required: Session ID to resume
-  system: string           # Optional: Update system prompt
+  session_id: string # Required: Session ID to resume
+  system: string # Optional: Update system prompt
 ```
 
 #### `copilot.resumeAndSend`
@@ -358,8 +362,8 @@ Resume session and send message in one action.
 ```yaml
 action: copilot.resumeAndSend
 inputs:
-  session_id: string       # Required: Session ID
-  message: string          # Required: Message to send
+  session_id: string # Required: Session ID
+  message: string # Required: Message to send
 ```
 
 ### Tool Actions
@@ -373,9 +377,9 @@ Send message with custom tools enabled.
 ```yaml
 action: copilot.sendWithTools
 inputs:
-  message: string          # Required: User message
-  tools: object[]          # Required: Tool definitions
-  session_config: object   # Optional: Session config
+  message: string # Required: User message
+  tools: object[] # Required: Tool definitions
+  session_config: object # Optional: Session config
 ```
 
 **Example:**
@@ -383,31 +387,31 @@ inputs:
 ```yaml
 action: copilot.sendWithTools
 inputs:
-  message: "Check the weather in San Francisco and send a Slack message with the forecast"
+  message: 'Check the weather in San Francisco and send a Slack message with the forecast'
   tools:
-    - type: "function"
+    - type: 'function'
       function:
-        name: "get_weather"
-        description: "Get current weather for a location"
+        name: 'get_weather'
+        description: 'Get current weather for a location'
         parameters:
-          type: "object"
+          type: 'object'
           properties:
             location:
-              type: "string"
-              description: "City name"
-          required: ["location"]
-    - type: "function"
+              type: 'string'
+              description: 'City name'
+          required: ['location']
+    - type: 'function'
       function:
-        name: "send_slack_message"
-        description: "Send a message to Slack"
+        name: 'send_slack_message'
+        description: 'Send a message to Slack'
         parameters:
-          type: "object"
+          type: 'object'
           properties:
             channel:
-              type: "string"
+              type: 'string'
             text:
-              type: "string"
-          required: ["channel", "text"]
+              type: 'string'
+          required: ['channel', 'text']
 ```
 
 #### `copilot.sendWithAgents`
@@ -417,8 +421,8 @@ Use custom agents for specialized tasks.
 ```yaml
 action: copilot.sendWithAgents
 inputs:
-  message: string          # Required: User message
-  custom_agents: object[]  # Required: Agent definitions
+  message: string # Required: User message
+  custom_agents: object[] # Required: Agent definitions
 ```
 
 #### `copilot.sendWithMcp`
@@ -428,8 +432,8 @@ Enable MCP (Model Context Protocol) servers.
 ```yaml
 action: copilot.sendWithMcp
 inputs:
-  message: string          # Required: User message
-  mcp_servers: object[]    # Required: MCP server configs
+  message: string # Required: User message
+  mcp_servers: object[] # Required: MCP server configs
 ```
 
 ### Status Actions
@@ -476,20 +480,21 @@ tools:
     auth:
       api_key: ${ANTHROPIC_API_KEY}
     options:
-      model: string            # Optional: Model (default: "claude-sonnet-4-5")
-      cwd: string              # Optional: Working directory
+      model: string # Optional: Model (default: "claude-sonnet-4-5")
+      cwd: string # Optional: Working directory
       additional_directories: string[] # Optional: Extra context dirs
-      exclude_files: string[]  # Optional: Files to exclude
-      permission_mode: string  # Optional: Permission mode
-      max_turns: number        # Optional: Max turns (default: 50)
-      max_budget_usd: number   # Optional: Budget limit
-      allowed_tools: string[]  # Optional: Allowed tools
+      exclude_files: string[] # Optional: Files to exclude
+      permission_mode: string # Optional: Permission mode
+      max_turns: number # Optional: Max turns (default: 50)
+      max_budget_usd: number # Optional: Budget limit
+      allowed_tools: string[] # Optional: Allowed tools
       disallowed_tools: string[] # Optional: Disallowed tools
-      mcp_servers: object[]    # Optional: MCP servers
-      agents: object[]         # Optional: Subagent definitions
+      mcp_servers: object[] # Optional: MCP servers
+      agents: object[] # Optional: Subagent definitions
 ```
 
 **Permission Modes:**
+
 - `acceptEdits` - Auto-accept file edits
 - `acceptCommands` - Auto-accept bash commands
 - `acceptAll` - Auto-accept everything
@@ -510,8 +515,8 @@ tools:
       max_turns: 100
       max_budget_usd: 5.00
       exclude_files:
-        - "node_modules/**"
-        - ".git/**"
+        - 'node_modules/**'
+        - '.git/**'
 ```
 
 ### Simple Actions
@@ -523,10 +528,10 @@ Simple prompt-response generation.
 ```yaml
 action: claude.generate
 inputs:
-  prompt: string           # Required: User prompt
-  system: string           # Optional: System prompt
-  max_tokens: number       # Optional: Max response tokens
-  temperature: number      # Optional: Temperature (0-1)
+  prompt: string # Required: User prompt
+  system: string # Optional: System prompt
+  max_tokens: number # Optional: Max response tokens
+  temperature: number # Optional: Temperature (0-1)
 ```
 
 **Example:**
@@ -534,7 +539,7 @@ inputs:
 ```yaml
 action: claude.generate
 inputs:
-  prompt: "Explain how React hooks work"
+  prompt: 'Explain how React hooks work'
   max_tokens: 1000
 output_variable: explanation
 ```
@@ -550,11 +555,11 @@ Full agentic query with tool use.
 ```yaml
 action: claude.run
 inputs:
-  prompt: string           # Required: User prompt
-  system: string           # Optional: System prompt
-  max_turns: number        # Optional: Max conversation turns
-  max_budget_usd: number   # Optional: Budget limit
-  allowed_tools: string[]  # Optional: Limit tools
+  prompt: string # Required: User prompt
+  system: string # Optional: System prompt
+  max_turns: number # Optional: Max conversation turns
+  max_budget_usd: number # Optional: Budget limit
+  allowed_tools: string[] # Optional: Limit tools
 ```
 
 **Example:**
@@ -562,9 +567,9 @@ inputs:
 ```yaml
 action: claude.run
 inputs:
-  prompt: "Find all TODO comments in the codebase and create GitHub issues for them"
+  prompt: 'Find all TODO comments in the codebase and create GitHub issues for them'
   max_turns: 50
-  allowed_tools: ["Read", "Glob", "Grep"]
+  allowed_tools: ['Read', 'Glob', 'Grep']
 output_variable: created_issues
 ```
 
@@ -575,10 +580,10 @@ Stream agentic response with callbacks.
 ```yaml
 action: claude.stream
 inputs:
-  prompt: string           # Required: User prompt
-  on_message: function     # Optional: Callback for messages
-  on_complete: function    # Optional: Completion callback
-  max_turns: number        # Optional: Max turns
+  prompt: string # Required: User prompt
+  on_message: function # Optional: Callback for messages
+  on_complete: function # Optional: Completion callback
+  max_turns: number # Optional: Max turns
 ```
 
 #### `claude.query`
@@ -588,9 +593,9 @@ Async generator for messages.
 ```yaml
 action: claude.query
 inputs:
-  prompt: string           # Required: User prompt
-  system: string           # Optional: System prompt
-  max_turns: number        # Optional: Max turns
+  prompt: string # Required: User prompt
+  system: string # Optional: System prompt
+  max_turns: number # Optional: Max turns
 ```
 
 ### Tool-Specific Actions
@@ -604,9 +609,9 @@ Run with specific tools only.
 ```yaml
 action: claude.runWithTools
 inputs:
-  prompt: string           # Required: User prompt
-  tools: string[]          # Required: Tools to enable
-  max_turns: number        # Optional: Max turns
+  prompt: string # Required: User prompt
+  tools: string[] # Required: Tools to enable
+  max_turns: number # Optional: Max turns
 ```
 
 **Example:**
@@ -614,8 +619,8 @@ inputs:
 ```yaml
 action: claude.runWithTools
 inputs:
-  prompt: "Analyze error rate trends in the logs"
-  tools: ["Read", "Grep", "Bash"]
+  prompt: 'Analyze error rate trends in the logs'
+  tools: ['Read', 'Grep', 'Bash']
 output_variable: analysis
 ```
 
@@ -626,8 +631,8 @@ Code analysis (Read, Glob, Grep only).
 ```yaml
 action: claude.analyzeCode
 inputs:
-  prompt: string           # Required: Analysis prompt
-  focus_files: string[]    # Optional: Files to focus on
+  prompt: string # Required: Analysis prompt
+  focus_files: string[] # Optional: Files to focus on
 ```
 
 **Example:**
@@ -635,8 +640,8 @@ inputs:
 ```yaml
 action: claude.analyzeCode
 inputs:
-  prompt: "Find all potential security vulnerabilities in the authentication code"
-  focus_files: ["src/auth/**/*.ts"]
+  prompt: 'Find all potential security vulnerabilities in the authentication code'
+  focus_files: ['src/auth/**/*.ts']
 output_variable: vulnerabilities
 ```
 
@@ -647,8 +652,8 @@ Code modification (Read, Write, Edit, Glob, Grep).
 ```yaml
 action: claude.modifyCode
 inputs:
-  prompt: string           # Required: Modification prompt
-  files: string[]          # Optional: Files to modify
+  prompt: string # Required: Modification prompt
+  files: string[] # Optional: Files to modify
 ```
 
 **Example:**
@@ -656,8 +661,8 @@ inputs:
 ```yaml
 action: claude.modifyCode
 inputs:
-  prompt: "Add TypeScript type annotations to all functions in the utils directory"
-  files: ["src/utils/**/*.js"]
+  prompt: 'Add TypeScript type annotations to all functions in the utils directory'
+  files: ['src/utils/**/*.js']
 output_variable: changes
 ```
 
@@ -668,8 +673,8 @@ Execute bash commands (Bash, Read, Glob).
 ```yaml
 action: claude.runCommands
 inputs:
-  prompt: string           # Required: Command prompt
-  cwd: string              # Optional: Working directory
+  prompt: string # Required: Command prompt
+  cwd: string # Optional: Working directory
 ```
 
 **Example:**
@@ -677,7 +682,7 @@ inputs:
 ```yaml
 action: claude.runCommands
 inputs:
-  prompt: "Run the test suite and generate a coverage report"
+  prompt: 'Run the test suite and generate a coverage report'
   cwd: /path/to/project
 output_variable: test_results
 ```
@@ -689,8 +694,8 @@ Web research (WebSearch, WebFetch).
 ```yaml
 action: claude.webResearch
 inputs:
-  prompt: string           # Required: Research prompt
-  max_searches: number     # Optional: Max search queries
+  prompt: string # Required: Research prompt
+  max_searches: number # Optional: Max search queries
 ```
 
 **Example:**
@@ -698,7 +703,7 @@ inputs:
 ```yaml
 action: claude.webResearch
 inputs:
-  prompt: "Research the latest best practices for React Server Components in 2024"
+  prompt: 'Research the latest best practices for React Server Components in 2024'
   max_searches: 5
 output_variable: research_findings
 ```
@@ -714,8 +719,8 @@ Run with custom subagents.
 ```yaml
 action: claude.runWithSubagents
 inputs:
-  prompt: string           # Required: User prompt
-  agents: object[]         # Required: Subagent definitions
+  prompt: string # Required: User prompt
+  agents: object[] # Required: Subagent definitions
 ```
 
 **Example:**
@@ -723,19 +728,19 @@ inputs:
 ```yaml
 action: claude.runWithSubagents
 inputs:
-  prompt: "Implement a new feature: user profile page with avatar upload"
+  prompt: 'Implement a new feature: user profile page with avatar upload'
   agents:
-    - name: "backend"
-      description: "Backend API developer"
-      allowed_tools: ["Read", "Write", "Edit"]
-      focus_dirs: ["src/api", "src/models"]
-    - name: "frontend"
-      description: "React frontend developer"
-      allowed_tools: ["Read", "Write", "Edit"]
-      focus_dirs: ["src/components", "src/pages"]
-    - name: "reviewer"
-      description: "Code reviewer"
-      allowed_tools: ["Read", "Grep"]
+    - name: 'backend'
+      description: 'Backend API developer'
+      allowed_tools: ['Read', 'Write', 'Edit']
+      focus_dirs: ['src/api', 'src/models']
+    - name: 'frontend'
+      description: 'React frontend developer'
+      allowed_tools: ['Read', 'Write', 'Edit']
+      focus_dirs: ['src/components', 'src/pages']
+    - name: 'reviewer'
+      description: 'Code reviewer'
+      allowed_tools: ['Read', 'Grep']
 output_variable: implementation
 ```
 
@@ -746,9 +751,9 @@ Multi-expert code review.
 ```yaml
 action: claude.codeReview
 inputs:
-  prompt: string           # Required: Review prompt
-  files: string[]          # Optional: Files to review
-  reviewers: string[]      # Optional: Review focus areas
+  prompt: string # Required: Review prompt
+  files: string[] # Optional: Files to review
+  reviewers: string[] # Optional: Review focus areas
 ```
 
 **Example:**
@@ -756,11 +761,11 @@ inputs:
 ```yaml
 action: claude.codeReview
 inputs:
-  prompt: "Review this pull request for security, performance, and code quality issues"
+  prompt: 'Review this pull request for security, performance, and code quality issues'
   files:
-    - "src/auth/login.ts"
-    - "src/auth/session.ts"
-  reviewers: ["security", "performance", "style"]
+    - 'src/auth/login.ts'
+    - 'src/auth/session.ts'
+  reviewers: ['security', 'performance', 'style']
 output_variable: review_report
 ```
 
@@ -773,8 +778,8 @@ Resume a previous session.
 ```yaml
 action: claude.resumeSession
 inputs:
-  session_id: string       # Required: Session ID
-  prompt: string           # Required: New prompt
+  session_id: string # Required: Session ID
+  prompt: string # Required: New prompt
 ```
 
 #### `claude.getSessionId`
@@ -799,17 +804,17 @@ inputs: {}
 
 Claude Agent has access to these built-in tools:
 
-| Tool | Description |
-|------|-------------|
-| `Read` | Read file contents |
-| `Write` | Write/create files |
-| `Edit` | Edit existing files |
-| `Bash` | Execute bash commands |
-| `Glob` | Find files by pattern |
-| `Grep` | Search file contents |
-| `WebSearch` | Search the web |
-| `WebFetch` | Fetch web pages |
-| `Task` | Delegate to subagents |
+| Tool        | Description           |
+| ----------- | --------------------- |
+| `Read`      | Read file contents    |
+| `Write`     | Write/create files    |
+| `Edit`      | Edit existing files   |
+| `Bash`      | Execute bash commands |
+| `Glob`      | Find files by pattern |
+| `Grep`      | Search file contents  |
+| `WebSearch` | Search the web        |
+| `WebFetch`  | Fetch web pages       |
+| `Task`      | Delegate to subagents |
 
 ---
 
@@ -826,10 +831,10 @@ tools:
     auth:
       api_key: ${OPENAI_API_KEY}
     options:
-      codex_path_override: string  # Optional: Custom CLI path
-      base_url: string             # Optional: API base URL
-      env: object                  # Optional: Environment variables
-      default_thread_options:      # Optional: Default thread config
+      codex_path_override: string # Optional: Custom CLI path
+      base_url: string # Optional: API base URL
+      env: object # Optional: Environment variables
+      default_thread_options: # Optional: Default thread config
         model: string
         temperature: number
 ```
@@ -857,11 +862,11 @@ Send prompt and get response.
 ```yaml
 action: codex.send
 inputs:
-  message: string          # Required: User message
-  system: string           # Optional: System prompt
-  model: string            # Optional: Model override
-  temperature: number      # Optional: Temperature
-  max_tokens: number       # Optional: Max tokens
+  message: string # Required: User message
+  system: string # Optional: System prompt
+  model: string # Optional: Model override
+  temperature: number # Optional: Temperature
+  max_tokens: number # Optional: Max tokens
 ```
 
 **Example:**
@@ -869,7 +874,7 @@ inputs:
 ```yaml
 action: codex.send
 inputs:
-  message: "Generate a Python function to parse JSON with error handling"
+  message: 'Generate a Python function to parse JSON with error handling'
   temperature: 0.2
 output_variable: python_code
 ```
@@ -881,9 +886,9 @@ Stream response.
 ```yaml
 action: codex.stream
 inputs:
-  message: string          # Required: User message
-  on_chunk: function       # Optional: Chunk callback
-  on_complete: function    # Optional: Complete callback
+  message: string # Required: User message
+  on_chunk: function # Optional: Chunk callback
+  on_complete: function # Optional: Complete callback
 ```
 
 ### Thread Actions
@@ -897,13 +902,13 @@ Send message with thread control.
 ```yaml
 action: codex.sendWithThread
 inputs:
-  message: string          # Required: User message
-  thread_options:          # Optional: Thread config
+  message: string # Required: User message
+  thread_options: # Optional: Thread config
     model: string
     temperature: number
     max_tokens: number
     tools: object[]
-  turn_options:            # Optional: Turn config
+  turn_options: # Optional: Turn config
     temperature: number
 ```
 
@@ -933,9 +938,9 @@ Create a new thread.
 ```yaml
 action: codex.startThread
 inputs:
-  model: string            # Optional: Model
-  temperature: number      # Optional: Temperature
-  system: string           # Optional: System prompt
+  model: string # Optional: Model
+  temperature: number # Optional: Temperature
+  system: string # Optional: System prompt
 output_variable: thread_id
 ```
 
@@ -946,7 +951,7 @@ Resume existing thread.
 ```yaml
 action: codex.resumeThread
 inputs:
-  thread_id: string        # Required: Thread ID
+  thread_id: string # Required: Thread ID
 ```
 
 #### `codex.resumeAndSend`
@@ -956,8 +961,8 @@ Resume thread and send message.
 ```yaml
 action: codex.resumeAndSend
 inputs:
-  thread_id: string        # Required: Thread ID
-  message: string          # Required: Message
+  thread_id: string # Required: Thread ID
+  message: string # Required: Message
 ```
 
 ### Structured Output
@@ -969,9 +974,9 @@ Get JSON response with schema validation.
 ```yaml
 action: codex.sendStructured
 inputs:
-  message: string          # Required: User message
-  schema: object           # Required: JSON schema
-  model: string            # Optional: Model
+  message: string # Required: User message
+  schema: object # Required: JSON schema
+  model: string # Optional: Model
 ```
 
 **Example:**
@@ -979,34 +984,34 @@ inputs:
 ```yaml
 action: codex.sendStructured
 inputs:
-  message: "Analyze this code and identify bugs, performance issues, and style problems"
+  message: 'Analyze this code and identify bugs, performance issues, and style problems'
   schema:
-    type: "object"
+    type: 'object'
     properties:
       bugs:
-        type: "array"
+        type: 'array'
         items:
-          type: "object"
+          type: 'object'
           properties:
-            line: { type: "number" }
-            severity: { type: "string" }
-            description: { type: "string" }
+            line: { type: 'number' }
+            severity: { type: 'string' }
+            description: { type: 'string' }
       performance_issues:
-        type: "array"
+        type: 'array'
         items:
-          type: "object"
+          type: 'object'
           properties:
-            line: { type: "number" }
-            impact: { type: "string" }
-            suggestion: { type: "string" }
+            line: { type: 'number' }
+            impact: { type: 'string' }
+            suggestion: { type: 'string' }
       style_issues:
-        type: "array"
+        type: 'array'
         items:
-          type: "object"
+          type: 'object'
           properties:
-            line: { type: "number" }
-            rule: { type: "string" }
-    required: ["bugs", "performance_issues", "style_issues"]
+            line: { type: 'number' }
+            rule: { type: 'string' }
+    required: ['bugs', 'performance_issues', 'style_issues']
 output_variable: code_analysis
 ```
 
@@ -1019,9 +1024,9 @@ Code modification with file changes.
 ```yaml
 action: codex.modifyCode
 inputs:
-  message: string          # Required: Modification request
-  files: string[]          # Required: Files to modify
-  auto_apply: boolean      # Optional: Auto-apply changes
+  message: string # Required: Modification request
+  files: string[] # Required: Files to modify
+  auto_apply: boolean # Optional: Auto-apply changes
 ```
 
 #### `codex.executeCommands`
@@ -1031,8 +1036,8 @@ Execute shell commands.
 ```yaml
 action: codex.executeCommands
 inputs:
-  message: string          # Required: Command request
-  cwd: string              # Optional: Working directory
+  message: string # Required: Command request
+  cwd: string # Optional: Working directory
 ```
 
 #### `codex.webSearch`
@@ -1042,8 +1047,8 @@ Web research capability.
 ```yaml
 action: codex.webSearch
 inputs:
-  message: string          # Required: Search query
-  max_results: number      # Optional: Max results
+  message: string # Required: Search query
+  max_results: number # Optional: Max results
 ```
 
 #### `codex.analyzeCode`
@@ -1053,8 +1058,8 @@ Read-only code analysis.
 ```yaml
 action: codex.analyzeCode
 inputs:
-  message: string          # Required: Analysis request
-  files: string[]          # Optional: Files to analyze
+  message: string # Required: Analysis request
+  files: string[] # Optional: Files to analyze
 ```
 
 ---
@@ -1070,10 +1075,10 @@ tools:
   opencode:
     sdk: '@opencode-ai/sdk'
     options:
-      mode: string         # Optional: "cli", "server", or "auto" (default: "auto")
-      server_url: string   # Optional: Server URL (default: http://localhost:4096)
-      cli_path: string     # Optional: CLI path (default: "opencode")
-      model: string        # Optional: Model name
+      mode: string # Optional: "cli", "server", or "auto" (default: "auto")
+      server_url: string # Optional: Server URL (default: http://localhost:4096)
+      cli_path: string # Optional: CLI path (default: "opencode")
+      model: string # Optional: Model name
       exclude_files: string[] # Optional: Files to exclude
 ```
 
@@ -1087,8 +1092,8 @@ tools:
       mode: auto
       model: gpt-4
       exclude_files:
-        - "node_modules/**"
-        - "dist/**"
+        - 'node_modules/**'
+        - 'dist/**'
 ```
 
 ### Actions
@@ -1100,9 +1105,9 @@ Generate code from prompt.
 ```yaml
 action: opencode.generate
 inputs:
-  prompt: string           # Required: User prompt
-  context_files: string[]  # Optional: Context files
-  temperature: number      # Optional: Temperature
+  prompt: string # Required: User prompt
+  context_files: string[] # Optional: Context files
+  temperature: number # Optional: Temperature
 ```
 
 **Example:**
@@ -1110,10 +1115,10 @@ inputs:
 ```yaml
 action: opencode.generate
 inputs:
-  prompt: "Create a React component for a user profile card with avatar, name, and bio"
+  prompt: 'Create a React component for a user profile card with avatar, name, and bio'
   context_files:
-    - "src/components/Card.tsx"
-    - "src/styles/theme.ts"
+    - 'src/components/Card.tsx'
+    - 'src/styles/theme.ts'
 output_variable: component_code
 ```
 
@@ -1128,14 +1133,14 @@ Generic OpenAI-compatible adapter for OpenAI, VLLM, and other local/remote endpo
 ```yaml
 tools:
   ai:
-    sdk: openai              # Also: openai-compatible, vllm
+    sdk: openai # Also: openai-compatible, vllm
     auth:
       api_key: '${OPENAI_API_KEY}'
       base_url: '${OPENAI_BASE_URL:-https://api.openai.com/v1}'
     options:
-      model: string          # Optional: Model name (default: "gpt-4o")
-      organization: string   # Optional: OpenAI organization ID
-      timeout: number        # Optional: Timeout in ms (default: 60000)
+      model: string # Optional: Model name (default: "gpt-4o")
+      organization: string # Optional: OpenAI organization ID
+      timeout: number # Optional: Timeout in ms (default: 60000)
 ```
 
 **Example (OpenAI):**
@@ -1172,7 +1177,7 @@ Generate text from a prompt.
 ```yaml
 action: ai.generate
 inputs:
-  prompt: string           # Required: User prompt
+  prompt: string # Required: User prompt
 ```
 
 #### `ai.chat.completions`
@@ -1184,9 +1189,9 @@ action: ai.chat.completions
 inputs:
   messages:
     - role: system
-      content: "You are a helpful assistant."
+      content: 'You are a helpful assistant.'
     - role: user
-      content: "Explain async/await in JavaScript"
+      content: 'Explain async/await in JavaScript'
 output_variable: response
 ```
 
@@ -1203,7 +1208,7 @@ tools:
   ollama:
     sdk: ollama
     options:
-      host: string         # Optional: Ollama host (default: http://127.0.0.1:11434)
+      host: string # Optional: Ollama host (default: http://127.0.0.1:11434)
 ```
 
 **Example:**
@@ -1227,12 +1232,12 @@ Generate text completion.
 ```yaml
 action: ollama.generate
 inputs:
-  model: string            # Required: Model name (e.g., "llama2", "codellama")
-  prompt: string           # Required: User prompt
-  system: string           # Optional: System prompt
-  temperature: number      # Optional: Temperature
-  top_p: number            # Optional: Nucleus sampling
-  top_k: number            # Optional: Top-k sampling
+  model: string # Required: Model name (e.g., "llama2", "codellama")
+  prompt: string # Required: User prompt
+  system: string # Optional: System prompt
+  temperature: number # Optional: Temperature
+  top_p: number # Optional: Nucleus sampling
+  top_k: number # Optional: Top-k sampling
 ```
 
 **Example:**
@@ -1241,7 +1246,7 @@ inputs:
 action: ollama.generate
 inputs:
   model: codellama
-  prompt: "Write a Python function to calculate Fibonacci numbers"
+  prompt: 'Write a Python function to calculate Fibonacci numbers'
   temperature: 0.7
 output_variable: fibonacci_code
 ```
@@ -1253,9 +1258,9 @@ Chat completion.
 ```yaml
 action: ollama.chat
 inputs:
-  model: string            # Required: Model name
-  messages: object[]       # Required: Chat messages
-  temperature: number      # Optional: Temperature
+  model: string # Required: Model name
+  messages: object[] # Required: Chat messages
+  temperature: number # Optional: Temperature
 ```
 
 **Example:**
@@ -1265,10 +1270,10 @@ action: ollama.chat
 inputs:
   model: llama2
   messages:
-    - role: "system"
-      content: "You are a helpful coding assistant"
-    - role: "user"
-      content: "Explain async/await in JavaScript"
+    - role: 'system'
+      content: 'You are a helpful coding assistant'
+    - role: 'user'
+      content: 'Explain async/await in JavaScript'
 output_variable: explanation
 ```
 
@@ -1288,7 +1293,7 @@ Download a model.
 ```yaml
 action: ollama.pull
 inputs:
-  model: string            # Required: Model name
+  model: string # Required: Model name
 ```
 
 #### `ollama.embeddings`
@@ -1298,9 +1303,118 @@ Generate embeddings.
 ```yaml
 action: ollama.embeddings
 inputs:
-  model: string            # Required: Model name
-  prompt: string           # Required: Text to embed
+  model: string # Required: Model name
+  prompt: string # Required: Text to embed
 ```
+
+---
+
+## Google Gemini CLI
+
+Google Gemini integration via OAuth (using your existing `gemini-cli` subscription) or API key.
+
+### Configuration
+
+```yaml
+tools:
+  gemini:
+    sdk: 'gemini-cli' # Also: google-gemini-cli, @google/gemini-cli
+    auth:
+      api_key: '${GEMINI_API_KEY}' # Option 1: API key
+      # oauth credentials extracted automatically from gemini-cli binary
+    options:
+      model: string # Optional: Model name (default: "gemini-2.5-flash")
+      base_url: string # Optional: API base URL
+```
+
+**Example (API key):**
+
+```yaml
+tools:
+  gemini:
+    sdk: gemini-cli
+    auth:
+      api_key: '${GEMINI_API_KEY}'
+    options:
+      model: gemini-2.5-flash
+```
+
+**Example (OAuth via installed gemini-cli):**
+
+```yaml
+tools:
+  gemini:
+    sdk: gemini-cli
+    options:
+      model: gemini-2.5-pro
+```
+
+To set up OAuth credentials, run:
+
+```bash
+marktoflow connect gemini-cli
+```
+
+### Actions
+
+#### `gemini.generate`
+
+Generate text from a prompt.
+
+```yaml
+action: gemini.generate
+inputs:
+  prompt: string # Required: User prompt
+  model: string # Optional: Model override
+  temperature: number # Optional: Temperature (0-1)
+  max_tokens: number # Optional: Max response tokens
+```
+
+**Example:**
+
+```yaml
+action: gemini.generate
+inputs:
+  prompt: 'Summarize the following pull request changes: {{ inputs.diff }}'
+  model: gemini-2.5-flash
+  temperature: 0.3
+output_variable: summary
+```
+
+#### `gemini.chat.completions`
+
+OpenAI-compatible chat completion.
+
+```yaml
+action: gemini.chat.completions
+inputs:
+  messages:
+    - role: user
+      content: string
+  model: string # Optional: Model override
+  temperature: number # Optional: Temperature
+  max_tokens: number # Optional: Max tokens
+```
+
+**Example:**
+
+```yaml
+action: gemini.chat.completions
+inputs:
+  messages:
+    - role: system
+      content: 'You are a helpful code reviewer.'
+    - role: user
+      content: 'Review this function: {{ inputs.code }}'
+output_variable: review
+```
+
+### Best Practices
+
+- **Use `gemini-2.5-flash`** for fast, cost-effective generation
+- **Use `gemini-2.5-pro`** for complex reasoning tasks
+- **OAuth setup**: Run `marktoflow connect gemini-cli` to extract credentials from an installed `gemini-cli` binary — no manual API key needed if you already have a Gemini subscription
+- **API key**: Set `GEMINI_API_KEY` if you prefer direct API authentication
 
 ---
 
@@ -1315,10 +1429,10 @@ tools:
   ai_browser:
     sdk: ai-browser
     options:
-      backend: string      # Required: "copilot" or "openai"
-      ai_client: object    # Optional: Pre-initialized AI client
+      backend: string # Required: "copilot" or "openai"
+      ai_client: object # Optional: Pre-initialized AI client
       playwright_client: object # Optional: Pre-initialized Playwright client
-      debug: boolean       # Optional: Enable debug logging
+      debug: boolean # Optional: Enable debug logging
 ```
 
 **Example:**
@@ -1354,9 +1468,9 @@ Perform natural language browser action.
 ```yaml
 action: ai_browser.act
 inputs:
-  action: string           # Required: Natural language action
-  url: string              # Optional: URL to navigate to first
-  selector: string         # Optional: Target element selector
+  action: string # Required: Natural language action
+  url: string # Optional: URL to navigate to first
+  selector: string # Optional: Target element selector
 ```
 
 **Example:**
@@ -1364,7 +1478,7 @@ inputs:
 ```yaml
 action: ai_browser.act
 inputs:
-  url: "https://github.com"
+  url: 'https://github.com'
   action: "Search for 'marktoflow' in the search bar and click on the first repository result"
 ```
 
@@ -1375,7 +1489,7 @@ Get description of interactive elements.
 ```yaml
 action: ai_browser.observe
 inputs:
-  instruction: string      # Optional: What to observe
+  instruction: string # Optional: What to observe
 ```
 
 **Example:**
@@ -1383,7 +1497,7 @@ inputs:
 ```yaml
 action: ai_browser.observe
 inputs:
-  instruction: "Identify all buttons and forms on this page"
+  instruction: 'Identify all buttons and forms on this page'
 output_variable: page_elements
 ```
 
@@ -1394,9 +1508,9 @@ AI-powered data extraction.
 ```yaml
 action: ai_browser.aiExtract
 inputs:
-  instruction: string      # Required: What to extract
-  schema: object           # Optional: JSON schema for validation
-  model_name: string       # Optional: Model to use
+  instruction: string # Required: What to extract
+  schema: object # Optional: JSON schema for validation
+  model_name: string # Optional: Model to use
 ```
 
 **Example:**
@@ -1404,17 +1518,17 @@ inputs:
 ```yaml
 action: ai_browser.aiExtract
 inputs:
-  instruction: "Extract all product information including names, prices, descriptions, and image URLs"
+  instruction: 'Extract all product information including names, prices, descriptions, and image URLs'
   schema:
-    type: "array"
+    type: 'array'
     items:
-      type: "object"
+      type: 'object'
       properties:
-        name: { type: "string" }
-        price: { type: "number" }
-        description: { type: "string" }
-        image_url: { type: "string" }
-      required: ["name", "price"]
+        name: { type: 'string' }
+        price: { type: 'number' }
+        description: { type: 'string' }
+        image_url: { type: 'string' }
+      required: ['name', 'price']
 output_variable: products
 ```
 
@@ -1424,7 +1538,7 @@ output_variable: products
 
 ### Example 1: Code Review with Claude
 
-```yaml
+````yaml
 ---
 workflow:
   id: ai-code-review
@@ -1461,16 +1575,16 @@ inputs:
   repo: project
   pull_number: "{{inputs.pr_number}}"
 output_variable: pr_files
-```
+````
 
 ## Step 2: Run Code Review
 
 ```yaml
 action: claude.codeReview
 inputs:
-  prompt: "Review these changes for security, performance, and best practices"
-  files: "{{pr_files}}"
-  reviewers: ["security", "performance", "architecture"]
+  prompt: 'Review these changes for security, performance, and best practices'
+  files: '{{pr_files}}'
+  reviewers: ['security', 'performance', 'architecture']
 output_variable: review
 ```
 
@@ -1481,14 +1595,14 @@ action: github.pulls.createReview
 inputs:
   owner: company
   repo: project
-  pull_number: "{{inputs.pr_number}}"
-  body: "{{review.summary}}"
+  pull_number: '{{inputs.pr_number}}'
+  body: '{{review.summary}}'
   event: COMMENT
 ```
 
 ### Example 2: AI-Powered Web Scraping
 
-```yaml
+````yaml
 ---
 workflow:
   id: ai-web-scraping
@@ -1531,16 +1645,16 @@ inputs:
         rating: { type: "number" }
         in_stock: { type: "boolean" }
 output_variable: products
-```
+````
 
 ## Step 2: Save to Google Sheets
 
 ```yaml
 action: sheets.appendValues
 inputs:
-  spreadsheet_id: "{{inputs.sheet_id}}"
-  range: "Products!A:D"
-  values: "{{products}}"
+  spreadsheet_id: '{{inputs.sheet_id}}'
+  range: 'Products!A:D'
+  values: '{{products}}'
 ```
 
 ---
@@ -1553,13 +1667,14 @@ inputs:
 - **Claude Agent**: Best for complex agentic tasks with tool use
 - **OpenAI Codex**: Best for structured code generation
 - **Ollama**: Best for local/offline AI
+- **Google Gemini CLI**: Best for users with an existing Gemini subscription (no extra API key needed)
 
 ### 2. Manage Costs
 
 ```yaml
 options:
-  max_budget_usd: 5.00      # Set budget limits
-  max_turns: 50             # Limit conversation turns
+  max_budget_usd: 5.00 # Set budget limits
+  max_turns: 50 # Limit conversation turns
 ```
 
 ### 3. Provide Context
@@ -1570,7 +1685,7 @@ options:
   additional_directories:
     - /path/to/docs
   exclude_files:
-    - "node_modules/**"
+    - 'node_modules/**'
 ```
 
 ### 4. Use Sessions for Multi-Turn
@@ -1592,8 +1707,8 @@ inputs:
 ```yaml
 action: claude.runWithTools
 inputs:
-  prompt: "Analyze the code"
-  tools: ["Read", "Grep"]  # No write or bash access
+  prompt: 'Analyze the code'
+  tools: ['Read', 'Grep'] # No write or bash access
 ```
 
 ---
