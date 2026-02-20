@@ -88,4 +88,18 @@ router.post('/providers/:providerId', async (req, res) => {
   }
 });
 
+// Start OAuth flow for a provider
+router.post('/providers/:providerId/oauth/start', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const result = await aiService.startOAuthFlow(providerId);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(400).json({
+      error: 'Failed to start OAuth flow',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 export { router as aiRoutes };
