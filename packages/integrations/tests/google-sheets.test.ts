@@ -308,5 +308,80 @@ describe('Google Sheets Integration', () => {
       expect(result.occurrencesChanged).toBe(3);
       expect(result.valuesChanged).toBe(3);
     });
+
+    // ── sortRange / parseA1Notation ───────────────────────────────────────────
+
+    describe('sortRange() and parseA1Notation()', () => {
+      beforeEach(() => {
+        mockSheets.spreadsheets.batchUpdate.mockResolvedValue({ data: { replies: [] } });
+      });
+
+      it('parses plain A1 notation (A1:D100) correctly', async () => {
+        await actions.sortRange('sheet-123', 'A1:D100', [{ dimensionIndex: 0, sortOrder: 'ASCENDING' }]);
+
+        const call = mockSheets.spreadsheets.batchUpdate.mock.calls[0][0];
+        const gridRange = call.requestBody.requests[0].sortRange.range;
+        expect(gridRange.startRowIndex).toBe(0);
+        expect(gridRange.endRowIndex).toBe(100);
+        expect(gridRange.startColumnIndex).toBe(0); // A
+        expect(gridRange.endColumnIndex).toBe(4);   // D (0-based inclusive → exclusive +1)
+        expect(gridRange.sheetId).toBe(0);
+      });
+
+      it('strips sheet-name prefix (Sheet1!A1:D100) before parsing', async () => {
+        await actions.sortRange('sheet-123', 'Sheet1!A1:D100', [{ dimensionIndex: 0, sortOrder: 'ASCENDING' }]);
+
+        const call = mockSheets.spreadsheets.batchUpdate.mock.calls[0][0];
+        const gridRange = call.requestBody.requests[0].sortRange.range;
+        // Should parse correctly — this was the failing case before the fix
+        expect(gridRange.startRowIndex).toBe(0);
+        expect(gridRange.endRowIndex).toBe(100);
+        expect(gridRange.startColumnIndex).toBe(0);
+        expect(gridRange.endColumnIndex).toBe(4);
+      });
+
+      it('strips quoted sheet-name prefix ("My Sheet"!B2:E50)', async () => {
+        await actions.sortRange('sheet-123', "'My Sheet'!B2:E50", [{ dimensionIndex: 0, sortOrder: 'DESCENDING' }]);
+
+        const call = mockSheets.spreadsheets.batchUpdate.mock.calls[0][0];
+        const gridRange = call.requestBody.requests[0].sortRange.range;
+        expect(gridRange.startRowIndex).toBe(1);  // row 2 → index 1
+        expect(gridRange.endRowIndex).toBe(50);
+        expect(gridRange.startColumnIndex).toBe(1); // B
+        expect(gridRange.endColumnIndex).toBe(5);   // E
+      });
+
+      it('uses the provided sheetId in the GridRange', async () => {
+        await actions.sortRange('sheet-123', 'A1:B10', [{ dimensionIndex: 0, sortOrder: 'ASCENDING' }], 3);
+
+        const call = mockSheets.spreadsheets.batchUpdate.mock.calls[0][0];
+        const gridRange = call.requestBody.requests[0].sortRange.range;
+        expect(gridRange.sheetId).toBe(3);
+      });
+
+      it('defaults sheetId to 0 when not provided', async () => {
+        await actions.sortRange('sheet-123', 'A1:B10', [{ dimensionIndex: 0, sortOrder: 'ASCENDING' }]);
+
+        const call = mockSheets.spreadsheets.batchUpdate.mock.calls[0][0];
+        expect(call.requestBody.requests[0].sortRange.range.sheetId).toBe(0);
+      });
+
+      it('throws a descriptive error for completely invalid range strings', async () => {
+        await expect(
+          actions.sortRange('sheet-123', 'NOT_A_RANGE', [{ dimensionIndex: 0, sortOrder: 'ASCENDING' }])
+        ).rejects.toThrow(/Invalid range format/);
+      });
+
+      it('includes correct sortSpecs in the request', async () => {
+        const specs = [
+          { dimensionIndex: 2, sortOrder: 'DESCENDING' as const },
+          { dimensionIndex: 0, sortOrder: 'ASCENDING' as const },
+        ];
+        await actions.sortRange('sheet-123', 'A1:C10', specs);
+
+        const call = mockSheets.spreadsheets.batchUpdate.mock.calls[0][0];
+        expect(call.requestBody.requests[0].sortRange.sortSpecs).toEqual(specs);
+      });
+    });
   });
 });
