@@ -150,12 +150,26 @@ export class LinearClient {
   }
 
   /**
-   * Get an issue by ID or identifier
+   * Get an issue by UUID, Linear identifier (e.g. "ENG-123"), or VCS branch name.
+   *
+   * UUIDs (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`) and Linear identifiers
+   * (`TEAM-\d+`) are resolved via the `issue` query which accepts both formats.
+   * Anything else is treated as a VCS branch name and resolved via
+   * `issueVcsBranchSearch`.
+   *
+   * The previous heuristic (`includes('-')`) incorrectly routed UUID IDs to
+   * `issueVcsBranchSearch`, which always returned null for them.
    */
   async getIssue(idOrIdentifier: string): Promise<LinearIssue> {
-    const isIdentifier = idOrIdentifier.includes('-');
-    const queryField = isIdentifier ? 'issueVcsBranchSearch' : 'issue';
-    const queryArg = isIdentifier ? 'branchName' : 'id';
+    // UUID: 8-4-4-4-12 hex groups
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    // Linear identifier: all-caps team key, dash, integer (e.g. ENG-123, BACK-4567)
+    const IDENTIFIER_RE = /^[A-Z][A-Z0-9]*-\d+$/;
+
+    const isBranchName = !UUID_RE.test(idOrIdentifier) && !IDENTIFIER_RE.test(idOrIdentifier);
+
+    const queryField = isBranchName ? 'issueVcsBranchSearch' : 'issue';
+    const queryArg = isBranchName ? 'branchName' : 'id';
 
     const data = await this.query<{ issue?: LinearIssue; issueVcsBranchSearch?: LinearIssue }>(
       `
@@ -283,27 +297,37 @@ export class LinearClient {
   async searchIssues(options: SearchIssuesOptions = {}): Promise<{ issues: LinearIssue[]; hasMore: boolean; endCursor?: string }> {
     const { query, teamId, assigneeId, projectId, priority, first = 25, after } = options;
 
-    // Build filter
-    const filters: string[] = [];
-    if (teamId) filters.push(`team: { id: { eq: "${teamId}" } }`);
-    if (assigneeId) filters.push(`assignee: { id: { eq: "${assigneeId}" } }`);
-    if (projectId) filters.push(`project: { id: { eq: "${projectId}" } }`);
-    if (priority !== undefined) filters.push(`priority: { eq: ${priority} }`);
+    // Build the filter object for the GraphQL variable — avoids string interpolation
+    // (which would break on IDs/queries containing double-quotes or other special chars).
+    const filterObj: Record<string, unknown> = {};
+    if (teamId) filterObj.team = { id: { eq: teamId } };
+    if (assigneeId) filterObj.assignee = { id: { eq: assigneeId } };
+    if (projectId) filterObj.project = { id: { eq: projectId } };
+    if (priority !== undefined) filterObj.priority = { eq: priority };
 
-    const filterArg = filters.length > 0 ? `filter: { ${filters.join(', ')} }` : '';
-    const queryArg = query ? `query: "${query}"` : '';
-    const paginationArgs = `first: ${first}${after ? `, after: "${after}"` : ''}`;
+    const hasFilter = Object.keys(filterObj).length > 0;
 
-    const allArgs = [queryArg, filterArg, paginationArgs].filter(Boolean).join(', ');
+    // All dynamic values are passed as typed GraphQL variables — no string
+    // interpolation into the query body.
+    const variables: Record<string, unknown> = { first, ...(after ? { after } : {}) };
+    if (query) variables.query = query;
+    if (hasFilter) variables.filter = filterObj;
+
+    const argParts: string[] = ['$first: Int!'];
+    const callParts: string[] = ['first: $first'];
+    if (after) { argParts.push('$after: String'); callParts.push('after: $after'); }
+    if (query) { argParts.push('$query: String'); callParts.push('query: $query'); }
+    if (hasFilter) { argParts.push('$filter: IssueFilter'); callParts.push('filter: $filter'); }
 
     const data = await this.query<{
       issues: {
         nodes: LinearIssue[];
         pageInfo: { hasNextPage: boolean; endCursor?: string };
       };
-    }>(`
-      query {
-        issues(${allArgs}) {
+    }>(
+      `
+      query SearchIssues(${argParts.join(', ')}) {
+        issues(${callParts.join(', ')}) {
           nodes {
             id
             identifier
@@ -326,7 +350,9 @@ export class LinearClient {
           }
         }
       }
-    `);
+    `,
+      variables
+    );
 
     return {
       issues: data.issues.nodes.map((issue) => ({
@@ -342,11 +368,17 @@ export class LinearClient {
    * List projects
    */
   async listProjects(teamId?: string): Promise<LinearProject[]> {
-    const filter = teamId ? `filter: { accessibleTeams: { id: { eq: "${teamId}" } } }` : '';
+    // Pass teamId as a variable to avoid string interpolation into the query.
+    const variables: Record<string, unknown> = {};
+    if (teamId) variables.filter = { accessibleTeams: { id: { eq: teamId } } };
 
-    const data = await this.query<{ projects: { nodes: LinearProject[] } }>(`
-      query {
-        projects(${filter}) {
+    const argDecl = teamId ? '($filter: ProjectFilter)' : '';
+    const argUse = teamId ? '(filter: $filter)' : '';
+
+    const data = await this.query<{ projects: { nodes: LinearProject[] } }>(
+      `
+      query ListProjects${argDecl} {
+        projects${argUse} {
           nodes {
             id
             name
@@ -358,7 +390,9 @@ export class LinearClient {
           }
         }
       }
-    `);
+    `,
+      variables
+    );
 
     return data.projects.nodes.map((project) => ({
       ...project,
