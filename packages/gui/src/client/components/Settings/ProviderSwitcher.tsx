@@ -26,6 +26,8 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
   });
   const [customModel, setCustomModel] = useState('');
   const [editingModelFor, setEditingModelFor] = useState<string | null>(null);
+  const [oauthLoadingFor, setOauthLoadingFor] = useState<string | null>(null);
+  const [oauthMessage, setOauthMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -77,6 +79,38 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
       setShowConfig(false);
       setConfigData({ apiKey: '', baseUrl: '', model: '' });
       onOpenChange(false);
+    }
+  };
+
+  const handleStartOAuth = async (provider: Provider) => {
+    setOauthLoadingFor(provider.id);
+    setOauthMessage(null);
+
+    try {
+      const response = await fetch(`/api/ai/providers/${provider.id}/oauth/start`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to start OAuth flow');
+      }
+
+      const authUrl = data.authUrl || provider.oauthAuthUrl;
+      if (authUrl) {
+        window.open(authUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      setOauthMessage(data.message || `OAuth started for ${provider.name}.`);
+
+      // Refresh provider status after a short delay in case auth completed quickly.
+      setTimeout(() => {
+        void loadProviders();
+      }, 2000);
+    } catch (err) {
+      setOauthMessage(err instanceof Error ? err.message : 'Failed to start OAuth flow');
+    } finally {
+      setOauthLoadingFor(null);
     }
   };
 
@@ -146,7 +180,14 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
       >
         <div className="p-4 space-y-4">
           {isSDK ? (
-            <SDKProviderConfig provider={provider} configData={configData} setConfigData={setConfigData} />
+            <SDKProviderConfig
+              provider={provider}
+              configData={configData}
+              setConfigData={setConfigData}
+              onStartOAuth={handleStartOAuth}
+              oauthLoading={oauthLoadingFor === provider.id}
+              oauthMessage={oauthMessage}
+            />
           ) : (
             <>
               {provider.configOptions?.apiKey && (
@@ -366,10 +407,16 @@ function SDKProviderConfig({
   provider,
   configData,
   setConfigData,
+  onStartOAuth,
+  oauthLoading,
+  oauthMessage,
 }: {
   provider: Provider;
   configData: { model: string };
   setConfigData: (data: { apiKey: string; baseUrl: string; model: string }) => void;
+  onStartOAuth: (provider: Provider) => Promise<void>;
+  oauthLoading: boolean;
+  oauthMessage: string | null;
 }) {
   const isConnected = provider.status === 'ready';
   const isAvailable = provider.status === 'available';
@@ -395,6 +442,25 @@ function SDKProviderConfig({
         <div className="flex items-start gap-2 p-3 bg-white/5 rounded border border-white/10">
           <Info className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-gray-300">{provider.authInstructions}</p>
+        </div>
+      )}
+
+      {provider.oauthSupported && !isConnected && (
+        <div className="space-y-2">
+          <Button
+            variant="primary"
+            onClick={() => void onStartOAuth(provider)}
+            disabled={oauthLoading}
+            className="w-full"
+          >
+            {oauthLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Authenticate with OAuth'}
+          </Button>
+          {oauthMessage && (
+            <p className="text-xs text-gray-400">{oauthMessage}</p>
+          )}
+          <p className="text-xs text-gray-500">
+            A separate browser tab will open for OAuth. After signing in, return and click Connect & Activate.
+          </p>
         </div>
       )}
 
