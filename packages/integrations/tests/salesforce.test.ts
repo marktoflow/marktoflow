@@ -21,6 +21,14 @@ describe('SalesforceClient', () => {
     });
   }
 
+  function mockJsonOnce(body: unknown, status = 200) {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status,
+      text: () => Promise.resolve(JSON.stringify(body)),
+    });
+  }
+
   it('encodes objectType in createRecord path', async () => {
     mockJson({ id: '001', success: true, errors: [] });
     const client = new SalesforceClient('https://example.my.salesforce.com', 'token');
@@ -32,19 +40,37 @@ describe('SalesforceClient', () => {
     expect(url).not.toContain('/sobjects/Custom/Object');
   });
 
-  it('encodes objectType and id in getRecord/updateRecord/deleteRecord paths', async () => {
-    mockJson({ Id: 'abc/123', attributes: { type: 'Case', url: '/x' } });
+  it('encodes objectType and id in getRecord path', async () => {
+    mockJsonOnce({ Id: 'abc/123', attributes: { type: 'Case', url: '/x' } });
     const client = new SalesforceClient('https://example.my.salesforce.com', 'token');
 
     await client.getRecord('Case/Sub', 'abc/123');
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain('/sobjects/Case%2FSub/abc%2F123');
+    expect(url).not.toContain('/sobjects/Case/Sub/abc/123');
+  });
+
+  it('encodes objectType and id in updateRecord path', async () => {
+    mockJsonOnce({}, 204);
+    const client = new SalesforceClient('https://example.my.salesforce.com', 'token');
+
     await client.updateRecord('Case/Sub', 'abc/123', { Subject: 'Updated' });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain('/sobjects/Case%2FSub/abc%2F123');
+    expect(url).not.toContain('/sobjects/Case/Sub/abc/123');
+  });
+
+  it('encodes objectType and id in deleteRecord path', async () => {
+    mockJsonOnce({}, 204);
+    const client = new SalesforceClient('https://example.my.salesforce.com', 'token');
+
     await client.deleteRecord('Case/Sub', 'abc/123');
 
-    const urls = fetchMock.mock.calls.map((c) => c[0] as string);
-    for (const url of urls) {
-      expect(url).toContain('/sobjects/Case%2FSub/abc%2F123');
-      expect(url).not.toContain('/sobjects/Case/Sub/abc/123');
-    }
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain('/sobjects/Case%2FSub/abc%2F123');
+    expect(url).not.toContain('/sobjects/Case/Sub/abc/123');
   });
 
   it('encodes objectType in describeObject path', async () => {
