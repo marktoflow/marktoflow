@@ -130,33 +130,36 @@ export class AirtableClient extends BaseApiClient {
     const id = baseId ?? this.baseId;
     if (!id) throw new Error('Base ID is required');
 
-    const params: string[] = [];
+    // Build query params with URLSearchParams so all values are consistently
+    // encoded. The previous implementation manually encoded some params
+    // (fields, filterByFormula, sort fields) while leaving others raw
+    // (offset, cellFormat, maxRecords). Airtable's offset is an opaque cursor
+    // that can contain +, =, and / which must be percent-encoded.
+    const qs = new URLSearchParams();
     if (options.fields) {
-      options.fields.forEach((f) => params.push(`fields[]=${encodeURIComponent(f)}`));
+      for (const f of options.fields) qs.append('fields[]', f);
     }
-    if (options.filterByFormula) {
-      params.push(`filterByFormula=${encodeURIComponent(options.filterByFormula)}`);
-    }
-    if (options.maxRecords) params.push(`maxRecords=${options.maxRecords}`);
-    if (options.pageSize) params.push(`pageSize=${options.pageSize}`);
+    if (options.filterByFormula) qs.set('filterByFormula', options.filterByFormula);
+    if (options.maxRecords)      qs.set('maxRecords', String(options.maxRecords));
+    if (options.pageSize)        qs.set('pageSize', String(options.pageSize));
     if (options.sort) {
       options.sort.forEach((s, i) => {
-        params.push(`sort[${i}][field]=${encodeURIComponent(s.field)}`);
-        if (s.direction) params.push(`sort[${i}][direction]=${s.direction}`);
+        qs.set(`sort[${i}][field]`, s.field);
+        if (s.direction) qs.set(`sort[${i}][direction]`, s.direction);
       });
     }
-    if (options.view) params.push(`view=${encodeURIComponent(options.view)}`);
-    if (options.offset) params.push(`offset=${options.offset}`);
-    if (options.cellFormat) params.push(`cellFormat=${options.cellFormat}`);
-    if (options.timeZone) params.push(`timeZone=${encodeURIComponent(options.timeZone)}`);
-    if (options.userLocale) params.push(`userLocale=${encodeURIComponent(options.userLocale)}`);
+    if (options.view)       qs.set('view', options.view);
+    if (options.offset)     qs.set('offset', options.offset);
+    if (options.cellFormat) qs.set('cellFormat', options.cellFormat);
+    if (options.timeZone)   qs.set('timeZone', options.timeZone);
+    if (options.userLocale) qs.set('userLocale', options.userLocale);
 
-    const query = params.length ? `?${params.join('&')}` : '';
+    const query = qs.toString();
     const encodedTable = encodeURIComponent(tableIdOrName);
 
     const data = await this.request<{ records: Array<Record<string, unknown>>; offset?: string }>(
       'GET',
-      `/${id}/${encodedTable}${query}`
+      `/${id}/${encodedTable}${query ? `?${query}` : ''}`
     );
 
     return {
