@@ -71,14 +71,17 @@ export class SalesforceClient extends BaseApiClient {
    * Create a record
    */
   async createRecord(objectType: string, fields: Record<string, unknown>): Promise<{ id: string; success: boolean; errors: unknown[] }> {
-    return this.post(`/sobjects/${objectType}`, fields);
+    const encodedObjectType = encodeURIComponent(objectType);
+    return this.post(`/sobjects/${encodedObjectType}`, fields);
   }
 
   /**
    * Get a record by ID
    */
   async getRecord(objectType: string, id: string, fields?: string[]): Promise<SalesforceRecord> {
-    const path = `/sobjects/${objectType}/${id}`;
+    const encodedObjectType = encodeURIComponent(objectType);
+    const encodedId = encodeURIComponent(id);
+    const path = `/sobjects/${encodedObjectType}/${encodedId}`;
     return fields && fields.length > 0
       ? this.get(path, { params: { fields: fields.join(',') } })
       : this.get(path);
@@ -88,21 +91,26 @@ export class SalesforceClient extends BaseApiClient {
    * Update a record
    */
   async updateRecord(objectType: string, id: string, fields: Record<string, unknown>): Promise<void> {
-    return this.patch(`/sobjects/${objectType}/${id}`, fields);
+    const encodedObjectType = encodeURIComponent(objectType);
+    const encodedId = encodeURIComponent(id);
+    return this.patch(`/sobjects/${encodedObjectType}/${encodedId}`, fields);
   }
 
   /**
    * Delete a record
    */
   async deleteRecord(objectType: string, id: string): Promise<void> {
-    return this.delete(`/sobjects/${objectType}/${id}`);
+    const encodedObjectType = encodeURIComponent(objectType);
+    const encodedId = encodeURIComponent(id);
+    return this.delete(`/sobjects/${encodedObjectType}/${encodedId}`);
   }
 
   /**
    * Describe an object (get metadata)
    */
   async describeObject(options: { objectType: string }): Promise<SalesforceObjectDescription> {
-    return this.get(`/sobjects/${options.objectType}/describe`);
+    const encodedObjectType = encodeURIComponent(options.objectType);
+    return this.get(`/sobjects/${encodedObjectType}/describe`);
   }
 }
 
