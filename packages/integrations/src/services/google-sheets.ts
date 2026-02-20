@@ -416,12 +416,21 @@ export class GoogleSheetsActions {
   }
 
   /**
-   * Sort a range
+   * Sort a range.
+   *
+   * @param spreadsheetId - The spreadsheet to operate on.
+   * @param range         - A1 notation range, with or without a sheet-name
+   *                        prefix (e.g. \`A1:D100\` or \`Sheet1!A1:D100\`).
+   * @param sortSpecs     - Column sort specifications.
+   * @param sheetId       - Numeric sheet ID (defaults to 0, the first sheet).
+   *                        Required when sorting a sheet other than the first;
+   *                        find it via \`getSpreadsheet()\` → \`sheets[n].sheetId\`.
    */
   async sortRange(
     spreadsheetId: string,
     range: string,
-    sortSpecs: { dimensionIndex: number; sortOrder: 'ASCENDING' | 'DESCENDING' }[]
+    sortSpecs: { dimensionIndex: number; sortOrder: 'ASCENDING' | 'DESCENDING' }[],
+    sheetId: number = 0
   ): Promise<void> {
     await this.sheets.spreadsheets.batchUpdate({
       spreadsheetId,
@@ -429,7 +438,7 @@ export class GoogleSheetsActions {
         requests: [
           {
             sortRange: {
-              range: this.parseA1Notation(range),
+              range: { ...this.parseA1Notation(range), sheetId },
               sortSpecs,
             },
           },
@@ -439,14 +448,25 @@ export class GoogleSheetsActions {
   }
 
   /**
-   * Parse A1 notation into grid range
-   * Helper method for internal use
+   * Parse A1 notation into a partial GridRange (row/column indices only).
+   *
+   * Accepts ranges with or without a sheet-name prefix:
+   *   - \`A1:D100\`        → plain range
+   *   - \`Sheet1!A1:D100\` → sheet-prefixed range (prefix is stripped)
+   *   - \`'My Sheet'!A1:D100\` → quoted sheet name (prefix is stripped)
+   *
+   * The returned object does NOT include \`sheetId\`; callers must set it
+   * separately (see \`sortRange\`).
    */
-  private parseA1Notation(range: string): sheets_v4.Schema$GridRange {
-    // This is a simplified parser - production code should handle more cases
-    const match = range.match(/^([A-Za-z]+)(\d+):([A-Za-z]+)(\d+)$/);
+  private parseA1Notation(range: string): Omit<sheets_v4.Schema$GridRange, 'sheetId'> {
+    // Strip optional sheet-name prefix: e.g. "Sheet1!" or "'My Sheet'!"
+    const withoutSheet = range.includes('!') ? range.slice(range.indexOf('!') + 1) : range;
+
+    const match = withoutSheet.match(/^([A-Za-z]+)(\d+):([A-Za-z]+)(\d+)$/);
     if (!match) {
-      throw new Error(`Invalid range format: ${range}`);
+      throw new Error(
+        `Invalid range format: "${range}". Expected A1:B2 or Sheet1!A1:B2 notation.`
+      );
     }
 
     const [, startCol, startRow, endCol, endRow] = match;
@@ -454,16 +474,16 @@ export class GoogleSheetsActions {
     const columnToIndex = (col: string): number => {
       let index = 0;
       for (let i = 0; i < col.length; i++) {
-        index = index * 26 + col.charCodeAt(i) - 'A'.charCodeAt(0) + 1;
+        index = index * 26 + col.toUpperCase().charCodeAt(i) - 'A'.charCodeAt(0) + 1;
       }
       return index - 1;
     };
 
     return {
-      startRowIndex: parseInt(startRow) - 1,
-      endRowIndex: parseInt(endRow),
-      startColumnIndex: columnToIndex(startCol.toUpperCase()),
-      endColumnIndex: columnToIndex(endCol.toUpperCase()) + 1,
+      startRowIndex: parseInt(startRow, 10) - 1,
+      endRowIndex: parseInt(endRow, 10),
+      startColumnIndex: columnToIndex(startCol),
+      endColumnIndex: columnToIndex(endCol) + 1,
     };
   }
 }
