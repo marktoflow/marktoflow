@@ -134,10 +134,18 @@ export class AWSS3Client {
    * Copy object
    */
   async copyObject(options: CopyObjectOptions) {
+    // AWS requires CopySource to be URL-encoded. The bucket name is DNS-safe
+    // and does not need encoding, but the key can contain arbitrary characters
+    // (spaces, +, #, etc.) that would break the header if passed raw.
+    const encodedSource = `${options.sourceBucket}/${options.sourceKey
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/')}`;
+
     const input: CopyObjectCommandInput = {
       Bucket: options.destinationBucket,
       Key: options.destinationKey,
-      CopySource: `${options.sourceBucket}/${options.sourceKey}`,
+      CopySource: encodedSource,
       Metadata: options.metadata,
       ACL: options.acl,
       MetadataDirective: options.metadata ? 'REPLACE' : undefined,
