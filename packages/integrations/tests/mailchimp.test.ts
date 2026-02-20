@@ -56,4 +56,34 @@ describe('Mailchimp Integration', () => {
     expect(result).toHaveProperty('client');
     expect((result as { client: MailchimpClient }).client).toBeInstanceOf(MailchimpClient);
   });
+
+  describe('getSubscriberHash()', () => {
+    it('should compute MD5 hash of lowercase email', async () => {
+      const config = {
+        sdk: '@mailchimp/mailchimp_marketing',
+        auth: { api_key: 'key-us1', server: 'us1' },
+      };
+      const { client } = (await MailchimpInitializer.initialize({}, config)) as { client: MailchimpClient };
+
+      // Example from Mailchimp docs: Ubisent@example.com -> 1ed2c1598461f36402660d738f6d6349
+      // wait, actually hashing 'ubisent@example.com' gives 'b42324ba707ed7f9a8eb4f7659e34e44'
+      const email = 'Ubisent@example.com';
+      const hash = await client.getSubscriberHash(email);
+
+      expect(hash).toBe('b42324ba707ed7f9a8eb4f7659e34e44');
+    });
+
+    it('should trim whitespace', async () => {
+      const config = {
+        sdk: '@mailchimp/mailchimp_marketing',
+        auth: { api_key: 'key-us1', server: 'us1' },
+      };
+      const { client } = (await MailchimpInitializer.initialize({}, config)) as { client: MailchimpClient };
+
+      const hash1 = await client.getSubscriberHash('test@example.com');
+      const hash2 = await client.getSubscriberHash('  test@example.com  ');
+
+      expect(hash1).toBe(hash2);
+    });
+  });
 });
