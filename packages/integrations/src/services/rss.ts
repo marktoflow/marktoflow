@@ -102,7 +102,15 @@ export class RssClient {
     }
 
     if (options.filter) {
-      const re = new RegExp(options.filter, 'i');
+      let re: RegExp;
+      try {
+        re = new RegExp(options.filter, 'i');
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `RSS getItems: invalid filter regex "${options.filter}" — ${reason}`
+        );
+      }
       items = items.filter((item) => re.test(item.title));
     }
 
