@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 /**
  * Mailchimp Integration
  *
@@ -54,6 +56,17 @@ export class MailchimpClient {
       apiKey: this.apiKey,
       server: this.server,
     });
+  }
+
+  /**
+   * Helper to compute the MD5 subscriber hash from an email address.
+   * Mailchimp member APIs require this hash instead of the raw email.
+   */
+  getSubscriberHash(email: string): string {
+    return crypto
+      .createHash('md5')
+      .update(email.toLowerCase().trim())
+      .digest('hex');
   }
 
   // ==================== Lists ====================
