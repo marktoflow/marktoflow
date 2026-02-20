@@ -205,6 +205,35 @@ describe('RssClient', () => {
 
       expect(items).toHaveLength(1);
     });
+
+    it('throws a descriptive error for invalid regex patterns', async () => {
+      mockFetch(RSS_FEED);
+      const client = new RssClient();
+
+      // '[unclosed' is an invalid regex — the raw SyntaxError message is cryptic;
+      // after the fix it should be wrapped with a clear message.
+      await expect(
+        client.getItems({ url: 'https://example.com/feed.xml', filter: '[unclosed' })
+      ).rejects.toThrow(/invalid filter regex "\[unclosed"/i);
+    });
+
+    it('includes the underlying regex error reason in the message', async () => {
+      mockFetch(RSS_FEED);
+      const client = new RssClient();
+
+      let caughtError: Error | undefined;
+      try {
+        await client.getItems({ url: 'https://example.com/feed.xml', filter: '(?invalid' });
+      } catch (e) {
+        caughtError = e as Error;
+      }
+
+      expect(caughtError).toBeDefined();
+      // Message must start with our prefix so callers know which option is wrong
+      expect(caughtError!.message).toMatch(/RSS getItems: invalid filter regex/);
+      // And must include the bad pattern so users can identify it
+      expect(caughtError!.message).toContain('(?invalid');
+    });
   });
 });
 
