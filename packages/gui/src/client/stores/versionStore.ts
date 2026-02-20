@@ -20,6 +20,7 @@ interface VersionState {
   loadVersions: (workflowPath: string) => Promise<void>;
   createVersion: (workflowPath: string, content: string, message: string) => Promise<void>;
   restoreVersion: (workflowPath: string, versionId: string) => Promise<string | null>;
+  getVersionContent: (workflowPath: string, versionId: string) => Promise<string | null>;
   setCompareMode: (enabled: boolean) => void;
   selectForCompare: (versionId: string) => void;
 }
@@ -65,6 +66,19 @@ export const useVersionStore = create<VersionState>((set, get) => ({
       const data = await res.json();
       await get().loadVersions(workflowPath);
       return data.restoredContent;
+    } catch {
+      return null;
+    }
+  },
+
+  getVersionContent: async (workflowPath, versionId) => {
+    try {
+      const res = await fetch(
+        `/api/versions/${encodeURIComponent(workflowPath)}/versions/${versionId}`
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data.version?.content as string) ?? null;
     } catch {
       return null;
     }
