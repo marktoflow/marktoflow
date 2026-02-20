@@ -66,6 +66,16 @@ export class PagerDutyClient extends BaseApiClient {
 
   /**
    * List incidents
+   *
+   * PagerDuty expects multi-value array parameters as repeated query-string
+   * entries (e.g. `statuses[]=triggered&statuses[]=acknowledged`), NOT as a
+   * single comma-joined value.  The previous implementation used
+   * `options.statuses.join(',')` which produced `statuses[]=triggered,acknowledged`
+   * — an invalid value that the API silently ignores, so filtering never worked.
+   *
+   * We build the query string with URLSearchParams (which supports repeated keys
+   * via `.append()`) and attach it directly to the path so that BaseApiClient's
+   * single-value `params` map is not used for the array fields.
    */
   async listIncidents(options?: {
     statuses?: string[];
@@ -73,13 +83,21 @@ export class PagerDutyClient extends BaseApiClient {
     limit?: number;
     offset?: number;
   }): Promise<{ incidents: PagerDutyIncident[]; limit: number; offset: number; total: number; more: boolean }> {
-    const params: Record<string, string> = {};
-    if (options?.statuses) params['statuses[]'] = options.statuses.join(',');
-    if (options?.serviceIds) params['service_ids[]'] = options.serviceIds.join(',');
-    if (options?.limit) params.limit = String(options.limit);
-    if (options?.offset) params.offset = String(options.offset);
+    const qs = new URLSearchParams();
 
-    return this.get('/incidents', { params });
+    for (const status of options?.statuses ?? []) {
+      qs.append('statuses[]', status);
+    }
+    for (const id of options?.serviceIds ?? []) {
+      qs.append('service_ids[]', id);
+    }
+    if (options?.limit != null) qs.set('limit', String(options.limit));
+    if (options?.offset != null) qs.set('offset', String(options.offset));
+
+    const queryString = qs.toString();
+    const path = queryString ? `/incidents?${queryString}` : '/incidents';
+
+    return this.get(path);
   }
 
   /**
