@@ -152,6 +152,11 @@ export class AIService {
             authInstructions = 'Install OpenCode CLI from https://opencode.ai or start server mode with: opencode serve --port 4096';
             configOptions = { port: true, model: true };
             break;
+          case 'qwen-code':
+            authType = 'sdk';
+            authInstructions = 'Use Qwen OAuth (`qwen login`) or connect to a local OpenAI-compatible endpoint via Base URL/API key.';
+            configOptions = { apiKey: true, baseUrl: true, model: true };
+            break;
           case 'openai':
             authType = 'api_key';
             authInstructions = 'Set OPENAI_API_KEY environment variable or provide API key in configuration.';
