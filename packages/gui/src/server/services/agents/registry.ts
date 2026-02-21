@@ -19,6 +19,7 @@ import { createOllamaProvider } from './ollama-provider.js';
 import { createOpenAIProvider } from './openai-provider.js';
 import { createOpenCodeProvider } from './opencode-provider.js';
 import { createGeminiCliProvider } from './gemini-cli-provider.js';
+import { createQwenProvider } from './qwen-provider.js';
 
 /**
  * Registry of all available agent providers
@@ -62,6 +63,12 @@ export class AgentRegistry {
       id: 'gemini-cli',
       name: 'Google Gemini (CLI)',
       factory: createGeminiCliProvider,
+    });
+    // Qwen Code SDK
+    this.registerProvider({
+      id: 'qwen-code',
+      name: 'Qwen Code (SDK)',
+      factory: createQwenProvider,
     });
     // Local providers
     this.registerProvider({
@@ -184,6 +191,20 @@ export class AgentRegistry {
       if (codexProvider.isReady()) {
         this.activeProviderId = 'codex';
         return 'codex';
+      }
+    }
+
+    // Try Qwen Code SDK (uses Qwen OAuth auth)
+    const qwenProvider = this.providers.get('qwen-code');
+    if (qwenProvider) {
+      await qwenProvider.initialize({
+        options: {
+          cwd: process.cwd(),
+        },
+      });
+      if (qwenProvider.isReady()) {
+        this.activeProviderId = 'qwen-code';
+        return 'qwen-code';
       }
     }
 
