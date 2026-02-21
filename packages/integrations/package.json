@@ -36,6 +36,7 @@
     "@octokit/rest": "^22.0.1",
     "@openai/codex-sdk": "^0.91.0",
     "@opencode-ai/sdk": "^1.1.53",
+    "@qwen-code/sdk": "^0.1.5",
     "openai": "^4.73.0",
     "@sendgrid/mail": "^8.1.4",
     "@shopify/shopify-api": "^11.7.1",

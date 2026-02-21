@@ -131,8 +131,12 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                         (provider.authType === 'sdk' && provider.status === 'needs_config');
     if (!canActivate) return;
 
-    const config = configData.model ? { model: configData.model } : undefined;
-    const success = await setProvider(selectedProviderId, config);
+    const config = {
+      ...(configData.apiKey ? { apiKey: configData.apiKey } : {}),
+      ...(configData.baseUrl ? { baseUrl: configData.baseUrl } : {}),
+      ...(configData.model ? { model: configData.model } : {}),
+    };
+    const success = await setProvider(selectedProviderId, Object.keys(config).length > 0 ? config : undefined);
     if (success) {
       setShowConfig(false);
       setConfigData({ apiKey: '', baseUrl: '', model: '' });
@@ -470,6 +474,36 @@ function SDKProviderConfig({
         </div>
       )}
 
+      {provider.configOptions?.baseUrl && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Base URL (optional)
+          </label>
+          <input
+            type="text"
+            value={configData.baseUrl}
+            onChange={(e) => setConfigData({ ...configData, baseUrl: e.target.value })}
+            className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="e.g., http://localhost:11434/v1"
+          />
+        </div>
+      )}
+
+      {provider.configOptions?.apiKey && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            API Key (optional)
+          </label>
+          <input
+            type="password"
+            value={configData.apiKey}
+            onChange={(e) => setConfigData({ ...configData, apiKey: e.target.value })}
+            className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Enter API key if required by your local endpoint"
+          />
+        </div>
+      )}
+
       {/* Model dropdown (if models available) */}
       {provider.availableModels && provider.availableModels.length > 0 && (
         <div>
@@ -478,7 +512,7 @@ function SDKProviderConfig({
           </label>
           <select
             value={configData.model}
-            onChange={(e) => setConfigData({ apiKey: '', baseUrl: '', model: e.target.value })}
+            onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
             className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Default</option>
