@@ -51,6 +51,7 @@ import { OpenCodeInitializer } from './adapters/opencode.js';
 import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
 import { CodexInitializer } from './adapters/codex.js';
 import { GeminiCliInitializer } from './adapters/gemini-cli.js';
+import { QwenCodeInitializer } from './adapters/qwen-code.js';
 
 // Tools
 import { ScriptInitializer } from './tools/script.js';
@@ -146,6 +147,8 @@ export function registerIntegrations(registry: SDKRegistry) {
   registry.registerInitializer('google-gemini-cli', GeminiCliInitializer);
   registry.registerInitializer('gemini-cli', GeminiCliInitializer);
   registry.registerInitializer('@google/gemini-cli', GeminiCliInitializer);
+  registry.registerInitializer('qwen-code', QwenCodeInitializer);
+  registry.registerInitializer('@qwen-code/sdk', QwenCodeInitializer);
 
   // Tools
   registry.registerInitializer('script', ScriptInitializer);
@@ -440,6 +443,7 @@ export * from './adapters/codex-workflow.js';
 export * from './adapters/gemini-cli.js';
 export * from './adapters/gemini-cli-types.js';
 export * from './adapters/gemini-cli-oauth.js';
+export * from './adapters/qwen-code.js';
 
 // Export tools
 export * from './tools/script.js';
