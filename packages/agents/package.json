@@ -1,0 +1,59 @@
+{
+  "name": "@marktoflow/agents",
+  "version": "2.0.5",
+  "description": "Unified SDK for AI agent providers with typed auth, capability metadata, and normalized errors",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marktoflow/marktoflow.git",
+    "directory": "packages/agents"
+  },
+  "homepage": "https://github.com/marktoflow/marktoflow#readme",
+  "bugs": {
+    "url": "https://github.com/marktoflow/marktoflow/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "marktoflow",
+    "agents",
+    "ai",
+    "sdk",
+    "provider",
+    "claude",
+    "codex",
+    "copilot",
+    "qwen",
+    "gemini",
+    "oauth",
+    "api-key",
+    "typescript"
+  ],
+  "author": "Scott Glover",
+  "license": "AGPL-3.0-only",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  }
+}

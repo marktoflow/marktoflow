@@ -41,6 +41,15 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.11)(jsdom@28.1.0(@noble/hashes@1.8.0))(msw@2.12.10(@types/node@22.19.11)(typescript@5.9.3))
 
+  packages/agents:
+    dependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+
   packages/cli:
     dependencies:
       '@inquirer/prompts':
@@ -442,6 +451,9 @@ importers:
 
   packages/marktoflow:
     dependencies:
+      '@marktoflow/agents':
+        specifier: workspace:*
+        version: link:../agents
       '@marktoflow/cli':
         specifier: workspace:*
         version: link:../cli

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `@marktoflow/agents` package with a unified provider SDK for Claude, Codex, Copilot, Qwen, and Gemini
+  - Provider registration/discovery API with capability metadata
+  - Typed auth abstraction for OAuth and API keys with secret-redaction helpers
+  - Uniform client creation interface and normalized error model
+  - Provider adapter stubs and config schemas for all five providers
+  - Unit tests and package documentation with usage examples
+
 ## [2.0.6] - 2026-02-19
 
 ### Security
