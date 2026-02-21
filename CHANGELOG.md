@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uniform client creation interface and normalized error model
   - Provider adapter stubs and config schemas for all five providers
   - Unit tests and package documentation with usage examples
+  - Centralized provider alias/SDK/auth template mapping consumed by CLI (`agent-config`) to reduce duplicate provider SDK config logic
 
 ## [2.0.6] - 2026-02-19
 

@@ -4,4 +4,5 @@ export * from './auth.js';
 export * from './registry.js';
 export * from './client.js';
 export * from './sdk.js';
+export * from './provider-config.js';
 export * from './providers/index.js';
