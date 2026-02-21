@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Unit tests and package documentation with usage examples
   - Centralized provider alias/SDK/auth template mapping consumed by CLI (`agent-config`) to reduce duplicate provider SDK config logic
 
+### Changed
+
+- Migrated AI adapter implementations from `@marktoflow/integrations` to `@marktoflow/agents` (`claude-agent`, `codex`, `github-copilot`, `gemini-cli`, `openai`, `ollama`, `opencode` and related workflow/type modules)
+- `@marktoflow/integrations` now keeps thin compatibility shims/re-exports for AI adapters while provider implementation ownership lives in `@marktoflow/agents`
+- Updated package documentation to reflect `packages/agents` as the source of truth for AI providers
+
 ## [2.0.6] - 2026-02-19
 
 ### Security

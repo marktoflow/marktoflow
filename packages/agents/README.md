@@ -1,6 +1,7 @@
 # @marktoflow/agents
 
 Unified SDK for AI agent providers in marktoflow.
+This package is the source of truth for provider implementations.
 
 ## Features
 
@@ -10,6 +11,8 @@ Unified SDK for AI agent providers in marktoflow.
 - Uniform client creation interface
 - Normalized error model for provider failures
 - Built-in provider adapters: `claude`, `codex`, `copilot`, `qwen`, `gemini`
+- Provider implementation modules for workflow/CLI adapters:
+  `claude-agent`, `codex`, `github-copilot`, `gemini-cli`, `openai`, `ollama`, `opencode`
 
 ## Installation
 
@@ -75,6 +78,17 @@ console.log(safe);
 - `AgentProvider<TConfig>`: provider adapter contract
 - `AuthConfig`: discriminated union for auth modes
 - `AgentError` + `toAgentError()`: normalized error model
+
+## Adapter Modules
+
+Legacy adapter entrypoints are available as subpaths:
+
+```ts
+import { OpenAIInitializer } from '@marktoflow/agents/adapters/openai';
+import { CodexInitializer } from '@marktoflow/agents/adapters/codex';
+```
+
+`@marktoflow/integrations` re-exports these modules for backwards compatibility.
 
 ## Built-in Providers
 
