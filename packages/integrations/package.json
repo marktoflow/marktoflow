@@ -21,7 +21,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm -C ../agents build && tsc",
     "test": "vitest run",
     "test:integration": "vitest run --include 'tests/**/*.integration.test.ts'",
     "lint": "tsc --noEmit",
