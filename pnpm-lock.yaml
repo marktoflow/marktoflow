@@ -172,9 +172,6 @@ importers:
       '@monaco-editor/react':
         specifier: ^4.6.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@qwen-code/sdk':
-        specifier: ^0.1.5
-        version: 0.1.5(@cfworker/json-schema@4.1.1)(typescript@5.9.3)
       '@radix-ui/react-context-menu':
         specifier: ^2.2.2
         version: 2.2.16(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

@@ -188,7 +188,22 @@ export class QwenCodeClient {
   }
 }
 
+/**
+ * Lightweight runtime check used by GUI/CLI provider availability status.
+ * Keeps module-resolution checks inside integrations, where @qwen-code/sdk is a direct dependency.
+ */
+export async function isQwenSdkAvailable(): Promise<boolean> {
+  try {
+    const sdkModule = await import('@qwen-code/sdk').catch(() => null);
+    return !!(sdkModule && typeof sdkModule.query === 'function');
+  } catch {
+    return false;
+  }
+}
+
 export const QwenCodeInitializer: SDKInitializer = {
+  // Keep the standard SDKInitializer signature consistent across adapters.
+  // `_module` is intentionally unused because Qwen client creation is config-driven.
   async initialize(_module: unknown, config: ToolConfig): Promise<unknown> {
     const auth = config.auth || {};
     const options = config.options || {};

@@ -11,8 +11,10 @@ const streamMock = vi.fn().mockImplementation(async ({ onChunk }: { onChunk?: (c
   return text;
 });
 const cancelMock = vi.fn().mockResolvedValue(undefined);
+const isQwenSdkAvailableMock = vi.fn().mockResolvedValue(true);
 
 vi.mock('@marktoflow/integrations', () => ({
+  isQwenSdkAvailable: (...args: unknown[]) => isQwenSdkAvailableMock(...args),
   QwenCodeClient: vi.fn().mockImplementation(() => ({
     send: (...args: unknown[]) => sendMock(...args),
     stream: (...args: unknown[]) => streamMock(...args),
@@ -32,6 +34,8 @@ describe('QwenProvider', () => {
   beforeEach(() => {
     provider = new QwenProvider();
     vi.clearAllMocks();
+    isQwenSdkAvailableMock.mockResolvedValue(true);
+    isQwenSdkAvailableMock.mockClear();
     sendMock.mockClear();
     streamMock.mockClear();
     cancelMock.mockClear();
@@ -47,6 +51,13 @@ describe('QwenProvider', () => {
     await provider.initialize({ model: 'qwen-max' });
     expect(provider.isReady()).toBe(true);
     expect(provider.getStatus().model).toBeDefined();
+  });
+
+  it('reports unavailable status when SDK check fails', async () => {
+    isQwenSdkAvailableMock.mockResolvedValueOnce(false);
+    const unavailableProvider = new QwenProvider();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(unavailableProvider.getStatus().available).toBe(false);
   });
 
   it('processes prompt after initialization', async () => {

@@ -4,7 +4,7 @@
  */
 
 import { parse as yamlParse } from 'yaml';
-import { QwenCodeClient } from '@marktoflow/integrations';
+import { QwenCodeClient, isQwenSdkAvailable } from '@marktoflow/integrations';
 import type {
   AgentProvider,
   AgentCapabilities,
@@ -35,11 +35,7 @@ export class QwenProvider implements AgentProvider {
   }
 
   private async checkAvailability(): Promise<void> {
-    try {
-      this.available = true;
-    } catch {
-      this.available = false;
-    }
+    this.available = await isQwenSdkAvailable();
   }
 
   async initialize(config: AgentConfig): Promise<void> {
