@@ -27,7 +27,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
   const [customModel, setCustomModel] = useState('');
   const [editingModelFor, setEditingModelFor] = useState<string | null>(null);
   const [oauthLoadingFor, setOauthLoadingFor] = useState<string | null>(null);
-  const [oauthMessage, setOauthMessage] = useState<string | null>(null);
+  const [oauthMessagesByProvider, setOauthMessagesByProvider] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     if (open) {
@@ -84,7 +84,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
 
   const handleStartOAuth = async (provider: Provider) => {
     setOauthLoadingFor(provider.id);
-    setOauthMessage(null);
+    setOauthMessagesByProvider((prev) => ({ ...prev, [provider.id]: null }));
 
     try {
       const response = await fetch(`/api/ai/providers/${provider.id}/oauth/start`, {
@@ -101,14 +101,20 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
         window.open(authUrl, '_blank', 'noopener,noreferrer');
       }
 
-      setOauthMessage(data.message || `OAuth started for ${provider.name}.`);
+      setOauthMessagesByProvider((prev) => ({
+        ...prev,
+        [provider.id]: data.message || `OAuth started for ${provider.name}.`,
+      }));
 
       // Refresh provider status after a short delay in case auth completed quickly.
       setTimeout(() => {
         void loadProviders();
       }, 2000);
     } catch (err) {
-      setOauthMessage(err instanceof Error ? err.message : 'Failed to start OAuth flow');
+      setOauthMessagesByProvider((prev) => ({
+        ...prev,
+        [provider.id]: err instanceof Error ? err.message : 'Failed to start OAuth flow',
+      }));
     } finally {
       setOauthLoadingFor(null);
     }
@@ -186,7 +192,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
               setConfigData={setConfigData}
               onStartOAuth={handleStartOAuth}
               oauthLoading={oauthLoadingFor === provider.id}
-              oauthMessage={oauthMessage}
+              oauthMessage={oauthMessagesByProvider[provider.id] ?? null}
             />
           ) : (
             <>
