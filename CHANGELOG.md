@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- GUI provider OAuth status message is now scoped per provider, preventing stale messages from showing after switching providers
+
 ## [2.0.6] - 2026-02-19
 
 ### Security

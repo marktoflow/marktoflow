@@ -230,6 +230,8 @@ export class AIService {
    * returns a suggested auth URL for the GUI to open in a separate tab.
    */
   async startOAuthFlow(providerId: string): Promise<{ message: string; authUrl?: string }> {
+    // SECURITY: Explicit whitelist of trusted CLI commands by provider ID.
+    // Never construct command names or arguments from user input.
     const providerCommands: Record<string, { commands: Array<{ command: string; args: string[] }>; authUrl?: string }> = {
       'claude-agent': {
         commands: [{ command: 'claude', args: ['login'] }],
