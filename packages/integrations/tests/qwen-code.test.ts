@@ -86,4 +86,38 @@ describe('QwenCodeClient', () => {
     expect(client).toBeInstanceOf(QwenCodeClient);
     expect(client.getStatus().model).toBe('qwen2.5-coder:14b');
   });
+
+  it('cancel interrupts active query and cleans up', async () => {
+    let releaseInterrupt: (() => void) | null = null;
+    const interrupted = new Promise<void>((resolve) => {
+      releaseInterrupt = resolve;
+    });
+    const closeMock = vi.fn().mockResolvedValue(undefined);
+    const interruptMock = vi.fn().mockImplementation(async () => {
+      releaseInterrupt?.();
+    });
+
+    queryMock.mockImplementationOnce(() => ({
+      async *[Symbol.asyncIterator]() {
+        await interrupted;
+        throw new Error('interrupted');
+      },
+      close: closeMock,
+      interrupt: interruptMock,
+    }));
+
+    const client = new QwenCodeClient({ model: 'qwen-plus' });
+    const sendPromise = client.send({ prompt: 'long running prompt' });
+
+    await Promise.resolve();
+    await client.cancel();
+
+    await expect(sendPromise).rejects.toThrow('interrupted');
+    expect(interruptMock).toHaveBeenCalledTimes(1);
+    expect(closeMock).toHaveBeenCalledTimes(1);
+
+    // Ensure internal state was cleaned and no stale interrupt is called again.
+    await client.cancel();
+    expect(interruptMock).toHaveBeenCalledTimes(1);
+  });
 });
