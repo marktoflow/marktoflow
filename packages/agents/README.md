@@ -30,7 +30,7 @@ const sdk = createAgentsSDK();
 const client = await sdk.createClient({
   provider: 'codex',
   config: {
-    model: 'gpt-5.2-codex',
+    model: 'codex-mini-latest',
     sandboxMode: 'workspace-write',
   },
   auth: {

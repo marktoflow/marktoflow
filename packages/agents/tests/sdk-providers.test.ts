@@ -27,6 +27,7 @@ describe('AgentsSDK providers', () => {
 
       const output = await client.invoke({ input: 'ping' });
       expect(output.output).toContain(`[stub:${provider}]`);
+      expect(output.raw).toMatchObject({ authType: 'api_key' });
     }
   });
 
@@ -34,8 +35,25 @@ describe('AgentsSDK providers', () => {
     const sdk = createAgentsSDK();
 
     const vision = sdk.providersByCapability('vision').map((provider) => provider.id);
-    expect(vision).toEqual(expect.arrayContaining(['claude', 'codex', 'qwen', 'gemini']));
+    expect(vision).toEqual(expect.arrayContaining(['claude', 'qwen', 'gemini']));
+    expect(vision).not.toContain('codex');
     expect(vision).not.toContain('copilot');
+  });
+
+  it('exposes differentiated provider metadata and current codex model ids', () => {
+    const sdk = createAgentsSDK();
+    const byId = new Map(sdk.listProviders().map((provider) => [provider.id, provider]));
+
+    expect(byId.get('codex')?.defaultModel).toBe('codex-mini-latest');
+    expect(byId.get('codex')?.models).toEqual(expect.arrayContaining(['codex-mini-latest', 'codex-latest']));
+    expect(byId.get('copilot')?.defaultModel).toBe('codex-mini-latest');
+
+    expect(byId.get('claude')?.capabilities).toContain('mcp');
+    expect(byId.get('codex')?.capabilities).toContain('code-exec');
+    expect(byId.get('codex')?.capabilities).not.toContain('vision');
+    expect(byId.get('gemini')?.capabilities).toContain('vision');
+    expect(byId.get('gemini')?.capabilities).not.toContain('mcp');
+    expect(byId.get('copilot')?.capabilities).not.toContain('structured-output');
   });
 
   it('throws a normalized error when provider does not exist', async () => {

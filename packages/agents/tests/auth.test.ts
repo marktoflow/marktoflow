@@ -11,7 +11,7 @@ import { AgentError } from '../src/errors.js';
 
 describe('auth utilities', () => {
   it('redacts secrets', () => {
-    expect(redactSecret('abcdef123456')).toBe('***3456');
+    expect(redactSecret('abcdef123456')).toBe('abcd***');
     expect(redactSecret('abc')).toBe('***');
     expect(redactSecret(undefined)).toBe('***');
   });
@@ -26,7 +26,7 @@ describe('auth utilities', () => {
       type: 'api_key',
       headerName: undefined,
       prefix: undefined,
-      apiKey: '***-key',
+      apiKey: 'my-s***',
     });
   });
 
@@ -45,8 +45,8 @@ describe('auth utilities', () => {
       tokenType: 'Bearer',
       expiresAt: 100,
       scopes: ['read'],
-      accessToken: '***alue',
-      refreshToken: '***alue',
+      accessToken: 'acce***',
+      refreshToken: 'refr***',
     });
   });
 

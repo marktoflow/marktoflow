@@ -17,7 +17,7 @@ export const ClaudeProvider: AgentProvider<ClaudeConfig> = {
     id: 'claude',
     displayName: 'Claude Agent',
     description: 'Anthropic Claude agent provider adapter',
-    capabilities: ['chat', 'tools', 'vision', 'code-exec', 'streaming', 'structured-output', 'mcp'],
+    capabilities: ['chat', 'tools', 'vision', 'streaming', 'structured-output', 'mcp'],
     auth: {
       required: true,
       supported: ['api_key', 'oauth'],
@@ -26,11 +26,13 @@ export const ClaudeProvider: AgentProvider<ClaudeConfig> = {
     models: ['claude-opus-4-6', 'claude-sonnet-4-5', 'claude-haiku-4-5'],
   },
   configSchema: ClaudeConfigSchema,
-  createClient: async ({ config }) => {
+  createClient: async ({ config, auth }) => {
+    // TODO(agents): Replace StubAgentClient with ClaudeAgentInitializer-backed client wiring.
     return new StubAgentClient({
       provider: 'claude',
       capabilities: ClaudeProvider.metadata.capabilities,
       model: config.model,
+      authType: auth?.type,
     });
   },
 };

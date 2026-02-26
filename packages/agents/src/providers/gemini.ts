@@ -18,7 +18,7 @@ export const GeminiProvider: AgentProvider<GeminiConfig> = {
     id: 'gemini',
     displayName: 'Google Gemini',
     description: 'Google Gemini provider adapter',
-    capabilities: ['chat', 'tools', 'vision', 'streaming', 'structured-output'],
+    capabilities: ['chat', 'tools', 'vision', 'streaming'],
     auth: {
       required: true,
       supported: ['api_key', 'oauth'],
@@ -27,11 +27,13 @@ export const GeminiProvider: AgentProvider<GeminiConfig> = {
     models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
   },
   configSchema: GeminiConfigSchema,
-  createClient: async ({ config }) => {
+  createClient: async ({ config, auth }) => {
+    // TODO(agents): Replace StubAgentClient with GeminiCLIInitializer-backed client wiring (no MCP support).
     return new StubAgentClient({
       provider: 'gemini',
       capabilities: GeminiProvider.metadata.capabilities,
       model: config.model,
+      authType: auth?.type,
     });
   },
 };

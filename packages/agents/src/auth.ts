@@ -21,7 +21,7 @@ export function redactSecret(value: string | undefined, visibleChars = 4): strin
     return DEFAULT_MASK;
   }
 
-  return `${DEFAULT_MASK}${value.slice(-visibleChars)}`;
+  return `${value.slice(0, visibleChars)}${DEFAULT_MASK}`;
 }
 
 export function sanitizeAuthForLogging(auth?: AuthConfig): Record<string, unknown> | undefined {

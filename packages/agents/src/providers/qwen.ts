@@ -26,11 +26,13 @@ export const QwenProvider: AgentProvider<QwenConfig> = {
     models: ['qwen-max', 'qwen-plus', 'qwen-turbo'],
   },
   configSchema: QwenConfigSchema,
-  createClient: async ({ config }) => {
+  createClient: async ({ config, auth }) => {
+    // TODO(agents): Replace StubAgentClient with OpenAI-compatible Qwen adapter wiring.
     return new StubAgentClient({
       provider: 'qwen',
       capabilities: QwenProvider.metadata.capabilities,
       model: config.model,
+      authType: auth?.type,
     });
   },
 };

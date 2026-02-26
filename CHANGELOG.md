@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated AI adapter implementations from `@marktoflow/integrations` to `@marktoflow/agents` (`claude-agent`, `codex`, `github-copilot`, `gemini-cli`, `openai`, `ollama`, `opencode` and related workflow/type modules)
 - `@marktoflow/integrations` now keeps thin compatibility shims/re-exports for AI adapters while provider implementation ownership lives in `@marktoflow/agents`
 - Updated package documentation to reflect `packages/agents` as the source of truth for AI providers
+- Updated `@marktoflow/agents` provider metadata to use explicit auth-aware `createClient({ config, auth })` signatures and realistic per-provider capability sets
+- Updated Codex provider model metadata to current IDs (`codex-mini-latest`, `codex-latest`) and aligned Copilot default Codex model naming
 
 ## [2.0.6] - 2026-02-19
 
