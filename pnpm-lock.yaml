@@ -41,11 +41,45 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.11)(jsdom@28.1.0(@noble/hashes@1.8.0))(msw@2.12.10(@types/node@22.19.11)(typescript@5.9.3))
 
+  packages/agents:
+    dependencies:
+      '@github/copilot-sdk':
+        specifier: ^0.1.18
+        version: 0.1.23
+      '@marktoflow/core':
+        specifier: workspace:*
+        version: link:../core
+      '@openai/codex-sdk':
+        specifier: ^0.91.0
+        version: 0.91.0
+      '@opencode-ai/sdk':
+        specifier: ^1.1.53
+        version: 1.2.4
+      ollama:
+        specifier: ^0.6.3
+        version: 0.6.3
+      openai:
+        specifier: ^4.73.0
+        version: 4.104.0(ws@8.19.0(bufferutil@4.1.0))(zod@3.25.76)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    optionalDependencies:
+      '@anthropic-ai/claude-agent-sdk':
+        specifier: '>=0.1.0'
+        version: 0.2.42(zod@3.25.76)
+
   packages/cli:
     dependencies:
       '@inquirer/prompts':
         specifier: ^8.2.0
         version: 8.2.1(@types/node@25.2.3)
+      '@marktoflow/agents':
+        specifier: workspace:*
+        version: link:../agents
       '@marktoflow/core':
         specifier: workspace:*
         version: link:../core
@@ -347,6 +381,9 @@ importers:
       '@mailchimp/mailchimp_marketing':
         specifier: ^3.0.80
         version: 3.0.80
+      '@marktoflow/agents':
+        specifier: workspace:*
+        version: link:../agents
       '@marktoflow/core':
         specifier: workspace:*
         version: link:../core
@@ -442,6 +479,9 @@ importers:
 
   packages/marktoflow:
     dependencies:
+      '@marktoflow/agents':
+        specifier: workspace:*
+        version: link:../agents
       '@marktoflow/cli':
         specifier: workspace:*
         version: link:../cli

@@ -1,0 +1,23 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig*.json
+vitest.config.ts
+
+# Development files
+.turbo/
+.marktoflow/
+*.tgz
+tsconfig.tsbuildinfo
+
+# Test files
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Development dependencies
+node_modules/

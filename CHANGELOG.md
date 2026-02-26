@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `@marktoflow/agents` package with a unified provider SDK for Claude, Codex, Copilot, Qwen, and Gemini
+  - Provider registration/discovery API with capability metadata
+  - Typed auth abstraction for OAuth and API keys with secret-redaction helpers
+  - Uniform client creation interface and normalized error model
+  - Provider adapter stubs and config schemas for all five providers
+  - Unit tests and package documentation with usage examples
+  - Centralized provider alias/SDK/auth template mapping consumed by CLI (`agent-config`) to reduce duplicate provider SDK config logic
+
+### Changed
+
+- Migrated AI adapter implementations from `@marktoflow/integrations` to `@marktoflow/agents` (`claude-agent`, `codex`, `github-copilot`, `gemini-cli`, `openai`, `ollama`, `opencode` and related workflow/type modules)
+- `@marktoflow/integrations` now keeps thin compatibility shims/re-exports for AI adapters while provider implementation ownership lives in `@marktoflow/agents`
+- Updated package documentation to reflect `packages/agents` as the source of truth for AI providers
+- Updated `@marktoflow/agents` provider metadata to use explicit auth-aware `createClient({ config, auth })` signatures and realistic per-provider capability sets
+- Updated Codex provider model metadata to current IDs (`codex-mini-latest`, `codex-latest`) and aligned Copilot default Codex model naming
+
 ## [2.0.6] - 2026-02-19
 
 ### Security
