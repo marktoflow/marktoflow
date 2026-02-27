@@ -169,6 +169,11 @@ export class AIService {
             oauthSupported = true;
             oauthAuthUrl = 'https://accounts.google.com/';
             break;
+          case 'qwen-code':
+            authType = 'sdk';
+            authInstructions = 'Use Qwen OAuth (`qwen login`) or connect to a local OpenAI-compatible endpoint via Base URL/API key.';
+            configOptions = { apiKey: true, baseUrl: true, model: true };
+            break;
           case 'openai':
             authType = 'api_key';
             authInstructions = 'Set OPENAI_API_KEY environment variable or provide API key in configuration.';

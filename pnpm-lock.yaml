@@ -156,7 +156,7 @@ importers:
     dependencies:
       '@anthropic-ai/claude-agent-sdk':
         specifier: '>=0.1.0'
-        version: 0.2.42(zod@4.3.6)
+        version: 0.2.42(zod@3.25.76)
       '@anthropic-ai/sdk':
         specifier: ^0.52.0
         version: 0.52.0
@@ -362,6 +362,9 @@ importers:
       '@opencode-ai/sdk':
         specifier: ^1.1.53
         version: 1.2.4
+      '@qwen-code/sdk':
+        specifier: ^0.1.5
+        version: 0.1.5(@cfworker/json-schema@4.1.1)(typescript@5.9.3)
       '@sendgrid/mail':
         specifier: ^8.1.4
         version: 8.1.6
@@ -1962,6 +1965,12 @@ packages:
     resolution: {integrity: sha512-ioXoq9gPxkss4MYhD+SFaU9p1IHFUX0ILAWFPyjGaBdjLsYAlZw6j1iLA0N/m12uVHLFDfSYNF7EQccjinIMDA==}
     engines: {node: '>=18'}
     hasBin: true
+
+  '@qwen-code/sdk@0.1.5':
+    resolution: {integrity: sha512-xuCdAoNVMCb8NmmsV1jDTymStjQWAA5+OzuUvjw7AcuCW1t1I3UUD7+JnQhTn8FmH1w/vWjOaoXzhiAfNCtWKg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      typescript: '>=5.0.0'
 
   '@radix-ui/primitive@1.1.3':
     resolution: {integrity: sha512-JTF99U/6XIjCBo0wqkU5sK10glYe27MRRsfwoiq5zzOEZLHU3A3KCMa5X/azekYRCJ0HlwI0crAXS/5dEHTzDg==}
@@ -6913,20 +6922,6 @@ snapshots:
       '@img/sharp-linuxmusl-arm64': 0.33.5
       '@img/sharp-linuxmusl-x64': 0.33.5
       '@img/sharp-win32-x64': 0.33.5
-    optional: true
-
-  '@anthropic-ai/claude-agent-sdk@0.2.42(zod@4.3.6)':
-    dependencies:
-      zod: 4.3.6
-    optionalDependencies:
-      '@img/sharp-darwin-arm64': 0.33.5
-      '@img/sharp-darwin-x64': 0.33.5
-      '@img/sharp-linux-arm': 0.33.5
-      '@img/sharp-linux-arm64': 0.33.5
-      '@img/sharp-linux-x64': 0.33.5
-      '@img/sharp-linuxmusl-arm64': 0.33.5
-      '@img/sharp-linuxmusl-x64': 0.33.5
-      '@img/sharp-win32-x64': 0.33.5
 
   '@anthropic-ai/sdk@0.39.0':
     dependencies:
@@ -8535,6 +8530,15 @@ snapshots:
       - react-native-b4a
       - supports-color
     optional: true
+
+  '@qwen-code/sdk@0.1.5(@cfworker/json-schema@4.1.1)(typescript@5.9.3)':
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.26.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
+      typescript: 5.9.3
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
 
   '@radix-ui/primitive@1.1.3': {}
 

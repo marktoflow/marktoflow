@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Google Sheets `parseA1Notation` now strips sheet-name prefixes correctly; `sortRange` now accepts `sheetId`
 - RSS filter parsing now wraps invalid regex patterns in a descriptive error instead of leaking raw `SyntaxError`
 - Mailchimp member operations now use a shared `getSubscriberHash` helper for consistent subscriber targeting
+- GUI Qwen provider now performs a real SDK availability check (via integrations adapter) instead of always reporting available
+- Qwen adapter cancel path now has test coverage for interrupt + cleanup behavior during in-flight queries
+- GUI package now relies on transitive Qwen SDK via `@marktoflow/integrations` (removed redundant direct `@qwen-code/sdk` dependency)
 
 ### Technical
 
