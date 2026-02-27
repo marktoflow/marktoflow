@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gemini CLI OAuth flow now auto-discovers auth config from installed CLI metadata, uses the correct Google Code Assist endpoint, and is covered by real integration tests
 - Salesforce `getRecord` now URL-encodes both `objectType` and record ID path segments to avoid path injection and malformed requests
 - AWS S3 `copyObject` now URL-encodes `CopySource` keys to support special characters safely
+- Core parser now maps merge `key_field`/`keyField` aliases to runtime `matchField`, fixing merge `match`/`diff`/`combine_by_field` steps that previously failed at execution
 - GUI version compare now correctly renders diffs (wired compare mode + switched `DiffViewer` to an LCS-based algorithm)
 - Airtable `listRecords` now uses `URLSearchParams` for robust query encoding
 - Linear `getIssue` now correctly handles UUID vs identifier routing and uses GraphQL variables
