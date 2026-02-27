@@ -292,10 +292,22 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
             {providers.map((provider) => {
               const isDisabled = provider.status === 'unavailable';
               return (
-              <button
+              <div
                 key={provider.id}
-                onClick={() => handleProviderClick(provider.id)}
-                disabled={isDisabled}
+                role="button"
+                tabIndex={isDisabled ? -1 : 0}
+                aria-disabled={isDisabled}
+                onClick={() => {
+                  if (isDisabled) return;
+                  void handleProviderClick(provider.id);
+                }}
+                onKeyDown={(e) => {
+                  if (isDisabled) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    void handleProviderClick(provider.id);
+                  }
+                }}
                 className={`
                   w-full flex items-center justify-between p-3 rounded border transition-all
                   ${provider.isActive
@@ -327,6 +339,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                   )}
                   {provider.status === 'ready' && (
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleConfigureReady(provider.id);
@@ -341,7 +354,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                     {getStatusLabel(provider.status)}
                   </span>
                 </div>
-              </button>
+              </div>
               );
             })}
           </div>

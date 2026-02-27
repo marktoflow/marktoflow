@@ -124,6 +124,37 @@ describe('ProviderSwitcher config actions', () => {
     vi.unstubAllGlobals();
   });
 
+
+  it('does not render nested button controls in provider list rows', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    useAgentStoreMock.mockReturnValue({
+      providers: [
+        {
+          id: 'openai',
+          name: 'OpenAI',
+          status: 'ready',
+          isActive: false,
+          authType: 'oauth',
+          configOptions: { apiKey: true },
+        },
+      ],
+      activeProviderId: null,
+      isLoading: false,
+      error: null,
+      loadProviders,
+      setProvider,
+    });
+
+    render(<ProviderSwitcher open={true} onOpenChange={() => {}} />);
+
+    const domNestingWarning = errorSpy.mock.calls.some((call) =>
+      call.some((arg) => typeof arg === 'string' && arg.includes('validateDOMNesting'))
+    );
+
+    expect(domNestingWarning).toBe(false);
+  });
+
   it('opens config modal from ready provider settings button', async () => {
     useAgentStoreMock.mockReturnValue({
       providers: [
