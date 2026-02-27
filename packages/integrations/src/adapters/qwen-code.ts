@@ -90,10 +90,14 @@ export class QwenCodeClient {
   }
 
   async cancel(): Promise<void> {
-    if (this.currentQuery?.interrupt) {
-      await this.currentQuery.interrupt().catch(() => {});
-    }
+    const query = this.currentQuery;
     this.currentQuery = null;
+
+    if (query?.interrupt) {
+      await query.interrupt().catch((err) => {
+        console.warn('[QwenCodeClient] Failed to interrupt active query during cancel', err);
+      });
+    }
   }
 
   getStatus(): { ready: boolean; model: string; authType: QwenAuthType; baseUrl?: string } {
@@ -124,13 +128,17 @@ export class QwenCodeClient {
     options: QwenOptions;
     onChunk?: (chunk: string) => void;
   }): Promise<{ text: string }> {
+    if (this.currentQuery) {
+      throw new Error('Qwen query already in progress; concurrent send/stream is not supported');
+    }
+
     let responseText = '';
 
     const env: Record<string, string> = {};
     if (this.baseUrl) env.OPENAI_BASE_URL = this.baseUrl;
     if (this.apiKey) env.OPENAI_API_KEY = this.apiKey;
 
-    this.currentQuery = qwenQuery({
+    const query = qwenQuery({
       prompt: params.prompt,
       options: {
         ...params.options,
@@ -138,16 +146,16 @@ export class QwenCodeClient {
       },
     }) as unknown as QwenQuery;
 
+    this.currentQuery = query;
+
     try {
-      for await (const message of this.currentQuery) {
+      for await (const message of query) {
         if (message.type === 'assistant') {
           const next = this.extractAssistantText(message);
-          if (params.onChunk) {
-            if (next.startsWith(responseText)) {
-              const delta = next.slice(responseText.length);
-              if (delta) params.onChunk(delta);
-            } else if (next) {
-              params.onChunk(next);
+          if (params.onChunk && next.startsWith(responseText)) {
+            const delta = next.slice(responseText.length);
+            if (delta) {
+              this.emitChunk(params.onChunk, delta);
             }
           }
           responseText = next;
@@ -158,7 +166,9 @@ export class QwenCodeClient {
           if (message.result) {
             if (params.onChunk && message.result.startsWith(responseText)) {
               const delta = message.result.slice(responseText.length);
-              if (delta) params.onChunk(delta);
+              if (delta) {
+                this.emitChunk(params.onChunk, delta);
+              }
             }
             responseText = message.result;
           }
@@ -168,10 +178,23 @@ export class QwenCodeClient {
 
       return { text: responseText };
     } finally {
-      if (this.currentQuery?.close) {
-        await this.currentQuery.close().catch(() => {});
+      if (query?.close) {
+        await query.close().catch((err) => {
+          console.warn('[QwenCodeClient] Failed to close query', err);
+        });
       }
-      this.currentQuery = null;
+      if (this.currentQuery === query) {
+        this.currentQuery = null;
+      }
+    }
+  }
+
+
+  private emitChunk(onChunk: (chunk: string) => void, chunk: string): void {
+    try {
+      onChunk(chunk);
+    } catch (err) {
+      console.warn('[QwenCodeClient] onChunk callback threw', err);
     }
   }
 
