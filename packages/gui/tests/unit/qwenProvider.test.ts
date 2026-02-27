@@ -53,11 +53,14 @@ describe('QwenProvider', () => {
     expect(provider.getStatus().model).toBeDefined();
   });
 
-  it('reports unavailable status when SDK check fails', async () => {
+  it('checks availability during initialize without constructor race', async () => {
     isQwenSdkAvailableMock.mockResolvedValueOnce(false);
     const unavailableProvider = new QwenProvider();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await unavailableProvider.initialize({ model: 'qwen-plus' });
+
     expect(unavailableProvider.getStatus().available).toBe(false);
+    expect(isQwenSdkAvailableMock).toHaveBeenCalledTimes(1);
   });
 
   it('processes prompt after initialization', async () => {

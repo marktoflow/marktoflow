@@ -52,6 +52,56 @@ describe('QwenCodeClient', () => {
     expect(chunks.join('')).toContain('Hello from Qwen');
   });
 
+
+  it('guards against concurrent queries', async () => {
+    let release: (() => void) | null = null;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    queryMock.mockImplementationOnce(() => ({
+      async *[Symbol.asyncIterator]() {
+        await blocked;
+        yield {
+          type: 'result',
+          result: 'done',
+          is_error: false,
+        };
+      },
+      close: vi.fn().mockResolvedValue(undefined),
+      interrupt: vi.fn().mockResolvedValue(undefined),
+    }));
+
+    const client = new QwenCodeClient({ model: 'qwen-plus' });
+    const first = client.send({ prompt: 'First' });
+
+    await Promise.resolve();
+
+    await expect(client.send({ prompt: 'Second' })).rejects.toThrow(
+      'Qwen query already in progress; concurrent send/stream is not supported'
+    );
+
+    release?.();
+    await expect(first).resolves.toBe('done');
+  });
+
+  it('does not fail stream when onChunk callback throws', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const client = new QwenCodeClient({ model: 'qwen-plus' });
+
+    const result = await client.stream({
+      prompt: 'Stream with flaky callback',
+      onChunk: () => {
+        throw new Error('chunk handler exploded');
+      },
+    });
+
+    expect(result).toBe('Hello from Qwen');
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
   it('uses openai auth mode with local baseUrl/apiKey', async () => {
     const client = new QwenCodeClient({
       baseUrl: 'http://localhost:11434/v1',

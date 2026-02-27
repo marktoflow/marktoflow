@@ -28,17 +28,21 @@ export class QwenProvider implements AgentProvider {
   private client: QwenCodeClient | null = null;
   private ready: boolean = false;
   private available: boolean = false;
+  private availabilityChecked: boolean = false;
   private error: string | undefined;
 
-  constructor() {
-    this.checkAvailability();
-  }
+  constructor() {}
 
-  private async checkAvailability(): Promise<void> {
+  private async ensureAvailabilityChecked(): Promise<void> {
+    if (this.availabilityChecked) return;
+
     this.available = await isQwenSdkAvailable();
+    this.availabilityChecked = true;
   }
 
   async initialize(config: AgentConfig): Promise<void> {
+    await this.ensureAvailabilityChecked();
+
     try {
       this.client = new QwenCodeClient({
         model: config.model,
