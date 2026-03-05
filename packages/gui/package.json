@@ -58,7 +58,7 @@
     "express": "^4.21.2",
     "fuse.js": "^7.1.0",
     "lucide-react": "^0.468.0",
-    "multer": "^2.0.2",
+    "multer": "^2.1.1",
     "react-joyride": "^2.9.3",
     "react-markdown": "^9.0.1",
     "rehype-highlight": "^7.0.1",
