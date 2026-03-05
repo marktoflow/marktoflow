@@ -156,7 +156,7 @@ importers:
     dependencies:
       '@anthropic-ai/claude-agent-sdk':
         specifier: '>=0.1.0'
-        version: 0.2.42(zod@3.25.76)
+        version: 0.2.42(zod@4.3.6)
       '@anthropic-ai/sdk':
         specifier: ^0.52.0
         version: 0.52.0
@@ -230,8 +230,8 @@ importers:
         specifier: ^0.468.0
         version: 0.468.0(react@18.3.1)
       multer:
-        specifier: ^2.0.2
-        version: 2.0.2
+        specifier: ^2.1.1
+        version: 2.1.1
       react-joyride:
         specifier: ^2.9.3
         version: 2.9.3(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -384,8 +384,8 @@ importers:
         specifier: ^10.34.0
         version: 10.34.0(@types/node-fetch@2.6.13)
       fast-xml-parser:
-        specifier: ^5.3.6
-        version: 5.3.6
+        specifier: ^5.3.8
+        version: 5.3.8
       googleapis:
         specifier: ^140.0.0
         version: 140.0.1
@@ -927,8 +927,8 @@ packages:
   '@csstools/css-syntax-patches-for-csstree@1.0.27':
     resolution: {integrity: sha512-sxP33Jwg1bviSUXAV43cVYdmjt2TLnLXNqCWl9xmxHawWVjGz/kEbdkr7F9pxJNBN2Mh+dq0crgItbW6tQvyow==}
 
-  '@csstools/css-syntax-patches-for-csstree@1.0.28':
-    resolution: {integrity: sha512-1NRf1CUBjnr3K7hu8BLxjQrKCxEe8FP/xmPTenAxCRZWVLbmGotkFvG9mfNpjA6k7Bw1bw4BilZq9cu19RA5pg==}
+  '@csstools/css-syntax-patches-for-csstree@1.0.29':
+    resolution: {integrity: sha512-jx9GjkkP5YHuTmko2eWAvpPnb0mB4mGRr2U7XwVNwevm8nlpobZEVk+GNmiYMk2VuA75v+plfXWyroWKmICZXg==}
 
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
@@ -1404,6 +1404,15 @@ packages:
 
   '@exodus/bytes@1.14.1':
     resolution: {integrity: sha512-OhkBFWI6GcRMUroChZiopRiSp2iAMvEBK47NhJooDqz1RERO4QuZIZnjP63TXX8GAiLABkYmX+fuQsdJ1dd2QQ==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+    peerDependencies:
+      '@noble/hashes': ^1.8.0 || ^2.0.0
+    peerDependenciesMeta:
+      '@noble/hashes':
+        optional: true
+
+  '@exodus/bytes@1.15.0':
+    resolution: {integrity: sha512-UY0nlA+feH81UGSHv92sLEPLCeZFjXOuHhrIo0HQydScuQc8s0A7kL/UdgwgDq8g8ilksmuoF35YVTNphV2aBQ==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
     peerDependencies:
       '@noble/hashes': ^1.8.0 || ^2.0.0
@@ -3610,8 +3619,8 @@ packages:
     resolution: {integrity: sha512-7D2EPVltRrsTkhpQmksIu+LxeWAIEk6wRDMJ1qljlv+CKHJM+cJLlfhWIzNA44eAsHXSNe3+vO6DW1yCYx8SuQ==}
     engines: {node: '>=20'}
 
-  cssstyle@6.1.0:
-    resolution: {integrity: sha512-Ml4fP2UT2K3CUBQnVlbdV/8aFDdlY69E+YnwJM+3VUWl08S3J8c8aRuJqCkD9Py8DHZ7zNNvsfKl8psocHZEFg==}
+  cssstyle@6.2.0:
+    resolution: {integrity: sha512-Fm5NvhYathRnXNVndkUsCCuR63DCLVVwGOOwQw782coXFi5HhkXdu289l59HlXZBawsyNccXfWRYvLzcDCdDig==}
     engines: {node: '>=20'}
 
   csstype@3.2.3:
@@ -4064,8 +4073,8 @@ packages:
   fast-wrap-ansi@0.2.0:
     resolution: {integrity: sha512-rLV8JHxTyhVmFYhBJuMujcrHqOT2cnO5Zxj37qROj23CP39GXubJRBUFF0z8KFK77Uc0SukZUf7JZhsVEQ6n8w==}
 
-  fast-xml-parser@5.3.6:
-    resolution: {integrity: sha512-QNI3sAvSvaOiaMl8FYU4trnEzCwiRr8XMWgAHzlrWpTSj+QaCSvOf1h82OEP1s4hiAXhnbXSyFWCf4ldZzZRVA==}
+  fast-xml-parser@5.3.8:
+    resolution: {integrity: sha512-53jIF4N6u/pxvaL1eb/hEZts/cFLWZ92eCfLrNyCI0k38lettCG/Bs40W9pPwoPXyHQlKu2OUbQtiEIZK/J6Vw==}
     hasBin: true
 
   fastq@1.20.1:
@@ -5111,8 +5120,8 @@ packages:
       typescript:
         optional: true
 
-  multer@2.0.2:
-    resolution: {integrity: sha512-u7f2xaZ/UG8oLXHvtF/oWTRvT44p9ecwBBqTwgJVq0+4BW1g8OW01TyMEGWBHbyMOYVHXslaut7qEQ1meATXgw==}
+  multer@2.1.1:
+    resolution: {integrity: sha512-mo+QTzKlx8R7E5ylSXxWzGoXoZbOsRMpyitcht8By2KHvMbf3tjwosZ/Mu/XYU6UuJ3VZnODIrak5ZrPiPyB6A==}
     engines: {node: '>= 10.16.0'}
 
   mustache@4.2.0:
@@ -6091,8 +6100,8 @@ packages:
       '@types/node':
         optional: true
 
-  strnum@2.1.2:
-    resolution: {integrity: sha512-l63NF9y/cLROq/yqKXSLtcMeeyOfnSQlfMSlzFt/K73oIaD8DGaQWd7Z34X9GPiKqP5rbSh84Hl4bOlLcjiSrQ==}
+  strnum@2.2.0:
+    resolution: {integrity: sha512-Y7Bj8XyJxnPAORMZj/xltsfo55uOiyHcU2tnAVzHUnSJR/KsEX+9RoDeXEnsXtl/CX4fAcrt64gZ13aGaWPeBg==}
 
   style-to-js@1.1.21:
     resolution: {integrity: sha512-RjQetxJrrUJLQPHbLku6U/ocGtzyjbJMP9lCNK7Ag0CNh690nSH8woqWH9u16nMjYBAok+i7JO1NP2pOy8IsPQ==}
@@ -6942,6 +6951,20 @@ snapshots:
       '@img/sharp-linuxmusl-arm64': 0.33.5
       '@img/sharp-linuxmusl-x64': 0.33.5
       '@img/sharp-win32-x64': 0.33.5
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk@0.2.42(zod@4.3.6)':
+    dependencies:
+      zod: 4.3.6
+    optionalDependencies:
+      '@img/sharp-darwin-arm64': 0.33.5
+      '@img/sharp-darwin-x64': 0.33.5
+      '@img/sharp-linux-arm': 0.33.5
+      '@img/sharp-linux-arm64': 0.33.5
+      '@img/sharp-linux-x64': 0.33.5
+      '@img/sharp-linuxmusl-arm64': 0.33.5
+      '@img/sharp-linuxmusl-x64': 0.33.5
+      '@img/sharp-win32-x64': 0.33.5
 
   '@anthropic-ai/sdk@0.39.0':
     dependencies:
@@ -7465,7 +7488,7 @@ snapshots:
   '@aws-sdk/xml-builder@3.972.4':
     dependencies:
       '@smithy/types': 4.12.0
-      fast-xml-parser: 5.3.6
+      fast-xml-parser: 5.3.8
       tslib: 2.8.1
 
   '@aws/lambda-invoke-store@0.2.3': {}
@@ -7711,7 +7734,7 @@ snapshots:
 
   '@csstools/css-syntax-patches-for-csstree@1.0.27': {}
 
-  '@csstools/css-syntax-patches-for-csstree@1.0.28':
+  '@csstools/css-syntax-patches-for-csstree@1.0.29':
     optional: true
 
   '@csstools/css-tokenizer@4.0.0': {}
@@ -7953,6 +7976,11 @@ snapshots:
   '@exodus/bytes@1.14.1(@noble/hashes@1.8.0)':
     optionalDependencies:
       '@noble/hashes': 1.8.0
+
+  '@exodus/bytes@1.15.0(@noble/hashes@1.8.0)':
+    optionalDependencies:
+      '@noble/hashes': 1.8.0
+    optional: true
 
   '@fast-csv/format@4.3.5':
     dependencies:
@@ -10435,10 +10463,10 @@ snapshots:
       css-tree: 3.1.0
       lru-cache: 11.2.6
 
-  cssstyle@6.1.0:
+  cssstyle@6.2.0:
     dependencies:
       '@asamuzakjp/css-color': 5.0.1
-      '@csstools/css-syntax-patches-for-csstree': 1.0.28
+      '@csstools/css-syntax-patches-for-csstree': 1.0.29
       css-tree: 3.1.0
       lru-cache: 11.2.6
     optional: true
@@ -11000,9 +11028,9 @@ snapshots:
     dependencies:
       fast-string-width: 3.0.2
 
-  fast-xml-parser@5.3.6:
+  fast-xml-parser@5.3.8:
     dependencies:
-      strnum: 2.1.2
+      strnum: 2.2.0
 
   fastq@1.20.1:
     dependencies:
@@ -11665,8 +11693,8 @@ snapshots:
       '@acemir/cssom': 0.9.31
       '@asamuzakjp/dom-selector': 6.8.1
       '@bramus/specificity': 2.4.2
-      '@exodus/bytes': 1.14.1(@noble/hashes@1.8.0)
-      cssstyle: 6.1.0
+      '@exodus/bytes': 1.15.0(@noble/hashes@1.8.0)
+      cssstyle: 6.2.0
       data-urls: 7.0.0(@noble/hashes@1.8.0)
       decimal.js: 10.6.0
       html-encoding-sniffer: 6.0.0(@noble/hashes@1.8.0)
@@ -12338,6 +12366,7 @@ snapshots:
   mkdirp@0.5.6:
     dependencies:
       minimist: 1.2.8
+    optional: true
 
   monaco-editor@0.55.1:
     dependencies:
@@ -12399,15 +12428,12 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  multer@2.0.2:
+  multer@2.1.1:
     dependencies:
       append-field: 1.0.0
       busboy: 1.6.0
       concat-stream: 2.0.0
-      mkdirp: 0.5.6
-      object-assign: 4.1.1
       type-is: 1.6.18
-      xtend: 4.0.2
 
   mustache@4.2.0:
     optional: true
@@ -13586,7 +13612,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.2.3
 
-  strnum@2.1.2: {}
+  strnum@2.2.0: {}
 
   style-to-js@1.1.21:
     dependencies:
@@ -14210,7 +14236,7 @@ snapshots:
 
   whatwg-url@16.0.1(@noble/hashes@1.8.0):
     dependencies:
-      '@exodus/bytes': 1.14.1(@noble/hashes@1.8.0)
+      '@exodus/bytes': 1.15.0(@noble/hashes@1.8.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
