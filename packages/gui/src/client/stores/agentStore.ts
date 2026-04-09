@@ -19,6 +19,8 @@ export interface Provider {
   authType?: 'sdk' | 'api_key' | 'local' | 'demo';
   authInstructions?: string;
   availableModels?: string[];
+  oauthSupported?: boolean;
+  oauthAuthUrl?: string;
 }
 
 export interface AgentStatus {

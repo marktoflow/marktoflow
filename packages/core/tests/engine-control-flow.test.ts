@@ -33,7 +33,8 @@ const mockExecutor: StepExecutor = async (step, context) => {
   if (step.id === 'set-value' || step.id === 'set-priority' || step.id === 'set-items' ||
       step.id === 'set-numbers' || step.id === 'set-users' || step.id === 'init-counter' ||
       step.id === 'set-data' || step.id === 'set-empty' || step.id === 'set-flag' ||
-      step.id === 'set-false' || step.id === 'set-non-array') {
+      step.id === 'set-false' || step.id === 'set-non-array' ||
+      step.id === 'set-users-a' || step.id === 'set-users-b') {
     return step.inputs?.value;
   }
 
@@ -1035,6 +1036,48 @@ steps:
       const result = await engine.execute(workflow, {}, mockRegistry, mockExecutor);
 
       expect(result.status).toBe('completed');
+    });
+
+    it('should execute merge match mode when key_field is provided', async () => {
+      const workflowContent = `---
+workflow:
+  id: merge-match-key-field
+  name: Merge Match Key Field
+
+steps:
+  - id: set-users-a
+    type: action
+    action: mock.setValue
+    inputs:
+      value:
+        - id: "u1"
+          name: "Alice"
+        - id: "u2"
+          name: "Bob"
+    output_variable: users_a
+  - id: set-users-b
+    type: action
+    action: mock.setValue
+    inputs:
+      value:
+        - id: "u2"
+          team: "Platform"
+        - id: "u3"
+          team: "Security"
+    output_variable: users_b
+  - id: merge-users
+    type: merge
+    mode: match
+    sources: ["{{ users_a }}", "{{ users_b }}"]
+    key_field: id
+    output_variable: merged
+---`;
+
+      const { workflow } = parseContent(workflowContent);
+      const result = await engine.execute(workflow, {}, mockRegistry, mockExecutor);
+
+      expect(result.status).toBe('completed');
+      expect(result.output.merged).toEqual([{ id: 'u2', name: 'Bob' }]);
     });
   });
 });

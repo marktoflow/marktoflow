@@ -527,7 +527,9 @@ function normalizeStep(raw: Record<string, unknown>, index: number): Record<stri
         type: 'merge',
         mode: raw.mode,
         sources: raw.sources,
-        keyField: raw.key_field || raw.keyField,
+        // Accept legacy key_field/keyField aliases, normalize to matchField used by runtime.
+        matchField: raw.match_field ?? raw.matchField ?? raw.key_field ?? raw.keyField,
+        onConflict: raw.on_conflict ?? raw.onConflict,
       };
 
     default:

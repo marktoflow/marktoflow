@@ -26,6 +26,8 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
   });
   const [customModel, setCustomModel] = useState('');
   const [editingModelFor, setEditingModelFor] = useState<string | null>(null);
+  const [oauthLoadingFor, setOauthLoadingFor] = useState<string | null>(null);
+  const [oauthMessagesByProvider, setOauthMessagesByProvider] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     if (open) {
@@ -80,6 +82,44 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
     }
   };
 
+  const handleStartOAuth = async (provider: Provider) => {
+    setOauthLoadingFor(provider.id);
+    setOauthMessagesByProvider((prev) => ({ ...prev, [provider.id]: null }));
+
+    try {
+      const response = await fetch(`/api/ai/providers/${provider.id}/oauth/start`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to start OAuth flow');
+      }
+
+      const authUrl = data.authUrl || provider.oauthAuthUrl;
+      if (authUrl) {
+        window.open(authUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      setOauthMessagesByProvider((prev) => ({
+        ...prev,
+        [provider.id]: data.message || `OAuth started for ${provider.name}.`,
+      }));
+
+      // Refresh provider status after a short delay in case auth completed quickly.
+      setTimeout(() => {
+        void loadProviders();
+      }, 2000);
+    } catch (err) {
+      setOauthMessagesByProvider((prev) => ({
+        ...prev,
+        [provider.id]: err instanceof Error ? err.message : 'Failed to start OAuth flow',
+      }));
+    } finally {
+      setOauthLoadingFor(null);
+    }
+  };
+
   const handleActivate = async () => {
     if (!selectedProviderId) return;
     const provider = providers.find((p) => p.id === selectedProviderId);
@@ -91,8 +131,12 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                         (provider.authType === 'sdk' && provider.status === 'needs_config');
     if (!canActivate) return;
 
-    const config = configData.model ? { model: configData.model } : undefined;
-    const success = await setProvider(selectedProviderId, config);
+    const config = {
+      ...(configData.apiKey ? { apiKey: configData.apiKey } : {}),
+      ...(configData.baseUrl ? { baseUrl: configData.baseUrl } : {}),
+      ...(configData.model ? { model: configData.model } : {}),
+    };
+    const success = await setProvider(selectedProviderId, Object.keys(config).length > 0 ? config : undefined);
     if (success) {
       setShowConfig(false);
       setConfigData({ apiKey: '', baseUrl: '', model: '' });
@@ -146,7 +190,14 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
       >
         <div className="p-4 space-y-4">
           {isSDK ? (
-            <SDKProviderConfig provider={provider} configData={configData} setConfigData={setConfigData} />
+            <SDKProviderConfig
+              provider={provider}
+              configData={configData}
+              setConfigData={setConfigData}
+              onStartOAuth={handleStartOAuth}
+              oauthLoading={oauthLoadingFor === provider.id}
+              oauthMessage={oauthMessagesByProvider[provider.id] ?? null}
+            />
           ) : (
             <>
               {provider.configOptions?.apiKey && (
@@ -245,10 +296,22 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
             {providers.map((provider) => {
               const isDisabled = provider.status === 'unavailable';
               return (
-              <button
+              <div
                 key={provider.id}
-                onClick={() => handleProviderClick(provider.id)}
-                disabled={isDisabled}
+                role="button"
+                tabIndex={isDisabled ? -1 : 0}
+                aria-disabled={isDisabled}
+                onClick={() => {
+                  if (isDisabled) return;
+                  void handleProviderClick(provider.id);
+                }}
+                onKeyDown={(e) => {
+                  if (isDisabled) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    void handleProviderClick(provider.id);
+                  }
+                }}
                 className={`
                   w-full flex items-center justify-between p-3 rounded border transition-all
                   ${provider.isActive
@@ -280,6 +343,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                   )}
                   {provider.status === 'ready' && (
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleConfigureReady(provider.id);
@@ -294,7 +358,7 @@ export function ProviderSwitcher({ open, onOpenChange }: ProviderSwitcherProps) 
                     {getStatusLabel(provider.status)}
                   </span>
                 </div>
-              </button>
+              </div>
               );
             })}
           </div>
@@ -366,10 +430,16 @@ function SDKProviderConfig({
   provider,
   configData,
   setConfigData,
+  onStartOAuth,
+  oauthLoading,
+  oauthMessage,
 }: {
   provider: Provider;
   configData: { model: string };
   setConfigData: (data: { apiKey: string; baseUrl: string; model: string }) => void;
+  onStartOAuth: (provider: Provider) => Promise<void>;
+  oauthLoading: boolean;
+  oauthMessage: string | null;
 }) {
   const isConnected = provider.status === 'ready';
   const isAvailable = provider.status === 'available';
@@ -398,6 +468,55 @@ function SDKProviderConfig({
         </div>
       )}
 
+      {provider.oauthSupported && !isConnected && (
+        <div className="space-y-2">
+          <Button
+            variant="primary"
+            onClick={() => void onStartOAuth(provider)}
+            disabled={oauthLoading}
+            className="w-full"
+          >
+            {oauthLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Authenticate with OAuth'}
+          </Button>
+          {oauthMessage && (
+            <p className="text-xs text-gray-400">{oauthMessage}</p>
+          )}
+          <p className="text-xs text-gray-500">
+            A separate browser tab will open for OAuth. After signing in, return and click Connect & Activate.
+          </p>
+        </div>
+      )}
+
+      {provider.configOptions?.baseUrl && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Base URL (optional)
+          </label>
+          <input
+            type="text"
+            value={configData.baseUrl}
+            onChange={(e) => setConfigData({ ...configData, baseUrl: e.target.value })}
+            className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="e.g., http://localhost:11434/v1"
+          />
+        </div>
+      )}
+
+      {provider.configOptions?.apiKey && (
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            API Key (optional)
+          </label>
+          <input
+            type="password"
+            value={configData.apiKey}
+            onChange={(e) => setConfigData({ ...configData, apiKey: e.target.value })}
+            className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Enter API key if required by your local endpoint"
+          />
+        </div>
+      )}
+
       {/* Model dropdown (if models available) */}
       {provider.availableModels && provider.availableModels.length > 0 && (
         <div>
@@ -406,7 +525,7 @@ function SDKProviderConfig({
           </label>
           <select
             value={configData.model}
-            onChange={(e) => setConfigData({ apiKey: '', baseUrl: '', model: e.target.value })}
+            onChange={(e) => setConfigData({ ...configData, model: e.target.value })}
             className="w-full px-3 py-2 bg-node-bg border border-node-border rounded text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Default</option>
