@@ -43,15 +43,15 @@ import { IntercomInitializer } from './services/intercom.js';
 import { MondayInitializer } from './services/monday.js';
 import { RssInitializer } from './services/rss.js';
 
-// AI Adapters
-import { OllamaInitializer } from './adapters/ollama.js';
-import { OpenAIInitializer } from './adapters/openai.js';
-import { ClaudeAgentInitializer } from './adapters/claude-agent.js';
-import { OpenCodeInitializer } from './adapters/opencode.js';
-import { GitHubCopilotInitializer } from './adapters/github-copilot.js';
-import { CodexInitializer } from './adapters/codex.js';
-import { GeminiCliInitializer } from './adapters/gemini-cli.js';
-import { QwenCodeInitializer } from './adapters/qwen-code.js';
+// AI Adapters (implemented in @marktoflow/agents)
+import { OllamaInitializer } from '@marktoflow/agents/adapters/ollama';
+import { OpenAIInitializer } from '@marktoflow/agents/adapters/openai';
+import { ClaudeAgentInitializer } from '@marktoflow/agents/adapters/claude-agent';
+import { OpenCodeInitializer } from '@marktoflow/agents/adapters/opencode';
+import { GitHubCopilotInitializer } from '@marktoflow/agents/adapters/github-copilot';
+import { CodexInitializer } from '@marktoflow/agents/adapters/codex';
+import { GeminiCliInitializer } from '@marktoflow/agents/adapters/gemini-cli';
+import { QwenCodeInitializer } from '@marktoflow/agents/adapters/qwen-code';
 
 // Tools
 import { ScriptInitializer } from './tools/script.js';

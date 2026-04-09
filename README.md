@@ -154,7 +154,7 @@ marktoflow is designed for teams and individuals who care about where their data
 | **Storage**            | Dropbox, AWS S3                                                                                                                                                                                                   |
 | **Databases**          | Supabase, PostgreSQL, MySQL                                                                                                                                                                                       |
 | **Universal**          | HTTP client (any REST API), RSS/Atom feeds                                                                                                                                                                        |
-| **AI Agents**          | GitHub Copilot, Claude, Codex, Gemini — use your existing subscriptions, no API keys — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
+| **AI Agents**          | Implemented in [`@marktoflow/agents`](packages/agents) and exposed via compatibility exports in integrations: GitHub Copilot, Claude, Codex, Gemini, OpenAI, Ollama, llama.cpp, VLLM — [control via Slack/Telegram](examples/agent-task-executor/) |
 
 ## Packages
 
@@ -165,7 +165,8 @@ marktoflow is designed for teams and individuals who care about where their data
 | [`@marktoflow/core`](packages/core)                 | Parser, engine, state management, plugin system |
 | [`@marktoflow/cli`](packages/cli)                   | Command-line interface and workflow runner      |
 | [`@marktoflow/gui`](packages/gui)                   | Visual workflow designer (web UI)               |
-| [`@marktoflow/integrations`](packages/integrations) | 39 service integrations and AI adapters         |
+| [`@marktoflow/integrations`](packages/integrations) | 39 service integrations + AI adapter compatibility exports |
+| [`@marktoflow/agents`](packages/agents)             | Source of truth for AI providers and agent adapters |
 
 ## Examples
 

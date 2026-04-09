@@ -22,6 +22,7 @@
 
 This is the all-in-one package that includes everything you need:
 
+- **@marktoflow/agents** — Unified SDK for AI agent providers
 - **@marktoflow/cli** — Command-line interface and workflow runner
 - **@marktoflow/core** — Workflow engine, parser, state management, plugin system
 - **@marktoflow/gui** — Visual drag-and-drop workflow designer

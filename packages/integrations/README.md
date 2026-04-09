@@ -1,6 +1,6 @@
 # @marktoflow/integrations
 
-> 39 native service integrations and AI agent adapters with tool calling, structured output, and local LLM support.
+> 39 native service integrations plus compatibility exports for AI adapters now owned by `@marktoflow/agents`.
 
 [![npm](https://img.shields.io/npm/v/@marktoflow/integrations)](https://www.npmjs.com/package/@marktoflow/integrations)
 
@@ -43,7 +43,7 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 ## Features
 
 - **39 native SDK integrations** with full TypeScript types
-- **8 AI agent adapters** — OpenAI, Claude, Copilot, Codex, OpenCode, Ollama, Google Gemini + any OpenAI-compatible endpoint
+- **AI adapter compatibility exports** — OpenAI, Claude, Copilot, Codex, OpenCode, Ollama, Google Gemini + any OpenAI-compatible endpoint (implemented in `@marktoflow/agents`)
 - **Tool calling / function calling** — Agentic loops where AI models invoke tools autonomously
 - **Structured output** — JSON mode and JSON Schema validation for reliable AI responses
 - **Local LLM support** — llama.cpp, VLLM, LM Studio, LocalAI with auto model detection

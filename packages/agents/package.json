@@ -1,0 +1,140 @@
+{
+  "name": "@marktoflow/agents",
+  "version": "2.0.5",
+  "description": "Unified SDK for AI agent providers with typed auth, capability metadata, and normalized errors",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marktoflow/marktoflow.git",
+    "directory": "packages/agents"
+  },
+  "homepage": "https://github.com/marktoflow/marktoflow#readme",
+  "bugs": {
+    "url": "https://github.com/marktoflow/marktoflow/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters/claude-agent": {
+      "types": "./dist/adapters/claude-agent.d.ts",
+      "import": "./dist/adapters/claude-agent.js"
+    },
+    "./adapters/claude-agent-hooks": {
+      "types": "./dist/adapters/claude-agent-hooks.d.ts",
+      "import": "./dist/adapters/claude-agent-hooks.js"
+    },
+    "./adapters/claude-agent-types": {
+      "types": "./dist/adapters/claude-agent-types.d.ts",
+      "import": "./dist/adapters/claude-agent-types.js"
+    },
+    "./adapters/claude-agent-workflow": {
+      "types": "./dist/adapters/claude-agent-workflow.d.ts",
+      "import": "./dist/adapters/claude-agent-workflow.js"
+    },
+    "./adapters/codex": {
+      "types": "./dist/adapters/codex.d.ts",
+      "import": "./dist/adapters/codex.js"
+    },
+    "./adapters/codex-types": {
+      "types": "./dist/adapters/codex-types.d.ts",
+      "import": "./dist/adapters/codex-types.js"
+    },
+    "./adapters/codex-workflow": {
+      "types": "./dist/adapters/codex-workflow.d.ts",
+      "import": "./dist/adapters/codex-workflow.js"
+    },
+    "./adapters/gemini-cli": {
+      "types": "./dist/adapters/gemini-cli.d.ts",
+      "import": "./dist/adapters/gemini-cli.js"
+    },
+    "./adapters/gemini-cli-oauth": {
+      "types": "./dist/adapters/gemini-cli-oauth.d.ts",
+      "import": "./dist/adapters/gemini-cli-oauth.js"
+    },
+    "./adapters/gemini-cli-types": {
+      "types": "./dist/adapters/gemini-cli-types.d.ts",
+      "import": "./dist/adapters/gemini-cli-types.js"
+    },
+    "./adapters/github-copilot": {
+      "types": "./dist/adapters/github-copilot.d.ts",
+      "import": "./dist/adapters/github-copilot.js"
+    },
+    "./adapters/github-copilot-types": {
+      "types": "./dist/adapters/github-copilot-types.d.ts",
+      "import": "./dist/adapters/github-copilot-types.js"
+    },
+    "./adapters/github-copilot-workflow": {
+      "types": "./dist/adapters/github-copilot-workflow.d.ts",
+      "import": "./dist/adapters/github-copilot-workflow.js"
+    },
+    "./adapters/ollama": {
+      "types": "./dist/adapters/ollama.d.ts",
+      "import": "./dist/adapters/ollama.js"
+    },
+    "./adapters/ollama-types": {
+      "types": "./dist/adapters/ollama-types.d.ts",
+      "import": "./dist/adapters/ollama-types.js"
+    },
+    "./adapters/openai": {
+      "types": "./dist/adapters/openai.d.ts",
+      "import": "./dist/adapters/openai.js"
+    },
+    "./adapters/openai-types": {
+      "types": "./dist/adapters/openai-types.d.ts",
+      "import": "./dist/adapters/openai-types.js"
+    },
+    "./adapters/opencode": {
+      "types": "./dist/adapters/opencode.d.ts",
+      "import": "./dist/adapters/opencode.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@github/copilot-sdk": "^0.1.18",
+    "@marktoflow/core": "workspace:*",
+    "@openai/codex-sdk": "^0.91.0",
+    "@opencode-ai/sdk": "^1.1.53",
+    "ollama": "^0.6.3",
+    "openai": "^4.73.0",
+    "zod": "^3.24.0"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/claude-agent-sdk": ">=0.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "marktoflow",
+    "agents",
+    "ai",
+    "sdk",
+    "provider",
+    "claude",
+    "codex",
+    "copilot",
+    "qwen",
+    "gemini",
+    "oauth",
+    "api-key",
+    "typescript"
+  ],
+  "author": "Scott Glover",
+  "license": "AGPL-3.0-only",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  }
+}
