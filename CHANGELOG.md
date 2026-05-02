@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ACP-backed agent adapters with one canonical ACP entry each for GitHub Copilot (`copilot-acp`), Gemini (`gemini-acp`), Claude Code (`claude-code-acp`), and Codex (`codex-acp`)
+- Shared agent runtime types in `@marktoflow/core` for ACP sessions, MCP server attachment, and reusable skill configuration
+
+### Changed
+
+- Existing SDK-based agent integrations remain available while ACP is added as an additional transport path through the integrations package and CLI agent selection
+- Project licensing is now MIT across the repository and published packages
+
 ### Fixed
 
 - GUI provider OAuth status message is now scoped per provider, preventing stale messages from showing after switching providers
@@ -27,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical
 
+- Added unit coverage for ACP client aggregation, provider initializers, and CLI ACP detection/config aliases
 - Added targeted Salesforce path-encoding tests split by method for clearer failure diagnostics
 
 ## [2.0.6] - 2026-02-19

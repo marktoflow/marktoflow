@@ -56,6 +56,15 @@ const AGENT_SPECS: AgentSpec[] = [
     configHint: 'Install Claude CLI or set ANTHROPIC_API_KEY',
   },
   {
+    id: 'claude-code-acp',
+    name: 'Claude Code ACP',
+    detect: () => {
+      if (hasCli('claude')) return { available: true, method: 'cli' };
+      return { available: false, method: 'none' };
+    },
+    configHint: 'Install Claude Code CLI with ACP support',
+  },
+  {
     id: 'openai',
     name: 'OpenAI',
     detect: () => {
@@ -74,6 +83,15 @@ const AGENT_SPECS: AgentSpec[] = [
     configHint: 'Install Codex CLI: npm install -g @openai/codex',
   },
   {
+    id: 'codex-acp',
+    name: 'Codex ACP',
+    detect: () => {
+      if (hasCli('codex')) return { available: true, method: 'cli' };
+      return { available: false, method: 'none' };
+    },
+    configHint: 'Install Codex CLI with ACP support',
+  },
+  {
     id: 'copilot',
     name: 'GitHub Copilot',
     detect: () => {
@@ -82,6 +100,24 @@ const AGENT_SPECS: AgentSpec[] = [
       return { available: false, method: 'none' };
     },
     configHint: 'Install GitHub Copilot CLI or set GITHUB_TOKEN',
+  },
+  {
+    id: 'copilot-acp',
+    name: 'GitHub Copilot ACP',
+    detect: () => {
+      if (hasCli('copilot')) return { available: true, method: 'cli' };
+      return { available: false, method: 'none' };
+    },
+    configHint: 'Install GitHub Copilot CLI with ACP preview support',
+  },
+  {
+    id: 'gemini-acp',
+    name: 'Gemini ACP',
+    detect: () => {
+      if (hasCli('gemini')) return { available: true, method: 'cli' };
+      return { available: false, method: 'none' };
+    },
+    configHint: 'Install Gemini CLI with ACP support',
   },
   {
     id: 'opencode',

@@ -29,7 +29,7 @@
     "github"
   ],
   "author": "Scott Glover",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^2.1.0",
