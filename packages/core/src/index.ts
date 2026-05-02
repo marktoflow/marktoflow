@@ -214,6 +214,23 @@ export {
   type SDKInitializer,
 } from './sdk-registry.js';
 
+// Agent Runtime
+export {
+  AgentProviderRegistry,
+  type AgentMcpServerConfig,
+  type AgentPlanEntry,
+  type AgentPromptRequest,
+  type AgentPromptResult,
+  type AgentProviderDefinition,
+  type AgentRuntimeCapabilities,
+  type AgentRuntimeClient,
+  type AgentSessionConfig,
+  type AgentSkillDefinition,
+  type AgentToolCall,
+  type AgentTransport,
+  type AgentUsage,
+} from './agent-runtime.js';
+
 // User-defined Integrations
 export {
   defineIntegration,

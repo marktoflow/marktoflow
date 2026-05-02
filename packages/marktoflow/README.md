@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  Use your Copilot/Claude/Codex subscriptions · 38 integrations · Tool calling · Visual editor · Self-hosted
+  Use your Copilot/Claude/Codex subscriptions · ACP-ready agents · 39 integrations · Visual editor · Self-hosted
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/v/@marktoflow/marktoflow" alt="npm version" /></a>
-  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License" /></a>
+  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
   <a href="https://github.com/marktoflow/marktoflow/stargazers"><img src="https://img.shields.io/github/stars/marktoflow/marktoflow" alt="GitHub stars" /></a>
 </p>
 
@@ -25,7 +25,7 @@ This is the all-in-one package that includes everything you need:
 - **@marktoflow/cli** — Command-line interface and workflow runner
 - **@marktoflow/core** — Workflow engine, parser, state management, plugin system
 - **@marktoflow/gui** — Visual drag-and-drop workflow designer
-- **@marktoflow/integrations** — 38 service integrations and AI agent adapters
+- **@marktoflow/integrations** — 39 service integrations and AI agent adapters
 
 ## Install
 
@@ -43,6 +43,10 @@ marktoflow run workflow.md --agent claude    # Use your Claude subscription (CLI
 marktoflow run workflow.md --agent codex     # Use your Codex subscription
 marktoflow run workflow.md --agent ollama    # Use Ollama (free, local)
 marktoflow run workflow.md --agent vllm      # Use local llama.cpp / VLLM
+marktoflow run workflow.md --agent copilot-acp
+marktoflow run workflow.md --agent gemini-acp
+marktoflow run workflow.md --agent claude-code-acp
+marktoflow run workflow.md --agent codex-acp
 marktoflow gui                               # Launch visual editor
 marktoflow connect gmail                     # Setup OAuth
 marktoflow serve --port 3000                 # Start webhook server
@@ -50,7 +54,7 @@ marktoflow serve --port 3000                 # Start webhook server
 
 ## Why marktoflow?
 
-- **Use your existing AI subscriptions** — Copilot, Claude, Codex — no extra API keys needed
+- **Use your existing AI subscriptions** — Copilot, Claude, Codex, Gemini — no extra API keys needed
 - **Markdown-native** — Workflows are `.md` files — readable, auditable, version-controlled
 - **AI agents with tool calling** — Agentic loops where models decide which tools to invoke
 - **38 integrations** — Slack, GitHub, Jira, Gmail, Stripe, Google Sheets, and more
@@ -59,6 +63,7 @@ marktoflow serve --port 3000                 # Start webhook server
 - **Visual editor** — Optional drag-and-drop GUI with real-time execution
 - **Parallel execution** — Run multiple AI agents concurrently for faster results
 - **MCP support** — Native Model Context Protocol integration
+- **ACP support** — one ACP variant each for Copilot, Gemini, Claude Code, and Codex
 - **Structured output** — JSON mode and JSON Schema validation for reliable AI responses
 - **Enterprise ready** — RBAC, audit logging, cost tracking, AES-256 credential encryption
 
@@ -96,4 +101,4 @@ Full documentation, examples, and source code:
 
 ## License
 
-[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE) — Free for personal and open source use. Commercial licensing available — contact [scottgl@gmail.com](mailto:scottgl@gmail.com).
+[MIT](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)

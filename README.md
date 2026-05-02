@@ -9,13 +9,13 @@
 </p>
 
 <p align="center">
-  Use your Copilot/Claude/Codex subscriptions · 39 integrations · Tool calling · Local LLMs · Self-hosted
+  Use your Copilot/Claude/Codex subscriptions · ACP-ready agents · 39 integrations · Local LLMs · Self-hosted
 
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/v/@marktoflow/marktoflow" alt="npm version" /></a>
-  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License" /></a>
+  <a href="https://github.com/marktoflow/marktoflow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
   <a href="https://github.com/marktoflow/marktoflow/stargazers"><img src="https://img.shields.io/github/stars/marktoflow/marktoflow" alt="GitHub stars" /></a>
   <a href="https://github.com/marktoflow/marktoflow/actions"><img src="https://img.shields.io/github/actions/workflow/status/marktoflow/marktoflow/ci.yml?branch=main" alt="Build" /></a>
   <a href="https://www.npmjs.com/package/@marktoflow/marktoflow"><img src="https://img.shields.io/npm/dm/@marktoflow/marktoflow" alt="Downloads" /></a>
@@ -63,14 +63,23 @@ steps:
 ---
 ```
 
-Already have a GitHub Copilot, Claude, or Codex subscription? Use it directly — no API keys:
+Already have a GitHub Copilot, Claude, Codex, or Gemini subscription? Use it directly — no API keys:
 
 ```bash
 marktoflow run workflow.md --agent copilot   # GitHub Copilot subscription
 marktoflow run workflow.md --agent claude     # Claude CLI login
 marktoflow run workflow.md --agent codex      # Codex CLI
 marktoflow run workflow.md --agent ollama     # Free, runs locally
-marktoflow run workflow.md --agent gemini     # Google Gemini subscription
+marktoflow run workflow.md --agent gemini-cli # Google Gemini subscription
+```
+
+ACP-backed agent variants are also available alongside the existing SDK adapters:
+
+```bash
+marktoflow run workflow.md --agent copilot-acp
+marktoflow run workflow.md --agent gemini-acp
+marktoflow run workflow.md --agent claude-code-acp
+marktoflow run workflow.md --agent codex-acp
 ```
 
 ## Why marktoflow?
@@ -84,6 +93,7 @@ marktoflow run workflow.md --agent gemini     # Google Gemini subscription
 | **Secure by design**     | Self-hosted, no telemetry, your data never leaves your infrastructure          |
 | **Structured output**    | JSON mode and JSON Schema validation for reliable AI responses                 |
 | **MCP-first**            | Native Model Context Protocol support with zero config                         |
+| **ACP-ready**            | One ACP variant each for Copilot, Gemini, Claude Code, and Codex               |
 | **Direct SDK calls**     | Official SDKs, full TypeScript types, no wrapper APIs                          |
 | **Parallel execution**   | Run multiple AI agents concurrently — 3x faster code reviews, batch processing |
 | **Visual editor**        | Optional drag-and-drop GUI with `marktoflow gui`                               |
@@ -102,7 +112,7 @@ marktoflow is designed for teams and individuals who care about where their data
 | **Workflow transparency** | Plain markdown — read every step before it runs                      | Opaque agent behavior            |
 | **Telemetry**             | None — zero phone-home, zero tracking                                | Varies                           |
 | **Credential storage**    | Local encryption (AES-256-GCM) or your vault (HashiCorp, AWS, Azure) | Vendor-managed                   |
-| **Source available**      | AGPL-3.0 — inspect, modify, self-host                                | Often proprietary                |
+| **License**               | MIT — inspect, modify, self-host                                     | Often proprietary                |
 
 **Use case:** You want AI-powered automation but your company policy (or common sense) says sensitive data — code, credentials, customer info, internal docs — shouldn't flow through third-party agent platforms. marktoflow runs entirely on your machine or your servers with your choice of LLM.
 
@@ -154,7 +164,34 @@ marktoflow is designed for teams and individuals who care about where their data
 | **Storage**            | Dropbox, AWS S3                                                                                                                                                                                                   |
 | **Databases**          | Supabase, PostgreSQL, MySQL                                                                                                                                                                                       |
 | **Universal**          | HTTP client (any REST API), RSS/Atom feeds                                                                                                                                                                        |
-| **AI Agents**          | GitHub Copilot, Claude, Codex, Gemini — use your existing subscriptions, no API keys — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
+| **AI Agents**          | GitHub Copilot, Claude, Codex, Gemini — existing SDK adapters plus one ACP variant each for Copilot/Gemini/Claude Code/Codex — plus OpenAI, Ollama, llama.cpp, VLLM for local/custom setups — [control via Slack/Telegram](examples/agent-task-executor/) |
+
+## ACP, MCP, and skills
+
+marktoflow now keeps the existing SDK-backed agent integrations **and** adds one ACP-backed variant for each ACP-capable coding agent:
+
+- `copilot-acp`
+- `gemini-acp`
+- `claude-code-acp`
+- `codex-acp`
+
+ACP agents can attach MCP servers and reusable skill prompts directly through tool options:
+
+```yaml
+tools:
+  agent:
+    sdk: copilot-acp
+    options:
+      model: gpt-5.4
+      mcpServers:
+        github:
+          type: stdio
+          command: npx
+          args: ['-y', '@modelcontextprotocol/server-github']
+      skills:
+        - name: repo-review
+          prompt: Focus on security, reliability, and migration risks.
+```
 
 ## Packages
 
@@ -214,4 +251,4 @@ Production-ready workflow templates in [`examples/`](examples/):
 
 ## License
 
-[AGPL-3.0](LICENSE) — Free for personal and open source use. Commercial licensing available for organizations that cannot comply with AGPL terms. Contact [scottgl@gmail.com](mailto:scottgl@gmail.com) for details.
+[MIT](LICENSE)

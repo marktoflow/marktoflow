@@ -9,14 +9,26 @@ import type { Workflow } from '@marktoflow/core';
 export const AI_AGENT_SDKS = [
   'claude',
   'claude-agent',
+  '@anthropic-ai/claude-agent-sdk',
+  'claude-code-acp',
   'openai',
   'openai-compatible',
   'vllm',
   'github-copilot',
   'copilot',
+  '@github/copilot-sdk',
+  'copilot-acp',
   'opencode',
   'ollama',
   'codex',
+  'codex-acp',
+  '@openai/codex-sdk',
+  'google-gemini-cli',
+  'gemini-cli',
+  '@google/gemini-cli',
+  'gemini-acp',
+  'qwen-code',
+  '@qwen-code/sdk',
 ] as const;
 
 export type AIAgentSDK = (typeof AI_AGENT_SDKS)[number];

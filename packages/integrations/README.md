@@ -43,7 +43,7 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 ## Features
 
 - **39 native SDK integrations** with full TypeScript types
-- **8 AI agent adapters** — OpenAI, Claude, Copilot, Codex, OpenCode, Ollama, Google Gemini + any OpenAI-compatible endpoint
+- **8 AI agent adapters + ACP variants** — existing SDK/API adapters plus one ACP variant each for Copilot, Gemini, Claude Code, and Codex
 - **Tool calling / function calling** — Agentic loops where AI models invoke tools autonomously
 - **Structured output** — JSON mode and JSON Schema validation for reliable AI responses
 - **Local LLM support** — llama.cpp, VLLM, LM Studio, LocalAI with auto model detection
@@ -64,6 +64,15 @@ await registry.executeAction('slack', 'chat.postMessage', slack, { channel: '#ge
 | **OpenCode** | `opencode /connect` | ✅ | — |
 | **Ollama** | Local install | ✅ | — |
 | **Google Gemini** | `gemini-cli` or `GEMINI_API_KEY` | ✅ | — |
+
+### ACP Adapters
+
+- `copilot-acp`
+- `gemini-acp`
+- `claude-code-acp`
+- `codex-acp`
+
+ACP adapters support session-based prompting plus `options.mcpServers` and `options.skills` for attaching MCP servers and reusable skill prompts.
 
 ### OpenAI / Local LLM Methods
 
@@ -170,4 +179,4 @@ See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/
 
 ## License
 
-[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)
+[MIT](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)

@@ -100,4 +100,4 @@ See the [contributing guide](https://github.com/marktoflow/marktoflow/blob/main/
 
 ## License
 
-[AGPL-3.0](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)
+[MIT](https://github.com/marktoflow/marktoflow/blob/main/LICENSE)

@@ -24,22 +24,39 @@ describe('agent commands', () => {
     it('should list all known agents', () => {
       const output = runCLI('agent list');
       expect(output).toContain('claude-agent');
+      expect(output).toContain('claude-code-acp');
       expect(output).toContain('openai');
       expect(output).toContain('codex');
+      expect(output).toContain('codex-acp');
       expect(output).toContain('copilot');
+      expect(output).toContain('copilot-acp');
+      expect(output).toContain('gemini-acp');
       expect(output).toContain('opencode');
       expect(output).toContain('ollama');
     });
 
-    it('should not list gemini-cli', () => {
+    it('should not list the legacy non-ACP Gemini alias', () => {
       const output = runCLI('agent list');
-      expect(output).not.toContain('gemini-cli');
+      const agentLines = output
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      expect(agentLines).not.toContain('gemini-cli');
     });
 
     it('should show detection status for each agent', () => {
       const output = runCLI('agent list');
       // Each line should have either "Available" or "Not configured"
-      const agentLines = output.split('\n').filter((l) => l.includes('claude-agent') || l.includes('openai') || l.includes('ollama'));
+      const agentLines = output
+        .split('\n')
+        .filter(
+          (l) =>
+            l.includes('claude-agent') ||
+            l.includes('claude-code-acp') ||
+            l.includes('openai') ||
+            l.includes('gemini-acp') ||
+            l.includes('ollama')
+        );
       for (const line of agentLines) {
         expect(line).toMatch(/Available|Not configured/);
       }
@@ -55,10 +72,11 @@ describe('agent commands', () => {
       // Check if any agent line contains "Available" (not just the header)
       const lines = output.split('\n');
       const availableAgents = lines.filter(line =>
-        line.includes('claude-agent') || line.includes('openai') ||
-        line.includes('ollama') || line.includes('codex') ||
-        line.includes('copilot') || line.includes('opencode')
-      ).filter(line => line.includes('Available'));
+          line.includes('claude-agent') || line.includes('openai') ||
+          line.includes('ollama') || line.includes('codex') || line.includes('codex-acp') ||
+          line.includes('copilot') || line.includes('copilot-acp') ||
+          line.includes('gemini-acp') || line.includes('opencode')
+        ).filter(line => line.includes('Available'));
 
       if (availableAgents.length > 0) {
         // At least one agent is available, should show detection method
@@ -115,6 +133,7 @@ describe('agent commands', () => {
     it('should list known agents in error message', () => {
       const output = runCLI('agent info fake-agent');
       expect(output).toContain('claude-agent');
+      expect(output).toContain('claude-code-acp');
       expect(output).toContain('openai');
       expect(output).toContain('ollama');
     });

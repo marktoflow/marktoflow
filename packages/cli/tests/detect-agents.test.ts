@@ -49,11 +49,23 @@ describe('detect-agents', () => {
   describe('getKnownAgentIds', () => {
     it('should return all known agent IDs', () => {
       const ids = getKnownAgentIds();
-      expect(ids).toEqual(['claude-agent', 'openai', 'codex', 'copilot', 'opencode', 'ollama']);
+      expect(ids).toEqual([
+        'claude-agent',
+        'claude-code-acp',
+        'openai',
+        'codex',
+        'codex-acp',
+        'copilot',
+        'copilot-acp',
+        'gemini-acp',
+        'opencode',
+        'ollama',
+      ]);
     });
 
-    it('should not include gemini-cli', () => {
+    it('should only expose the canonical Gemini ACP variant', () => {
       expect(getKnownAgentIds()).not.toContain('gemini-cli');
+      expect(getKnownAgentIds()).toContain('gemini-acp');
     });
   });
 
@@ -89,6 +101,18 @@ describe('detect-agents', () => {
       expect(result!.method).toBe('none');
     });
 
+    it('should detect claude-code-acp via CLI', () => {
+      mockCliAvailability(['claude']);
+      const result = detectAgent('claude-code-acp');
+      expect(result).toEqual({
+        id: 'claude-code-acp',
+        name: 'Claude Code ACP',
+        available: true,
+        method: 'cli',
+        configHint: expect.any(String),
+      });
+    });
+
     it('should detect openai via env var', () => {
       mockCliAvailability([]);
       process.env.OPENAI_API_KEY = 'sk-test';
@@ -110,6 +134,13 @@ describe('detect-agents', () => {
       expect(result!.method).toBe('cli');
     });
 
+    it('should detect codex-acp via CLI', () => {
+      mockCliAvailability(['codex']);
+      const result = detectAgent('codex-acp');
+      expect(result!.available).toBe(true);
+      expect(result!.method).toBe('cli');
+    });
+
     it('should detect copilot via CLI', () => {
       mockCliAvailability(['copilot']);
       const result = detectAgent('copilot');
@@ -123,6 +154,20 @@ describe('detect-agents', () => {
       const result = detectAgent('copilot');
       expect(result!.available).toBe(true);
       expect(result!.method).toBe('env');
+    });
+
+    it('should detect copilot-acp via CLI', () => {
+      mockCliAvailability(['copilot']);
+      const result = detectAgent('copilot-acp');
+      expect(result!.available).toBe(true);
+      expect(result!.method).toBe('cli');
+    });
+
+    it('should detect gemini-acp via CLI', () => {
+      mockCliAvailability(['gemini']);
+      const result = detectAgent('gemini-acp');
+      expect(result!.available).toBe(true);
+      expect(result!.method).toBe('cli');
     });
 
     it('should detect opencode via CLI', () => {
@@ -158,20 +203,28 @@ describe('detect-agents', () => {
     it('should return results for all known agents', () => {
       mockCliAvailability([]);
       const results = detectAgents();
-      expect(results).toHaveLength(6);
+      expect(results).toHaveLength(10);
       expect(results.map((r) => r.id)).toEqual(getKnownAgentIds());
     });
 
     it('should detect multiple available agents', () => {
-      mockCliAvailability(['claude', 'ollama']);
+      mockCliAvailability(['claude', 'copilot', 'gemini', 'ollama']);
       process.env.OPENAI_API_KEY = 'sk-test';
 
       const results = detectAgents();
       const available = results.filter((r) => r.available);
       expect(available.map((r) => r.id)).toEqual(
-        expect.arrayContaining(['claude-agent', 'openai', 'ollama'])
+        expect.arrayContaining([
+          'claude-agent',
+          'claude-code-acp',
+          'openai',
+          'copilot',
+          'copilot-acp',
+          'gemini-acp',
+          'ollama',
+        ])
       );
-      expect(available).toHaveLength(3);
+      expect(available).toHaveLength(7);
     });
 
     it('should show all agents as unavailable when nothing is set up', () => {
